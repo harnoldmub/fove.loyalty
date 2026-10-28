@@ -1,0 +1,783 @@
+// FOVE — schéma multi-tenant.
+//
+// Isolation : toute table métier porte `tenantId`. Les relations entre tables
+// métier passent par des clés étrangères composites (tenantId, id) : la base
+// refuse physiquement qu'un compte de fidélité d'une entreprise pointe vers le
+// client ou le programme d'une autre.
+
+generator client {
+  provider     = "prisma-client"
+  output       = "../generated/client"
+  moduleFormat = "cjs"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ---------------------------------------------------------------------------
+// Comptes, sessions, rôles
+// ---------------------------------------------------------------------------
+
+model User {
+  id               String    @id @default(uuid()) @db.Uuid
+  email            String    @unique
+  name             String
+  passwordHash     String
+  emailVerifiedAt  DateTime?
+  isSuperAdmin     Boolean   @default(false)
+  failedLoginCount Int       @default(0)
+  lockedUntil      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  sessions     Session[]
+  memberships  TenantMembership[]
+  authTokens   AuthToken[]
+  supportGrants SupportAccessGrant[]
+}
+
+/// Le cookie porte un jeton opaque ; seule son empreinte SHA-256 est stockée.
+model Session {
+  id             String    @id @default(uuid()) @db.Uuid
+  tokenHash      String    @unique
+  userId         String    @db.Uuid
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// Entreprise choisie. Revérifiée à chaque requête contre les adhésions.
+  activeTenantId String?   @db.Uuid
+  /// Accès support (super admin) : lecture seule, limité dans le temps.
+  supportGrantId String?   @db.Uuid
+  userAgent      String?
+  ip             String?
+  expiresAt      DateTime
+  lastSeenAt     DateTime  @default(now())
+  createdAt      DateTime  @default(now())
+
+  @@index([userId])
+}
+
+enum AuthTokenType {
+  EMAIL_VERIFY
+  PASSWORD_RESET
+}
+
+model AuthToken {
+  id        String        @id @default(uuid()) @db.Uuid
+  type      AuthTokenType
+  tokenHash String        @unique
+  userId    String        @db.Uuid
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime      @default(now())
+
+  @@index([userId, type])
+}
+
+model Permission {
+  key         String @id
+  description String
+}
+
+/// Rôles système (tenantId nul) ou propres à une entreprise (évolution future).
+model Role {
+  id          String             @id @default(uuid()) @db.Uuid
+  key         String
+  tenantId    String?            @db.Uuid
+  name        String
+  permissions String[]
+  isSystem    Boolean            @default(false)
+  memberships TenantMembership[]
+  invitations Invitation[]
+
+  @@unique([tenantId, key])
+}
+
+// ---------------------------------------------------------------------------
+// Entreprises
+// ---------------------------------------------------------------------------
+
+enum TenantStatus {
+  ACTIVE
+  SUSPENDED
+}
+
+model Tenant {
+  id          String       @id @default(uuid()) @db.Uuid
+  slug        String       @unique
+  name        String
+  status      TenantStatus @default(ACTIVE)
+  suspendedAt DateTime?
+  suspendedReason String?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  settings       TenantSettings?
+  establishments Establishment[]
+  memberships    TenantMembership[]
+  invitations    Invitation[]
+  customers      Customer[]
+  identities     CustomerIdentity[]
+  programs       LoyaltyProgram[]
+  accounts       LoyaltyAccount[]
+  transactions   LoyaltyTransaction[]
+  rewards        Reward[]
+  redemptions    RewardRedemption[]
+  enrollmentLinks EnrollmentLink[]
+  otps           OtpChallenge[]
+  subscription   Subscription?
+  apiCredentials ApiCredential[]
+  integrations   IntegrationConnection[]
+  syncLogs       IntegrationSyncLog[]
+  webhooks       WebhookEndpoint[]
+  deliveries     WebhookDelivery[]
+  idempotency    IdempotencyRecord[]
+  auditLogs      AuditLog[]
+  supportGrants  SupportAccessGrant[]
+}
+
+model TenantSettings {
+  tenantId              String    @id @db.Uuid
+  tenant                Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  primaryColor          String    @default("#1F4FFF")
+  logoUrl               String?
+  country               String    @default("CD")
+  currency              String    @default("CDF")
+  timezone              String    @default("Africa/Kinshasa")
+  legalName             String?
+  contactEmail          String?
+  privacyPolicyUrl      String?
+  /// Durée de conservation des clients inactifs avant anonymisation (mois).
+  dataRetentionMonths   Int       @default(36)
+  onboardingCompletedAt DateTime?
+  updatedAt             DateTime  @updatedAt
+}
+
+model Establishment {
+  id        String   @id @default(uuid()) @db.Uuid
+  tenantId  String   @db.Uuid
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  name      String
+  address   String?
+  city      String?
+  phone     String?
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  memberships     MembershipEstablishment[]
+  enrollmentLinks EnrollmentLink[]
+
+  @@unique([tenantId, id])
+  @@index([tenantId])
+}
+
+enum MembershipStatus {
+  ACTIVE
+  DISABLED
+}
+
+model TenantMembership {
+  id                String           @id @default(uuid()) @db.Uuid
+  tenantId          String           @db.Uuid
+  tenant            Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  userId            String           @db.Uuid
+  user              User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  roleId            String           @db.Uuid
+  role              Role             @relation(fields: [roleId], references: [id])
+  status            MembershipStatus @default(ACTIVE)
+  /// Vrai : accès à tous les établissements. Faux : seulement ceux listés.
+  allEstablishments Boolean          @default(true)
+  createdAt         DateTime         @default(now())
+
+  establishments MembershipEstablishment[]
+
+  @@unique([tenantId, userId])
+  @@unique([tenantId, id])
+  @@index([userId])
+}
+
+model MembershipEstablishment {
+  tenantId        String           @db.Uuid
+  membershipId    String           @db.Uuid
+  membership      TenantMembership @relation(fields: [tenantId, membershipId], references: [tenantId, id], onDelete: Cascade)
+  establishmentId String           @db.Uuid
+  establishment   Establishment    @relation(fields: [tenantId, establishmentId], references: [tenantId, id], onDelete: Cascade)
+
+  @@id([membershipId, establishmentId])
+}
+
+model Invitation {
+  id               String    @id @default(uuid()) @db.Uuid
+  tenantId         String    @db.Uuid
+  tenant           Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  email            String
+  roleId           String    @db.Uuid
+  role             Role      @relation(fields: [roleId], references: [id])
+  establishmentIds String[]
+  tokenHash        String    @unique
+  invitedById      String    @db.Uuid
+  expiresAt        DateTime
+  acceptedAt       DateTime?
+  revokedAt        DateTime?
+  createdAt        DateTime  @default(now())
+
+  @@index([tenantId, email])
+}
+
+// ---------------------------------------------------------------------------
+// Clients
+// ---------------------------------------------------------------------------
+
+enum CustomerSource {
+  DASHBOARD
+  QR_ENROLLMENT
+  IMPORT
+  API
+  INTEGRATION
+}
+
+model Customer {
+  id                    String         @id @default(uuid()) @db.Uuid
+  tenantId              String         @db.Uuid
+  tenant                Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  firstName             String
+  lastName              String         @default("")
+  email                 String?
+  phone                 String?
+  externalRef           String?
+  source                CustomerSource @default(DASHBOARD)
+  termsAcceptedAt       DateTime?
+  /// Consentements marketing distincts du consentement au programme.
+  marketingEmailConsent Boolean        @default(false)
+  marketingSmsConsent   Boolean        @default(false)
+  consentUpdatedAt      DateTime?
+  anonymizedAt          DateTime?
+  createdAt             DateTime       @default(now())
+  updatedAt             DateTime       @updatedAt
+
+  identities CustomerIdentity[]
+  accounts   LoyaltyAccount[]
+
+  @@unique([tenantId, id])
+  @@index([tenantId, createdAt])
+  @@index([tenantId, lastName, firstName])
+}
+
+enum IdentityKind {
+  PHONE
+  EMAIL
+  EXTERNAL
+}
+
+/// Identifiants uniques d'un client dans une entreprise : empêchent les
+/// doublons sans fusionner deux personnes sur la base d'un simple nom.
+model CustomerIdentity {
+  id         String       @id @default(uuid()) @db.Uuid
+  tenantId   String       @db.Uuid
+  tenant     Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  customerId String       @db.Uuid
+  customer   Customer     @relation(fields: [tenantId, customerId], references: [tenantId, id], onDelete: Cascade)
+  kind       IdentityKind
+  value      String
+  verifiedAt DateTime?
+  createdAt  DateTime     @default(now())
+
+  @@unique([tenantId, kind, value])
+  @@index([customerId])
+}
+
+// ---------------------------------------------------------------------------
+// Fidélité
+// ---------------------------------------------------------------------------
+
+enum ProgramMode {
+  POINTS
+  STAMPS
+}
+
+enum EnrollmentVerification {
+  NONE
+  EMAIL_OTP
+  IN_STORE
+}
+
+model LoyaltyProgram {
+  id                     String                 @id @default(uuid()) @db.Uuid
+  tenantId               String                 @db.Uuid
+  tenant                 Tenant                 @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  name                   String
+  mode                   ProgramMode
+  currency               String
+  spendStep              Decimal                @default(1000) @db.Decimal(14, 2)
+  pointsPerStep          Int                    @default(1)
+  stampsPerPurchase      Int                    @default(1)
+  stampsTarget           Int                    @default(10)
+  minPurchaseAmount      Decimal?               @db.Decimal(14, 2)
+  maxPerTransaction      Int?
+  inactivityExpiryDays   Int?
+  enrollmentVerification EnrollmentVerification @default(NONE)
+  terms                  String                 @default("")
+  active                 Boolean                @default(true)
+  createdAt              DateTime               @default(now())
+  updatedAt              DateTime               @updatedAt
+
+  accounts        LoyaltyAccount[]
+  rewards         Reward[]
+  enrollmentLinks EnrollmentLink[]
+
+  @@unique([tenantId, id])
+  @@index([tenantId])
+}
+
+enum AccountStatus {
+  PENDING_VERIFICATION
+  ACTIVE
+  BLOCKED
+  CLOSED
+}
+
+model LoyaltyAccount {
+  id              String         @id @default(uuid()) @db.Uuid
+  tenantId        String         @db.Uuid
+  tenant          Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  programId       String         @db.Uuid
+  program         LoyaltyProgram @relation(fields: [tenantId, programId], references: [tenantId, id], onDelete: Restrict)
+  customerId      String         @db.Uuid
+  customer        Customer       @relation(fields: [tenantId, customerId], references: [tenantId, id], onDelete: Restrict)
+  /// Numéro lisible imprimé sur la carte (FV-XXXX-XXXX).
+  cardNumber      String
+  /// Contenu du QR personnel : identifie la carte, ne donne aucun droit.
+  qrToken         String         @unique
+  /// Empreinte du jeton secret du lien de la carte numérique.
+  accessTokenHash String         @unique
+  status          AccountStatus  @default(ACTIVE)
+  /// Solde mis en cache, toujours égal au `balanceAfter` de la dernière opération.
+  balance         Int            @default(0)
+  lifetimeEarned  Int            @default(0)
+  lifetimeSpent   Int            @default(0)
+  lastActivityAt  DateTime       @default(now())
+  createdAt       DateTime       @default(now())
+
+  transactions LoyaltyTransaction[]
+  redemptions  RewardRedemption[]
+  otps         OtpChallenge[]
+
+  @@unique([tenantId, id])
+  @@unique([tenantId, programId, customerId])
+  @@unique([tenantId, cardNumber])
+  @@index([tenantId, programId, createdAt])
+}
+
+enum TransactionKind {
+  EARN
+  ADJUSTMENT
+  REDEMPTION
+  REDEMPTION_REVERSAL
+  REVERSAL
+  REFUND
+  EXPIRATION
+}
+
+enum OperationSource {
+  DASHBOARD
+  SCANNER
+  API
+  INTEGRATION
+  SYSTEM
+}
+
+/// Historique immuable. Une correction = une nouvelle ligne compensatoire.
+model LoyaltyTransaction {
+  id             String          @id @default(uuid()) @db.Uuid
+  tenantId       String          @db.Uuid
+  tenant         Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  accountId      String          @db.Uuid
+  account        LoyaltyAccount  @relation(fields: [tenantId, accountId], references: [tenantId, id], onDelete: Restrict)
+  kind           TransactionKind
+  delta          Int
+  balanceAfter   Int
+  amount         Decimal?        @db.Decimal(14, 2)
+  currency       String?
+  saleReference  String?
+  externalOrderId String?
+  reason         String?
+  idempotencyKey String
+  /// Annulation totale : une opération ne peut être annulée qu'une fois.
+  reversesId     String?         @unique @db.Uuid
+  reverses       LoyaltyTransaction?  @relation("Reversal", fields: [reversesId], references: [id], onDelete: Restrict)
+  reversedBy     LoyaltyTransaction?  @relation("Reversal")
+  /// Remboursement partiel : plusieurs lignes possibles, plafonnées au gain initial.
+  refundOfId     String?         @db.Uuid
+  establishmentId String?        @db.Uuid
+  actorUserId    String?         @db.Uuid
+  actorApiKeyId  String?         @db.Uuid
+  source         OperationSource
+  createdAt      DateTime        @default(now())
+
+  @@unique([tenantId, idempotencyKey])
+  @@unique([tenantId, id])
+  @@index([tenantId, createdAt])
+  @@index([accountId, createdAt])
+  @@index([tenantId, externalOrderId])
+  @@index([refundOfId])
+}
+
+model Reward {
+  id             String         @id @default(uuid()) @db.Uuid
+  tenantId       String         @db.Uuid
+  tenant         Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  programId      String         @db.Uuid
+  program        LoyaltyProgram @relation(fields: [tenantId, programId], references: [tenantId, id], onDelete: Restrict)
+  name           String
+  description    String         @default("")
+  conditions     String         @default("")
+  cost           Int
+  stock          Int?
+  availableFrom  DateTime?
+  availableUntil DateTime?
+  active         Boolean        @default(true)
+  archivedAt     DateTime?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  redemptions RewardRedemption[]
+
+  @@unique([tenantId, id])
+  @@index([tenantId, programId, active])
+}
+
+enum RedemptionStatus {
+  COMPLETED
+  CANCELLED
+}
+
+model RewardRedemption {
+  id                    String           @id @default(uuid()) @db.Uuid
+  tenantId              String           @db.Uuid
+  tenant                Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  accountId             String           @db.Uuid
+  account               LoyaltyAccount   @relation(fields: [tenantId, accountId], references: [tenantId, id], onDelete: Restrict)
+  rewardId              String           @db.Uuid
+  reward                Reward           @relation(fields: [tenantId, rewardId], references: [tenantId, id], onDelete: Restrict)
+  rewardName            String
+  cost                  Int
+  status                RedemptionStatus @default(COMPLETED)
+  transactionId         String           @unique @db.Uuid
+  reversalTransactionId String?          @unique @db.Uuid
+  idempotencyKey        String
+  establishmentId       String?          @db.Uuid
+  actorUserId           String?          @db.Uuid
+  cancelledById         String?          @db.Uuid
+  cancelReason          String?
+  cancelledAt           DateTime?
+  createdAt             DateTime         @default(now())
+
+  @@unique([tenantId, idempotencyKey])
+  @@index([tenantId, createdAt])
+  @@index([accountId])
+}
+
+/// QR d'inscription public (différent du QR personnel de la carte).
+model EnrollmentLink {
+  id              String         @id @default(uuid()) @db.Uuid
+  tenantId        String         @db.Uuid
+  tenant          Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  programId       String         @db.Uuid
+  program         LoyaltyProgram @relation(fields: [tenantId, programId], references: [tenantId, id], onDelete: Cascade)
+  establishmentId String?        @db.Uuid
+  establishment   Establishment? @relation(fields: [tenantId, establishmentId], references: [tenantId, id], onDelete: Cascade)
+  token           String         @unique
+  active          Boolean        @default(true)
+  enrollCount     Int            @default(0)
+  createdAt       DateTime       @default(now())
+
+  @@index([tenantId])
+}
+
+model OtpChallenge {
+  id         String         @id @default(uuid()) @db.Uuid
+  tenantId   String         @db.Uuid
+  tenant     Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  accountId  String         @db.Uuid
+  account    LoyaltyAccount @relation(fields: [tenantId, accountId], references: [tenantId, id], onDelete: Cascade)
+  channel    String
+  target     String
+  codeHash   String
+  attempts   Int            @default(0)
+  expiresAt  DateTime
+  consumedAt DateTime?
+  createdAt  DateTime       @default(now())
+
+  @@index([accountId])
+}
+
+// ---------------------------------------------------------------------------
+// Abonnements
+// ---------------------------------------------------------------------------
+
+model SubscriptionPlan {
+  id                  String         @id @default(uuid()) @db.Uuid
+  code                String         @unique
+  name                String
+  description         String         @default("")
+  currency            String         @default("EUR")
+  priceMonthlyCents   Int
+  priceYearlyCents    Int
+  stripePriceMonthlyId String?
+  stripePriceYearlyId  String?
+  trialDays           Int            @default(14)
+  /// Fonctions incluses : { api: bool, widget: bool, integrations: bool, exports: bool }.
+  features            Json
+  /// Quotas : { customers, establishments, staff, programs } (null = illimité).
+  limits              Json
+  active              Boolean        @default(true)
+  sortOrder           Int            @default(0)
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
+
+  subscriptions Subscription[]
+}
+
+enum SubscriptionStatus {
+  TRIALING
+  ACTIVE
+  PAST_DUE
+  CANCELED
+  INCOMPLETE
+}
+
+enum BillingInterval {
+  MONTH
+  YEAR
+}
+
+enum BillingProvider {
+  STRIPE
+  MOCK
+  MANUAL
+}
+
+model Subscription {
+  id                   String             @id @default(uuid()) @db.Uuid
+  tenantId             String             @unique @db.Uuid
+  tenant               Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  planId               String             @db.Uuid
+  plan                 SubscriptionPlan   @relation(fields: [planId], references: [id])
+  status               SubscriptionStatus
+  interval             BillingInterval    @default(MONTH)
+  provider             BillingProvider    @default(MOCK)
+  trialEndsAt          DateTime?
+  currentPeriodEnd     DateTime?
+  cancelAtPeriodEnd    Boolean            @default(false)
+  stripeCustomerId     String?            @unique
+  stripeSubscriptionId String?            @unique
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+}
+
+/// Événements de facturation déjà traités : un webhook rejoué n'a aucun effet.
+model BillingEvent {
+  id          String   @id
+  type        String
+  processedAt DateTime @default(now())
+}
+
+// ---------------------------------------------------------------------------
+// Intégrations, API, webhooks
+// ---------------------------------------------------------------------------
+
+enum ApiKeyKind {
+  SECRET
+  PUBLISHABLE
+}
+
+enum ApiEnvironment {
+  TEST
+  LIVE
+}
+
+model ApiCredential {
+  id             String         @id @default(uuid()) @db.Uuid
+  tenantId       String         @db.Uuid
+  tenant         Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  name           String
+  kind           ApiKeyKind
+  environment    ApiEnvironment @default(TEST)
+  /// Début lisible de la clé (affichage seulement).
+  prefix         String
+  keyHash        String         @unique
+  scopes         String[]
+  allowedOrigins String[]
+  createdById    String?        @db.Uuid
+  lastUsedAt     DateTime?
+  revokedAt      DateTime?
+  createdAt      DateTime       @default(now())
+
+  @@index([tenantId])
+}
+
+enum IntegrationProvider {
+  MATCH_KWATA
+  CUSTOM
+}
+
+enum IntegrationStatus {
+  ACTIVE
+  PAUSED
+  ERROR
+}
+
+model IntegrationConnection {
+  id              String              @id @default(uuid()) @db.Uuid
+  tenantId        String              @db.Uuid
+  tenant          Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  provider        IntegrationProvider
+  name            String
+  status          IntegrationStatus   @default(ACTIVE)
+  programId       String?             @db.Uuid
+  apiCredentialId String?             @db.Uuid
+  config          Json                @default("{}")
+  lastSyncAt      DateTime?
+  lastError       String?
+  createdAt       DateTime            @default(now())
+
+  syncLogs IntegrationSyncLog[]
+
+  @@unique([tenantId, provider, name])
+  @@unique([tenantId, id])
+}
+
+model IntegrationSyncLog {
+  id           String                 @id @default(uuid()) @db.Uuid
+  tenantId     String                 @db.Uuid
+  tenant       Tenant                 @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  connectionId String?                @db.Uuid
+  connection   IntegrationConnection? @relation(fields: [tenantId, connectionId], references: [tenantId, id], onDelete: Cascade)
+  kind         String
+  externalId   String
+  status       String
+  error        String?
+  createdAt    DateTime               @default(now())
+
+  @@index([tenantId, createdAt])
+}
+
+model WebhookEndpoint {
+  id              String   @id @default(uuid()) @db.Uuid
+  tenantId        String   @db.Uuid
+  tenant          Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  url             String
+  /// Secret de signature chiffré (AES-256-GCM, clé APP_ENCRYPTION_KEY).
+  secretEncrypted String
+  events          String[]
+  active          Boolean  @default(true)
+  createdAt       DateTime @default(now())
+
+  deliveries WebhookDelivery[]
+
+  @@unique([tenantId, id])
+}
+
+enum DeliveryStatus {
+  PENDING
+  SUCCEEDED
+  FAILED
+}
+
+model WebhookDelivery {
+  id             String          @id @default(uuid()) @db.Uuid
+  tenantId       String          @db.Uuid
+  tenant         Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  endpointId     String          @db.Uuid
+  endpoint       WebhookEndpoint @relation(fields: [tenantId, endpointId], references: [tenantId, id], onDelete: Cascade)
+  event          String
+  payload        Json
+  status         DeliveryStatus  @default(PENDING)
+  attempts       Int             @default(0)
+  nextAttemptAt  DateTime        @default(now())
+  lastStatusCode Int?
+  lastError      String?
+  deliveredAt    DateTime?
+  createdAt      DateTime        @default(now())
+
+  @@index([status, nextAttemptAt])
+  @@index([tenantId, createdAt])
+}
+
+/// Réponses mémorisées pour l'en-tête `Idempotency-Key` de l'API publique.
+model IdempotencyRecord {
+  id           String   @id @default(uuid()) @db.Uuid
+  tenantId     String   @db.Uuid
+  tenant       Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  key          String
+  requestHash  String
+  statusCode   Int
+  responseBody Json
+  createdAt    DateTime @default(now())
+
+  @@unique([tenantId, key])
+}
+
+// ---------------------------------------------------------------------------
+// Plateforme
+// ---------------------------------------------------------------------------
+
+model AuditLog {
+  id            String   @id @default(uuid()) @db.Uuid
+  tenantId      String?  @db.Uuid
+  tenant        Tenant?  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  actorUserId   String?  @db.Uuid
+  actorApiKeyId String?  @db.Uuid
+  action        String
+  targetType    String?
+  targetId      String?
+  metadata      Json?
+  ip            String?
+  createdAt     DateTime @default(now())
+
+  @@index([tenantId, createdAt])
+  @@index([action, createdAt])
+}
+
+model SupportAccessGrant {
+  id           String    @id @default(uuid()) @db.Uuid
+  tenantId     String    @db.Uuid
+  tenant       Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  superAdminId String    @db.Uuid
+  superAdmin   User      @relation(fields: [superAdminId], references: [id], onDelete: Cascade)
+  reason       String
+  expiresAt    DateTime
+  revokedAt    DateTime?
+  createdAt    DateTime  @default(now())
+
+  @@index([tenantId])
+}
+
+model EmailOutbox {
+  id        String    @id @default(uuid()) @db.Uuid
+  to        String
+  subject   String
+  text      String
+  html      String?
+  provider  String
+  status    String    @default("PENDING")
+  error     String?
+  createdAt DateTime  @default(now())
+  sentAt    DateTime?
+
+  @@index([to, createdAt])
+}
+
+model ErrorLog {
+  id        String   @id @default(uuid()) @db.Uuid
+  requestId String?
+  method    String?
+  path      String?
+  status    Int
+  message   String
+  stack     String?
+  tenantId  String?  @db.Uuid
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+}

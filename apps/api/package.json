@@ -1,0 +1,42 @@
+{
+  "name": "@fove/api",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "dev": "node --env-file-if-exists=../../.env --env-file-if-exists=../../.env.local --watch -r @swc-node/register src/main.ts",
+    "start": "node dist/main.js",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@fove/database": "workspace:*",
+    "@fove/shared": "workspace:*",
+    "@nestjs/common": "11.2.8",
+    "@nestjs/core": "11.2.8",
+    "@nestjs/platform-express": "11.2.8",
+    "@nestjs/swagger": "11.4.7",
+    "@nestjs/throttler": "6.7.1",
+    "cookie-parser": "^1.4.7",
+    "helmet": "^8.1.0",
+    "qrcode": "^1.5.4",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.2",
+    "stripe": "^23.0.1",
+    "zod": "^4.1.0"
+  },
+  "devDependencies": {
+    "@fove/sdk": "workspace:^",
+    "@nestjs/testing": "11.2.8",
+    "@swc-node/register": "^1.10.10",
+    "@swc/core": "1.16.20",
+    "@types/cookie-parser": "^1.4.9",
+    "@types/express": "^5.0.3",
+    "@types/qrcode": "^1.5.5",
+    "@types/supertest": "^6.0.3",
+    "dotenv": "^17.2.0",
+    "supertest": "^7.1.0",
+    "unplugin-swc": "2.0.0",
+    "vitest": "4.1.12"
+  }
+}

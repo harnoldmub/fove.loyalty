@@ -1,0 +1,19 @@
+{
+  "name": "@fove/shared",
+  "version": "0.1.0",
+  "private": true,
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "libphonenumber-js": "^1.12.10",
+    "zod": "^4.1.0"
+  },
+  "devDependencies": {
+    "vitest": "4.1.12"
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "name": "fove",
+  "private": true,
+  "packageManager": "pnpm@9.15.4",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "dev": "turbo run dev --parallel --filter=@fove/api --filter=@fove/web",
+    "build": "turbo run build",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "lint": "turbo run lint",
+    "db:generate": "pnpm --filter @fove/database generate",
+    "db:migrate": "pnpm --filter @fove/database migrate:dev",
+    "db:deploy": "pnpm --filter @fove/database migrate:deploy",
+    "db:seed": "pnpm --filter @fove/database seed"
+  },
+  "devDependencies": {
+    "turbo": "2.11.10",
+    "typescript": "5.9.3",
+    "@types/node": "^22.15.0"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": ["@prisma/engines", "prisma", "@swc/core", "esbuild", "sharp", "unrs-resolver", "@nestjs/core"]
+  }
+}
