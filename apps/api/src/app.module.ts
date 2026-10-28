@@ -33,6 +33,7 @@ import { WidgetController } from "./public-api/widget.controller";
 import { AdminService } from "./admin/admin.service";
 import { AdminController } from "./admin/admin.controller";
 import { JobsController } from "./jobs/jobs.controller";
+import { MediaController } from "./media/media.controller";
 
 /**
  * Monolithe modulaire : un seul déploiement, des modules métier séparés par
@@ -58,6 +59,7 @@ import { JobsController } from "./jobs/jobs.controller";
     WidgetController,
     AdminController,
     JobsController,
+    MediaController,
   ],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },

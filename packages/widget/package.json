@@ -1,0 +1,16 @@
+{
+  "name": "@fove/widget",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Widget de fidélité FOVE, sans dépendance, compatible avec tout site (WordPress, Astro, React, Next.js, Symfony, HTML).",
+  "scripts": {
+    "build": "esbuild src/index.ts --bundle --minify --format=iife --target=es2018 --outfile=../../apps/web/public/widget/fove-widget.js",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.0",
+    "happy-dom": "^20.0.0",
+    "vitest": "4.1.12"
+  }
+}

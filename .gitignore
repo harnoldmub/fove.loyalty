@@ -11,3 +11,6 @@ packages/database/generated
 test-results
 playwright-report
 .DS_Store
+
+# Généré par packages/widget (pnpm build)
+apps/web/public/widget/

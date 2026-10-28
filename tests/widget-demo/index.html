@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Boutique de démonstration</title>
+    <style>
+      body { margin: 0; font-family: Georgia, serif; background: #faf7f2; color: #222; }
+      main { max-width: 640px; margin: 0 auto; padding: 48px 20px; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Boutique de démonstration</h1>
+      <p>Site externe servi depuis une autre origine que FOVE. Le widget est ajouté avec une seule balise script.</p>
+      <p>Ouvrir avec <code>?key=fove_pk_test_…&amp;app=http://localhost:5290</code>.</p>
+    </main>
+    <script>
+      // Équivalent de : <script src=".../widget/fove-widget.js" data-key="fove_pk_…" defer></script>
+      const params = new URLSearchParams(location.search);
+      const s = document.createElement("script");
+      s.src = (params.get("app") || "http://localhost:5290") + "/widget/fove-widget.js";
+      s.dataset.key = params.get("key") || "";
+      document.body.appendChild(s);
+    </script>
+  </body>
+</html>

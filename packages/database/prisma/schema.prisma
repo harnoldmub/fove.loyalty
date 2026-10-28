@@ -134,6 +134,7 @@ model Tenant {
   idempotency    IdempotencyRecord[]
   auditLogs      AuditLog[]
   supportGrants  SupportAccessGrant[]
+  media          MediaAsset[]
 }
 
 model TenantSettings {
@@ -780,4 +781,19 @@ model ErrorLog {
   createdAt DateTime @default(now())
 
   @@index([createdAt])
+}
+
+/// Médias (logos). Stockés en base en V1 ; le pilote `MediaStorage` de l'API
+/// permet de basculer vers un stockage objet (S3, R2) sans changer les URLs.
+model MediaAsset {
+  id          String   @id @default(uuid()) @db.Uuid
+  tenantId    String   @db.Uuid
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  contentType String
+  size        Int
+  data        Bytes?
+  storageKey  String?
+  createdAt   DateTime @default(now())
+
+  @@index([tenantId])
 }

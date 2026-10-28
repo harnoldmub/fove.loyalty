@@ -1,0 +1,37 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "fove-api",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": [
+        "--filter",
+        "@fove/api",
+        "dev"
+      ],
+      "port": 5291
+    },
+    {
+      "name": "fove-web",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": [
+        "--filter",
+        "@fove/web",
+        "dev"
+      ],
+      "port": 5290
+    },
+    {
+      "name": "fove-widget-demo",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": [
+        "-m",
+        "http.server",
+        "5299",
+        "--directory",
+        "tests/widget-demo"
+      ],
+      "port": 5299
+    }
+  ]
+}
