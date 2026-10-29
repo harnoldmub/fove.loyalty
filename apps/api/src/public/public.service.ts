@@ -1,6 +1,6 @@
 import { Injectable } from "@nestjs/common";
 import QRCode from "qrcode";
-import { normalizeEmail, publicEnrollSchema } from "@fove/shared";
+import { normalizeEmail, normalizePhone, publicEnrollSchema } from "@fove/shared";
 import type { z } from "zod";
 import { PrismaService } from "../common/prisma.service";
 import { AuditService } from "../common/audit.service";
@@ -11,8 +11,8 @@ import { PlanService } from "../billing/plan.service";
 import { EmailService } from "../notifications/email.service";
 import { WebhooksService } from "../notifications/webhooks.service";
 import { CustomersService, buildIdentities, findByIdentities } from "../customers/customers.service";
-import { createCard, rotateAccessToken } from "../loyalty/cards";
-import { cardUrl } from "../loyalty/loyalty.service";
+import { createCard } from "../loyalty/cards";
+import { CardsService, cardUrl } from "../cards/cards.service";
 
 const OTP_TTL_MS = 10 * 60_000;
 const OTP_MAX_ATTEMPTS = 5;
@@ -34,6 +34,7 @@ export class PublicService {
     private readonly email: EmailService,
     private readonly audit: AuditService,
     private readonly webhooks: WebhooksService,
+    private readonly cards: CardsService,
   ) {}
 
   private async link(token: string) {
@@ -123,24 +124,34 @@ export class PublicService {
     }
   }
 
-  /** Renvoi du lien de carte par email (réponse identique que le client existe ou non). */
-  async recover(token: string, emailRaw: string) {
+  /**
+   * « Retrouver ma carte » par email ou téléphone. Le lien part uniquement vers
+   * l'email enregistré sur la fiche, jamais affiché à l'écran, et n'est pas
+   * renouvelé : une demande malveillante ne peut pas couper la carte du vrai client.
+   * Réponse identique que le client existe ou non.
+   */
+  async recover(token: string, identifier: string) {
     const link = await this.link(token);
-    const email = normalizeEmail(emailRaw);
+    const value = identifier.trim();
+    const isEmail = value.includes("@");
+    const lookup = isEmail ? normalizeEmail(value) : normalizePhone(value, link.tenant.settings?.country ?? "CD");
+    if (!lookup) return;
     const identity = await this.prisma.client.customerIdentity.findUnique({
-      where: { tenantId_kind_value: { tenantId: link.tenantId, kind: "EMAIL", value: email } },
+      where: { tenantId_kind_value: { tenantId: link.tenantId, kind: isEmail ? "EMAIL" : "PHONE", value: lookup } },
+      include: { customer: { select: { email: true, firstName: true } } },
     });
-    if (!identity) return;
+    const email = identity?.customer.email;
+    if (!identity || !email) return;
     const account = await this.prisma.client.loyaltyAccount.findFirst({
       where: { tenantId: link.tenantId, programId: link.programId, customerId: identity.customerId, status: { not: "CLOSED" } },
     });
     if (!account) return;
-    const { accessToken, accessTokenHash } = rotateAccessToken();
-    await this.prisma.client.loyaltyAccount.update({ where: { id: account.id }, data: { accessTokenHash } });
+    const url = await this.cards.linkFor(account.id, link.tenantId);
+    await this.audit.log({ tenantId: link.tenantId, action: "account.link_emailed", targetType: "account", targetId: account.id });
     await this.email.send({
       to: email,
       subject: `Votre carte de fidélité ${link.tenant.name}`,
-      text: `Voici le lien de votre carte ${link.program.name} :\n${cardUrl(accessToken)}\n\nAjoutez-la à l'écran d'accueil de votre téléphone pour la retrouver facilement. L'ancien lien ne fonctionne plus.`,
+      text: `${identity.customer.firstName ? `Bonjour ${identity.customer.firstName},\n\n` : ""}Voici le lien de votre carte ${link.program.name} :\n${url}\n\nAjoutez-la à l'écran d'accueil de votre téléphone ou téléchargez-la en image pour la présenter à chaque passage.`,
     });
   }
 
@@ -177,7 +188,13 @@ export class PublicService {
     const next = rewards.find((r) => r.cost > account.balance) ?? null;
     return {
       tenant: { name: account.tenant.name, logoUrl: s?.logoUrl ?? null, primaryColor: s?.primaryColor ?? "#1F4FFF" },
-      program: { name: account.program.name, mode: account.program.mode, stampsTarget: account.program.stampsTarget, terms: account.program.terms },
+      program: {
+        name: account.program.name,
+        mode: account.program.mode,
+        stampsTarget: account.program.stampsTarget,
+        terms: account.program.terms,
+        rule: this.cards.rule(account.program, rewards[0]?.name),
+      },
       customer: { firstName: account.customer.firstName, lastInitial: account.customer.lastName.slice(0, 1) },
       card: {
         number: account.cardNumber,
@@ -191,6 +208,7 @@ export class PublicService {
       rewards: rewards.map((r) => ({ ...r, available: account.balance >= r.cost })),
       transactions,
       verification: account.status === "PENDING_VERIFICATION" ? account.program.enrollmentVerification : null,
+      googleWallet: this.cards.wallet.isConfigured() && account.status === "ACTIVE",
     };
   }
 

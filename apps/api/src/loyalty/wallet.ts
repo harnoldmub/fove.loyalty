@@ -1,14 +1,18 @@
 /**
- * Point d'extension pour Apple Wallet et Google Wallet (non implémentés en V1).
- * Un fournisseur reçoit l'état public d'une carte et renvoie un lien ou un
- * fichier .pkpass ; il est appelé après chaque opération qui modifie le solde.
+ * Portefeuilles mobiles. Google Wallet est implémenté (`cards/google-wallet.ts`),
+ * activé seulement si ses identifiants sont configurés. Apple Wallet reste à
+ * venir derrière la même interface (certificat Pass Type ID requis).
  */
 export interface WalletCardState {
   accountId: string;
+  programId: string;
   tenantName: string;
   programName: string;
+  holder: string;
   cardNumber: string;
+  /** Contenu du QR personnel, lu par le scanner. */
   qrPayload: string;
+  cardUrl: string;
   balance: number;
   unit: "points" | "tampons";
   primaryColor: string;
@@ -23,6 +27,3 @@ export interface WalletProvider {
   /** Mise à jour du pass existant après une opération. */
   updatePass(card: WalletCardState): Promise<void>;
 }
-
-/** Registre vide en V1 : la carte web reste la seule carte. */
-export const walletProviders: WalletProvider[] = [];

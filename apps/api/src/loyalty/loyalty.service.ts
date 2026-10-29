@@ -1,6 +1,7 @@
 import { Injectable } from "@nestjs/common";
 import type { LoyaltyProgram, OperationSource, Prisma } from "@fove/database";
 import {
+  addAmounts,
   adjustSchema,
   computeEarn,
   earnSchema,
@@ -10,7 +11,6 @@ import {
   type EarnRules,
 } from "@fove/shared";
 import type { z } from "zod";
-import { loadConfig } from "../config";
 import { PrismaService } from "../common/prisma.service";
 import { AuditService } from "../common/audit.service";
 import { badRequest, conflict, isUniqueViolation, notFound, unprocessable } from "../common/errors";
@@ -19,7 +19,8 @@ import { PlanService } from "../billing/plan.service";
 import { WebhooksService } from "../notifications/webhooks.service";
 import { assertEstablishmentAccess } from "../tenants/tenants.service";
 import { LedgerService, type PostResult } from "./ledger.service";
-import { createCard, rotateAccessToken } from "./cards";
+import { createCard } from "./cards";
+import { CardsService, cardUrl } from "../cards/cards.service";
 
 export function earnRules(program: LoyaltyProgram): EarnRules {
   return {
@@ -32,10 +33,6 @@ export function earnRules(program: LoyaltyProgram): EarnRules {
   };
 }
 
-export function cardUrl(accessToken: string): string {
-  return `${loadConfig().APP_URL}/card/${accessToken}`;
-}
-
 @Injectable()
 export class LoyaltyService {
   constructor(
@@ -44,6 +41,7 @@ export class LoyaltyService {
     private readonly audit: AuditService,
     private readonly plans: PlanService,
     private readonly webhooks: WebhooksService,
+    private readonly cards: CardsService,
   ) {}
 
   // --- Programmes ------------------------------------------------------------
@@ -118,18 +116,6 @@ export class LoyaltyService {
       if (isUniqueViolation(error)) throw conflict("account_exists", "Ce client a déjà une carte pour ce programme");
       throw error;
     }
-  }
-
-  /** Nouveau lien de carte à transmettre au client ; l'ancien est révoqué. */
-  async reissueCardLink(ctx: TenantContext, accountId: string) {
-    const { accessToken, accessTokenHash } = rotateAccessToken();
-    const { count } = await this.prisma.client.loyaltyAccount.updateMany({
-      where: { id: accountId, tenantId: ctx.tenantId, status: { not: "CLOSED" } },
-      data: { accessTokenHash },
-    });
-    if (count === 0) throw notFound("Carte");
-    await this.audit.forTenant(ctx, "account.link_reissued", { type: "account", id: accountId });
-    return { cardUrl: cardUrl(accessToken) };
   }
 
   async setAccountStatus(ctx: TenantContext, accountId: string, status: "ACTIVE" | "BLOCKED") {
@@ -243,8 +229,13 @@ export class LoyaltyService {
     const result = await this.ledger.run(
       ctx,
       input.idempotencyKey,
-      (tx) =>
-        this.ledger.post(
+      async (tx) => {
+        if (account.program.oneVisitPerDay && source !== "INTEGRATION") {
+          const replay = await this.ledger.findByKey(ctx, input.idempotencyKey, tx);
+          if (replay) return { transaction: replay, replayed: true };
+          await this.assertFirstVisitToday(tx, ctx.tenantId, account.id);
+        }
+        return this.ledger.post(
           ctx,
           {
             accountId: account.id,
@@ -259,11 +250,28 @@ export class LoyaltyService {
             establishmentId: input.establishmentId,
           },
           tx,
-        ),
+        );
+      },
       async () => ({ transaction: (await this.ledger.findByKey(ctx, input.idempotencyKey))!, replayed: true }),
     );
     if (!result.replayed) await this.emitTransaction(ctx, result);
     return result;
+  }
+
+  /**
+   * Un seul passage compté par client et par jour (fuseau de l'entreprise),
+   * hors commandes en ligne. Le verrou sur la carte sérialise deux scans simultanés.
+   */
+  private async assertFirstVisitToday(tx: Prisma.TransactionClient, tenantId: string, accountId: string) {
+    await tx.$queryRaw`SELECT id FROM "LoyaltyAccount" WHERE id = ${accountId}::uuid FOR UPDATE`;
+    const settings = await tx.tenantSettings.findUnique({ where: { tenantId }, select: { timezone: true } });
+    const tz = settings?.timezone ?? "Africa/Kinshasa";
+    const rows = await tx.$queryRaw<{ count: bigint }[]>`
+      SELECT COUNT(*)::bigint AS count FROM "LoyaltyTransaction"
+      WHERE "accountId" = ${accountId}::uuid AND kind = 'EARN' AND source <> 'INTEGRATION'
+        AND ("createdAt" AT TIME ZONE 'UTC' AT TIME ZONE ${tz})::date = (now() AT TIME ZONE ${tz})::date
+        AND id NOT IN (SELECT "reversesId" FROM "LoyaltyTransaction" WHERE "reversesId" IS NOT NULL)`;
+    if (Number(rows[0]?.count ?? 0) > 0) throw conflict("visit_already_counted", "Le passage d’aujourd’hui est déjà compté pour ce client.");
   }
 
   async adjust(ctx: TenantContext, input: z.infer<typeof adjustSchema>): Promise<PostResult> {
@@ -346,10 +354,13 @@ export class LoyaltyService {
         if (await tx.loyaltyTransaction.findUnique({ where: { reversesId: original.id } })) {
           throw conflict("already_reversed", "Commande déjà annulée");
         }
-        const refunded = await tx.loyaltyTransaction.aggregate({ where: { refundOfId: original.id }, _sum: { delta: true } });
-        const remaining = original.delta + (refunded._sum.delta ?? 0);
-        const target = original.amount ? proportionalReversal(original.delta, original.amount.toString(), input.amount) : original.delta;
-        const delta = -Math.min(target, remaining);
+        // Montant remboursé cumulé : un remboursement rejoué ou ancien ne restaure jamais de points.
+        const previous = await tx.loyaltyTransaction.findMany({ where: { refundOfId: original.id }, select: { delta: true, amount: true } });
+        const alreadyRemoved = -previous.reduce((sum, r) => sum + r.delta, 0);
+        const program = await tx.loyaltyProgram.findFirstOrThrow({ where: { tenantId: ctx.tenantId, accounts: { some: { id: original.accountId } } }, select: { mode: true } });
+        const cumulative = addAmounts(input.amount, ...previous.map((r) => r.amount?.toString() ?? "0"));
+        const target = original.amount ? proportionalReversal(original.delta, original.amount.toString(), cumulative, program.mode) : original.delta;
+        const delta = -Math.max(0, Math.min(target, original.delta) - alreadyRemoved);
         return this.ledger.post(
           ctx,
           {
@@ -413,6 +424,7 @@ export class LoyaltyService {
 
   private async emitTransaction(ctx: TenantContext, result: PostResult) {
     const t = result.transaction;
+    this.cards.refreshWallet(ctx.tenantId, t.accountId);
     await this.webhooks.emit(ctx.tenantId, "loyalty_transaction.created", {
       id: t.id,
       accountId: t.accountId,

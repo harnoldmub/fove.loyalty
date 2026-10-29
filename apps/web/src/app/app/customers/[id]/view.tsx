@@ -3,11 +3,12 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Ban, Download, Link2, Pencil, PlusCircle, SlidersHorizontal, Trash2 } from "lucide-react";
-import { QRCodeSVG } from "qrcode.react";
+import { ArrowLeft, Ban, Download, Pencil, PlusCircle, SlidersHorizontal, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { TransactionList } from "@/components/app/history";
+import { CardShareDialog, useWalletEnabled, WalletMessageDialog } from "@/components/app/card-share";
+import { Stamps } from "@/components/stamps";
 import { useCan } from "@/components/app/me-context";
 import type { Account, Program, Transaction } from "@/components/app/types";
 import { Button } from "@/components/ui/button";
@@ -39,40 +40,6 @@ const STATUS: Record<Account["status"], { label: string; tone: "mint" | "danger"
   PENDING_VERIFICATION: { label: "À valider", tone: "stamp" },
   CLOSED: { label: "Fermée", tone: "neutral" },
 };
-
-function CardLinkDialog({ accountId }: { accountId: string }) {
-  const [url, setUrl] = useState<string | null>(null);
-  return (
-    <ConfirmDialog
-      trigger={
-        <Button variant="secondary" size="sm">
-          <Link2 /> Lien de la carte
-        </Button>
-      }
-      title="Générer un nouveau lien de carte ?"
-      consequence="Le client pourra ouvrir sa carte avec ce lien. L’ancien lien cessera de fonctionner."
-      confirmLabel="Générer le lien"
-      onConfirm={async () => {
-        try {
-          const res = await api.post<{ cardUrl: string }>(`/app/accounts/${accountId}/reissue-link`);
-          setUrl(res.cardUrl);
-          await navigator.clipboard?.writeText(res.cardUrl).catch(() => undefined);
-          toast.success("Lien copié. Le client peut aussi scanner le QR affiché.");
-        } catch (e) {
-          toast.error(errorMessage(e));
-          throw e;
-        }
-      }}
-    >
-      {url && (
-        <div className="grid justify-items-center gap-3 rounded-md bg-white p-4">
-          <QRCodeSVG value={url} size={180} marginSize={2} fgColor="#14204a" />
-          <p className="break-all text-center text-xs text-[#4a5579]">{url}</p>
-        </div>
-      )}
-    </ConfirmDialog>
-  );
-}
 
 function AdjustDialog({ accountId, mode }: { accountId: string; mode: Program["mode"] }) {
   const qc = useQueryClient();
@@ -174,6 +141,8 @@ function AccountPanel({ accountId }: { accountId: string }) {
   const qc = useQueryClient();
   const canWrite = useCan("customers.write");
   const canAdjust = useCan("transactions.reverse");
+  const canMessage = useCan("programs.write");
+  const wallet = useWalletEnabled();
   const { data: account } = useQuery({ queryKey: ["account", accountId], queryFn: () => api.get<Account>(`/app/accounts/${accountId}`) });
   const { data: history } = useQuery({
     queryKey: ["account-history", accountId],
@@ -196,10 +165,16 @@ function AccountPanel({ accountId }: { accountId: string }) {
         <p className="font-display text-4xl font-semibold tabular sm:text-right">
           {formatNumber(account.balance)} <span className="text-lg font-normal text-ink-3">{unit}</span>
         </p>
+        {account.program.mode === "STAMPS" && (
+          <div className="max-w-sm sm:col-span-2">
+            <Stamps count={account.balance} target={account.program.stampsTarget} reward={account.rewards[0]?.name} size="sm" />
+          </div>
+        )}
       </div>
       {canWrite && account.status !== "CLOSED" && (
         <div className="flex flex-wrap gap-2 border-t border-line px-5 py-3 sm:px-6">
-          <CardLinkDialog accountId={account.id} />
+          <CardShareDialog accountId={account.id} />
+          {wallet && canMessage && account.status === "ACTIVE" && <WalletMessageDialog accountId={account.id} />}
           {canAdjust && <AdjustDialog accountId={account.id} mode={account.program.mode} />}
           {account.status === "BLOCKED" || account.status === "PENDING_VERIFICATION" ? (
             <Button

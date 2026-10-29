@@ -34,6 +34,8 @@ import { AdminService } from "./admin/admin.service";
 import { AdminController } from "./admin/admin.controller";
 import { JobsController } from "./jobs/jobs.controller";
 import { MediaController } from "./media/media.controller";
+import { CardsService } from "./cards/cards.service";
+import { GoogleWalletProvider } from "./cards/google-wallet";
 
 /**
  * Monolithe modulaire : un seul déploiement, des modules métier séparés par
@@ -87,6 +89,8 @@ import { MediaController } from "./media/media.controller";
     IntegrationsService,
     CommerceService,
     AdminService,
+    CardsService,
+    GoogleWalletProvider,
   ],
 })
 export class AppModule {}

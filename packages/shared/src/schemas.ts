@@ -66,6 +66,7 @@ export const programSchema = z
     minPurchaseAmount: amount.nullable().default(null),
     maxPerTransaction: z.int().min(1).max(1_000_000).nullable().default(null),
     inactivityExpiryDays: z.int().min(30).max(3650).nullable().default(null),
+    oneVisitPerDay: z.boolean().default(false),
     enrollmentVerification: z.enum(["NONE", "EMAIL_OTP", "IN_STORE"]).default("NONE"),
     terms: z.string().max(4000).default(""),
   });

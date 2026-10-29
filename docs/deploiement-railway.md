@@ -33,6 +33,7 @@ Les deux domaines `fove.digital` et `app.fove.digital` pointent sur le même ser
 | `STRIPE_SECRET_KEY` / `STRIPE_WEBHOOK_SECRET` | clés **test** tant que la mise en production n'est pas validée |
 | `STRIPE_ALLOW_LIVE` | `false` (passer à `true` seulement après validation) |
 | `TRIAL_PLAN_CODE` | `business` |
+| `GOOGLE_WALLET_ISSUER_ID` / `GOOGLE_WALLET_SERVICE_ACCOUNT_JSON` | facultatifs : compte émetteur Google Wallet (Google Pay & Wallet Console) et compte de service autorisé ; absents = bouton masqué |
 
 **fove-web**
 

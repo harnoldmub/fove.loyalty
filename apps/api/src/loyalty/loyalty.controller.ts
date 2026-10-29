@@ -24,6 +24,7 @@ import { TenantRoute } from "../auth/guards";
 import { RewardsService } from "../rewards/rewards.service";
 import { enrollmentQrSvg } from "../public/public.service";
 import { LoyaltyService } from "./loyalty.service";
+import { CardsService } from "../cards/cards.service";
 
 const transactionsQuery = paginationSchema.extend({
   accountId: z.uuid().optional(),
@@ -36,6 +37,8 @@ const lookupSchema = z.object({ code: z.string().trim().min(4).max(80) });
 const accountStatusSchema = z.object({ status: z.enum(["ACTIVE", "BLOCKED"]) });
 const cancelSchema = z.object({ reason: z.string().trim().min(3).max(300) });
 const linkSchema = z.object({ programId: z.uuid(), establishmentId: z.uuid().nullable().default(null) });
+const shareSchema = z.object({ renew: z.boolean().default(false) });
+const walletMessageSchema = z.object({ title: z.string().trim().min(2).max(60), body: z.string().trim().min(2).max(180) });
 
 @ApiTags("app")
 @Controller("app")
@@ -45,6 +48,7 @@ export class LoyaltyController {
     private readonly loyalty: LoyaltyService,
     private readonly rewards: RewardsService,
     private readonly prisma: PrismaService,
+    private readonly cards: CardsService,
   ) {}
 
   // Programmes
@@ -127,10 +131,33 @@ export class LoyaltyController {
     return this.loyalty.getAccount(ctx, id);
   }
 
-  @Post("accounts/:id/reissue-link")
+  /** Lien de la carte et message WhatsApp ; `renew` révoque l'ancien lien. */
+  @Post("accounts/:id/share")
+  @HttpCode(200)
   @RequirePermission("customers.write")
-  reissue(@Tenant() ctx: TenantContext, @Param("id", ParseUUIDPipe) id: string) {
-    return this.loyalty.reissueCardLink(ctx, id);
+  share(@Tenant() ctx: TenantContext, @Param("id", ParseUUIDPipe) id: string, @Body(new ZodPipe(shareSchema)) body: z.infer<typeof shareSchema>) {
+    return this.cards.share(ctx, id, body.renew);
+  }
+
+  @Post("accounts/:id/wallet-message")
+  @HttpCode(204)
+  @RequirePermission("programs.write")
+  async walletMessage(@Tenant() ctx: TenantContext, @Param("id", ParseUUIDPipe) id: string, @Body(new ZodPipe(walletMessageSchema)) body: z.infer<typeof walletMessageSchema>) {
+    await this.cards.walletMessage(ctx, id, body);
+  }
+
+  /** Notification à toutes les cartes Google Wallet du programme (envoi groupé, confirmé côté interface). */
+  @Post("programs/:id/wallet-broadcast")
+  @HttpCode(204)
+  @RequirePermission("programs.write")
+  async walletBroadcast(@Tenant() ctx: TenantContext, @Param("id", ParseUUIDPipe) id: string, @Body(new ZodPipe(walletMessageSchema)) body: z.infer<typeof walletMessageSchema>) {
+    await this.cards.walletBroadcast(ctx, id, body);
+  }
+
+  @Get("wallet/status")
+  @RequirePermission("programs.read")
+  walletStatus() {
+    return { googleWallet: this.cards.wallet.isConfigured() };
   }
 
   @Post("accounts/:id/status")

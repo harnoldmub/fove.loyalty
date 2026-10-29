@@ -8,6 +8,7 @@ import { PlanService } from "../billing/plan.service";
 import { buildIdentities, CustomersService, tenantCountry } from "../customers/customers.service";
 import { LoyaltyService } from "../loyalty/loyalty.service";
 import { createCard } from "../loyalty/cards";
+import { CardsService } from "../cards/cards.service";
 
 /**
  * Connecteur e-commerce générique (Match Kwata est le premier utilisateur).
@@ -22,6 +23,7 @@ export class CommerceService {
     private readonly customers: CustomersService,
     private readonly loyalty: LoyaltyService,
     private readonly plans: PlanService,
+    private readonly cards: CardsService,
   ) {}
 
   /**
@@ -131,6 +133,8 @@ export class CommerceService {
       );
       await this.log(ctx, "order.paid", input.externalOrderId, "ok");
       return {
+        // Lien à proposer au client sur la page de confirmation (« Voir ma carte »).
+        cardUrl: await this.cards.linkFor(accountId, ctx.tenantId),
         customerId: link.customerId,
         customerCreated: link.created,
         accountId,

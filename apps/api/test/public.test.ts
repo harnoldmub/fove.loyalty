@@ -89,15 +89,54 @@ describe("inscription par QR et carte numérique", () => {
     expect((await http().post(`/api/public/cards/${t}/verify`).send({ code })).body.status).toBe("ACTIVE");
   });
 
-  it("« retrouver ma carte » envoie un nouveau lien et révoque l'ancien", async () => {
+  it("« retrouver ma carte » renvoie le même lien, par email ou téléphone, sans le révoquer", async () => {
     const email = `recover${Date.now()}@test.fove`;
-    const join = await http().post(`/api/public/join/${joinToken}`).send({ firstName: "R", phone: randomPhone(), email, acceptTerms: true });
-    const oldToken = cardToken(join.body.cardUrl);
-    expect((await http().post(`/api/public/join/${joinToken}/recover`).send({ email })).status).toBe(204);
-    expect((await http().post(`/api/public/join/${joinToken}/recover`).send({ email: "inconnu@test.fove" })).status).toBe(204);
-    const newToken = /card\/(fvc_[A-Za-z0-9_-]+)/.exec((await lastEmail(email))!.text)![1]!;
-    expect((await http().get(`/api/public/cards/${oldToken}`)).status).toBe(404);
-    expect((await http().get(`/api/public/cards/${newToken}`)).status).toBe(200);
+    const phone = randomPhone();
+    const join = await http().post(`/api/public/join/${joinToken}`).send({ firstName: "R", phone, email, acceptTerms: true });
+    const token = cardToken(join.body.cardUrl);
+    expect((await http().post(`/api/public/join/${joinToken}/recover`).send({ identifier: email })).status).toBe(204);
+    expect(/card\/(fvc_[A-Za-z0-9_-]+)/.exec((await lastEmail(email))!.text)![1]).toBe(token);
+    // Téléphone saisi au format local avec espaces : le lien part vers l'email de la fiche.
+    const local = `0${phone.slice(4, 6)} ${phone.slice(6, 9)} ${phone.slice(9)}`;
+    await db.emailOutbox.deleteMany({ where: { to: email } });
+    expect((await http().post(`/api/public/join/${joinToken}/recover`).send({ identifier: local })).status).toBe(204);
+    expect((await lastEmail(email))?.text).toContain(token);
+    // Une demande malveillante ne coupe pas la carte du vrai client.
+    expect((await http().get(`/api/public/cards/${token}`)).status).toBe(200);
+    expect((await http().post(`/api/public/join/${joinToken}/recover`).send({ identifier: "inconnu@test.fove" })).status).toBe(204);
+  });
+
+  it("une carte sans email n'est jamais renvoyée à l'écran", async () => {
+    const phone = randomPhone();
+    await http().post(`/api/public/join/${joinToken}`).send({ firstName: "SansMail", phone, acceptTerms: true });
+    const before = await db.emailOutbox.count();
+    const res = await http().post(`/api/public/join/${joinToken}/recover`).send({ identifier: phone });
+    expect(res.status).toBe(204);
+    expect(res.body).toEqual({});
+    expect(await db.emailOutbox.count()).toBe(before);
+  });
+
+  it("télécharge la carte en image et en PDF avec le lien cliquable", async () => {
+    const join = await http().post(`/api/public/join/${joinToken}`).send({ firstName: "Image", lastName: "Test", phone: randomPhone(), acceptTerms: true });
+    const token = cardToken(join.body.cardUrl);
+    const png = await http().get(`/api/public/cards/${token}/carte.png`).buffer(true).parse((res, cb) => { const chunks: Buffer[] = []; res.on("data", (c: Buffer) => chunks.push(c)); res.on("end", () => cb(null, Buffer.concat(chunks))); });
+    expect(png.status).toBe(200);
+    expect(png.headers["content-type"]).toBe("image/png");
+    expect((png.body as Buffer).subarray(1, 4).toString()).toBe("PNG");
+    const pdf = await http().get(`/api/public/cards/${token}/carte.pdf?download=1`).buffer(true).parse((res, cb) => { const chunks: Buffer[] = []; res.on("data", (c: Buffer) => chunks.push(c)); res.on("end", () => cb(null, Buffer.concat(chunks))); });
+    expect(pdf.headers["content-disposition"]).toMatch(/^attachment/);
+    const text = (pdf.body as Buffer).toString("latin1");
+    expect(text.startsWith("%PDF")).toBe(true);
+    expect(text).toContain(token);
+    expect((await http().get(`/api/public/cards/${token}/autre.txt`)).status).toBe(404);
+    expect((await http().get("/api/public/cards/fvc_inconnu/carte.png")).status).toBe(404);
+  });
+
+  it("Google Wallet reste masqué tant qu'il n'est pas configuré", async () => {
+    const join = await http().post(`/api/public/join/${joinToken}`).send({ firstName: "W", phone: randomPhone(), acceptTerms: true });
+    const token = cardToken(join.body.cardUrl);
+    expect((await http().get(`/api/public/cards/${token}`)).body.googleWallet).toBe(false);
+    expect((await http().get(`/api/public/cards/${token}/google-wallet`)).status).toBe(404);
   });
 
   it("un lien d'inscription désactivé n'est plus utilisable", async () => {

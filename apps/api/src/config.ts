@@ -17,9 +17,12 @@ const schema = z.object({
   STRIPE_WEBHOOK_SECRET: z.string().optional(),
   /** Garde-fou : les clés Stripe « live » sont refusées tant que ce drapeau n'est pas posé. */
   STRIPE_ALLOW_LIVE: z.enum(["true", "false"]).default("false"),
+  /** Google Wallet : identifiant d'émetteur et compte de service (JSON). Absents = fonction masquée. */
+  GOOGLE_WALLET_ISSUER_ID: z.string().regex(/^\d+$/).optional(),
+  GOOGLE_WALLET_SERVICE_ACCOUNT_JSON: z.string().optional(),
 });
 
-export type AppConfig = z.infer<typeof schema> & { corsOrigins: string[]; isProd: boolean };
+export type AppConfig = z.infer<typeof schema> & { corsOrigins: string[]; isProd: boolean; googleWalletEnabled: boolean };
 
 let cached: AppConfig | null = null;
 
@@ -38,6 +41,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     ...value,
     corsOrigins: value.CORS_ORIGINS.split(",").map((o) => o.trim()).filter(Boolean),
     isProd: value.NODE_ENV === "production",
+    googleWalletEnabled: Boolean(value.GOOGLE_WALLET_ISSUER_ID && value.GOOGLE_WALLET_SERVICE_ACCOUNT_JSON),
   };
   return cached;
 }

@@ -6,10 +6,11 @@ import { QRCodeSVG } from "qrcode.react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { useCan } from "@/components/app/me-context";
+import { useWalletEnabled, WalletBroadcast } from "@/components/app/card-share";
 import type { Establishment, Program } from "@/components/app/types";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog, DialogContent, DialogRoot } from "@/components/ui/dialog";
-import { Field, Input, Select, Textarea } from "@/components/ui/field";
+import { Checkbox, Field, Input, Select, Textarea } from "@/components/ui/field";
 import { Badge, ErrorNote, PageHeader, Panel, Skeleton } from "@/components/ui/misc";
 import { api, errorMessage } from "@/lib/api";
 import { formatNumber } from "@/lib/utils";
@@ -41,6 +42,7 @@ function ProgramForm({ program, onDone }: { program?: Program; onDone: () => voi
     minPurchaseAmount: program?.minPurchaseAmount ?? "",
     maxPerTransaction: program?.maxPerTransaction ? String(program.maxPerTransaction) : "",
     inactivityExpiryDays: program?.inactivityExpiryDays ? String(program.inactivityExpiryDays) : "",
+    oneVisitPerDay: program?.oneVisitPerDay ?? !program,
     enrollmentVerification: program?.enrollmentVerification ?? "NONE",
     terms: program?.terms ?? "",
   });
@@ -63,6 +65,7 @@ function ProgramForm({ program, onDone }: { program?: Program; onDone: () => voi
       minPurchaseAmount: f.minPurchaseAmount ? f.minPurchaseAmount.replace(",", ".") : null,
       maxPerTransaction: f.maxPerTransaction ? Number(f.maxPerTransaction) : null,
       inactivityExpiryDays: f.inactivityExpiryDays ? Number(f.inactivityExpiryDays) : null,
+      oneVisitPerDay: f.oneVisitPerDay,
       enrollmentVerification: f.enrollmentVerification,
       terms: f.terms,
     };
@@ -121,6 +124,11 @@ function ProgramForm({ program, onDone }: { program?: Program; onDone: () => voi
       <Field label="Expiration après inactivité (jours, facultatif)" hint="Le solde expire si le client ne revient pas pendant cette durée. Minimum 30 jours.">
         {(p) => <Input {...p} type="number" min={30} value={f.inactivityExpiryDays} onChange={set("inactivityExpiryDays")} />}
       </Field>
+      <Checkbox
+        checked={f.oneVisitPerDay}
+        onChange={(e) => setF({ ...f, oneVisitPerDay: e.target.checked })}
+        label="Un seul passage compté par client et par jour (les commandes en ligne ne sont pas concernées)"
+      />
       <Field label="Validation des inscriptions par QR">
         {(p) => (
           <Select {...p} value={f.enrollmentVerification} onChange={set("enrollmentVerification")}>
@@ -139,13 +147,6 @@ function ProgramForm({ program, onDone }: { program?: Program; onDone: () => voi
 function LinkCard({ link }: { link: Link }) {
   const qc = useQueryClient();
   const canWrite = useCan("programs.write");
-  const print = () => {
-    const w = window.open("", "_blank", "width=600,height=800");
-    if (!w) return;
-    const svg = document.getElementById(`qr-${link.id}`)?.outerHTML ?? "";
-    w.document.write(`<!doctype html><title>QR ${link.program.name}</title><body style="font-family:sans-serif;display:grid;place-items:center;min-height:90vh;text-align:center"><div><h1 style="margin:0 0 8px">Rejoignez notre programme de fidélité</h1><p style="margin:0 0 24px;color:#4a5579">Scannez ce code avec l’appareil photo de votre téléphone</p>${svg.replace(/width="\d+" height="\d+"/, 'width="360" height="360"')}<p style="margin-top:16px;color:#4a5579">${link.program.name}</p></div><script>onload=()=>print()</script></body>`);
-    w.document.close();
-  };
   return (
     <Panel className="grid gap-4 p-5 sm:grid-cols-[auto_1fr]">
       <div className="rounded-md bg-white p-2 justify-self-start">
@@ -159,7 +160,9 @@ function LinkCard({ link }: { link: Link }) {
         <p className="text-sm text-ink-3">{link.program.name} · {formatNumber(link.enrollCount)} inscriptions</p>
         <p className="break-all text-sm text-ink-2">{link.url}</p>
         <div className="mt-1 flex flex-wrap gap-2">
-          <Button size="sm" variant="secondary" onClick={print}><Printer /> Imprimer</Button>
+          <Button asChild size="sm" variant="secondary">
+            <a href={`/affiche/${link.id}`} target="_blank" rel="noreferrer"><Printer /> Affiche à imprimer</a>
+          </Button>
           <Button size="sm" variant="ghost" onClick={() => navigator.clipboard.writeText(link.url).then(() => toast.success("Lien copié"))}>Copier le lien</Button>
           {canWrite && (
             <ConfirmDialog
@@ -182,6 +185,7 @@ function LinkCard({ link }: { link: Link }) {
 
 export default function ProgramsPage() {
   const canWrite = useCan("programs.write");
+  const wallet = useWalletEnabled();
   const qc = useQueryClient();
   const [editing, setEditing] = useState<Program | "new" | null>(null);
   const [linkProgram, setLinkProgram] = useState("");
@@ -215,11 +219,12 @@ export default function ProgramsPage() {
                   ? `${formatNumber(Number(p.spendStep))} ${p.currency} dépensés = ${p.pointsPerStep} point${p.pointsPerStep > 1 ? "s" : ""}`
                   : `${p.stampsPerPurchase} tampon${p.stampsPerPurchase > 1 ? "s" : ""} par achat, récompense à ${p.stampsTarget}`}
                 {p.maxPerTransaction && `, plafond ${formatNumber(p.maxPerTransaction)} par achat`}
-                {p.inactivityExpiryDays && `, expiration après ${p.inactivityExpiryDays} jours sans visite`}.
+                {p.inactivityExpiryDays && `, expiration après ${p.inactivityExpiryDays} jours sans visite`}
+                {p.oneVisitPerDay && ", un passage par jour au plus"}.
               </p>
               <p className="text-sm text-ink-3">Inscription : {VERIFICATION[p.enrollmentVerification]}</p>
               {canWrite && (
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                   <Button size="sm" variant="secondary" onClick={() => setEditing(p)}><Settings2 /> Modifier</Button>
                   <Button
                     size="sm"
@@ -231,6 +236,7 @@ export default function ProgramsPage() {
                   >
                     {p.active ? "Mettre en pause" : "Activer"}
                   </Button>
+                  {wallet && p.active && <WalletBroadcast programId={p.id} programName={p.name} />}
                 </div>
               )}
             </Panel>

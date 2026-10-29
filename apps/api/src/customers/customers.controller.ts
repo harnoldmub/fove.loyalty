@@ -8,7 +8,7 @@ import type { TenantContext } from "../common/context";
 import { TenantRoute } from "../auth/guards";
 import { PlanService } from "../billing/plan.service";
 import { CustomersService } from "./customers.service";
-import { cardUrl } from "../loyalty/loyalty.service";
+import { cardUrl } from "../cards/cards.service";
 
 const createWithProgram = customerSchema.and(z.object({ programId: z.uuid().nullable().default(null) }));
 

@@ -316,6 +316,8 @@ model LoyaltyProgram {
   minPurchaseAmount      Decimal?               @db.Decimal(14, 2)
   maxPerTransaction      Int?
   inactivityExpiryDays   Int?
+  /// Un seul passage compté par client et par jour (fuseau de l'entreprise), hors commandes en ligne.
+  oneVisitPerDay         Boolean                @default(false)
   enrollmentVerification EnrollmentVerification @default(NONE)
   terms                  String                 @default("")
   active                 Boolean                @default(true)
@@ -349,8 +351,11 @@ model LoyaltyAccount {
   cardNumber      String
   /// Contenu du QR personnel : identifie la carte, ne donne aucun droit.
   qrToken         String         @unique
-  /// Empreinte du jeton secret du lien de la carte numérique.
+  /// Empreinte du jeton secret du lien de la carte numérique (recherche).
   accessTokenHash String         @unique
+  /// Même jeton chiffré (AES-256-GCM) : le lien peut être renvoyé au client
+  /// (WhatsApp, « Retrouver ma carte ») sans être renouvelé.
+  accessTokenEncrypted String?
   status          AccountStatus  @default(ACTIVE)
   /// Solde mis en cache, toujours égal au `balanceAfter` de la dernière opération.
   balance         Int            @default(0)

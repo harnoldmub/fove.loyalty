@@ -114,7 +114,10 @@ export class CustomersService {
     const where: Prisma.CustomerWhereInput = { tenantId: ctx.tenantId, anonymizedAt: null };
     if (q) {
       const digits = q.replace(/\D/g, "");
+      // Numéro saisi avec espaces, tirets ou au format local (081 234 5678) : comparé en E.164.
+      const phone = digits.length >= 6 ? normalizePhone(q, await tenantCountry(this.prisma.client, ctx.tenantId)) : null;
       where.OR = [
+        ...(phone ? [{ phone }] : []),
         { firstName: { contains: q, mode: "insensitive" } },
         { lastName: { contains: q, mode: "insensitive" } },
         { email: { contains: q.toLowerCase() } },

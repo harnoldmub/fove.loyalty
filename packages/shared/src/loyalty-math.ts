@@ -47,11 +47,24 @@ export function computeEarn(rules: EarnRules, amount: string | null): number {
   return Math.max(0, earned);
 }
 
-/** Débit proportionnel lors d'un remboursement partiel, arrondi vers le bas. */
-export function proportionalReversal(originalPoints: number, originalAmount: string, refundedAmount: string): number {
+/**
+ * Points à retirer pour un montant remboursé **cumulé** sur une commande.
+ * - Points : proportionnel, arrondi au point supérieur (un remboursement ne
+ *   laisse jamais de points « gratuits »).
+ * - Tampons : le passage n'est retiré que si la commande est entièrement remboursée.
+ * Le résultat ne dépasse jamais les points gagnés.
+ */
+export function proportionalReversal(originalPoints: number, originalAmount: string, refundedAmount: string, mode: ProgramMode = "POINTS"): number {
   const total = toCents(originalAmount);
   const refunded = toCents(refundedAmount);
-  if (total <= 0n) return originalPoints;
-  if (refunded >= total) return originalPoints;
-  return Number((BigInt(originalPoints) * refunded) / total);
+  if (total <= 0n || refunded >= total) return originalPoints;
+  if (mode === "STAMPS") return 0;
+  const product = BigInt(originalPoints) * refunded;
+  return Number(product / total + (product % total === 0n ? 0n : 1n));
+}
+
+/** Somme de montants décimaux (chaînes), en centimes exacts. */
+export function addAmounts(...amounts: string[]): string {
+  const cents = amounts.reduce((sum, a) => sum + toCents(a), 0n);
+  return `${cents / 100n}.${String(cents % 100n).padStart(2, "0")}`;
 }

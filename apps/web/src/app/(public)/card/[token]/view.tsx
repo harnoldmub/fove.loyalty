@@ -2,9 +2,12 @@
 
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState, useSyncExternalStore } from "react";
-import { Gift, Share, Smartphone } from "lucide-react";
+import { Download, Gift, Share, Smartphone } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { Button } from "@/components/ui/button";
+import { GoogleWalletButton } from "@/components/google-wallet-button";
+import { Stamps, stampsStatus } from "@/components/stamps";
+import { rememberCard } from "@/lib/remembered-cards";
 import { Field, Input } from "@/components/ui/field";
 import { ErrorNote } from "@/components/ui/misc";
 import { api, errorMessage } from "@/lib/api";
@@ -12,13 +15,14 @@ import { cn, formatDate, formatNumber, KIND_LABEL } from "@/lib/utils";
 
 export interface CardData {
   tenant: { name: string; logoUrl: string | null; primaryColor: string };
-  program: { name: string; mode: "POINTS" | "STAMPS"; stampsTarget: number; terms: string };
+  program: { name: string; mode: "POINTS" | "STAMPS"; stampsTarget: number; terms: string; rule: string };
   customer: { firstName: string; lastInitial: string };
   card: { number: string; qr: string; status: string; balance: number; lifetimeEarned: number; memberSince: string };
   nextReward: { name: string; cost: number; remaining: number } | null;
   rewards: { id: string; name: string; description: string; conditions: string; cost: number; available: boolean }[];
   transactions: { id: string; kind: string; delta: number; createdAt: string; reason: string | null }[];
   verification: "EMAIL_OTP" | "IN_STORE" | "NONE" | null;
+  googleWallet: boolean;
 }
 
 function InstallHint() {
@@ -61,7 +65,12 @@ export function CardView({ token, initial }: { token: string; initial: CardData 
   const [info, setInfo] = useState<string | null>(null);
   const { tenant, program, card } = data;
   const stamps = program.mode === "STAMPS";
-  const filled = stamps ? Math.min(card.balance, program.stampsTarget) : 0;
+  const stampReward = stamps ? (data.rewards[0]?.name ?? null) : null;
+
+  // La carte est mémorisée sur ce téléphone : la page d'inscription proposera « Ouvrir ma carte ».
+  useEffect(() => {
+    rememberCard({ tenant: tenant.name, program: program.name, path: `/card/${token}` });
+  }, [tenant.name, program.name, token]);
 
   const refresh = async () => setData(await api.get<CardData>(`/public/cards/${token}`));
 
@@ -84,11 +93,9 @@ export function CardView({ token, initial }: { token: string; initial: CardData 
           </div>
 
           {stamps ? (
-            <ol className="mt-6 grid grid-cols-5 gap-2.5" aria-label={`${filled} tampons sur ${program.stampsTarget}`}>
-              {Array.from({ length: program.stampsTarget }, (_, i) => (
-                <li key={i} className={cn("aspect-square rounded-full border-2 border-dashed border-white/40", i < filled && "border-solid border-transparent bg-[#f5b82e]")} />
-              ))}
-            </ol>
+            <div className="mt-6">
+              <Stamps count={card.balance} target={program.stampsTarget} reward={stampReward} tone="brand" />
+            </div>
           ) : (
             <p className="mt-6 font-display text-5xl font-semibold tabular">
               {formatNumber(card.balance)} <span className="text-xl font-normal text-white/80">points</span>
@@ -100,7 +107,7 @@ export function CardView({ token, initial }: { token: string; initial: CardData 
               <p className="text-sm text-white/80">{data.customer.firstName} {data.customer.lastInitial}.</p>
               <p className="tabular text-sm tracking-[0.12em]">{card.number}</p>
             </div>
-            {stamps && <p className="font-display text-2xl font-semibold tabular">{card.balance}<span className="text-base text-white/70">/{program.stampsTarget}</span></p>}
+            {stamps && <p className="font-display text-2xl font-semibold tabular">{Math.min(card.balance, program.stampsTarget)}<span className="text-base text-white/70">/{program.stampsTarget}</span></p>}
           </div>
         </section>
 
@@ -153,7 +160,28 @@ export function CardView({ token, initial }: { token: string; initial: CardData 
           </section>
         )}
 
-        {data.nextReward && (
+        {stamps && card.status === "ACTIVE" && <p role="status" className="-mt-1 text-center text-sm text-ink-2">{stampsStatus(card.balance, program.stampsTarget, stampReward)}</p>}
+
+        {card.status === "ACTIVE" && (
+          <div className="grid justify-items-center gap-3">
+            {data.googleWallet && <GoogleWalletButton token={token} />}
+            {/* Téléchargements : à garder dans la galerie ou à imprimer. */}
+            <div className="flex gap-2">
+              <Button asChild variant="secondary" size="sm" className="rounded-full">
+                <a href={`/api/public/cards/${token}/carte.png?download=1`} download aria-label="Télécharger la carte en image (PNG)">
+                  <Download /> Image
+                </a>
+              </Button>
+              <Button asChild variant="secondary" size="sm" className="rounded-full">
+                <a href={`/api/public/cards/${token}/carte.pdf?download=1`} download aria-label="Télécharger la carte en PDF">
+                  <Download /> PDF
+                </a>
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {!stamps && data.nextReward && (
           <div className="rounded-[var(--radius-lg)] bg-surface p-5 shadow-1">
             <p className="text-sm text-ink-2">Prochaine récompense</p>
             <p className="font-display text-lg font-semibold">{data.nextReward.name}</p>

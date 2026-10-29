@@ -24,6 +24,7 @@ export interface Program {
   minPurchaseAmount: string | null;
   maxPerTransaction: number | null;
   inactivityExpiryDays: number | null;
+  oneVisitPerDay: boolean;
   enrollmentVerification: "NONE" | "EMAIL_OTP" | "IN_STORE";
   terms: string;
   active: boolean;

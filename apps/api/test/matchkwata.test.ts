@@ -64,6 +64,8 @@ describe("connecteur Match Kwata", () => {
     const result = await fove.orderPaid(toFove(mkOrder(1, "125.90")));
     expect(result.customerCreated).toBe(true);
     expect(result.pointsEarned).toBe(125);
+    // La boutique peut proposer « Voir ma carte » sur sa page de confirmation.
+    expect(result).toHaveProperty("cardUrl");
     expect(result.balance).toBe(125);
   });
 
@@ -100,6 +102,16 @@ describe("connecteur Match Kwata", () => {
     const rest = await fove.orderRefunded({ programId, externalOrderId: "mk-order-3", externalRefundId: "re_2", amount: "100.00" });
     expect(rest.pointsRemoved).toBe(75);
     expect(rest.balance).toBe(165);
+  });
+
+  it("arrondit le retrait au point supérieur et reste cumulatif", async () => {
+    const order = await fove.orderPaid(toFove(mkOrder(5, "125.90")));
+    const before = order.balance;
+    const small = await fove.orderRefunded({ programId, externalOrderId: "mk-order-5", externalRefundId: "re_a", amount: "0.50" });
+    expect(small.pointsRemoved).toBe(1);
+    const rest = await fove.orderRefunded({ programId, externalOrderId: "mk-order-5", externalRefundId: "re_b", amount: "125.40" });
+    expect(rest.pointsRemoved).toBe(124);
+    expect(rest.balance).toBe(before - 125);
   });
 
   it("refuse une devise différente de celle du programme", async () => {

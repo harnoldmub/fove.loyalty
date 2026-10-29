@@ -7,6 +7,8 @@
 | Mots de passe | scrypt (N=16384), comparaison à temps constant, hachage factice si l'email n'existe pas, verrouillage 15 min après 5 échecs. |
 | Permissions | Vérifiées côté serveur à chaque requête (`TenantGuard` + `@RequirePermission`). Rôles : Owner, Manager, Cashier, Viewer ; périmètre par établissement. Super Admin séparé. |
 | Accès support | Super admin uniquement, motif obligatoire, 5 à 120 minutes, **lecture seule**, journalisé dans l'audit de l'entreprise. |
+| Liens de carte | Stables et chiffrés au repos ; « Retrouver ma carte » envoie le lien uniquement à l'email de la fiche, sans le renouveler (pas de coupure de carte par un tiers) ; renouvellement réservé au commerçant, confirmé et audité. Fichiers image/PDF limités à 20 req/min. |
+| Google Wallet | Clé privée du compte de service uniquement sur le serveur ; liens d'ajout signés RS256 valables 10 min ; notifications réservées aux managers/propriétaires et auditées. |
 | Clés API | `fove_sk_` (serveur, scopes) et `fove_pk_` (widget, aucun scope, domaines autorisés). Stockées hachées, affichées une seule fois, révocables. Une clé publique ne peut jamais créditer (testé). |
 | Validation | Zod sur chaque entrée ; Prisma (requêtes paramétrées) contre les injections ; `$queryRaw` uniquement en gabarits paramétrés. |
 | Limitation de débit | Global 120 req/min/IP ; auth 10/min ; inscription publique 5/min ; API v1 300/min. Champ piège anti-robot sur l'inscription. |

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { computeEarn, proportionalReversal, toCents, type EarnRules } from "./loyalty-math";
+import { addAmounts, computeEarn, proportionalReversal, toCents, type EarnRules } from "./loyalty-math";
 
 const points: EarnRules = {
   mode: "POINTS",
@@ -36,9 +36,18 @@ describe("computeEarn", () => {
 });
 
 describe("proportionalReversal", () => {
-  it("retire une part proportionnelle", () => {
+  it("retire une part proportionnelle, arrondie au point supérieur", () => {
     expect(proportionalReversal(100, "50000", "25000")).toBe(50);
+    expect(proportionalReversal(10, "100", "1")).toBe(1);
     expect(proportionalReversal(15, "15999", "15999")).toBe(15);
     expect(proportionalReversal(15, "15999", "99999")).toBe(15);
+  });
+  it("ne retire un tampon que pour un remboursement complet", () => {
+    expect(proportionalReversal(1, "50", "49.99", "STAMPS")).toBe(0);
+    expect(proportionalReversal(1, "50", "50", "STAMPS")).toBe(1);
+  });
+  it("additionne des montants sans flottants", () => {
+    expect(addAmounts("0.10", "0.20")).toBe("0.30");
+    expect(addAmounts("25", "74.5")).toBe("99.50");
   });
 });

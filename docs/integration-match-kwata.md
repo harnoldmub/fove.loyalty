@@ -11,14 +11,20 @@ Match Kwata (Astro, React, Prisma) est le premier tenant. **FOVE n'accède jamai
 
 Le dépôt Match Kwata **n'a pas été modifié**.
 
+## Fonctions de la carte Match Kwata reprises dans FOVE
+
+Carte à passages (un par jour), tampons numérotés avec la récompense sur la dernière case, lien de carte stable envoyé par WhatsApp (renouvellement confirmé), carte en image/PDF 9:16, carte mémorisée sur le téléphone, « Retrouver ma carte » par email ou téléphone sans renouveler le lien, affiche A4, scanner plein cadre avec fiche caisse dédiée, Google Wallet (ajout, notifications individuelles et groupées), redirection vers la connexion quand la session expire, recherche par téléphone saisi au format local, registre et audit immuables en SQL.
+
+Différence assumée : la réduction en pourcentage de Match Kwata (« 10 passages = 10 % ») devient une récompense du catalogue FOVE (« Réduction de 10 % », coût 10 tampons), validée en caisse comme les autres récompenses.
+
 ## Contrat d'intégration
 
 Auth : `Authorization: Bearer fove_sk_live_…` (scopes `integrations:write`, `customers:read`, `loyalty:read`).
 
 | Événement boutique | Appel FOVE | Garantie |
 |---|---|---|
-| Commande passée à `PAID` | `POST /api/v1/integrations/commerce/orders/paid` | Dédupliqué par `externalOrderId` : un renvoi ne crédite jamais deux fois (`replayed: true`) |
-| Remboursement (total ou partiel) | `POST /api/v1/integrations/commerce/orders/refunded` | Proportionnel au montant, plafonné aux points de la commande, dédupliqué par `externalRefundId` |
+| Commande passée à `PAID` | `POST /api/v1/integrations/commerce/orders/paid` | Dédupliqué par `externalOrderId` : un renvoi ne crédite jamais deux fois (`replayed: true`). La réponse contient `cardUrl` : la boutique peut proposer « Voir ma carte » sur sa page de confirmation, comme aujourd'hui |
+| Remboursement (total ou partiel) | `POST /api/v1/integrations/commerce/orders/refunded` | Calculé sur le cumul remboursé, arrondi au point supérieur (règle Match Kwata), plafonné aux points de la commande, dédupliqué par `externalRefundId` ; en carte à passages, le passage n'est retiré que si la commande est entièrement remboursée |
 | Inscription / connexion d'un client | `POST /api/v1/integrations/commerce/customers` | Rattachement par `externalId`, puis par email ; jamais par nom |
 | Affichage du solde dans « Mon compte » | `GET /api/v1/customers/lookup?externalId=<User.id>` | Lecture seule |
 

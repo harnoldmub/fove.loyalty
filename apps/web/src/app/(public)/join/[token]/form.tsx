@@ -8,6 +8,7 @@ import { ErrorNote } from "@/components/ui/misc";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { api, ApiError, errorMessage } from "@/lib/api";
 import { formatNumber } from "@/lib/utils";
+import { readRememberedCards } from "@/lib/remembered-cards";
 
 export interface JoinPage {
   tenant: { name: string; logoUrl: string | null; primaryColor: string; privacyPolicyUrl: string | null; country: string };
@@ -25,12 +26,18 @@ export function JoinForm({ token, data }: { token: string; data: JoinPage }) {
   // Le widget ouvre directement « Retrouver ma carte » via #retrouver.
   const wantsRecover = useSyncExternalStore(subscribeHash, () => window.location.hash === "#retrouver", () => false);
   const [tab, setTab] = useState<string | null>(null);
+  // Carte déjà créée sur ce téléphone : on propose de l'ouvrir.
+  const remembered = useSyncExternalStore(
+    subscribeHash,
+    () => readRememberedCards().find((c) => c.tenant === data.tenant.name && c.program === data.program.name)?.path ?? null,
+    () => null,
+  );
   const { tenant, program } = data;
   const [f, setF] = useState({ firstName: "", lastName: "", phone: "", email: "", acceptTerms: false, marketingConsent: false, website: "" });
   const [error, setError] = useState<string | null>(null);
   const [already, setAlready] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [recoverEmail, setRecoverEmail] = useState("");
+  const [recoverId, setRecoverId] = useState("");
   const [recovered, setRecovered] = useState(false);
   const needsEmail = program.verification === "EMAIL_OTP";
   const rule =
@@ -77,6 +84,14 @@ export function JoinForm({ token, data }: { token: string; data: JoinPage }) {
       </header>
       <main id="contenu" className="mx-auto -mt-10 max-w-md px-4 pb-16">
         <div className="rounded-[var(--radius-lg)] bg-surface p-5 shadow-2 sm:p-6">
+          {remembered && (
+            <div className="mb-5 grid gap-2 rounded-md bg-mint-soft p-4">
+              <p className="text-sm font-medium text-mint">Vous avez déjà une carte sur ce téléphone.</p>
+              <Button asChild style={{ background: "var(--brand)", color: "#fff" }}>
+                <a href={remembered}>Ouvrir ma carte</a>
+              </Button>
+            </div>
+          )}
           <Tabs value={tab ?? (wantsRecover ? "recover" : "join")} onValueChange={setTab}>
             <TabsList className="mb-5 grid w-full grid-cols-2">
               <TabsTrigger value="join">Créer ma carte</TabsTrigger>
@@ -131,23 +146,23 @@ export function JoinForm({ token, data }: { token: string; data: JoinPage }) {
             </TabsContent>
             <TabsContent value="recover">
               {recovered ? (
-                <p role="status" className="text-ink-2">Si une carte est associée à cet email, le lien vient de vous être envoyé. Pensez à vérifier les courriers indésirables.</p>
+                <p role="status" className="text-ink-2">Si une carte correspond, son lien vient d’être envoyé à l’email de la fiche. Pensez à vérifier les courriers indésirables.</p>
               ) : (
                 <form
                   className="grid gap-4"
                   onSubmit={async (e) => {
                     e.preventDefault();
                     try {
-                      await api.post(`/public/join/${token}/recover`, { email: recoverEmail });
+                      await api.post(`/public/join/${token}/recover`, { identifier: recoverId });
                       setRecovered(true);
                     } catch (err) {
                       setError(errorMessage(err));
                     }
                   }}
                 >
-                  <p className="text-ink-2">Recevez le lien de votre carte par email. Sans email enregistré, demandez au personnel en caisse.</p>
-                  <Field label="Email utilisé à l’inscription">{(p) => <Input {...p} type="email" autoComplete="email" value={recoverEmail} onChange={(e) => setRecoverEmail(e.target.value)} />}</Field>
-                  <Button type="submit" variant="secondary" disabled={!recoverEmail.includes("@")}>Recevoir le lien</Button>
+                  <p className="text-ink-2">Le lien de votre carte est envoyé à l’email enregistré sur votre fiche. Sans email, demandez-le au personnel en caisse.</p>
+                  <Field label="Email ou téléphone utilisé à l’inscription">{(p) => <Input {...p} autoComplete="email" value={recoverId} onChange={(e) => setRecoverId(e.target.value)} />}</Field>
+                  <Button type="submit" variant="secondary" disabled={recoverId.trim().length < 6}>Recevoir le lien</Button>
                 </form>
               )}
             </TabsContent>
