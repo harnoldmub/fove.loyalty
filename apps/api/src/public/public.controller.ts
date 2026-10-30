@@ -10,7 +10,7 @@ import { sha256 } from "../common/crypto";
 import { CardsService } from "../cards/cards.service";
 import { PublicService } from "./public.service";
 
-const tokenPattern = /^[A-Za-z0-9_-]{8,80}$/;
+const tokenPattern = /^[A-Za-z0-9_-]{3,80}$/;
 const recoverSchema = z.object({ identifier: z.string().trim().min(3).max(160) });
 const tokenHash = (token: string) => (token.startsWith("fvc_") && token.length <= 80 ? sha256(token) : "");
 

@@ -167,4 +167,11 @@ describe("inscription par QR et carte numérique", () => {
     });
     expect(bot.status).toBe(400);
   });
+
+  it("résout la page publique d'inscription directement par le sous-domaine / slug du commerce", async () => {
+    const link = await db.enrollmentLink.findUniqueOrThrow({ where: { token: joinToken }, include: { tenant: true } });
+    const bySlug = await http().get(`/api/public/join/${link.tenant.slug}`);
+    expect(bySlug.status).toBe(200);
+    expect(bySlug.body.tenant.name).toBe(link.tenant.name);
+  });
 });

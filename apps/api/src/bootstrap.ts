@@ -32,13 +32,25 @@ export async function createApp(): Promise<NestExpressApplication> {
     // CORS : le widget est appelé depuis les sites des commerçants (sans cookie,
     // domaines vérifiés par la clé publique) ; le reste uniquement depuis l'app.
     const origin = req.headers.origin;
+    const isAllowedOrigin = (o: string) => {
+      if (config.corsOrigins.includes(o)) return true;
+      try {
+        const u = new URL(o);
+        return config.corsOrigins.some((allowed) => {
+          const a = new URL(allowed);
+          return u.protocol === a.protocol && u.port === a.port && u.hostname.endsWith(`.${a.hostname.replace(/^app\./, "")}`);
+        });
+      } catch {
+        return false;
+      }
+    };
     if (origin) {
       if (req.path.startsWith("/api/widget/")) {
         res.setHeader("Access-Control-Allow-Origin", origin);
         res.setHeader("Vary", "Origin");
         res.setHeader("Access-Control-Allow-Headers", "Content-Type, X-Fove-Key");
         res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
-      } else if (config.corsOrigins.includes(origin) && !req.path.startsWith("/api/v1/")) {
+      } else if (isAllowedOrigin(origin) && !req.path.startsWith("/api/v1/")) {
         res.setHeader("Access-Control-Allow-Origin", origin);
         res.setHeader("Access-Control-Allow-Credentials", "true");
         res.setHeader("Vary", "Origin");

@@ -81,11 +81,24 @@ export class TenantsService {
   }
 
   async update(ctx: TenantContext, input: z.infer<typeof updateTenantSchema>) {
-    const { name, ...settings } = input;
-    await this.prisma.client.$transaction(async (tx) => {
-      if (name) await tx.tenant.update({ where: { id: ctx.tenantId }, data: { name } });
-      await tx.tenantSettings.update({ where: { tenantId: ctx.tenantId }, data: settings });
-    });
+    const { name, slug, ...settings } = input;
+    try {
+      await this.prisma.client.$transaction(async (tx) => {
+        if (name || slug) {
+          await tx.tenant.update({
+            where: { id: ctx.tenantId },
+            data: {
+              ...(name ? { name } : {}),
+              ...(slug ? { slug } : {}),
+            },
+          });
+        }
+        await tx.tenantSettings.update({ where: { tenantId: ctx.tenantId }, data: settings });
+      });
+    } catch (error) {
+      if (isUniqueViolation(error)) throw conflict("slug_taken", "Ce sous-domaine est déjà pris, choisissez-en un autre");
+      throw error;
+    }
     await this.audit.forTenant(ctx, "tenant.updated", { type: "tenant", id: ctx.tenantId }, { fields: Object.keys(input) });
     await this.cards.refreshProgramWallet(ctx.tenantId);
     return this.current(ctx);

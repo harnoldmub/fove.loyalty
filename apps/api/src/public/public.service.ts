@@ -37,15 +37,51 @@ export class PublicService {
     private readonly cards: CardsService,
   ) {}
 
-  private async link(token: string) {
-    const link = await this.prisma.client.enrollmentLink.findUnique({
-      where: { token },
-      include: {
-        program: { include: { rewards: { where: { active: true, archivedAt: null }, orderBy: { cost: "asc" }, take: 6 } } },
-        establishment: { select: { name: true } },
-        tenant: { include: { settings: true } },
-      },
+  private async link(tokenOrSlug: string) {
+    const include = {
+      program: { include: { rewards: { where: { active: true, archivedAt: null }, orderBy: { cost: "asc" as const }, take: 6 } } },
+      establishment: { select: { name: true } },
+      tenant: { include: { settings: true } },
+    };
+
+    let link = await this.prisma.client.enrollmentLink.findUnique({
+      where: { token: tokenOrSlug },
+      include,
     });
+
+    if (!link) {
+      const normalizedSlug = tokenOrSlug.toLowerCase();
+      link = await this.prisma.client.enrollmentLink.findFirst({
+        where: {
+          tenant: { slug: normalizedSlug, status: "ACTIVE" },
+          active: true,
+          program: { active: true },
+        },
+        orderBy: [{ establishmentId: "asc" }, { createdAt: "asc" }],
+        include,
+      });
+
+      if (!link) {
+        const program = await this.prisma.client.loyaltyProgram.findFirst({
+          where: {
+            tenant: { slug: normalizedSlug, status: "ACTIVE" },
+            active: true,
+          },
+          orderBy: { createdAt: "asc" },
+        });
+        if (program) {
+          link = await this.prisma.client.enrollmentLink.create({
+            data: {
+              tenantId: program.tenantId,
+              programId: program.id,
+              token: crypto.randomUUID().replaceAll("-", "").slice(0, 16),
+            },
+            include,
+          });
+        }
+      }
+    }
+
     if (!link || !link.active || !link.program.active || link.tenant.status !== "ACTIVE") throw notFound("Programme");
     return link;
   }

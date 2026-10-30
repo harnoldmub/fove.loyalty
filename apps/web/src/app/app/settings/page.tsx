@@ -21,7 +21,19 @@ export default function SettingsPage() {
   const { data, isLoading, error } = useQuery({ queryKey: ["tenant"], queryFn: () => api.get<Tenant>("/app/tenant") });
   return (
     <>
-      <PageHeader title="Paramètres" description={data ? `Adresse de votre page : ${data.slug}` : undefined} />
+      <PageHeader
+        title="Paramètres"
+        description={data ? `Sous-domaine de votre page : ${data.slug}.fove.digital` : undefined}
+        actions={
+          data ? (
+            <Button asChild variant="secondary" size="sm">
+              <Link href={`/${data.slug}`} target="_blank">
+                Voir ma page publique
+              </Link>
+            </Button>
+          ) : undefined
+        }
+      />
       {isLoading && <Skeleton className="h-64" />}
       {error && <ErrorNote>{errorMessage(error)}</ErrorNote>}
       {data && <SettingsForm data={data} />}
@@ -43,6 +55,7 @@ function SettingsForm({ data }: { data: Tenant }) {
   const [busy, setBusy] = useState(false);
   const [f, setF] = useState<Record<string, string>>(() => ({
       name: data.name,
+      slug: data.slug,
       primaryColor: data.settings.primaryColor,
       logoUrl: data.settings.logoUrl ?? "",
       country: data.settings.country,
@@ -66,6 +79,7 @@ function SettingsForm({ data }: { data: Tenant }) {
             try {
               await api.patch("/app/tenant", {
                 name: f.name,
+                slug: f.slug,
                 primaryColor: f.primaryColor,
                 country: f.country,
                 currency: f.currency,
@@ -88,6 +102,33 @@ function SettingsForm({ data }: { data: Tenant }) {
           {error && <ErrorNote>{error}</ErrorNote>}
           <fieldset disabled={!canWrite} className="grid gap-4">
             <Field label="Nom du commerce">{(p) => <Input {...p} value={f.name ?? ""} onChange={set("name")} />}</Field>
+            <Field
+              label="Sous-domaine de votre page"
+              hint={`Accessible sur https://${f.slug || "votre-commerce"}.fove.digital et sur fove.digital/${f.slug || "votre-commerce"}`}
+            >
+              {(p) => (
+                <div className="flex items-stretch overflow-hidden rounded-[var(--radius)] bg-surface shadow-1 ring-1 ring-line focus-within:ring-2 focus-within:ring-cobalt">
+                  <Input
+                    {...p}
+                    value={f.slug ?? ""}
+                    onChange={(e) =>
+                      setF({
+                        ...f,
+                        slug: e.target.value
+                          .toLowerCase()
+                          .replace(/[^a-z0-9-]+/g, "-")
+                          .replace(/^-+|-+$/g, "")
+                          .slice(0, 48),
+                      })
+                    }
+                    className="rounded-none border-0 shadow-none ring-0 focus-visible:ring-0"
+                  />
+                  <span className="flex select-none items-center border-l border-line bg-surface-2 px-3.5 text-sm font-medium text-ink-2">
+                    .fove.digital
+                  </span>
+                </div>
+              )}
+            </Field>
             <Field label="Raison sociale">{(p) => <Input {...p} value={f.legalName ?? ""} onChange={set("legalName")} />}</Field>
             <div className="grid gap-4 sm:grid-cols-[auto_1fr]">
               <Field label="Couleur">{(p) => <input {...p} type="color" className="h-11 w-16 cursor-pointer rounded-md bg-surface shadow-1" value={f.primaryColor ?? "#2C55F5"} onChange={set("primaryColor")} />}</Field>

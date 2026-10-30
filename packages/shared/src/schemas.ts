@@ -6,12 +6,41 @@ const amount = z
   .trim()
   .regex(/^\d{1,12}(\.\d{1,2})?$/, "Montant invalide (ex. 15000 ou 12.50)");
 const hexColor = z.string().regex(/^#[0-9a-fA-F]{6}$/, "Couleur hexadécimale attendue (#RRGGBB)");
+const RESERVED_SLUGS = new Set([
+  "www",
+  "app",
+  "api",
+  "admin",
+  "mail",
+  "smtp",
+  "cdn",
+  "status",
+  "docs",
+  "login",
+  "signup",
+  "forgot-password",
+  "reset-password",
+  "verify-email",
+  "invite",
+  "onboarding",
+  "tarifs",
+  "fonctionnalites",
+  "developpeurs",
+  "contact",
+  "confidentialite",
+  "cgu",
+  "card",
+  "join",
+  "affiche",
+]);
+
 const slug = z
   .string()
   .trim()
   .min(3)
   .max(48)
-  .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Lettres minuscules, chiffres et tirets uniquement");
+  .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Lettres minuscules, chiffres et tirets uniquement")
+  .refine((v) => !RESERVED_SLUGS.has(v), "Ce sous-domaine est réservé par FOVE");
 export const password = z
   .string()
   .min(10, "10 caractères minimum")
@@ -40,7 +69,7 @@ export const createTenantSchema = z.object({
   currency: z.string().length(3).default("CDF"),
   timezone: z.string().max(64).default("Africa/Kinshasa"),
 });
-export const updateTenantSchema = createTenantSchema.omit({ slug: true }).partial().extend({
+export const updateTenantSchema = createTenantSchema.partial().extend({
   logoUrl: z.url().max(500).nullable().optional(),
   legalName: z.string().max(120).nullable().optional(),
   contactEmail: z.email().nullable().optional(),

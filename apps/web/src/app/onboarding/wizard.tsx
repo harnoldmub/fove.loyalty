@@ -181,16 +181,25 @@ export function OnboardingWizard({ userName, tenant }: { userName: string; tenan
                     />
                   )}
                 </Field>
-                <Field label="Adresse de votre page" hint={`app.fove.digital/${slug || "votre-commerce"}`}>
+                <Field
+                  label="Sous-domaine de votre page"
+                  hint={`Accessible sur https://${slug || "votre-commerce"}.fove.digital et sur fove.digital/${slug || "votre-commerce"}`}
+                >
                   {(p) => (
-                    <Input
-                      {...p}
-                      value={slug}
-                      onChange={(e) => {
-                        setSlugTouched(true);
-                        setSlug(slugify(e.target.value));
-                      }}
-                    />
+                    <div className="flex items-stretch overflow-hidden rounded-[var(--radius)] bg-surface shadow-1 ring-1 ring-line focus-within:ring-2 focus-within:ring-cobalt">
+                      <Input
+                        {...p}
+                        value={slug}
+                        onChange={(e) => {
+                          setSlugTouched(true);
+                          setSlug(slugify(e.target.value));
+                        }}
+                        className="rounded-none border-0 shadow-none ring-0 focus-visible:ring-0"
+                      />
+                      <span className="flex select-none items-center border-l border-line bg-surface-2 px-3.5 text-sm font-medium text-ink-2">
+                        .fove.digital
+                      </span>
+                    </div>
                   )}
                 </Field>
                 <Field label="Devise de vos ventes">
