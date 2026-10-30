@@ -2,7 +2,7 @@
   "$schema": "https://railway.com/railway.schema.json",
   "build": { "builder": "DOCKERFILE", "dockerfilePath": "infrastructure/docker/api.Dockerfile", "watchPatterns": ["apps/api/**", "packages/**", "pnpm-lock.yaml"] },
   "deploy": {
-    "preDeployCommand": ["pnpm --filter @fove/database migrate:deploy"],
+    "preDeployCommand": ["pnpm --filter @fove/database migrate:deploy && pnpm db:seed"],
     "startCommand": "node apps/api/dist/main.js",
     "healthcheckPath": "/api/health",
     "healthcheckTimeout": 60,

@@ -1,6 +1,14 @@
+import { createHash } from "node:crypto";
 import { CardsService } from "../cards/cards.service";
 import { Injectable } from "@nestjs/common";
-import { createTenantSchema, establishmentSchema, updateTenantSchema } from "@fove/shared";
+import {
+  createTenantSchema,
+  establishmentSchema,
+  PERMISSIONS,
+  ROLE_PERMISSIONS,
+  TENANT_ROLES,
+  updateTenantSchema,
+} from "@fove/shared";
 import type { z } from "zod";
 import { PrismaService } from "../common/prisma.service";
 import { AuditService } from "../common/audit.service";
@@ -8,8 +16,68 @@ import { conflict, forbidden, isUniqueViolation, notFound } from "../common/erro
 import type { AuthState, TenantContext } from "../common/context";
 import { PlanService } from "../billing/plan.service";
 
+const ROLE_NAMES = { OWNER: "Propriétaire", MANAGER: "Manager", CASHIER: "Caissier", VIEWER: "Lecteur" } as const;
+
+const DEFAULT_PLANS = [
+  {
+    code: "starter",
+    name: "Essentiel",
+    description: "Pour les petits commerces, salons et indépendants.",
+    currency: "USD",
+    priceMonthlyCents: 0,
+    priceYearlyCents: 9900,
+    features: { api: false, widget: true, integrations: false, exports: true },
+    limits: { customers: 500, establishments: 1, staff: 3, programs: 1 },
+    sortOrder: 1,
+  },
+  {
+    code: "business",
+    name: "Business",
+    description: "Pour les boutiques qui veulent développer leur clientèle.",
+    currency: "USD",
+    priceMonthlyCents: 0,
+    priceYearlyCents: 19900,
+    features: { api: true, widget: true, integrations: true, exports: true },
+    limits: { customers: 2000, establishments: 1, staff: 15, programs: 3 },
+    sortOrder: 2,
+  },
+  {
+    code: "premium",
+    name: "Réseau",
+    description: "Pour les enseignes qui gèrent plusieurs boutiques.",
+    currency: "USD",
+    priceMonthlyCents: 0,
+    priceYearlyCents: 39900,
+    features: { api: true, widget: true, integrations: true, exports: true },
+    limits: { customers: 10000, establishments: 3, staff: null, programs: null },
+    sortOrder: 3,
+  },
+];
+
+export async function ensureSystemReferenceData(prisma: PrismaService): Promise<void> {
+  for (const perm of PERMISSIONS) {
+    await prisma.client.permission.upsert({ where: { key: perm }, update: {}, create: { key: perm, description: perm } });
+  }
+  for (const roleKey of TENANT_ROLES) {
+    const hash = createHash("sha256").update(`role:${roleKey}`).digest("hex");
+    const uuid = `${hash.slice(0, 8)}-${hash.slice(8, 12)}-4${hash.slice(13, 16)}-a${hash.slice(17, 20)}-${hash.slice(20, 32)}`;
+    await prisma.client.role.upsert({
+      where: { id: uuid },
+      update: { permissions: [...ROLE_PERMISSIONS[roleKey]], name: ROLE_NAMES[roleKey] },
+      create: { id: uuid, key: roleKey, name: ROLE_NAMES[roleKey], permissions: [...ROLE_PERMISSIONS[roleKey]], isSystem: true },
+    });
+  }
+  for (const plan of DEFAULT_PLANS) {
+    await prisma.client.subscriptionPlan.upsert({ where: { code: plan.code }, update: {}, create: plan });
+  }
+}
+
 export async function systemRoleId(prisma: PrismaService, key: string): Promise<string> {
-  const role = await prisma.client.role.findFirst({ where: { tenantId: null, key, isSystem: true } });
+  let role = await prisma.client.role.findFirst({ where: { tenantId: null, key, isSystem: true } });
+  if (!role) {
+    await ensureSystemReferenceData(prisma);
+    role = await prisma.client.role.findFirst({ where: { tenantId: null, key, isSystem: true } });
+  }
   if (!role) throw new Error(`Rôle système ${key} absent : lancer le seed`);
   return role.id;
 }
