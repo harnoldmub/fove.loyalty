@@ -135,6 +135,7 @@ model Tenant {
   auditLogs      AuditLog[]
   supportGrants  SupportAccessGrant[]
   media          MediaAsset[]
+  customerNotes  CustomerNote[]
 }
 
 model TenantSettings {
@@ -253,15 +254,37 @@ model Customer {
   marketingSmsConsent   Boolean        @default(false)
   consentUpdatedAt      DateTime?
   anonymizedAt          DateTime?
+  tags                  String[]       @default([])
+  notes                 String?
+  lastVisitAt           DateTime?
+  totalVisits           Int            @default(0)
+  totalSpend            Decimal        @default(0) @db.Decimal(14, 2)
   createdAt             DateTime       @default(now())
   updatedAt             DateTime       @updatedAt
 
-  identities CustomerIdentity[]
-  accounts   LoyaltyAccount[]
+  identities    CustomerIdentity[]
+  accounts      LoyaltyAccount[]
+  customerNotes CustomerNote[]
 
   @@unique([tenantId, id])
   @@index([tenantId, createdAt])
   @@index([tenantId, lastName, firstName])
+  @@index([tenantId, lastVisitAt])
+}
+
+model CustomerNote {
+  id         String   @id @default(uuid()) @db.Uuid
+  tenantId   String   @db.Uuid
+  tenant     Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  customerId String   @db.Uuid
+  customer   Customer @relation(fields: [tenantId, customerId], references: [tenantId, id], onDelete: Cascade)
+  authorName String
+  authorId   String?  @db.Uuid
+  content    String
+  createdAt  DateTime @default(now())
+
+  @@unique([tenantId, id])
+  @@index([tenantId, customerId, createdAt])
 }
 
 enum IdentityKind {
@@ -428,6 +451,12 @@ model LoyaltyTransaction {
   @@index([refundOfId])
 }
 
+enum RewardKind {
+  GIFT
+  PERCENTAGE
+  FIXED
+}
+
 model Reward {
   id             String         @id @default(uuid()) @db.Uuid
   tenantId       String         @db.Uuid
@@ -437,6 +466,8 @@ model Reward {
   name           String
   description    String         @default("")
   conditions     String         @default("")
+  kind           RewardKind     @default(GIFT)
+  value          Decimal?       @db.Decimal(14, 2)
   cost           Int
   stock          Int?
   availableFrom  DateTime?
@@ -465,6 +496,11 @@ model RewardRedemption {
   account               LoyaltyAccount   @relation(fields: [tenantId, accountId], references: [tenantId, id], onDelete: Restrict)
   rewardId              String           @db.Uuid
   reward                Reward           @relation(fields: [tenantId, rewardId], references: [tenantId, id], onDelete: Restrict)
+  rewardKind            RewardKind       @default(GIFT)
+  rewardValue           Decimal?         @db.Decimal(14, 2)
+  purchaseAmount        Decimal?         @db.Decimal(14, 2)
+  discountAmount        Decimal?         @db.Decimal(14, 2)
+  currency              String?
   rewardName            String
   cost                  Int
   status                RedemptionStatus @default(COMPLETED)
@@ -801,4 +837,28 @@ model MediaAsset {
   createdAt   DateTime @default(now())
 
   @@index([tenantId])
+}
+
+enum ContactStatus {
+  NEW
+  IN_PROGRESS
+  CONTACTED
+  ARCHIVED
+}
+
+model ContactMessage {
+  id          String        @id @default(uuid()) @db.Uuid
+  name        String
+  email       String
+  phone       String?
+  companyName String?
+  subject     String?
+  message     String
+  source      String        @default("WEBSITE")
+  status      ContactStatus @default(NEW)
+  notes       String?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@index([status, createdAt])
 }

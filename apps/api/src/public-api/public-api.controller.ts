@@ -9,6 +9,7 @@ import {
   enrollAccountSchema,
   paginationSchema,
   reverseSchema,
+  redeemSchema,
 } from "@fove/shared";
 import { z } from "zod";
 import { ZodPipe } from "../common/zod.pipe";
@@ -28,7 +29,7 @@ const apiEarnSchema = z.object({
   saleReference: z.string().max(120).nullable().default(null),
   establishmentId: z.uuid().nullable().default(null),
 });
-const apiRedeemSchema = z.object({ accountId: z.uuid(), rewardId: z.uuid(), establishmentId: z.uuid().nullable().default(null) });
+const apiRedeemSchema = redeemSchema.omit({ idempotencyKey: true });
 const apiReverseSchema = reverseSchema.omit({ idempotencyKey: true });
 const findSchema = z.object({ externalId: z.string().max(120).optional(), email: z.string().max(254).optional(), phone: z.string().max(32).optional() });
 

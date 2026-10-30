@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog, DialogContent, DialogRoot } from "@/components/ui/dialog";
 import { Field, Input, Select } from "@/components/ui/field";
+import { ExternalLink, Smartphone, Users } from "lucide-react";
 import { Badge, ErrorNote, PageHeader, Panel, Skeleton } from "@/components/ui/misc";
 import { api, errorMessage } from "@/lib/api";
 import { formatDate, formatNumber } from "@/lib/utils";
@@ -23,6 +24,28 @@ interface Detail {
   integrations: { id: string; name: string; provider: string; lastSyncAt: string | null; lastError: string | null }[];
   _count: { customers: number; accounts: number; transactions: number; programs: number; establishments: number };
   audit: { id: string; action: string; createdAt: string; metadata: unknown }[];
+  customers?: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    email: string | null;
+    phone: string | null;
+    tags: string[];
+    notes: string | null;
+    totalVisits: number;
+    totalSpend: string | number;
+    lastVisitAt: string | null;
+    createdAt: string;
+    segment?: { segment: string; label: string; color: string };
+    accounts: {
+      id: string;
+      cardNumber: string;
+      balance: number;
+      status: string;
+      accessToken: string | null;
+      program: { name: string; mode: "POINTS" | "STAMPS"; stampsTarget: number };
+    }[];
+  }[];
 }
 
 export default function AdminTenant() {
@@ -113,6 +136,86 @@ export default function AdminTenant() {
             ))}
           </ul>
         </Panel>
+        <Panel className="p-5 lg:col-span-2">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="font-display text-lg font-semibold flex items-center gap-2">
+              <Users className="size-4 text-cobalt" />
+              Clients & Cartes de fidélité ({data.customers?.length ?? 0})
+            </h2>
+          </div>
+
+          {!data.customers || data.customers.length === 0 ? (
+            <p className="text-sm text-ink-3 py-4 text-center">Aucun client inscrit pour le moment.</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm">
+                <thead className="border-b border-line text-ink-3">
+                  <tr>
+                    <th scope="col" className="pb-2 font-medium">Client</th>
+                    <th scope="col" className="pb-2 font-medium">Segment</th>
+                    <th scope="col" className="pb-2 font-medium">Carte & Solde</th>
+                    <th scope="col" className="pb-2 font-medium">Passages</th>
+                    <th scope="col" className="pb-2 font-medium">Dernière visite</th>
+                    <th scope="col" className="pb-2 font-medium text-right">Lien direct carte</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-line">
+                  {data.customers.map((c) => {
+                    const acc = c.accounts[0];
+                    const cardUrl = acc?.accessToken ? `/card/${acc.accessToken}` : null;
+                    return (
+                      <tr key={c.id} className="hover:bg-surface-2 transition-colors">
+                        <td className="py-3">
+                          <span className="font-semibold text-ink block">{c.firstName} {c.lastName}</span>
+                          <span className="text-xs text-ink-3">{c.phone ?? c.email ?? "—"}</span>
+                          {c.tags.length > 0 && (
+                            <div className="mt-1 flex flex-wrap gap-1">
+                              {c.tags.map((t) => (
+                                <span key={t} className="rounded bg-surface-3 px-1.5 py-0.5 text-[0.68rem] text-ink-2">#{t}</span>
+                              ))}
+                            </div>
+                          )}
+                        </td>
+                        <td className="py-3">
+                          {c.segment ? <Badge tone={c.segment.segment === "VIP" ? "mint" : c.segment.segment === "AT_RISK" ? "stamp" : "cobalt"}>{c.segment.label}</Badge> : <Badge tone="neutral">Standard</Badge>}
+                        </td>
+                        <td className="py-3">
+                          {acc ? (
+                            <div>
+                              <span className="font-mono text-xs font-semibold text-ink">{acc.cardNumber}</span>
+                              <span className="block text-xs font-semibold text-cobalt">{acc.balance} {acc.program.mode === "POINTS" ? "points" : "tampons"}</span>
+                            </div>
+                          ) : (
+                            <span className="text-xs text-ink-3">—</span>
+                          )}
+                        </td>
+                        <td className="py-3 text-xs text-ink">{c.totalVisits} passage{c.totalVisits > 1 ? "s" : ""}</td>
+                        <td className="py-3 text-xs text-ink-3">{c.lastVisitAt ? formatDate(c.lastVisitAt) : "N/A"}</td>
+                        <td className="py-3 text-right">
+                          {cardUrl ? (
+                            <a
+                              href={cardUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1.5 rounded-lg border border-line bg-surface px-2.5 py-1 text-xs font-medium text-ink shadow-xs transition-colors hover:border-cobalt hover:text-cobalt"
+                            >
+                              <Smartphone className="size-3.5 text-cobalt" />
+                              <span>Ouvrir</span>
+                              <ExternalLink className="size-3 opacity-60" />
+                            </a>
+                          ) : (
+                            <span className="text-xs text-ink-3">—</span>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </Panel>
+
         <Panel className="p-5">
           <h2 className="mb-3 font-display text-lg font-semibold">Journal d’audit</h2>
           <ul className="grid max-h-80 gap-1.5 overflow-y-auto text-sm">

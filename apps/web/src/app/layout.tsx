@@ -1,12 +1,21 @@
 import type { Metadata, Viewport } from "next";
 import { Bricolage_Grotesque, Figtree } from "next/font/google";
 import { Providers } from "@/components/providers";
+import { defaultKeywords, siteUrl } from "@/lib/og";
 import "./globals.css";
 
 const bricolage = Bricolage_Grotesque({ subsets: ["latin"], variable: "--font-bricolage", display: "swap" });
 const figtree = Figtree({ subsets: ["latin"], variable: "--font-figtree", display: "swap" });
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://fove.digital";
+const ogBanner = {
+  url: `${siteUrl}/opengraph-image`,
+  secureUrl: `${siteUrl}/opengraph-image`,
+  type: "image/png",
+  width: 1200,
+  height: 630,
+  alt: "FOVE — Plateforme de fidélisation et force de vente retail",
+};
+
 const shareImage = {
   url: `${siteUrl}/share-icon.png`,
   secureUrl: `${siteUrl}/share-icon.png`,
@@ -18,12 +27,46 @@ const shareImage = {
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
-  title: { default: "FOVE — Transformez vos clients en habitués", template: "%s · FOVE" },
-  description: "Cartes de fidélité numériques, QR codes et points pour les commerçants. Sans application à installer.",
+  title: { default: "FOVE — Transformez vos clients en habitués | Carte de fidélité numérique & CRM", template: "%s · FOVE" },
+  description:
+    "Plateforme de fidélisation et force de vente retail : cartes de fidélité numériques (Apple & Google Wallet), QR codes en caisse, points ou tampons, CRM RFM et relances WhatsApp. Sans application à installer.",
   applicationName: "FOVE",
-  openGraph: { type: "website", siteName: "FOVE", locale: "fr_FR", images: [shareImage] },
-  twitter: { card: "summary", images: [shareImage.url] },
-  icons: { apple: "/apple-touch-icon.png" },
+  authors: [{ name: "Dizayna", url: siteUrl }],
+  creator: "Dizayna",
+  publisher: "Dizayna",
+  category: "business",
+  keywords: defaultKeywords,
+  manifest: "/manifest.webmanifest",
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+      "max-video-preview": -1,
+    },
+  },
+  openGraph: {
+    type: "website",
+    siteName: "FOVE",
+    locale: "fr_FR",
+    url: siteUrl,
+    images: [ogBanner, shareImage],
+  },
+  twitter: {
+    card: "summary_large_image",
+    images: [ogBanner.url],
+  },
+  icons: {
+    icon: [
+      { url: "/icon.svg", type: "image/svg+xml" },
+      { url: "/icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icon-512.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: "/apple-touch-icon.png",
+  },
 };
 
 export const viewport: Viewport = {

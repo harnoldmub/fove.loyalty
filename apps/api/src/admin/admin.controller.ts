@@ -5,7 +5,7 @@ import { ZodPipe } from "../common/zod.pipe";
 import { Auth } from "../common/decorators";
 import type { AuthState } from "../common/context";
 import { SuperAdminRoute, UserRoute } from "../auth/guards";
-import { AdminService, supportAccessSchema, updatePlanSchema } from "./admin.service";
+import { AdminService, supportAccessSchema, updateMessageSchema, updatePlanSchema } from "./admin.service";
 
 const statusSchema = z.object({ status: z.enum(["ACTIVE", "SUSPENDED"]), reason: z.string().trim().min(5).max(300) });
 const subscriptionSchema = z.object({ planCode: z.string().min(2).max(40), status: z.enum(["TRIALING", "ACTIVE", "CANCELED"]), trialDays: z.int().min(1).max(365).optional() });
@@ -31,6 +31,24 @@ export class AdminController {
   @SuperAdminRoute()
   tenant(@Param("id", ParseUUIDPipe) id: string) {
     return this.admin.tenant(id);
+  }
+
+  @Get("messages")
+  @SuperAdminRoute()
+  messages(@Query("status") status?: string) {
+    return this.admin.listMessages(status);
+  }
+
+  @Patch("messages/:id")
+  @SuperAdminRoute()
+  updateMessage(@Param("id", ParseUUIDPipe) id: string, @Body(new ZodPipe(updateMessageSchema)) body: z.infer<typeof updateMessageSchema>) {
+    return this.admin.updateMessage(id, body);
+  }
+
+  @Get("customers")
+  @SuperAdminRoute()
+  customers(@Query("q") q?: string) {
+    return this.admin.listAllCustomers(q);
   }
 
   @Post("tenants/:id/status")

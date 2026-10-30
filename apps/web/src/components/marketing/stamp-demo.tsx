@@ -43,7 +43,7 @@ export function StampDemo() {
         <div className="mt-7 flex items-end justify-between gap-4">
           <div>
             <p className="text-sm text-white/75">Awa K.</p>
-            <p className="tabular text-sm tracking-[0.12em] text-white/90">FV-7K2M-Q9XD</p>
+            <p className="tabular text-sm tracking-[0.12em] text-white/90">CM-7K2M-Q9XD</p>
           </div>
           <p className="tabular text-right font-display text-3xl font-semibold" aria-live="polite">
             {stamps}

@@ -39,7 +39,7 @@ export default function AdminHome() {
           <p className="mt-4 text-sm text-ink-2">Revenu mensuel récurrent facturé par Stripe : <strong className="text-ink">{formatPrice(stats.mrrCents)}</strong> (les essais et abonnements simulés ne sont pas comptés).</p>
         </Panel>
       )}
-      <Input type="search" aria-label="Rechercher une entreprise" placeholder="Nom, adresse ou email d’un membre" className="mb-4" value={q} onChange={(e) => setQ(e.target.value)} />
+      <Input type="search" aria-label="Rechercher une entreprise" className="mb-4" value={q} onChange={(e) => setQ(e.target.value)} />
       <Panel className="overflow-x-auto">
         <table className="w-full min-w-[720px] text-left text-sm">
           <thead className="text-ink-3">
@@ -47,26 +47,54 @@ export default function AdminHome() {
               <th scope="col" className="px-4 py-3 font-medium">Entreprise</th>
               <th scope="col" className="px-4 py-3 font-medium">Offre</th>
               <th scope="col" className="px-4 py-3 font-medium">Clients</th>
+              <th scope="col" className="px-4 py-3 font-medium">Cartes</th>
               <th scope="col" className="px-4 py-3 font-medium">Équipe</th>
               <th scope="col" className="px-4 py-3 font-medium">Créée le</th>
+              <th scope="col" className="px-4 py-3 font-medium text-right">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-line">
-            {tenants.map((t) => (
-              <tr key={t.id} className="hover:bg-surface-2">
-                <td className="px-4 py-3">
-                  <Link href={`/admin/tenants/${t.id}`} className="font-medium hover:underline">{t.name}</Link>
-                  <span className="block text-ink-3">{t.slug}</span>
-                </td>
-                <td className="px-4 py-3">
-                  {t.subscription ? `${t.subscription.plan.name} · ${t.subscription.status.toLowerCase()}` : "Aucune"}
-                  {t.status === "SUSPENDED" && <Badge tone="danger" className="ml-2">Suspendue</Badge>}
-                </td>
-                <td className="px-4 py-3 tabular">{formatNumber(t._count.customers)}</td>
-                <td className="px-4 py-3 tabular">{t._count.memberships}</td>
-                <td className="px-4 py-3">{formatDate(t.createdAt)}</td>
-              </tr>
-            ))}
+            {tenants.map((t) => {
+              const subStatus = t.subscription?.status;
+              const isTrial = subStatus === "TRIALING";
+              const isActive = subStatus === "ACTIVE";
+
+              return (
+                <tr key={t.id} className="hover:bg-surface-2 transition-colors">
+                  <td className="px-4 py-3">
+                    <Link href={`/admin/tenants/${t.id}`} className="font-semibold text-ink hover:text-cobalt hover:underline">
+                      {t.name}
+                    </Link>
+                    <span className="block text-xs text-ink-3">{t.slug}</span>
+                  </td>
+                  <td className="px-4 py-3">
+                    {t.subscription ? (
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-medium text-ink">{t.subscription.plan.name}</span>
+                        <Badge tone={isActive ? "mint" : isTrial ? "cobalt" : "neutral"}>
+                          {isTrial ? "Essai" : isActive ? "Payant" : t.subscription.status}
+                        </Badge>
+                      </div>
+                    ) : (
+                      <Badge tone="neutral">Aucune</Badge>
+                    )}
+                    {t.status === "SUSPENDED" && <Badge tone="danger" className="ml-2">Suspendue</Badge>}
+                  </td>
+                  <td className="px-4 py-3 tabular font-semibold text-ink">{formatNumber(t._count.customers)}</td>
+                  <td className="px-4 py-3 tabular text-ink-2">{formatNumber(t._count.accounts)}</td>
+                  <td className="px-4 py-3 tabular text-ink-2">{t._count.memberships}</td>
+                  <td className="px-4 py-3 text-xs text-ink-3">{formatDate(t.createdAt)}</td>
+                  <td className="px-4 py-3 text-right">
+                    <Link
+                      href={`/admin/tenants/${t.id}`}
+                      className="inline-flex items-center gap-1 rounded-lg border border-line bg-surface px-3 py-1.5 text-xs font-medium text-ink shadow-xs transition-colors hover:border-cobalt hover:text-cobalt"
+                    >
+                      Détails & Clients ›
+                    </Link>
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </Panel>

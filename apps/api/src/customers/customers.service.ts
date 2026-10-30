@@ -1,6 +1,13 @@
 import { Injectable } from "@nestjs/common";
 import type { CustomerSource, IdentityKind, Prisma } from "@fove/database";
-import { customerSchema, normalizeEmail, normalizePhone, updateCustomerSchema, importCustomersSchema } from "@fove/shared";
+import {
+  computeCustomerSegment,
+  customerSchema,
+  normalizeEmail,
+  normalizePhone,
+  updateCustomerSchema,
+  importCustomersSchema,
+} from "@fove/shared";
 import type { z } from "zod";
 import { PrismaService } from "../common/prisma.service";
 import { AuditService } from "../common/audit.service";
@@ -8,7 +15,8 @@ import { badRequest, conflict, isUniqueViolation, notFound } from "../common/err
 import type { TenantContext } from "../common/context";
 import { PlanService } from "../billing/plan.service";
 import { WebhooksService } from "../notifications/webhooks.service";
-import { createCard } from "../loyalty/cards";
+import { createCard, readAccessToken } from "../loyalty/cards";
+import { cardUrl } from "../cards/cards.service";
 
 type Db = Prisma.TransactionClient;
 
@@ -60,7 +68,11 @@ export class CustomersService {
   async createInTx(
     tx: Db,
     ctx: TenantContext,
-    input: z.infer<typeof customerSchema> & { termsAcceptedAt?: Date | null },
+    input: Omit<z.infer<typeof customerSchema>, "tags" | "notes"> & {
+      tags?: string[];
+      notes?: string | null;
+      termsAcceptedAt?: Date | null;
+    },
     source: CustomerSource,
   ) {
     const country = await tenantCountry(tx, ctx.tenantId);
@@ -77,6 +89,8 @@ export class CustomersService {
         email,
         externalRef,
         source,
+        tags: input.tags ?? [],
+        notes: input.notes ?? null,
         termsAcceptedAt: input.termsAcceptedAt ?? null,
         marketingEmailConsent: input.marketingEmailConsent,
         marketingSmsConsent: input.marketingSmsConsent,
@@ -87,7 +101,15 @@ export class CustomersService {
     return customer;
   }
 
-  async create(ctx: TenantContext, input: z.infer<typeof customerSchema> & { programId?: string | null }, source: CustomerSource = "DASHBOARD") {
+  async create(
+    ctx: TenantContext,
+    input: Omit<z.infer<typeof customerSchema>, "tags" | "notes"> & {
+      tags?: string[];
+      notes?: string | null;
+      programId?: string | null;
+    },
+    source: CustomerSource = "DASHBOARD",
+  ) {
     await this.plans.assertQuota(ctx.tenantId, "customers");
     try {
       const result = await this.prisma.client.$transaction(async (tx) => {
@@ -134,7 +156,16 @@ export class CustomersService {
       include: { accounts: { select: { id: true, programId: true, balance: true, cardNumber: true, status: true } } },
     });
     const hasMore = rows.length > params.limit;
-    const data = hasMore ? rows.slice(0, params.limit) : rows;
+    const rawData = hasMore ? rows.slice(0, params.limit) : rows;
+    const data = rawData.map((c) => ({
+      ...c,
+      segment: computeCustomerSegment({
+        totalVisits: c.totalVisits,
+        totalSpend: c.totalSpend ? Number(c.totalSpend) : 0,
+        lastVisitAt: c.lastVisitAt,
+        createdAt: c.createdAt,
+      }),
+    }));
     return { data, nextCursor: hasMore ? data[data.length - 1]!.id : null };
   }
 
@@ -146,10 +177,67 @@ export class CustomersService {
           include: { program: { select: { id: true, name: true, mode: true, stampsTarget: true } } },
           orderBy: { createdAt: "asc" },
         },
+        customerNotes: {
+          orderBy: { createdAt: "desc" },
+          take: 20,
+        },
       },
     });
     if (!customer) throw notFound("Client");
-    return customer;
+    const segment = computeCustomerSegment({
+      totalVisits: customer.totalVisits,
+      totalSpend: customer.totalSpend ? Number(customer.totalSpend) : 0,
+      lastVisitAt: customer.lastVisitAt,
+      createdAt: customer.createdAt,
+    });
+    return {
+      ...customer,
+      segment,
+      accounts: customer.accounts.map(({ accessTokenHash: _h, accessTokenEncrypted, ...a }) => {
+        const token = readAccessToken(accessTokenEncrypted);
+        return {
+          ...a,
+          cardUrl: token ? cardUrl(token) : null,
+        };
+      }),
+    };
+  }
+
+  async addNote(ctx: TenantContext, customerId: string, content: string, authorName: string, authorId?: string | null) {
+    const customer = await this.prisma.client.customer.findFirst({ where: { id: customerId, tenantId: ctx.tenantId } });
+    if (!customer) throw notFound("Client");
+    const note = await this.prisma.client.customerNote.create({
+      data: {
+        tenantId: ctx.tenantId,
+        customerId,
+        content: content.trim(),
+        authorName,
+        authorId: authorId ?? null,
+      },
+    });
+    await this.audit.forTenant(ctx, "customer.note_added", { type: "customer", id: customerId });
+    return note;
+  }
+
+  async listNotes(ctx: TenantContext, customerId: string) {
+    const customer = await this.prisma.client.customer.findFirst({ where: { id: customerId, tenantId: ctx.tenantId } });
+    if (!customer) throw notFound("Client");
+    return this.prisma.client.customerNote.findMany({
+      where: { tenantId: ctx.tenantId, customerId },
+      orderBy: { createdAt: "desc" },
+      take: 50,
+    });
+  }
+
+  async updateTags(ctx: TenantContext, customerId: string, tags: string[]) {
+    const customer = await this.prisma.client.customer.findFirst({ where: { id: customerId, tenantId: ctx.tenantId } });
+    if (!customer) throw notFound("Client");
+    const updated = await this.prisma.client.customer.update({
+      where: { id: customerId },
+      data: { tags },
+    });
+    await this.audit.forTenant(ctx, "customer.tags_updated", { type: "customer", id: customerId }, { tags });
+    return updated;
   }
 
   async update(ctx: TenantContext, id: string, input: z.infer<typeof updateCustomerSchema>) {

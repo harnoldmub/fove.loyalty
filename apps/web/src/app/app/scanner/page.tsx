@@ -51,7 +51,7 @@ export default function ScannerPage() {
     <section aria-labelledby="scan-title" className="mx-auto grid w-full max-w-md gap-5 text-center">
       <div>
         <h1 id="scan-title" className="font-display text-[clamp(1.75rem,6vw,2.4rem)] font-semibold">{mode === "camera" ? "Scanner une carte" : "Rechercher un client"}</h1>
-        <p className="mt-1 text-ink-2">{mode === "camera" ? "Placez le QR code de la carte du client dans le cadre." : "Nom, téléphone ou numéro de carte FV-XXXX-XXXX."}</p>
+        <p className="mt-1 text-ink-2">{mode === "camera" ? "Placez le QR code de la carte du client dans le cadre." : "Nom, téléphone ou numéro de carte (ex: CM-XXXX-XXXX)."}</p>
       </div>
       {error && <ErrorNote>{error}</ErrorNote>}
       {mode === "camera" ? (
@@ -64,7 +64,7 @@ export default function ScannerPage() {
       ) : (
         <div className="grid gap-4 text-left">
           <form onSubmit={search} className="flex gap-2">
-            <Input autoFocus aria-label="Nom, téléphone ou numéro de carte" placeholder="Nom, téléphone ou FV-XXXX-XXXX" value={q} onChange={(e) => setQ(e.target.value)} />
+            <Input autoFocus aria-label="Nom, téléphone ou numéro de carte" value={q} onChange={(e) => setQ(e.target.value)} />
             <Button type="submit" variant="secondary">Chercher</Button>
           </form>
           {results?.length === 0 && <p className="text-sm text-ink-2">Aucun client trouvé.</p>}

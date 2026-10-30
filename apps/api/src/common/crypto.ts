@@ -32,10 +32,11 @@ export function randomDigits(length: number): string {
 }
 
 const CARD_ALPHABET = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ";
-export function cardNumber(): string {
+export function cardNumber(prefix = "FV"): string {
+  const cleanPrefix = (prefix || "FV").trim().toUpperCase().slice(0, 2);
   const pick = () => CARD_ALPHABET[randomInt(0, CARD_ALPHABET.length)];
   const block = () => Array.from({ length: 4 }, pick).join("");
-  return `FV-${block()}-${block()}`;
+  return `${cleanPrefix}-${block()}-${block()}`;
 }
 
 // --- Mots de passe (scrypt, format auto-descriptif) ------------------------

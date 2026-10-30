@@ -27,8 +27,8 @@ export class BillingService {
     this.stripe = key ? new Stripe(key) : null;
   }
 
-  get mode(): "stripe" | "mock" {
-    return this.stripe ? "stripe" : "mock";
+  get mode(): "stripe" | "mock" | "unavailable" {
+    return this.stripe ? "stripe" : loadConfig().isProd ? "unavailable" : "mock";
   }
 
   listPlans() {
@@ -52,11 +52,13 @@ export class BillingService {
   }
 
   async checkout(ctx: TenantContext, planCode: string, interval: BillingInterval) {
+    if (interval !== "YEAR") throw badRequest("annual_only", "Les nouvelles souscriptions sont annuelles.");
     const plan = await this.plan(planCode);
     const appUrl = loadConfig().APP_URL;
     const current = await this.prisma.client.subscription.findUnique({ where: { tenantId: ctx.tenantId } });
 
     if (!this.stripe) {
+      if (loadConfig().isProd) throw badRequest("stripe_disabled", "Le paiement n’est pas encore disponible. Contactez FOVE.");
       await this.prisma.client.subscription.upsert({
         where: { tenantId: ctx.tenantId },
         update: { planId: plan.id, status: "ACTIVE", interval, provider: "MOCK", cancelAtPeriodEnd: false, currentPeriodEnd: periodEnd(interval) },
@@ -79,14 +81,14 @@ export class BillingService {
       email: tenant.settings?.contactEmail ?? undefined,
       metadata: { tenantId: tenant.id },
     })).id;
-    const trialRemaining = current?.status === "TRIALING" && current.trialEndsAt ? Math.ceil((current.trialEndsAt.getTime() - Date.now()) / 86_400_000) : 0;
+
 
     const session = await this.stripe.checkout.sessions.create({
       mode: "subscription",
       customer: customerId,
       client_reference_id: tenant.id,
       line_items: [{ price, quantity: 1 }],
-      subscription_data: { metadata: { tenantId: tenant.id }, ...(trialRemaining > 0 ? { trial_period_days: trialRemaining } : {}) },
+      subscription_data: { metadata: { tenantId: tenant.id } },
       success_url: `${appUrl}/app/billing?checkout=success`,
       cancel_url: `${appUrl}/app/billing?checkout=cancelled`,
       allow_promotion_codes: true,
@@ -100,6 +102,7 @@ export class BillingService {
   }
 
   async changePlan(ctx: TenantContext, planCode: string, interval: BillingInterval) {
+    if (interval !== "YEAR") throw badRequest("annual_only", "Les nouvelles souscriptions sont annuelles.");
     const plan = await this.plan(planCode);
     const sub = await this.prisma.client.subscription.findUnique({ where: { tenantId: ctx.tenantId } });
     if (!sub) throw notFound("Abonnement");

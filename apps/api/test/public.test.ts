@@ -38,7 +38,7 @@ describe("inscription par QR et carte numérique", () => {
     const card = await http().get(`/api/public/cards/${cardToken(res.body.cardUrl)}`);
     expect(card.status).toBe(200);
     expect(card.body.customer.firstName).toBe("Nadia");
-    expect(card.body.card.number).toMatch(/^FV-/);
+    expect(card.body.card.number).toMatch(/^[A-Z0-9]{2}-[A-Z0-9]{4}-[A-Z0-9]{4}$/);
     expect(card.body.card.balance).toBe(0);
     expect(card.headers["cache-control"]).toBe("no-store");
     const svg = await http().get(`/api/public/cards/${cardToken(res.body.cardUrl)}/qr.svg`);
@@ -144,5 +144,27 @@ describe("inscription par QR et carte numérique", () => {
     await owner.post(`/api/app/enrollment-links/${link.id}/toggle`);
     expect((await http().get(`/api/public/join/${joinToken}`)).status).toBe(404);
     await owner.post(`/api/app/enrollment-links/${link.id}/toggle`);
+  });
+
+  it("enregistre un message de contact public et rejette le honeypot", async () => {
+    const ok = await http().post("/api/public/contact").send({
+      name: "Marie Kabila",
+      email: "marie@boutique-kin.cd",
+      phone: "+243812345678",
+      companyName: "Boutique Kin",
+      subject: "Demande de démonstration & essai accompagné",
+      message: "Bonjour, nous avons 3 boutiques à Gombe et souhaitons déployer FOVE.",
+      source: "DEMO_REQUEST",
+    });
+    expect(ok.status).toBe(201);
+    expect(ok.body.status).toBe("NEW");
+
+    const bot = await http().post("/api/public/contact").send({
+      name: "Spam Bot",
+      email: "spam@example.com",
+      message: "Message automatique de test spam.",
+      website: "https://spam.example.com",
+    });
+    expect(bot.status).toBe(400);
   });
 });

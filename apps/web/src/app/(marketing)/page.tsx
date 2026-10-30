@@ -1,15 +1,64 @@
 import Link from "next/link";
 import { BarChart3, Gift, QrCode, ScanLine, Store, Users } from "lucide-react";
 import { StampDemo } from "@/components/marketing/stamp-demo";
+import { WalletNotificationDemo } from "@/components/marketing/wallet-notification-demo";
 import { Pricing } from "@/components/marketing/pricing";
 import { Button } from "@/components/ui/button";
-import { pageMeta } from "@/lib/og";
+import { pageMeta, siteUrl } from "@/lib/og";
 
 export const metadata = pageMeta(
-  "FOVE — Transformez vos clients en habitués",
-  "Cartes de fidélité numériques, QR codes et points pour les commerçants. Sans application à installer.",
+  "FOVE — Transformez vos clients en habitués | Carte de fidélité numérique & CRM",
+  "Cartes de fidélité numériques (Apple Wallet & Google Wallet), QR codes en caisse, points ou tampons, CRM RFM et relances WhatsApp pour les commerçants. Sans application à installer.",
   "/",
 );
+
+const homeJsonLd = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      "@id": `${siteUrl}/#organization`,
+      name: "FOVE",
+      alternateName: "FOVE by Dizayna",
+      url: siteUrl,
+      logo: `${siteUrl}/icon-512.png`,
+      description:
+        "Plateforme SaaS de fidélisation client et d'action commerciale retail : cartes de fidélité numériques, QR codes en caisse, Apple/Google Wallet et CRM commerçant.",
+      brand: {
+        "@type": "Brand",
+        name: "FOVE",
+      },
+      parentOrganization: {
+        "@type": "Organization",
+        name: "Dizayna",
+      },
+    },
+    {
+      "@type": "WebSite",
+      "@id": `${siteUrl}/#website`,
+      url: siteUrl,
+      name: "FOVE",
+      inLanguage: "fr-FR",
+      publisher: { "@id": `${siteUrl}/#organization` },
+    },
+    {
+      "@type": "SoftwareApplication",
+      name: "FOVE",
+      applicationCategory: "BusinessApplication",
+      operatingSystem: "Web, iOS (Apple Wallet), Android (Google Wallet)",
+      url: siteUrl,
+      description:
+        "Solution de fidélisation pour commerçants : programme à points ou à tampons, inscription par QR code au comptoir, scanner caisse mobile, segmentation RFM et relances WhatsApp.",
+      offers: {
+        "@type": "AggregateOffer",
+        priceCurrency: "USD",
+        lowPrice: "150",
+        highPrice: "590",
+        offerCount: "3",
+      },
+    },
+  ],
+};
 
 const steps = [
   {
@@ -38,6 +87,10 @@ const counter = [
 export default function HomePage() {
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(homeJsonLd) }}
+      />
       <section className="mx-auto grid max-w-6xl items-center gap-12 px-4 pb-16 pt-12 sm:px-6 md:grid-cols-[1.1fr_1fr] md:pt-20 lg:gap-16">
         <div>
           <h1 className="font-display text-[2.6rem] font-bold leading-[1.02] sm:text-6xl lg:text-[4.4rem]">Transformez vos clients en habitués.</h1>
@@ -69,6 +122,12 @@ export default function HomePage() {
             </li>
           ))}
         </ol>
+      </section>
+
+      <section aria-labelledby="wallet-push" className="border-y border-line bg-surface/50 py-20 sm:py-24">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6">
+          <WalletNotificationDemo />
+        </div>
       </section>
 
       <section aria-labelledby="comptoir" className="bg-surface py-20">

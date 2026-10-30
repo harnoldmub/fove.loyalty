@@ -8,7 +8,6 @@ import { useCan, useMe } from "@/components/app/me-context";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/dialog";
 import { Badge, PageHeader, Panel, Skeleton } from "@/components/ui/misc";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { api, errorMessage } from "@/lib/api";
 import { cn, formatDate, formatNumber, formatPrice } from "@/lib/utils";
 
@@ -22,7 +21,7 @@ interface Plan {
   priceYearlyCents: number;
 }
 interface Billing {
-  mode: "stripe" | "mock";
+  mode: "stripe" | "mock" | "unavailable";
   subscription: { status: string; interval: "MONTH" | "YEAR"; trialEndsAt: string | null; currentPeriodEnd: string | null; cancelAtPeriodEnd: boolean; provider: string; plan: Plan } | null;
   plans: Plan[];
   usage: Record<string, number>;
@@ -43,7 +42,7 @@ function BillingView() {
   const me = useMe();
   const canWrite = useCan("billing.write");
   const qc = useQueryClient();
-  const [interval, setInterval] = useState<"MONTH" | "YEAR">("MONTH");
+  const interval = "YEAR" as const;
   const [pending, setPending] = useState<string | null>(null);
   const { data } = useQuery({ queryKey: ["billing"], queryFn: () => api.get<Billing>("/app/billing") });
 
@@ -78,6 +77,7 @@ function BillingView() {
           Mode de facturation simulé : aucun paiement réel n’est effectué sur cet environnement.
         </p>
       )}
+      {data.mode === "unavailable" && <p className="mb-6 rounded-md bg-surface-2 px-4 py-3 text-sm">Le paiement en ligne sera disponible prochainement. Votre essai reste accessible.</p>}
       <div className="grid gap-6 lg:grid-cols-[1fr_20rem]">
         <Panel className="p-5 sm:p-6">
           {sub ? (
@@ -112,7 +112,7 @@ function BillingView() {
                     <ConfirmDialog
                       trigger={<Button variant="ghost">Résilier</Button>}
                       title="Résilier l’abonnement ?"
-                      consequence="Il reste actif jusqu’à la fin de la période payée, puis votre compte passe aux limites Starter. Aucune carte n’est supprimée."
+                      consequence="Il reste actif jusqu’à la fin de la période payée, puis votre compte passe aux limites Essentiel. Aucune carte n’est supprimée."
                       confirmLabel="Résilier"
                       destructive
                       onConfirm={async () => {
@@ -126,7 +126,7 @@ function BillingView() {
               )}
             </div>
           ) : (
-            <p className="text-ink-2">Aucun abonnement : votre compte utilise les limites Starter.</p>
+            <p className="text-ink-2">Aucun abonnement : votre compte utilise les limites Essentiel.</p>
           )}
         </Panel>
         <Panel className="p-5 sm:p-6">
@@ -157,26 +157,21 @@ function BillingView() {
         <section className="mt-10" aria-labelledby="offres">
           <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
             <h2 id="offres" className="font-display text-2xl font-semibold">Changer d’offre</h2>
-            <Tabs value={interval} onValueChange={(v) => setInterval(v as "MONTH" | "YEAR")}>
-              <TabsList aria-label="Facturation">
-                <TabsTrigger value="MONTH">Mensuel</TabsTrigger>
-                <TabsTrigger value="YEAR">Annuel</TabsTrigger>
-              </TabsList>
-            </Tabs>
+            <p className="text-sm text-ink-2">Abonnement annuel, payé à l’avance en dollars US.</p>
           </div>
           {!me.user.emailVerifiedAt && <p className="mb-4 text-sm text-danger">Confirmez votre email avant de choisir une offre.</p>}
           <div className="grid gap-4 md:grid-cols-3">
             {data.plans.map((p) => {
-              const current = sub?.plan.code === p.code && sub.status === "ACTIVE";
+              const current = sub?.plan.code === p.code && sub.status === "ACTIVE" && sub.interval === "YEAR";
               return (
                 <Panel key={p.id} className={cn("grid gap-3 p-5", current && "ring-2 ring-cobalt")}>
                   <h3 className="font-display text-xl font-semibold">{p.name}</h3>
                   <p className="text-sm text-ink-2">{p.description}</p>
                   <p className="font-display text-3xl font-semibold tabular">
-                    {formatPrice(interval === "YEAR" ? p.priceYearlyCents : p.priceMonthlyCents, p.currency)}
-                    <span className="text-base font-normal text-ink-3"> /{interval === "YEAR" ? "an" : "mois"}</span>
+                    {formatPrice(p.priceYearlyCents, p.currency)}
+                    <span className="text-base font-normal text-ink-3"> /an</span>
                   </p>
-                  <Button variant={current ? "secondary" : "primary"} disabled={current || !me.user.emailVerifiedAt} loading={pending === p.code} onClick={() => choose(p.code)}>
+                  <Button variant={current ? "secondary" : "primary"} disabled={current || !me.user.emailVerifiedAt || data.mode === "unavailable"} loading={pending === p.code} onClick={() => choose(p.code)}>
                     {current ? "Offre actuelle" : `Passer à ${p.name}`}
                   </Button>
                 </Panel>

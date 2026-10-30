@@ -1,6 +1,7 @@
 "use client";
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { rewardValueLabel, type RewardKind } from "@fove/shared";
 import { Gift, Plus } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -19,6 +20,8 @@ interface Reward {
   name: string;
   description: string;
   conditions: string;
+  kind: RewardKind;
+  value: string | null;
   cost: number;
   stock: number | null;
   availableFrom: string | null;
@@ -43,6 +46,8 @@ function RewardForm({ reward, programs, onDone }: { reward?: Reward; programs: P
     name: reward?.name ?? "",
     description: reward?.description ?? "",
     conditions: reward?.conditions ?? "",
+    kind: reward?.kind ?? "GIFT",
+    value: reward?.value ?? "",
     cost: String(reward?.cost ?? ""),
     stock: reward?.stock === null || reward?.stock === undefined ? "" : String(reward.stock),
     availableFrom: reward?.availableFrom?.slice(0, 10) ?? "",
@@ -64,6 +69,8 @@ function RewardForm({ reward, programs, onDone }: { reward?: Reward; programs: P
           name: f.name,
           description: f.description,
           conditions: f.conditions,
+          kind: f.kind,
+          value: f.kind === "GIFT" ? null : f.value.replace(",", "."),
           cost: Number(f.cost),
           stock: f.stock === "" ? null : Number(f.stock),
           availableFrom: f.availableFrom ? new Date(f.availableFrom).toISOString() : null,
@@ -75,6 +82,7 @@ function RewardForm({ reward, programs, onDone }: { reward?: Reward; programs: P
           else await api.post("/app/rewards", { ...body, programId: f.programId });
           toast.success(reward ? "Récompense mise à jour" : "Récompense créée");
           qc.invalidateQueries({ queryKey: ["rewards"] });
+          qc.invalidateQueries({ queryKey: ["account"] });
           onDone();
         } catch (err) {
           setError(errorMessage(err));
@@ -93,13 +101,23 @@ function RewardForm({ reward, programs, onDone }: { reward?: Reward; programs: P
           )}
         </Field>
       )}
-      <Field label="Nom">{(p) => <Input {...p} value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} placeholder="Café offert" />}</Field>
+      <Field label="Nom">{(p) => <Input {...p} value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} />}</Field>
+      <Field label="Type de récompense">
+        {(p) => <Select {...p} value={f.kind} onChange={(e) => setF({ ...f, kind: e.target.value as RewardKind, value: "" })}>
+          <option value="GIFT">Cadeau ou service offert</option>
+          <option value="PERCENTAGE">Réduction en pourcentage</option>
+          <option value="FIXED">Réduction d’un montant fixe</option>
+        </Select>}
+      </Field>
+      {f.kind !== "GIFT" && <Field label={f.kind === "PERCENTAGE" ? "Réduction (%)" : `Montant de la réduction (${programs.find((p) => p.id === f.programId)?.currency ?? ""})`} hint="Appliquée sur le montant de l’achat, sans dépasser son total. Les utilisations passées restent inchangées.">
+        {(p) => <Input {...p} inputMode="decimal" required value={f.value} onChange={(e) => setF({ ...f, value: e.target.value })} />}
+      </Field>}
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label={`Coût (${unitLabel(mode)})`}>{(p) => <Input {...p} type="number" min={1} value={f.cost} onChange={(e) => setF({ ...f, cost: e.target.value })} />}</Field>
         <Field label="Stock (vide = illimité)">{(p) => <Input {...p} type="number" min={0} value={f.stock} onChange={(e) => setF({ ...f, stock: e.target.value })} />}</Field>
       </div>
       <Field label="Description">{(p) => <Textarea {...p} value={f.description} onChange={(e) => setF({ ...f, description: e.target.value })} />}</Field>
-      <Field label="Conditions">{(p) => <Input {...p} value={f.conditions} onChange={(e) => setF({ ...f, conditions: e.target.value })} placeholder="Sur place uniquement" />}</Field>
+      <Field label="Conditions">{(p) => <Input {...p} value={f.conditions} onChange={(e) => setF({ ...f, conditions: e.target.value })} />}</Field>
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label="Disponible à partir du">{(p) => <Input {...p} type="date" value={f.availableFrom} onChange={(e) => setF({ ...f, availableFrom: e.target.value })} />}</Field>
         <Field label="Jusqu’au">{(p) => <Input {...p} type="date" value={f.availableUntil} onChange={(e) => setF({ ...f, availableUntil: e.target.value })} />}</Field>
@@ -143,7 +161,7 @@ export default function RewardsPage() {
                       {r.stock === 0 && <Badge tone="danger">Épuisée</Badge>}
                     </p>
                     <p className="text-sm text-ink-3">
-                      {program?.name} · {formatNumber(r._count.redemptions)} utilisations
+                      {rewardValueLabel(r, program?.currency ?? "CDF")} · {program?.name} · {formatNumber(r._count.redemptions)} utilisations
                       {r.stock !== null && ` · ${r.stock} en stock`}
                       {r.availableUntil && ` · jusqu’au ${formatDate(r.availableUntil)}`}
                     </p>

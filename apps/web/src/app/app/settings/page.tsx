@@ -1,12 +1,14 @@
 "use client";
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
 import { useCan } from "@/components/app/me-context";
 import { Button } from "@/components/ui/button";
 import { Field, Input, Select } from "@/components/ui/field";
-import { ErrorNote, PageHeader, Panel } from "@/components/ui/misc";
+import { ErrorNote, PageHeader, Panel, Skeleton } from "@/components/ui/misc";
 import { api, errorMessage } from "@/lib/api";
 
 interface Tenant {
@@ -16,16 +18,25 @@ interface Tenant {
 }
 
 export default function SettingsPage() {
-  const { data } = useQuery({ queryKey: ["tenant"], queryFn: () => api.get<Tenant>("/app/tenant") });
+  const { data, isLoading, error } = useQuery({ queryKey: ["tenant"], queryFn: () => api.get<Tenant>("/app/tenant") });
   return (
     <>
       <PageHeader title="Paramètres" description={data ? `Adresse de votre page : ${data.slug}` : undefined} />
+      {isLoading && <Skeleton className="h-64" />}
+      {error && <ErrorNote>{errorMessage(error)}</ErrorNote>}
       {data && <SettingsForm data={data} />}
+      <div className="mt-6 flex flex-wrap gap-3">
+        <Button asChild variant="secondary"><Link href="/app/programs">Règles de fidélité</Link></Button>
+        <Button asChild variant="secondary"><Link href="/app/rewards">Réductions et récompenses</Link></Button>
+        <Button asChild variant="secondary"><Link href="/app/establishments">Points de vente</Link></Button>
+      </div>
     </>
   );
 }
 
 function SettingsForm({ data }: { data: Tenant }) {
+  const router = useRouter();
+  const [uploading, setUploading] = useState(false);
   const canWrite = useCan("tenant.update");
   const qc = useQueryClient();
   const [error, setError] = useState<string | null>(null);
@@ -65,7 +76,8 @@ function SettingsForm({ data }: { data: Tenant }) {
                 privacyPolicyUrl: f.privacyPolicyUrl || null,
               });
               qc.invalidateQueries({ queryKey: ["tenant"] });
-              toast.success("Paramètres enregistrés");
+              router.refresh();
+              toast.success("Paramètres enregistrés sur vos pages et cartes clients");
             } catch (err) {
               setError(errorMessage(err));
             } finally {
@@ -79,7 +91,25 @@ function SettingsForm({ data }: { data: Tenant }) {
             <Field label="Raison sociale">{(p) => <Input {...p} value={f.legalName ?? ""} onChange={set("legalName")} />}</Field>
             <div className="grid gap-4 sm:grid-cols-[auto_1fr]">
               <Field label="Couleur">{(p) => <input {...p} type="color" className="h-11 w-16 cursor-pointer rounded-md bg-surface shadow-1" value={f.primaryColor ?? "#2C55F5"} onChange={set("primaryColor")} />}</Field>
-              <Field label="Logo (URL)">{(p) => <Input {...p} value={f.logoUrl ?? ""} onChange={set("logoUrl")} />}</Field>
+              <Field label="Importer le logo" hint="PNG, JPEG ou WebP, 512 Ko maximum. Enregistrez ensuite vos paramètres.">
+                {(p) => <Input {...p} type="file" accept="image/png,image/jpeg,image/webp" disabled={uploading} onChange={async (e) => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+                  if (file.size > 512 * 1024) { setError("Le logo ne doit pas dépasser 512 Ko."); return; }
+                  setUploading(true); setError(null);
+                  try {
+                    const dataBase64 = await new Promise<string>((resolve, reject) => {
+                      const reader = new FileReader();
+                      reader.onload = () => resolve(String(reader.result).split(",")[1] ?? "");
+                      reader.onerror = () => reject(new Error("Lecture du fichier impossible"));
+                      reader.readAsDataURL(file);
+                    });
+                    const { url } = await api.post<{ url: string }>("/app/media", { dataBase64 });
+                    setF((current) => ({ ...current, logoUrl: url }));
+                  } catch (err) { setError(errorMessage(err)); } finally { setUploading(false); }
+                }} />}
+              </Field>
+              <Field label="Adresse du logo">{(p) => <Input {...p} value={f.logoUrl ?? ""} onChange={set("logoUrl")} />}</Field>
             </div>
             <div className="grid gap-4 sm:grid-cols-3">
               <Field label="Pays">
@@ -92,7 +122,7 @@ function SettingsForm({ data }: { data: Tenant }) {
                   </Select>
                 )}
               </Field>
-              <Field label="Devise">
+              <Field label="Devise" hint="Utilisée pour les nouveaux programmes. Les programmes existants conservent leur devise.">
                 {(p) => (
                   <Select {...p} value={f.currency ?? "CDF"} onChange={set("currency")}>
                     <option value="CDF">CDF</option>
@@ -114,7 +144,7 @@ function SettingsForm({ data }: { data: Tenant }) {
             </div>
             <Field label="Email de contact">{(p) => <Input {...p} type="email" value={f.contactEmail ?? ""} onChange={set("contactEmail")} />}</Field>
             <Field label="Politique de confidentialité (URL)" hint="Affichée aux clients lors de l’inscription.">{(p) => <Input {...p} value={f.privacyPolicyUrl ?? ""} onChange={set("privacyPolicyUrl")} />}</Field>
-            {canWrite && <Button type="submit" loading={busy} className="justify-self-start">Enregistrer</Button>}
+            {canWrite && <Button type="submit" loading={busy || uploading} className="justify-self-start">Enregistrer</Button>}
           </fieldset>
         </form>
       </Panel>

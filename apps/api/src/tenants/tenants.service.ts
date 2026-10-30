@@ -1,3 +1,4 @@
+import { CardsService } from "../cards/cards.service";
 import { Injectable } from "@nestjs/common";
 import { createTenantSchema, establishmentSchema, updateTenantSchema } from "@fove/shared";
 import type { z } from "zod";
@@ -19,6 +20,7 @@ export class TenantsService {
     private readonly prisma: PrismaService,
     private readonly audit: AuditService,
     private readonly plans: PlanService,
+    private readonly cards: CardsService,
   ) {}
 
   /** Crée l'entreprise, l'adhésion propriétaire, les réglages et l'essai gratuit. */
@@ -47,6 +49,7 @@ export class TenantsService {
               tenantId: tenant.id,
               planId: trialPlan.id,
               status: "TRIALING",
+              interval: "YEAR",
               provider: "MOCK",
               trialEndsAt: new Date(Date.now() + trialPlan.trialDays * 86_400_000),
             },
@@ -84,6 +87,7 @@ export class TenantsService {
       await tx.tenantSettings.update({ where: { tenantId: ctx.tenantId }, data: settings });
     });
     await this.audit.forTenant(ctx, "tenant.updated", { type: "tenant", id: ctx.tenantId }, { fields: Object.keys(input) });
+    await this.cards.refreshProgramWallet(ctx.tenantId);
     return this.current(ctx);
   }
 

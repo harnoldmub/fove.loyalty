@@ -3,6 +3,7 @@ import type { LoyaltyProgram, OperationSource, Prisma } from "@fove/database";
 import {
   addAmounts,
   adjustSchema,
+  computeCustomerSegment,
   computeEarn,
   earnSchema,
   programSchema,
@@ -19,7 +20,7 @@ import { PlanService } from "../billing/plan.service";
 import { WebhooksService } from "../notifications/webhooks.service";
 import { assertEstablishmentAccess } from "../tenants/tenants.service";
 import { LedgerService, type PostResult } from "./ledger.service";
-import { createCard } from "./cards";
+import { createCard, readAccessToken } from "./cards";
 import { CardsService, cardUrl } from "../cards/cards.service";
 
 export function earnRules(program: LoyaltyProgram): EarnRules {
@@ -93,6 +94,7 @@ export class LoyaltyService {
     }
     const program = await this.prisma.client.loyaltyProgram.update({ where: { id: current.id }, data: input });
     await this.audit.forTenant(ctx, "program.updated", { type: "program", id }, { fields: Object.keys(input) });
+    await this.cards.refreshProgramWallet(ctx.tenantId, id);
     return program;
   }
 
@@ -131,16 +133,49 @@ export class LoyaltyService {
     const account = await this.prisma.client.loyaltyAccount.findFirst({
       where: { id: accountId, tenantId: ctx.tenantId },
       include: {
-        customer: { select: { id: true, firstName: true, lastName: true, phone: true, email: true, anonymizedAt: true } },
+        customer: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            phone: true,
+            email: true,
+            anonymizedAt: true,
+            tags: true,
+            notes: true,
+            totalVisits: true,
+            totalSpend: true,
+            lastVisitAt: true,
+            createdAt: true,
+          },
+        },
         program: true,
         transactions: { orderBy: { createdAt: "desc" }, take: 20 },
       },
     });
     if (!account) throw notFound("Carte");
     const rewards = await this.availableRewards(ctx.tenantId, account.programId);
-    const { accessTokenHash: _h, ...safe } = account;
+    const token = readAccessToken(account.accessTokenEncrypted);
+    const { accessTokenHash: _h, accessTokenEncrypted: _e, ...safe } = account;
+
+    const segment = computeCustomerSegment({
+      totalVisits: account.customer.totalVisits,
+      totalSpend: account.customer.totalSpend ? Number(account.customer.totalSpend) : 0,
+      lastVisitAt: account.customer.lastVisitAt,
+      createdAt: account.customer.createdAt,
+    });
+
+    const recentNotes = await this.prisma.client.customerNote.findMany({
+      where: { tenantId: ctx.tenantId, customerId: account.customer.id },
+      orderBy: { createdAt: "desc" },
+      take: 5,
+    });
+
     return {
       ...safe,
+      cardUrl: token ? cardUrl(token) : null,
+      segment,
+      recentNotes,
       rewards: rewards.map((r) => ({ ...r, affordable: account.balance >= r.cost })),
     };
   }
@@ -160,7 +195,7 @@ export class LoyaltyService {
         ],
       },
       orderBy: { cost: "asc" },
-      select: { id: true, name: true, description: true, conditions: true, cost: true, stock: true },
+      select: { id: true, name: true, description: true, conditions: true, kind: true, value: true, cost: true, stock: true },
     });
   }
 

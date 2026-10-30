@@ -6,6 +6,7 @@ const links = [
   { href: "/fonctionnalites", label: "Fonctionnalités" },
   { href: "/tarifs", label: "Tarifs" },
   { href: "/developpeurs", label: "Développeurs" },
+  { href: "/contact", label: "Contact" },
 ];
 
 export function SiteHeader() {
@@ -51,18 +52,25 @@ export function SiteFooter() {
       <div className="mx-auto grid max-w-6xl gap-8 px-4 py-12 sm:px-6 md:grid-cols-[1.5fr_1fr_1fr]">
         <div className="grid content-start gap-3">
           <Logo />
-          <p className="max-w-xs text-sm text-ink-2">FOVE, pour FOrce de VEnte. Un produit Dizayna.</p>
+          <p className="max-w-sm text-sm text-ink-2 leading-relaxed">
+            <strong className="font-semibold text-ink">FOVE</strong>, pour <strong className="font-semibold text-ink">FOrce de VEnte</strong>.
+            <br />
+            La plateforme de fidélisation et d&apos;action commerciale retail. Un produit Dizayna.
+          </p>
         </div>
         <nav aria-label="Produit" className="grid content-start gap-2 text-sm">
-          <p className="font-medium">Produit</p>
-          <Link className="text-ink-2 hover:text-ink" href="/fonctionnalites">Fonctionnalités</Link>
-          <Link className="text-ink-2 hover:text-ink" href="/tarifs">Tarifs</Link>
-          <Link className="text-ink-2 hover:text-ink" href="/developpeurs">Documentation API</Link>
+          <p className="font-medium text-ink">Produit</p>
+          <Link className="text-ink-2 hover:text-ink transition-colors" href="/fonctionnalites">Fonctionnalités</Link>
+          <Link className="text-ink-2 hover:text-ink transition-colors" href="/tarifs">Tarifs</Link>
+          <Link className="text-ink-2 hover:text-ink transition-colors" href="/developpeurs">Documentation API</Link>
+          <Link className="text-ink-2 hover:text-ink transition-colors" href="/contact">Contact & Démo</Link>
         </nav>
         <nav aria-label="Informations" className="grid content-start gap-2 text-sm">
-          <p className="font-medium">Informations</p>
-          <Link className="text-ink-2 hover:text-ink" href="/confidentialite">Données personnelles</Link>
-          <Link className="text-ink-2 hover:text-ink" href="/login">Espace commerçant</Link>
+          <p className="font-medium text-ink">Informations</p>
+          <Link className="text-ink-2 hover:text-ink transition-colors" href="/cgu">Conditions d’utilisation (CGU)</Link>
+          <Link className="text-ink-2 hover:text-ink transition-colors" href="/confidentialite">Données personnelles</Link>
+          <Link className="text-ink-2 hover:text-ink transition-colors" href="/login">Espace commerçant</Link>
+          <Link className="text-ink-2 hover:text-ink transition-colors" href="/sitemap.xml">Plan du site</Link>
         </nav>
       </div>
       <p className="mx-auto max-w-6xl px-4 pb-10 text-xs text-ink-3 sm:px-6">© {new Date().getFullYear()} Dizayna. Tous droits réservés.</p>

@@ -178,7 +178,6 @@ export function OnboardingWizard({ userName, tenant }: { userName: string; tenan
                         setName(e.target.value);
                         if (!slugTouched) setSlug(slugify(e.target.value));
                       }}
-                      placeholder="Café Matonge"
                     />
                   )}
                 </Field>
@@ -286,7 +285,7 @@ export function OnboardingWizard({ userName, tenant }: { userName: string; tenan
                 <p className="-mt-2 text-ink-2">
                   {program.mode === "STAMPS" ? `Offerte quand la carte atteint ${program.stampsTarget} tampons.` : "Ce que vos clients obtiennent avec leurs points. Vous en ajouterez d’autres plus tard."}
                 </p>
-                <Field label="Nom de la récompense">{(p) => <Input {...p} value={rewardName} onChange={(e) => setRewardName(e.target.value)} placeholder="Café offert" />}</Field>
+                <Field label="Nom de la récompense">{(p) => <Input {...p} value={rewardName} onChange={(e) => setRewardName(e.target.value)} />}</Field>
                 {program.mode === "POINTS" && (
                   <Field label="Coût en points">{(p) => <Input {...p} type="number" min={1} value={rewardCost} onChange={(e) => setRewardCost(e.target.value)} />}</Field>
                 )}

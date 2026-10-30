@@ -2,7 +2,12 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { pageMeta } from "@/lib/og";
 
-export const metadata = pageMeta("Fonctionnalités", "Programme de points ou de tampons, cartes numériques, scanner, récompenses, équipe et statistiques.", "/fonctionnalites");
+export const metadata = pageMeta(
+  "Fonctionnalités — Cartes de fidélité, Wallet, Scanner caisse & CRM RFM",
+  "Programme de points ou de tampons, cartes numériques Apple & Google Wallet, notifications push lockscreen, scanner caisse mobile, segmentation RFM et relances WhatsApp.",
+  "/fonctionnalites",
+  ["fonctionnalités carte de fidélité", "Apple Wallet commerçant", "Google Wallet fidélité", "scanner QR caisse"],
+);
 
 const groups = [
   {
@@ -17,8 +22,10 @@ const groups = [
     title: "Vos clients",
     items: [
       ["Inscription par QR code", "Un QR public à vos couleurs, par établissement. Le client crée sa carte depuis son téléphone."],
-      ["Carte numérique", "Logo, nom, numéro, QR personnel, solde, progression et récompenses disponibles. Ajoutable à l’écran d’accueil."],
-      ["Fichier clients", "Recherche, création, import, historique complet. Pas de doublon sur un même téléphone ou email."],
+      ["Apple Wallet & Google Wallet", "Un pass natif ajouté en 1 clic dans Apple Cartes et Google Wallet. Zéro application à télécharger."],
+      ["Notifications Push Lockscreen", "Communiquez directement sur l'écran verrouillé de vos clients : offres flash, mises à jour de points et récompenses débloquées."],
+      ["Rappels de proximité GPS", "La carte fidélité s'affiche sur l'écran du smartphone dès que votre client s'approche de votre établissement."],
+      ["Fichier clients & RFM", "Segmentation client automatique (VIP, réguliers, dormants, en risque), tags et mémos commerciaux pour votre force de vente."],
     ],
   },
   {

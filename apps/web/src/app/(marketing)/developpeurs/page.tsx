@@ -1,6 +1,11 @@
 import { pageMeta } from "@/lib/og";
 
-export const metadata = pageMeta("Documentation développeur", "API REST v1, SDK TypeScript, webhooks signés et widget FOVE.", "/developpeurs");
+export const metadata = pageMeta(
+  "Documentation développeur — API REST Fidélité, SDK TypeScript & Webhooks",
+  "Intégrez FOVE à votre boutique e-commerce ou logiciel de caisse : API REST v1 idempotente, SDK TypeScript @fove/sdk, webhooks signés HMAC-SHA256 et widget web.",
+  "/developpeurs",
+  ["API fidélité e-commerce", "SDK TypeScript fidélité", "webhook fidélité caisse", "widget fidélité site web"],
+);
 
 const endpoints = [
   ["GET", "/api/v1/customers", "Lister et rechercher les clients (pagination par curseur, filtre q)"],

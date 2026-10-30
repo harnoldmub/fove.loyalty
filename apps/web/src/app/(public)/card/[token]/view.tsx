@@ -1,5 +1,6 @@
 "use client";
 
+import { rewardValueLabel, type RewardKind } from "@fove/shared";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { Download, Gift, Share, Smartphone } from "lucide-react";
@@ -15,11 +16,11 @@ import { cn, formatDate, formatNumber, KIND_LABEL } from "@/lib/utils";
 
 export interface CardData {
   tenant: { name: string; logoUrl: string | null; primaryColor: string };
-  program: { name: string; mode: "POINTS" | "STAMPS"; stampsTarget: number; terms: string; rule: string };
+  program: { currency: string; name: string; mode: "POINTS" | "STAMPS"; stampsTarget: number; terms: string; rule: string };
   customer: { firstName: string; lastInitial: string };
   card: { number: string; qr: string; status: string; balance: number; lifetimeEarned: number; memberSince: string };
   nextReward: { name: string; cost: number; remaining: number } | null;
-  rewards: { id: string; name: string; description: string; conditions: string; cost: number; available: boolean }[];
+  rewards: { kind: RewardKind; value: string | null; id: string; name: string; description: string; conditions: string; cost: number; available: boolean }[];
   transactions: { id: string; kind: string; delta: number; createdAt: string; reason: string | null }[];
   verification: "EMAIL_OTP" | "IN_STORE" | "NONE" | null;
   googleWallet: boolean;
@@ -200,6 +201,7 @@ export function CardView({ token, initial }: { token: string; initial: CardData 
                 <Gift className={cn("size-5 shrink-0", r.available ? "text-stamp" : "text-ink-3")} aria-hidden />
                 <div className="min-w-0 flex-1">
                   <p className="font-medium">{r.name}</p>
+                  {r.kind !== "GIFT" && <p className="text-sm text-ink-2">{rewardValueLabel(r, program.currency)}</p>}
                   {(r.description || r.conditions) && <p className="text-sm text-ink-3">{[r.description, r.conditions].filter(Boolean).join(" · ")}</p>}
                 </div>
                 <span className="text-sm font-medium tabular">{r.available ? "Disponible" : formatNumber(r.cost)}</span>

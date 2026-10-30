@@ -138,7 +138,7 @@ export class FoveClient {
   earn(input: { accountId: string; amount?: string | null; saleReference?: string | null }, idempotencyKey: string) {
     return this.request<{ transaction: Record<string, unknown>; replayed: boolean }>("POST", "/v1/loyalty/transactions", input, idempotencyKey);
   }
-  redeem(input: { accountId: string; rewardId: string }, idempotencyKey: string) {
+  redeem(input: { accountId: string; rewardId: string; purchaseAmount?: string; establishmentId?: string }, idempotencyKey: string) {
     return this.request<{ redemption: Record<string, unknown>; replayed: boolean }>("POST", "/v1/redemptions", input, idempotencyKey);
   }
 

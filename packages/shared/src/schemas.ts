@@ -73,7 +73,9 @@ export const programSchema = z
 export const updateProgramSchema = programSchema.partial().extend({ active: z.boolean().optional() });
 
 // --- Récompenses -----------------------------------------------------------
-export const rewardSchema = z.object({
+const rewardFields = z.object({
+  kind: z.enum(["GIFT", "PERCENTAGE", "FIXED"]).default("GIFT"),
+  value: amount.nullable().default(null),
   programId: z.uuid(),
   name: z.string().trim().min(2).max(80),
   description: z.string().max(500).default(""),
@@ -84,7 +86,24 @@ export const rewardSchema = z.object({
   availableUntil: z.iso.datetime().nullable().default(null),
   active: z.boolean().default(true),
 });
-export const updateRewardSchema = rewardSchema.omit({ programId: true }).partial();
+export const rewardSchema = rewardFields.superRefine((r, ctx) => {
+  if (r.kind !== "GIFT" && (!r.value || Number(r.value) <= 0 || (r.kind === "PERCENTAGE" && Number(r.value) > 100))) {
+    ctx.addIssue({ code: "custom", path: ["value"], message: r.kind === "PERCENTAGE" ? "Indiquez un pourcentage supérieur à 0 et inférieur ou égal à 100." : "Indiquez un montant supérieur à 0." });
+  }
+  if (r.availableFrom && r.availableUntil && r.availableFrom > r.availableUntil) ctx.addIssue({ code: "custom", path: ["availableUntil"], message: "La date de fin doit suivre la date de début." });
+});
+export const updateRewardSchema = z.object({
+  name: rewardFields.shape.name.optional(),
+  cost: rewardFields.shape.cost.optional(),
+  kind: rewardFields.shape.kind.removeDefault().optional(),
+  value: rewardFields.shape.value.removeDefault().optional(),
+  description: rewardFields.shape.description.removeDefault().optional(),
+  conditions: rewardFields.shape.conditions.removeDefault().optional(),
+  stock: rewardFields.shape.stock.removeDefault().optional(),
+  availableFrom: rewardFields.shape.availableFrom.removeDefault().optional(),
+  availableUntil: rewardFields.shape.availableUntil.removeDefault().optional(),
+  active: rewardFields.shape.active.removeDefault().optional(),
+});
 
 // --- Clients ---------------------------------------------------------------
 export const customerSchema = z
@@ -96,6 +115,8 @@ export const customerSchema = z
     externalRef: z.string().trim().max(120).nullable().default(null),
     marketingEmailConsent: z.boolean().default(false),
     marketingSmsConsent: z.boolean().default(false),
+    tags: z.array(z.string().trim().min(1).max(30)).default([]),
+    notes: z.string().trim().max(1000).nullable().default(null),
   })
   .refine((c) => c.phone || c.email, { message: "Téléphone ou email requis", path: ["phone"] });
 export const updateCustomerSchema = z.object({
@@ -106,6 +127,14 @@ export const updateCustomerSchema = z.object({
   externalRef: z.string().trim().max(120).nullable().optional(),
   marketingEmailConsent: z.boolean().optional(),
   marketingSmsConsent: z.boolean().optional(),
+  tags: z.array(z.string().trim().min(1).max(30)).optional(),
+  notes: z.string().trim().max(1000).nullable().optional(),
+});
+export const customerNoteSchema = z.object({
+  content: z.string().trim().min(1, "La note ne peut pas être vide").max(1000, "1 000 caractères maximum"),
+});
+export const updateCustomerTagsSchema = z.object({
+  tags: z.array(z.string().trim().min(1).max(30)).max(20),
 });
 export const importCustomersSchema = z.object({
   programId: z.uuid().nullable().default(null),
@@ -133,6 +162,7 @@ export const reverseSchema = z.object({
 export const redeemSchema = z.object({
   accountId: z.uuid(),
   rewardId: z.uuid(),
+  purchaseAmount: amount.nullable().default(null),
   establishmentId: z.uuid().nullable().default(null),
   idempotencyKey: z.string().min(8).max(120),
 });
@@ -150,6 +180,17 @@ export const publicEnrollSchema = z.object({
   website: z.string().max(0).optional(),
 });
 export const verifyOtpSchema = z.object({ code: z.string().regex(/^\d{6}$/) });
+export const contactMessageSchema = z.object({
+  name: z.string().trim().min(2, "Indiquez votre nom").max(100),
+  email: z.email("Email invalide").max(254),
+  phone: z.string().trim().max(32).nullable().default(null),
+  companyName: z.string().trim().max(120).nullable().default(null),
+  subject: z.string().trim().max(150).nullable().default(null),
+  message: z.string().trim().min(10, "Décrivez brièvement votre besoin (10 caractères min.)").max(4000),
+  source: z.enum(["WEBSITE", "DEMO_REQUEST", "PRICING_PAGE"]).default("WEBSITE"),
+  /** Champ piège anti-robot : doit rester vide. */
+  website: z.string().max(0).optional(),
+});
 
 // --- Équipe ----------------------------------------------------------------
 export const inviteMemberSchema = z.object({
@@ -208,7 +249,7 @@ export const commerceRefundSchema = z.object({
 // --- Facturation -----------------------------------------------------------
 export const checkoutSchema = z.object({
   planCode: z.string().min(2).max(40),
-  interval: z.enum(["MONTH", "YEAR"]),
+  interval: z.literal("YEAR"),
 });
 
 export const paginationSchema = z.object({
@@ -221,5 +262,6 @@ export type SignupInput = z.infer<typeof signupSchema>;
 export type ProgramInput = z.infer<typeof programSchema>;
 export type CustomerInput = z.infer<typeof customerSchema>;
 export type PublicEnrollInput = z.infer<typeof publicEnrollSchema>;
+export type ContactMessageInput = z.infer<typeof contactMessageSchema>;
 export type CommerceOrderPaidInput = z.infer<typeof commerceOrderPaidSchema>;
 export type CommerceRefundInput = z.infer<typeof commerceRefundSchema>;

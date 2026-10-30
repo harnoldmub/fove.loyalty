@@ -97,7 +97,8 @@ describe("Google Wallet configuré", () => {
     expect(verify("RSA-SHA256", Buffer.from(`${header}.${payload}`), publicKey, Buffer.from(signature, "base64url"))).toBe(true);
     const claims = JSON.parse(Buffer.from(payload, "base64url").toString());
     const account = await db.loyaltyAccount.findUniqueOrThrow({ where: { id: accountId } });
-    expect(claims.payload.loyaltyClasses[0].id).toBe(`3388000000012345678.fove_${program.id.replace(/-/g, "")}`);
+    expect(claims.payload.loyaltyClasses[0].id).toBe(`3388000000012345678.fove_digital_program_${program.id.replace(/-/g, "")}`);
+    expect(claims.payload.loyaltyObjects[0].id).toBe(`3388000000012345678.fove_digital_card_${accountId.replace(/-/g, "")}`);
     expect(claims.payload.loyaltyObjects[0].barcode.value).toBe(account.qrToken);
     expect(claims.exp - claims.iat).toBe(600);
     expect((await client.get("/api/app/wallet/status")).body.googleWallet).toBe(true);

@@ -127,7 +127,7 @@ export function WalletMessageDialog({ accountId }: { accountId: string }) {
           }}
         >
           {error && <ErrorNote>{error}</ErrorNote>}
-          <Field label="Titre">{(p) => <Input {...p} maxLength={60} value={f.title} onChange={(e) => setF({ ...f, title: e.target.value })} placeholder="Offre spéciale cette semaine" />}</Field>
+          <Field label="Titre">{(p) => <Input {...p} maxLength={60} value={f.title} onChange={(e) => setF({ ...f, title: e.target.value })} />}</Field>
           <Field label="Message" hint={`${f.body.length}/180`}>{(p) => <Textarea {...p} maxLength={180} value={f.body} onChange={(e) => setF({ ...f, body: e.target.value })} />}</Field>
           <Button type="submit" loading={busy} disabled={f.title.trim().length < 2 || f.body.trim().length < 2}>Envoyer la notification</Button>
         </form>
@@ -183,7 +183,7 @@ export function WalletBroadcast({ programId, programName }: { programId: string;
           </div>
         ) : (
           <form className="grid gap-4" onSubmit={(e) => { e.preventDefault(); setError(null); setStep("confirm"); }}>
-            <Field label="Titre">{(p) => <Input {...p} maxLength={60} value={f.title} onChange={(e) => setF({ ...f, title: e.target.value })} placeholder="Nouvelle carte de saison" />}</Field>
+            <Field label="Titre">{(p) => <Input {...p} maxLength={60} value={f.title} onChange={(e) => setF({ ...f, title: e.target.value })} />}</Field>
             <Field label="Message" hint={`${f.body.length}/180`}>{(p) => <Textarea {...p} maxLength={180} value={f.body} onChange={(e) => setF({ ...f, body: e.target.value })} />}</Field>
             <Button type="submit" disabled={f.title.trim().length < 2 || f.body.trim().length < 2}>Relire avant l’envoi</Button>
           </form>

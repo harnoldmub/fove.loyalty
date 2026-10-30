@@ -2,7 +2,7 @@ import { Body, Controller, Get, HttpCode, Param, Post, Query, Req, Res } from "@
 import { ApiTags } from "@nestjs/swagger";
 import { Throttle } from "@nestjs/throttler";
 import type { Request, Response } from "express";
-import { publicEnrollSchema, verifyOtpSchema } from "@fove/shared";
+import { publicEnrollSchema, verifyOtpSchema, contactMessageSchema } from "@fove/shared";
 import { z } from "zod";
 import { ZodPipe } from "../common/zod.pipe";
 import { notFound } from "../common/errors";
@@ -92,6 +92,14 @@ export class PublicController {
   @Throttle({ default: { limit: 3, ttl: 60_000 } })
   async resend(@Param("token") token: string) {
     await this.service.resendCode(token);
+  }
+
+  /** Formulaire de contact public (site commercial / demande de démo). */
+  @Post("contact")
+  @HttpCode(201)
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
+  contact(@Body(new ZodPipe(contactMessageSchema)) body: z.infer<typeof contactMessageSchema>, @Req() req: Request) {
+    return this.service.submitContact(body, req.ip ?? null);
   }
 
   private notFound(): never {

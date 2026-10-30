@@ -30,6 +30,18 @@ describe("facturation en mode simulé et quotas", () => {
     const sub = await db.subscription.findUniqueOrThrow({ where: { tenantId: o.tenantId }, include: { plan: true } });
     expect(sub.plan.code).toBe("premium");
     expect(sub.provider).toBe("MOCK");
+    expect(sub.interval).toBe("YEAR");
+  });
+
+  it("refuse une souscription mensuelle sans modifier l’abonnement", async () => {
+    const o = await ownerWithTenant(app);
+    await db.user.update({ where: { email: o.email }, data: { emailVerifiedAt: new Date() } });
+    const before = await db.subscription.findUniqueOrThrow({ where: { tenantId: o.tenantId } });
+    const res = await o.client.post("/api/app/billing/checkout", { planCode: "premium", interval: "MONTH" });
+    expect(res.status).toBe(400);
+    const after = await db.subscription.findUniqueOrThrow({ where: { tenantId: o.tenantId } });
+    expect(after.planId).toBe(before.planId);
+    expect(after.status).toBe("TRIALING");
   });
 
   it("un passage à une offre inférieure bloque les créations, jamais les cartes existantes", async () => {

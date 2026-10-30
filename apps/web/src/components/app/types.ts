@@ -1,4 +1,14 @@
+import type { CustomerSegmentResult } from "@fove/shared";
+
 export type Mode = "POINTS" | "STAMPS";
+
+export interface CustomerNote {
+  id: string;
+  authorName: string;
+  authorId?: string | null;
+  content: string;
+  createdAt: string;
+}
 
 export interface CustomerRow {
   id: string;
@@ -7,6 +17,12 @@ export interface CustomerRow {
   phone: string | null;
   email: string | null;
   externalRef: string | null;
+  tags?: string[];
+  notes?: string | null;
+  totalVisits?: number;
+  totalSpend?: string | number;
+  lastVisitAt?: string | null;
+  segment?: CustomerSegmentResult;
   createdAt: string;
   anonymizedAt: string | null;
   accounts: { id: string; programId: string; balance: number; cardNumber: string; status: string }[];
@@ -50,15 +66,30 @@ export interface Account {
   id: string;
   cardNumber: string;
   qrToken: string;
+  cardUrl?: string | null;
   status: "ACTIVE" | "BLOCKED" | "PENDING_VERIFICATION" | "CLOSED";
   balance: number;
   lifetimeEarned: number;
   lifetimeSpent: number;
   createdAt: string;
-  customer: { id: string; firstName: string; lastName: string; phone: string | null; email: string | null; anonymizedAt: string | null };
+  segment?: CustomerSegmentResult;
+  recentNotes?: CustomerNote[];
+  customer: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    phone: string | null;
+    email: string | null;
+    anonymizedAt: string | null;
+    tags?: string[];
+    notes?: string | null;
+    totalVisits?: number;
+    totalSpend?: string | number;
+    lastVisitAt?: string | null;
+  };
   program: Program;
   transactions: Transaction[];
-  rewards: { id: string; name: string; description: string; cost: number; stock: number | null; affordable: boolean }[];
+  rewards: { kind: "GIFT" | "PERCENTAGE" | "FIXED"; value: string | null; id: string; name: string; description: string; cost: number; stock: number | null; affordable: boolean }[];
 }
 
 export interface Establishment {

@@ -17,6 +17,7 @@ export interface WalletCardState {
   unit: "points" | "tampons";
   primaryColor: string;
   logoUrl: string | null;
+  rewardSummary?: string;
 }
 
 export interface WalletProvider {

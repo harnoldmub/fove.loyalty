@@ -1,4 +1,5 @@
 import type { Prisma } from "@fove/database";
+import { tenantInitials } from "@fove/shared";
 import { loadConfig } from "../config";
 import { cardNumber, decrypt, encrypt, randomToken, sha256 } from "../common/crypto";
 
@@ -28,17 +29,26 @@ export function readAccessToken(encrypted: string | null): string | null {
 }
 
 /**
- * Crée un compte de fidélité avec numéro lisible, QR personnel et lien de carte.
- * Le numéro tire 40 bits d'aléa : une collision ferait échouer la transaction,
- * qu'il suffit de rejouer.
+ * Crée un compte de fidélité avec numéro lisible personnalisé aux 2 initiales du restaurant/commerce,
+ * QR personnel et lien de carte.
  */
 export async function createCard(
   tx: Prisma.TransactionClient,
   data: { tenantId: string; programId: string; customerId: string; status: "ACTIVE" | "PENDING_VERIFICATION" },
+  tenantNameOrPrefix?: string,
 ): Promise<NewCard> {
+  let initials = tenantNameOrPrefix ? tenantInitials(tenantNameOrPrefix) : null;
+  if (!initials) {
+    const tenant = await tx.tenant.findUnique({
+      where: { id: data.tenantId },
+      select: { name: true },
+    });
+    initials = tenantInitials(tenant?.name);
+  }
+
   const { accessToken, accessTokenHash, accessTokenEncrypted } = newAccessToken();
   const account = await tx.loyaltyAccount.create({
-    data: { ...data, cardNumber: cardNumber(), qrToken: randomToken("fvq_", 18), accessTokenHash, accessTokenEncrypted },
+    data: { ...data, cardNumber: cardNumber(initials), qrToken: randomToken("fvq_", 18), accessTokenHash, accessTokenEncrypted },
   });
   return { accountId: account.id, accessToken };
 }

@@ -1,6 +1,7 @@
+import { CardsService } from "../cards/cards.service";
 import { Injectable } from "@nestjs/common";
 import type { OperationSource, Prisma } from "@fove/database";
-import { redeemSchema, rewardSchema, updateRewardSchema } from "@fove/shared";
+import { computeRewardDiscount, redeemSchema, rewardSchema, updateRewardSchema } from "@fove/shared";
 import type { z } from "zod";
 import { PrismaService } from "../common/prisma.service";
 import { AuditService } from "../common/audit.service";
@@ -17,6 +18,7 @@ export class RewardsService {
     private readonly ledger: LedgerService,
     private readonly audit: AuditService,
     private readonly webhooks: WebhooksService,
+    private readonly cards: CardsService,
   ) {}
 
   list(ctx: TenantContext, programId?: string) {
@@ -33,24 +35,32 @@ export class RewardsService {
     const reward = await this.prisma.client.reward.create({
       data: {
         ...input,
+        value: input.kind === "GIFT" ? null : input.value,
         tenantId: ctx.tenantId,
         availableFrom: input.availableFrom ? new Date(input.availableFrom) : null,
         availableUntil: input.availableUntil ? new Date(input.availableUntil) : null,
       },
     });
     await this.audit.forTenant(ctx, "reward.created", { type: "reward", id: reward.id });
+    await this.cards.refreshProgramWallet(ctx.tenantId, reward.programId);
     return reward;
   }
 
   async update(ctx: TenantContext, id: string, input: z.infer<typeof updateRewardSchema>) {
+    const current = await this.prisma.client.reward.findFirst({ where: { id, tenantId: ctx.tenantId, archivedAt: null } });
+    if (!current) throw notFound("Récompense");
+    const merged = rewardSchema.safeParse({ ...current, value: current.value?.toString() ?? null, availableFrom: current.availableFrom?.toISOString() ?? null, availableUntil: current.availableUntil?.toISOString() ?? null, ...input });
+    if (!merged.success) throw unprocessable("invalid_reward", merged.error.issues.map((i) => i.message).join(" "));
     const data: Prisma.RewardUpdateManyMutationInput = {
       ...input,
+      value: merged.data.kind === "GIFT" ? null : merged.data.value,
       availableFrom: input.availableFrom === undefined ? undefined : input.availableFrom ? new Date(input.availableFrom) : null,
       availableUntil: input.availableUntil === undefined ? undefined : input.availableUntil ? new Date(input.availableUntil) : null,
     };
     const { count } = await this.prisma.client.reward.updateMany({ where: { id, tenantId: ctx.tenantId, archivedAt: null }, data });
     if (count === 0) throw notFound("Récompense");
     await this.audit.forTenant(ctx, "reward.updated", { type: "reward", id }, { fields: Object.keys(input) });
+    await this.cards.refreshProgramWallet(ctx.tenantId, current.programId);
     return this.prisma.client.reward.findFirst({ where: { id, tenantId: ctx.tenantId } });
   }
 
@@ -62,6 +72,7 @@ export class RewardsService {
     });
     if (count === 0) throw notFound("Récompense");
     await this.audit.forTenant(ctx, "reward.archived", { type: "reward", id });
+    await this.cards.refreshProgramWallet(ctx.tenantId);
   }
 
   /**
@@ -90,6 +101,12 @@ export class RewardsService {
           where: { id: input.rewardId, tenantId: ctx.tenantId, programId: account.programId, archivedAt: null },
         });
         if (!reward) throw notFound("Récompense");
+        const program = await tx.loyaltyProgram.findUniqueOrThrow({ where: { id: account.programId } });
+        if (!program.active) throw unprocessable("program_inactive", "Programme désactivé");
+        if (input.establishmentId && !await tx.establishment.findFirst({ where: { id: input.establishmentId, tenantId: ctx.tenantId, active: true } })) throw notFound("Établissement");
+        let discountAmount: string | null;
+        try { discountAmount = computeRewardDiscount({ kind: reward.kind, value: reward.value?.toString() ?? null }, input.purchaseAmount); }
+        catch (error) { throw unprocessable("invalid_purchase", error instanceof Error ? error.message : "Montant invalide"); }
         const now = new Date();
         if (!reward.active) throw unprocessable("reward_inactive", "Récompense désactivée");
         if ((reward.availableFrom && reward.availableFrom > now) || (reward.availableUntil && reward.availableUntil < now)) {
@@ -118,6 +135,11 @@ export class RewardsService {
             accountId: account.id,
             rewardId: reward.id,
             rewardName: reward.name,
+            rewardKind: reward.kind,
+            rewardValue: reward.value,
+            purchaseAmount: reward.kind === "GIFT" ? null : input.purchaseAmount,
+            discountAmount,
+            currency: program.currency,
             cost: reward.cost,
             transactionId: transaction.id,
             idempotencyKey: input.idempotencyKey,
@@ -132,7 +154,10 @@ export class RewardsService {
         accountId: redemption.accountId,
         rewardId: redemption.rewardId,
         cost: redemption.cost,
+        discountAmount: redemption.discountAmount?.toString() ?? null,
+        currency: redemption.currency,
       });
+      this.cards.refreshWallet(ctx.tenantId, redemption.accountId);
       return { redemption, replayed: false };
     } catch (error) {
       if (isUniqueViolation(error)) return { redemption: await replay(), replayed: true };

@@ -98,7 +98,18 @@ export class LedgerService {
       throw unprocessable("insufficient_balance", "Solde insuffisant", { balance: account.balance, required: -input.delta });
     }
 
-    const account = await tx.loyaltyAccount.findUniqueOrThrow({ where: { id: input.accountId }, select: { balance: true } });
+    const account = await tx.loyaltyAccount.findUniqueOrThrow({ where: { id: input.accountId }, select: { balance: true, customerId: true } });
+    if (input.kind === "EARN") {
+      const amountVal = input.amount ? parseFloat(input.amount) : 0;
+      await tx.customer.update({
+        where: { id: account.customerId },
+        data: {
+          totalVisits: { increment: 1 },
+          lastVisitAt: new Date(),
+          ...(amountVal > 0 ? { totalSpend: { increment: amountVal } } : {}),
+        },
+      });
+    }
     const transaction = await tx.loyaltyTransaction.create({
       data: {
         tenantId: ctx.tenantId,

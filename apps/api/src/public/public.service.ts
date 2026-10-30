@@ -1,6 +1,6 @@
 import { Injectable } from "@nestjs/common";
 import QRCode from "qrcode";
-import { normalizeEmail, normalizePhone, publicEnrollSchema } from "@fove/shared";
+import { contactMessageSchema, normalizeEmail, normalizePhone, publicEnrollSchema } from "@fove/shared";
 import type { z } from "zod";
 import { PrismaService } from "../common/prisma.service";
 import { AuditService } from "../common/audit.service";
@@ -107,7 +107,7 @@ export class PublicService {
           },
           "QR_ENROLLMENT",
         );
-        const card = await createCard(tx, { tenantId, programId: program.id, customerId: customer.id, status });
+        const card = await createCard(tx, { tenantId, programId: program.id, customerId: customer.id, status }, link.tenant.name);
         await tx.enrollmentLink.update({ where: { id: link.id }, data: { enrollCount: { increment: 1 } } });
         return { card, customerId: customer.id };
       });
@@ -175,7 +175,7 @@ export class PublicService {
       this.prisma.client.reward.findMany({
         where: { tenantId: account.tenantId, programId: account.programId, active: true, archivedAt: null },
         orderBy: { cost: "asc" },
-        select: { id: true, name: true, description: true, conditions: true, cost: true },
+        select: { id: true, name: true, description: true, conditions: true, kind: true, value: true, cost: true },
       }),
       this.prisma.client.loyaltyTransaction.findMany({
         where: { tenantId: account.tenantId, accountId: account.id },
@@ -192,6 +192,7 @@ export class PublicService {
         name: account.program.name,
         mode: account.program.mode,
         stampsTarget: account.program.stampsTarget,
+        currency: account.program.currency,
         terms: account.program.terms,
         rule: this.cards.rule(account.program, rewards[0]?.name),
       },
@@ -260,6 +261,38 @@ export class PublicService {
       }),
     ]);
     return { status: "ACTIVE" };
+  }
+
+  /**
+   * Réception d'une demande de contact ou de démonstration depuis le site vitrine.
+   * Alimente le CRM interne (/admin/messages) et envoie une alerte email à l'équipe FOVE.
+   */
+  async submitContact(input: z.infer<typeof contactMessageSchema>, ip: string | null) {
+    if (input.website) throw badRequest("rejected", "Envoi refusé");
+    const msg = await this.prisma.client.contactMessage.create({
+      data: {
+        name: input.name,
+        email: normalizeEmail(input.email),
+        phone: input.phone,
+        companyName: input.companyName,
+        subject: input.subject,
+        message: input.message,
+        source: input.source,
+      },
+    });
+    await this.audit.log({
+      action: "public.contact_submitted",
+      targetType: "contact_message",
+      targetId: msg.id,
+      ip,
+      metadata: { subject: input.subject, companyName: input.companyName },
+    });
+    await this.email.send({
+      to: "contact@fove.digital",
+      subject: `[FOVE Contact] ${input.subject ?? "Demande"} — ${input.name}${input.companyName ? ` (${input.companyName})` : ""}`,
+      text: `Nouveau message reçu sur fove.digital :\n\nNom : ${input.name}\nEmail : ${input.email}\nTéléphone : ${input.phone ?? "Non renseigné"}\nEntreprise : ${input.companyName ?? "Non renseignée"}\nSujet : ${input.subject ?? "Demande d'information"}\n\nMessage :\n${input.message}\n\nConsultez et traitez cette demande dans l'espace Super-Admin : /admin/messages`,
+    });
+    return { id: msg.id, status: msg.status };
   }
 }
 

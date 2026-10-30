@@ -1,10 +1,12 @@
 import { Injectable } from "@nestjs/common";
 import type { Prisma } from "@fove/database";
 import { z } from "zod";
+import { computeCustomerSegment } from "@fove/shared";
 import { PrismaService } from "../common/prisma.service";
 import { AuditService } from "../common/audit.service";
 import { badRequest, notFound } from "../common/errors";
 import type { AuthState } from "../common/context";
+import { readAccessToken } from "../loyalty/cards";
 
 export const updatePlanSchema = z.object({
   name: z.string().min(2).max(40).optional(),
@@ -29,6 +31,11 @@ export const updatePlanSchema = z.object({
 export const supportAccessSchema = z.object({
   reason: z.string().trim().min(10).max(300),
   minutes: z.int().min(5).max(120).default(30),
+});
+
+export const updateMessageSchema = z.object({
+  status: z.enum(["NEW", "IN_PROGRESS", "CONTACTED", "ARCHIVED"]).optional(),
+  notes: z.string().trim().max(2000).nullable().optional(),
 });
 
 /** Administration FOVE (Dizayna). Chaque action sensible est auditée. */
@@ -93,8 +100,103 @@ export class AdminService {
       },
     });
     if (!tenant) throw notFound("Entreprise");
-    const audit = await this.prisma.client.auditLog.findMany({ where: { tenantId: id }, orderBy: { createdAt: "desc" }, take: 50 });
-    return { ...tenant, audit };
+
+    const [audit, rawCustomers] = await Promise.all([
+      this.prisma.client.auditLog.findMany({ where: { tenantId: id }, orderBy: { createdAt: "desc" }, take: 50 }),
+      this.prisma.client.customer.findMany({
+        where: { tenantId: id },
+        orderBy: { createdAt: "desc" },
+        take: 50,
+        include: {
+          accounts: {
+            select: {
+              id: true,
+              cardNumber: true,
+              balance: true,
+              status: true,
+              accessTokenEncrypted: true,
+              program: { select: { name: true, mode: true, stampsTarget: true } },
+            },
+          },
+        },
+      }),
+    ]);
+
+    const customers = rawCustomers.map((c) => ({
+      ...c,
+      segment: computeCustomerSegment({
+        totalVisits: c.totalVisits,
+        totalSpend: c.totalSpend ? Number(c.totalSpend) : 0,
+        lastVisitAt: c.lastVisitAt,
+        createdAt: c.createdAt,
+      }),
+      accounts: c.accounts.map((a) => ({
+        ...a,
+        accessToken: readAccessToken(a.accessTokenEncrypted),
+      })),
+    }));
+
+    return { ...tenant, audit, customers };
+  }
+
+  listMessages(status?: string) {
+    const where: Prisma.ContactMessageWhereInput = {};
+    if (status && status !== "ALL") where.status = status as Prisma.ContactMessageWhereInput["status"];
+    return this.prisma.client.contactMessage.findMany({
+      where,
+      orderBy: { createdAt: "desc" },
+    });
+  }
+
+  async updateMessage(id: string, data: z.infer<typeof updateMessageSchema>) {
+    return this.prisma.client.contactMessage.update({
+      where: { id },
+      data,
+    });
+  }
+
+  async listAllCustomers(q?: string) {
+    const where: Prisma.CustomerWhereInput = {};
+    if (q) {
+      where.OR = [
+        { firstName: { contains: q, mode: "insensitive" } },
+        { lastName: { contains: q, mode: "insensitive" } },
+        { phone: { contains: q } },
+        { email: { contains: q.toLowerCase() } },
+        { tenant: { name: { contains: q, mode: "insensitive" } } },
+      ];
+    }
+    const rows = await this.prisma.client.customer.findMany({
+      where,
+      orderBy: { createdAt: "desc" },
+      take: 100,
+      include: {
+        tenant: { select: { id: true, name: true, slug: true } },
+        accounts: {
+          select: {
+            id: true,
+            cardNumber: true,
+            balance: true,
+            status: true,
+            accessTokenEncrypted: true,
+            program: { select: { name: true, mode: true, stampsTarget: true } },
+          },
+        },
+      },
+    });
+    return rows.map((c) => ({
+      ...c,
+      segment: computeCustomerSegment({
+        totalVisits: c.totalVisits,
+        totalSpend: c.totalSpend ? Number(c.totalSpend) : 0,
+        lastVisitAt: c.lastVisitAt,
+        createdAt: c.createdAt,
+      }),
+      accounts: c.accounts.map((a) => ({
+        ...a,
+        accessToken: readAccessToken(a.accessTokenEncrypted),
+      })),
+    }));
   }
 
   async setStatus(auth: AuthState, id: string, status: "ACTIVE" | "SUSPENDED", reason: string) {

@@ -1,3 +1,4 @@
+import { rewardValueLabel } from "@fove/shared";
 import { Injectable, Logger } from "@nestjs/common";
 import { loadConfig } from "../config";
 import { PrismaService } from "../common/prisma.service";
@@ -85,6 +86,7 @@ export class CardsService {
   async walletState(accountId: string, tenantId: string): Promise<WalletCardState> {
     const account = await this.load({ id: accountId, tenantId });
     if (!account) throw notFound("Carte");
+    const rewards = await this.prisma.client.reward.findMany({ where: { tenantId, programId: account.programId, active: true, archivedAt: null }, orderBy: { cost: "asc" }, take: 6 });
     const s = account.tenant.settings;
     return {
       accountId: account.id,
@@ -99,7 +101,20 @@ export class CardsService {
       unit: account.program.mode === "STAMPS" ? "tampons" : "points",
       primaryColor: /^#[0-9a-fA-F]{6}$/.test(s?.primaryColor ?? "") ? s!.primaryColor : "#2C55F5",
       logoUrl: s?.logoUrl ?? null,
+      rewardSummary: rewards.map((r) => `${r.name}${r.kind === "GIFT" ? "" : ` : ${rewardValueLabel({ kind: r.kind, value: r.value?.toString() ?? null }, account.program.currency)}`} — ${r.cost} ${account.program.mode === "STAMPS" ? "tampons" : "points"}`).join("\n"),
     };
+  }
+
+  async refreshProgramWallet(tenantId: string, programId?: string): Promise<void> {
+    if (!this.wallet.isConfigured()) return;
+    const programs = await this.prisma.client.loyaltyProgram.findMany({ where: { tenantId, ...(programId ? { id: programId } : {}) }, select: { id: true } });
+    for (const program of programs) {
+      const account = await this.prisma.client.loyaltyAccount.findFirst({ where: { tenantId, programId: program.id, status: "ACTIVE" }, select: { id: true } });
+      if (account) {
+        try { await this.wallet.updateProgram(await this.walletState(account.id, tenantId)); }
+        catch { this.logger.warn("Synchronisation du programme Wallet différée"); }
+      }
+    }
   }
 
   /** Fichier de la carte depuis son lien public. */

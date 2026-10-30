@@ -14,6 +14,7 @@ interface Plan {
   name: string;
   description: string;
   priceMonthlyCents: number;
+  currency: string;
   priceYearlyCents: number;
   stripePriceMonthlyId: string | null;
   stripePriceYearlyId: string | null;
@@ -40,11 +41,10 @@ function PlanEditor({ plan }: { plan: Plan }) {
       </div>
       <Field label="Nom">{(f) => <Input {...f} value={p.name} onChange={(e) => setP({ ...p, name: e.target.value })} />}</Field>
       <Field label="Description">{(f) => <Input {...f} value={p.description} onChange={(e) => setP({ ...p, description: e.target.value })} />}</Field>
-      <div className="grid grid-cols-2 gap-3">
-        <Field label="Mensuel (centimes)">{(f) => <Input {...f} type="number" value={p.priceMonthlyCents} onChange={(e) => setP({ ...p, priceMonthlyCents: Number(e.target.value) })} />}</Field>
+      <p className="text-sm text-ink-2">Nouvelles souscriptions annuelles · {p.currency}. Les tarifs mensuels existants sont conservés pour l’historique.</p>
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <Field label="Annuel (centimes)">{(f) => <Input {...f} type="number" value={p.priceYearlyCents} onChange={(e) => setP({ ...p, priceYearlyCents: Number(e.target.value) })} />}</Field>
-        <Field label="Prix Stripe mensuel">{(f) => <Input {...f} value={p.stripePriceMonthlyId ?? ""} onChange={(e) => setP({ ...p, stripePriceMonthlyId: e.target.value || null })} placeholder="price_…" />}</Field>
-        <Field label="Prix Stripe annuel">{(f) => <Input {...f} value={p.stripePriceYearlyId ?? ""} onChange={(e) => setP({ ...p, stripePriceYearlyId: e.target.value || null })} placeholder="price_…" />}</Field>
+        <Field label="Prix Stripe annuel">{(f) => <Input {...f} value={p.stripePriceYearlyId ?? ""} onChange={(e) => setP({ ...p, stripePriceYearlyId: e.target.value || null })} />}</Field>
       </div>
       <Field label="Jours d’essai">{(f) => <Input {...f} type="number" value={p.trialDays} onChange={(e) => setP({ ...p, trialDays: Number(e.target.value) })} />}</Field>
       <fieldset className="grid grid-cols-2 gap-3">

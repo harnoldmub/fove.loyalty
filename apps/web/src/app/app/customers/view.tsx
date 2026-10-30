@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useInfiniteQuery, useQuery, useQueryClient } from "@tanstack/react-query";
 import { FileUp, Search, UserPlus, Users } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { useCan } from "@/components/app/me-context";
 import type { CustomerRow, Page, Program } from "@/components/app/types";
@@ -175,7 +175,12 @@ export function CustomersView() {
     initialPageParam: "",
     getNextPageParam: (last) => last.nextCursor ?? undefined,
   });
-  const rows = list.data?.pages.flatMap((p) => p.data) ?? [];
+  const [selectedSegment, setSelectedSegment] = useState<string>("ALL");
+  const rows: CustomerRow[] = useMemo(() => {
+    const listRows = list.data?.pages.flatMap((p) => p.data) ?? [];
+    if (selectedSegment === "ALL") return listRows;
+    return listRows.filter((r) => r.segment?.segment === selectedSegment);
+  }, [list.data, selectedSegment]);
   const programName = (id: string) => programs.find((p) => p.id === id)?.name ?? "";
 
   return (
@@ -198,16 +203,41 @@ export function CustomersView() {
           </>
         }
       />
-      <div className="relative mb-4">
-        <Search className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-ink-3" aria-hidden />
-        <Input type="search" placeholder="Rechercher un client" aria-label="Rechercher un client" className="pl-10" value={q} onChange={(e) => setQ(e.target.value)} />
+      <div className="flex flex-col gap-3 mb-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="relative flex-1">
+          <Search className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-ink-3" aria-hidden />
+          <Input type="search" aria-label="Rechercher un client" className="pl-10" value={q} onChange={(e) => setQ(e.target.value)} />
+        </div>
+        <div className="flex flex-wrap gap-1 text-xs">
+          {[
+            { id: "ALL", label: "Tous" },
+            { id: "VIP", label: "🌟 VIP" },
+            { id: "REGULAR", label: "🟢 Actifs" },
+            { id: "AT_RISK", label: "⚠️ En risque" },
+            { id: "DORMANT", label: "💤 Dormants" },
+            { id: "NEW", label: "🆕 Nouveaux" },
+          ].map((s) => (
+            <button
+              key={s.id}
+              type="button"
+              onClick={() => setSelectedSegment(s.id)}
+              className={`rounded-full px-2.5 py-1 transition-colors ${
+                selectedSegment === s.id
+                  ? "bg-ink text-paper font-medium"
+                  : "bg-surface hover:bg-surface-2 text-ink-2"
+              }`}
+            >
+              {s.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {list.isLoading ? (
         <Skeleton className="h-64" />
       ) : rows.length === 0 ? (
-        <EmptyState icon={<Users />} title={query ? "Aucun client trouvé" : "Aucun client"} action={canWrite && !query ? <Button onClick={() => setCreating(true)}>Ajouter un client</Button> : undefined}>
-          {query ? "Vérifiez l’orthographe ou cherchez par téléphone." : "Les clients inscrits par QR code apparaîtront ici automatiquement."}
+        <EmptyState icon={<Users />} title={query || selectedSegment !== "ALL" ? "Aucun client dans ce filtre" : "Aucun client"} action={canWrite && !query ? <Button onClick={() => setCreating(true)}>Ajouter un client</Button> : undefined}>
+          {query || selectedSegment !== "ALL" ? "Essayez de modifier votre recherche ou de sélectionner « Tous »." : "Les clients inscrits par QR code apparaîtront ici automatiquement."}
         </EmptyState>
       ) : (
         <Panel className="overflow-hidden">
@@ -217,7 +247,29 @@ export function CustomersView() {
                 <Link href={`/app/customers/${c.id}`} className="flex items-center gap-4 px-4 py-3.5 hover:bg-surface-2 sm:px-5">
                   <span className="grid size-10 shrink-0 place-items-center rounded-full bg-cobalt-soft font-display font-semibold text-cobalt">{c.firstName.slice(0, 1).toUpperCase()}</span>
                   <span className="min-w-0 flex-1">
-                    <span className="block truncate font-medium">{c.firstName} {c.lastName}</span>
+                    <span className="flex flex-wrap items-center gap-2">
+                      <span className="font-medium text-ink">{c.firstName} {c.lastName}</span>
+                      {c.segment && (
+                        <span
+                          className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${
+                            c.segment.segment === "VIP"
+                              ? "bg-cobalt/15 text-cobalt"
+                              : c.segment.segment === "AT_RISK"
+                              ? "bg-amber-500/15 text-amber-700 dark:text-amber-400"
+                              : c.segment.segment === "NEW"
+                              ? "bg-mint/15 text-mint"
+                              : "bg-surface text-ink-3"
+                          }`}
+                        >
+                          {c.segment.label}
+                        </span>
+                      )}
+                      {c.tags?.map((t) => (
+                        <span key={t} className="rounded-sm bg-subtle px-1.5 py-0.2 text-[10px] text-ink-3">
+                          #{t}
+                        </span>
+                      ))}
+                    </span>
                     <span className="block truncate text-sm text-ink-3">{c.phone ?? c.email ?? "Sans contact"} · depuis le {formatDate(c.createdAt)}</span>
                   </span>
                   <span className="hidden text-right text-sm sm:block">

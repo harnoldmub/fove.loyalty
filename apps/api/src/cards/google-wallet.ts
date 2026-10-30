@@ -19,8 +19,8 @@ export class WalletError extends AppError {
 }
 
 /**
- * Google Wallet (Android). Une classe par programme (`<émetteur>.fove_<programme>`),
- * un objet par carte (`<émetteur>.<carte>`). La clé privée reste sur le serveur :
+ * Google Wallet (Android). Une classe par programme (`<émetteur>.fove_digital_program_<programme>`),
+ * un objet par carte (`<émetteur>.fove_digital_card_<carte>`). La clé privée reste sur le serveur :
  * le client reçoit seulement un lien « Save to Google Wallet » signé, valable 10 min.
  * La classe est déclarée dans le JWT : Google la crée au premier ajout.
  */
@@ -54,11 +54,11 @@ export class GoogleWalletProvider implements WalletProvider {
   }
 
   classId(programId: string) {
-    return `${loadConfig().GOOGLE_WALLET_ISSUER_ID}.fove_${programId.replace(/-/g, "")}`;
+    return `${loadConfig().GOOGLE_WALLET_ISSUER_ID}.fove_digital_program_${programId.replace(/-/g, "")}`;
   }
 
   objectId(accountId: string) {
-    return `${loadConfig().GOOGLE_WALLET_ISSUER_ID}.${accountId.replace(/-/g, "")}`;
+    return `${loadConfig().GOOGLE_WALLET_ISSUER_ID}.fove_digital_card_${accountId.replace(/-/g, "")}`;
   }
 
   private loyaltyClass(card: WalletCardState) {
@@ -70,6 +70,7 @@ export class GoogleWalletProvider implements WalletProvider {
       programLogo: { sourceUri: { uri: logo } },
       hexBackgroundColor: card.primaryColor,
       reviewStatus: "UNDER_REVIEW",
+      textModulesData: card.rewardSummary ? [{ id: "fove_rewards", header: "Récompenses", body: card.rewardSummary }] : [],
     };
   }
 
@@ -123,6 +124,20 @@ export class GoogleWalletProvider implements WalletProvider {
     if (!res.ok || !data.access_token) throw new WalletError("Connexion à Google Wallet impossible.", HttpStatus.BAD_GATEWAY);
     this.token = { value: data.access_token, expiresAt: Date.now() + (data.expires_in ?? 3600) * 1000 };
     return data.access_token;
+  }
+
+  /** Une seule classe FOVE est mise à jour ; aucun objet d'une autre application n'est ciblé. */
+  async updateProgram(card: WalletCardState): Promise<void> {
+    if (!this.isConfigured()) return;
+    try {
+      const token = await this.accessToken();
+      const { id: _id, reviewStatus: _review, ...data } = this.loyaltyClass(card);
+      const res = await fetch(`${WALLET_API}/loyaltyClass/${encodeURIComponent(this.classId(card.programId))}`, {
+        method: "PATCH", headers: { authorization: `Bearer ${token}`, "content-type": "application/json" },
+        body: JSON.stringify(data), signal: AbortSignal.timeout(10_000),
+      });
+      if (!res.ok && res.status !== 404) this.logger.warn(`Mise à jour du programme Wallet : HTTP ${res.status}`);
+    } catch { this.logger.warn("Mise à jour Google Wallet temporairement indisponible"); }
   }
 
   /** Met à jour le solde affiché sur la carte enregistrée (sans effet si le client ne l'a pas ajoutée). */

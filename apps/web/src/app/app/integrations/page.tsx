@@ -103,7 +103,7 @@ function KeyDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (o: bo
               )}
             </Field>
             <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="Nom">{(p) => <Input {...p} value={name} onChange={(e) => setName(e.target.value)} placeholder="Boutique en ligne" />}</Field>
+              <Field label="Nom">{(p) => <Input {...p} value={name} onChange={(e) => setName(e.target.value)} />}</Field>
               <Field label="Environnement">
                 {(p) => (
                   <Select {...p} value={env} onChange={(e) => setEnv(e.target.value as "TEST" | "LIVE")}>
@@ -163,7 +163,7 @@ function WebhookDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (o
             }}
           >
             {error && <ErrorNote>{error}</ErrorNote>}
-            <Field label="URL (HTTPS)">{(p) => <Input {...p} type="url" value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://maboutique.com/webhooks/fove" />}</Field>
+            <Field label="URL (HTTPS)">{(p) => <Input {...p} type="url" value={url} onChange={(e) => setUrl(e.target.value)} />}</Field>
             <fieldset className="grid gap-2">
               <legend className="mb-1 text-sm font-medium">Événements</legend>
               {WEBHOOK_EVENTS.map((ev) => (

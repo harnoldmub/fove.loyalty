@@ -10,6 +10,7 @@ import { loginSchema, password as passwordRule } from "@fove/shared";
 import { Button } from "@/components/ui/button";
 import { Checkbox, Field, Input } from "@/components/ui/field";
 import { ErrorNote } from "@/components/ui/misc";
+import { PrivacyDialog, TermsDialog } from "@/components/privacy-dialog";
 import { api, ApiError, errorMessage } from "@/lib/api";
 
 function Heading({ title, children }: { title: string; children?: React.ReactNode }) {
@@ -99,7 +100,7 @@ export function SignupForm() {
             {...form.register("acceptTerms")}
             label={
               <>
-                J’accepte les conditions d’utilisation et la <Link className="text-cobalt underline" href="/confidentialite">politique de données</Link>.
+                J’accepte les <TermsDialog /> et la <PrivacyDialog />.
               </>
             }
           />

@@ -27,7 +27,7 @@ export async function Pricing() {
   if (!plans?.length) {
     return <p className="rounded-md bg-surface px-4 py-3 text-ink-2 shadow-1">Les tarifs sont momentanément indisponibles. Réessayez dans un instant.</p>;
   }
-  const featured = plans.length >= 2 ? plans[1]!.code : null;
+  const featured = "business";
   return (
     <div className="grid gap-4 lg:grid-cols-3">
       {plans.map((plan) => (
@@ -37,20 +37,21 @@ export async function Pricing() {
         >
           <div className="flex items-baseline justify-between gap-3">
             <h3 className="font-display text-xl font-semibold">{plan.name}</h3>
-            {plan.code === featured && <span className="text-sm font-medium text-cobalt">Le plus choisi</span>}
+            {plan.code === featured && <span className="text-sm font-medium text-cobalt">Recommandé</span>}
           </div>
           <p className="mt-1 min-h-12 text-sm text-ink-2">{plan.description}</p>
           <p className="mt-5 font-display text-4xl font-semibold tabular">
-            {formatPrice(plan.priceMonthlyCents, plan.currency)}
-            <span className="text-base font-normal text-ink-3"> /mois</span>
+            {formatPrice(plan.priceYearlyCents, plan.currency)}
+            <span className="text-base font-normal text-ink-3"> /an</span>
           </p>
-          <p className="text-sm text-ink-3">ou {formatPrice(plan.priceYearlyCents, plan.currency)} par an</p>
+          <p className="text-sm text-ink-3">Paiement annuel à l’avance · dollars US</p>
           <ul className="mt-6 grid gap-2.5 text-[0.95rem]">
             {[
               limit(plan.limits.customers, "client", "clients"),
               limit(plan.limits.establishments, "établissement", "établissements"),
               limit(plan.limits.staff, "collaborateur", "collaborateurs"),
-              "Cartes numériques et QR codes",
+              "Cartes de fidélité et QR d’inscription",
+              "Scan et récompenses",
               plan.features.widget && "Widget pour votre site",
               plan.features.api && "API et webhooks",
               plan.features.integrations && "Connexion boutique en ligne",

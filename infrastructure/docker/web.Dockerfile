@@ -5,6 +5,8 @@ WORKDIR /app
 COPY . .
 # Variables lues au build (URL publique du site pour les métadonnées de partage).
 ARG NEXT_PUBLIC_SITE_URL=https://fove.digital
+ARG API_URL=http://fove-api.railway.internal:5291
+ENV API_URL=$API_URL
 ENV NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL NEXT_TELEMETRY_DISABLED=1
 RUN pnpm install --frozen-lockfile \
  && pnpm --filter @fove/widget build \
