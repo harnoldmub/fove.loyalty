@@ -6,13 +6,13 @@
 
 | Service | Source | Domaine cible | Coût |
 |---|---|---|---|
-| `fove-web` | `infrastructure/railway/web.railway.json` | `fove.digital`, `app.fove.digital`, `*.fove.digital` | 1 instance |
+| `fove-web` | `infrastructure/railway/web.railway.json` | `fove.digital`, `app.fove.digital` | 1 instance |
 | `fove-api` | `infrastructure/railway/api.railway.json` | `api.fove.digital` | 1 instance |
 | `fove-postgres` | Base Neon (URL dans `.env` de production) ou PostgreSQL Railway | — | selon offre |
 
 Pas de worker : la tâche planifiée `.github/workflows/cron.yml` appelle `POST /api/jobs/run` toutes les 5 minutes (gratuit). Alternative Railway : un service cron `curl` (facturé à l'exécution).
 
-Les domaines `fove.digital`, `app.fove.digital` et le wildcard `*.fove.digital` (sous-domaines commerçants comme `dizayna.fove.digital`) pointent sur le même service web ; le site commercial, l'application et les pages publiques d'inscription fidélité partagent le même build.
+Les deux domaines `fove.digital` et `app.fove.digital` pointent sur le même service web ; le site commercial, l'application et les pages publiques d'inscription (`app.fove.digital/<slug>`) partagent le même build.
 
 ## Variables d'environnement
 

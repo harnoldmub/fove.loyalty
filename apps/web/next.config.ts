@@ -11,35 +11,8 @@ const nextConfig: NextConfig = {
   transpilePackages: ["@fove/shared"],
   // L'API est servie sous le même domaine que l'application : les cookies de
   // session restent first-party et aucune requête cross-site n'est nécessaire.
-  // Les sous-domaines commerçants (<slug>.fove.digital) ouvrent directement la page d'inscription fidélité.
   async rewrites() {
-    return {
-      beforeFiles: [
-        {
-          source: "/",
-          has: [
-            {
-              type: "host",
-              value: "(?<slug>(?!www$|app$|api$|admin$)[a-z0-9-]+)\\.fove\\.digital",
-            },
-          ],
-          destination: "/join/:slug",
-        },
-        {
-          source: "/",
-          has: [
-            {
-              type: "host",
-              value: "(?<slug>(?!www$|app$|api$|admin$)[a-z0-9-]+)\\.localhost(?::\\d+)?",
-            },
-          ],
-          destination: "/join/:slug",
-        },
-      ],
-      afterFiles: [
-        { source: "/api/:path*", destination: `${apiUrl}/api/:path*` },
-      ],
-    };
+    return [{ source: "/api/:path*", destination: `${apiUrl}/api/:path*` }];
   },
   async headers() {
     return [

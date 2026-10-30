@@ -23,7 +23,7 @@ export default function SettingsPage() {
     <>
       <PageHeader
         title="Paramètres"
-        description={data ? `Sous-domaine de votre page : ${data.slug}.fove.digital` : undefined}
+        description={data ? `Adresse de votre page : app.fove.digital/${data.slug}` : undefined}
         actions={
           data ? (
             <Button asChild variant="secondary" size="sm">
@@ -103,11 +103,14 @@ function SettingsForm({ data }: { data: Tenant }) {
           <fieldset disabled={!canWrite} className="grid gap-4">
             <Field label="Nom du commerce">{(p) => <Input {...p} value={f.name ?? ""} onChange={set("name")} />}</Field>
             <Field
-              label="Sous-domaine de votre page"
-              hint={`Accessible sur https://${f.slug || "votre-commerce"}.fove.digital et sur fove.digital/${f.slug || "votre-commerce"}`}
+              label="Adresse de votre page"
+              hint={`app.fove.digital/${f.slug || "votre-commerce"}`}
             >
               {(p) => (
                 <div className="flex items-stretch overflow-hidden rounded-[var(--radius)] bg-surface shadow-1 ring-1 ring-line focus-within:ring-2 focus-within:ring-cobalt">
+                  <span className="flex select-none items-center border-r border-line bg-surface-2 px-3.5 text-sm font-medium text-ink-2">
+                    app.fove.digital/
+                  </span>
                   <Input
                     {...p}
                     value={f.slug ?? ""}
@@ -123,9 +126,6 @@ function SettingsForm({ data }: { data: Tenant }) {
                     }
                     className="rounded-none border-0 shadow-none ring-0 focus-visible:ring-0"
                   />
-                  <span className="flex select-none items-center border-l border-line bg-surface-2 px-3.5 text-sm font-medium text-ink-2">
-                    .fove.digital
-                  </span>
                 </div>
               )}
             </Field>
