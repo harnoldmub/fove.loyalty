@@ -4,30 +4,23 @@ import { LoaderCircle } from "lucide-react";
 import { useState, useSyncExternalStore } from "react";
 import { api, errorMessage } from "@/lib/api";
 
-/** Logo Google Wallet : cartes vert, jaune, rouge glissées dans la poche bleue. */
-function WalletMark() {
-  return (
-    <svg viewBox="0 0 40 32" width="34" height="27" aria-hidden>
-      <rect x="2" y="0" width="36" height="22" rx="5" fill="#34A853" />
-      <rect x="2" y="5" width="36" height="22" rx="5" fill="#FBBC04" />
-      <rect x="2" y="10" width="36" height="22" rx="5" fill="#EA4335" />
-      <path d="M2 16h11.5c2.4 0 4.2 1.2 5.4 3.1L20 21l1.1-1.9c1.2-1.9 3-3.1 5.4-3.1H38v11a5 5 0 0 1-5 5H7a5 5 0 0 1-5-5z" fill="#4285F4" />
-    </svg>
-  );
-}
-
 const noop = () => () => undefined;
 // Google Wallet n'existe pas sur iPhone ni iPad : le bouton y est masqué.
 const isApple = () => /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
 
-/** Badge « Ajouter à Google Wallet » dans le style officiel. */
-export function GoogleWalletButton({ token }: { token: string }) {
+/**
+ * Badge officiel « Ajouter à Google Wallet » conforme aux directives de marque Google :
+ * https://developers.google.com/wallet/generic/resources/brand-guidelines
+ */
+export function GoogleWalletButton({ token, className = "" }: { token: string; className?: string }) {
   const apple = useSyncExternalStore(noop, isApple, () => true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
   if (apple) return null;
+
   return (
-    <div>
+    <div className={className}>
       <button
         type="button"
         disabled={loading}
@@ -44,13 +37,20 @@ export function GoogleWalletButton({ token }: { token: string }) {
             setLoading(false);
           }
         }}
-        className="inline-flex h-14 items-center gap-3 rounded-full border border-[#747775] bg-[#1f1f1f] pl-4 pr-6 text-left text-white transition-[background-color,transform] hover:bg-black active:scale-[0.97] disabled:opacity-80"
+        className="group relative inline-flex h-[44px] shrink-0 items-center transition-opacity hover:opacity-90 active:scale-[0.98] disabled:opacity-80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black"
       >
-        <span className="grid w-[34px] place-items-center">{loading ? <LoaderCircle className="size-6 animate-spin" aria-hidden /> : <WalletMark />}</span>
-        <span aria-hidden className="leading-none">
-          <span className="block text-[0.8125rem] font-medium">Ajouter à</span>
-          <span className="mt-1 block text-[1.1875rem] font-medium tracking-[-0.01em]">Google Wallet</span>
-        </span>
+        <img
+          src="/wallet/add-to-google-wallet.svg"
+          alt="Ajouter à Google Wallet"
+          height={44}
+          className="h-[44px] w-auto shrink-0 select-none"
+          loading="eager"
+        />
+        {loading && (
+          <span className="absolute inset-0 flex items-center justify-center rounded-full bg-black/60 backdrop-blur-xs" aria-hidden="true">
+            <LoaderCircle className="size-5 animate-spin text-white" aria-hidden />
+          </span>
+        )}
       </button>
       {error && <p role="alert" className="mt-2 text-sm text-danger">{error}</p>}
     </div>
