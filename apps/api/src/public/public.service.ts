@@ -9,6 +9,7 @@ import { badRequest, conflict, isUniqueViolation, notFound } from "../common/err
 import type { TenantContext } from "../common/context";
 import { PlanService } from "../billing/plan.service";
 import { EmailService } from "../notifications/email.service";
+import { WhatsAppService } from "../notifications/whatsapp.service";
 import { WebhooksService } from "../notifications/webhooks.service";
 import { CustomersService, buildIdentities, findByIdentities } from "../customers/customers.service";
 import { createCard } from "../loyalty/cards";
@@ -32,6 +33,7 @@ export class PublicService {
     private readonly customers: CustomersService,
     private readonly plans: PlanService,
     private readonly email: EmailService,
+    private readonly whatsapp: WhatsAppService,
     private readonly audit: AuditService,
     private readonly webhooks: WebhooksService,
     private readonly cards: CardsService,
@@ -174,21 +176,29 @@ export class PublicService {
     if (!lookup) return;
     const identity = await this.prisma.client.customerIdentity.findUnique({
       where: { tenantId_kind_value: { tenantId: link.tenantId, kind: isEmail ? "EMAIL" : "PHONE", value: lookup } },
-      include: { customer: { select: { email: true, firstName: true } } },
+      include: { customer: { select: { email: true, phone: true, firstName: true } } },
     });
-    const email = identity?.customer.email;
-    if (!identity || !email) return;
+    if (!identity) return;
+    const email = identity.customer.email;
+    const phone = identity.customer.phone;
+    if (!email && !phone) return;
     const account = await this.prisma.client.loyaltyAccount.findFirst({
       where: { tenantId: link.tenantId, programId: link.programId, customerId: identity.customerId, status: { not: "CLOSED" } },
     });
     if (!account) return;
     const url = await this.cards.linkFor(account.id, link.tenantId);
+    const text = `${identity.customer.firstName ? `Bonjour ${identity.customer.firstName},\n\n` : ""}Voici le lien de votre carte ${link.program.name} :\n${url}\n\nAjoutez-la à l'écran d'accueil de votre téléphone ou téléchargez-la en image pour la présenter à chaque passage.`;
     await this.audit.log({ tenantId: link.tenantId, action: "account.link_emailed", targetType: "account", targetId: account.id });
-    await this.email.send({
-      to: email,
-      subject: `Votre carte de fidélité ${link.tenant.name}`,
-      text: `${identity.customer.firstName ? `Bonjour ${identity.customer.firstName},\n\n` : ""}Voici le lien de votre carte ${link.program.name} :\n${url}\n\nAjoutez-la à l'écran d'accueil de votre téléphone ou téléchargez-la en image pour la présenter à chaque passage.`,
-    });
+    if (email) {
+      await this.email.send({
+        to: email,
+        subject: `Votre carte de fidélité ${link.tenant.name}`,
+        text,
+      });
+    }
+    if (phone && this.whatsapp.isConfigured()) {
+      await this.whatsapp.send(phone, text);
+    }
   }
 
   private async account(accessToken: string) {

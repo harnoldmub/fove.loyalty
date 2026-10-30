@@ -88,7 +88,10 @@ export class BillingService {
       customer: customerId,
       client_reference_id: tenant.id,
       line_items: [{ price, quantity: 1 }],
-      subscription_data: { metadata: { tenantId: tenant.id } },
+      subscription_data: {
+        billing_mode: { type: "flexible" },
+        metadata: { tenantId: tenant.id },
+      },
       success_url: `${appUrl}/app/billing?checkout=success`,
       cancel_url: `${appUrl}/app/billing?checkout=cancelled`,
       allow_promotion_codes: true,
@@ -176,6 +179,16 @@ export class BillingService {
         if (typeof invoice.customer === "string") {
           await this.prisma.client.subscription.updateMany({ where: { stripeCustomerId: invoice.customer }, data: { status: "PAST_DUE" } });
           this.logger.warn(`Paiement échoué pour ${invoice.customer}`);
+        }
+        break;
+      }
+      case "invoice.paid": {
+        const invoice = event.data.object as Stripe.Invoice & { customer: string | null };
+        if (typeof invoice.customer === "string") {
+          await this.prisma.client.subscription.updateMany({
+            where: { stripeCustomerId: invoice.customer, status: "PAST_DUE" },
+            data: { status: "ACTIVE" },
+          });
         }
         break;
       }

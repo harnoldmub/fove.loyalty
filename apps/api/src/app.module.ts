@@ -4,6 +4,7 @@ import { ThrottlerGuard, ThrottlerModule } from "@nestjs/throttler";
 import { PrismaService } from "./common/prisma.service";
 import { AuditService } from "./common/audit.service";
 import { EmailService } from "./notifications/email.service";
+import { WhatsAppService } from "./notifications/whatsapp.service";
 import { WebhooksService } from "./notifications/webhooks.service";
 import { SessionService } from "./auth/session.service";
 import { AuthService } from "./auth/auth.service";
@@ -68,6 +69,7 @@ import { GoogleWalletProvider } from "./cards/google-wallet";
     PrismaService,
     AuditService,
     EmailService,
+    WhatsAppService,
     WebhooksService,
     SessionService,
     AuthService,

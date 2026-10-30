@@ -16,6 +16,7 @@ interface Share {
   message: string;
   whatsapp: string;
   hasPhone: boolean;
+  cloudSent?: boolean;
 }
 
 /**
@@ -33,8 +34,10 @@ export function CardShareDialog({ accountId }: { accountId: string }) {
     setBusy(true);
     setError(null);
     try {
-      setShare(await api.post<Share>(`/app/accounts/${accountId}/share`, { renew }));
+      const res = await api.post<Share>(`/app/accounts/${accountId}/share`, { renew });
+      setShare(res);
       if (renew) toast.success("Nouveau lien créé. L’ancien ne fonctionne plus.");
+      else if (res.cloudSent) toast.success("Carte envoyée directement sur WhatsApp via Dizayna.");
       setConfirmRenew(false);
     } catch (e) {
       setError(errorMessage(e));

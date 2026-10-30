@@ -20,9 +20,14 @@ const schema = z.object({
   /** Google Wallet : identifiant d'émetteur et compte de service (JSON). Absents = fonction masquée. */
   GOOGLE_WALLET_ISSUER_ID: z.string().regex(/^\d+$/).optional(),
   GOOGLE_WALLET_SERVICE_ACCOUNT_JSON: z.string().optional(),
+  /** WhatsApp Business Cloud API (application Meta « DIZAYNA »). */
+  WHATSAPP_TOKEN: z.string().optional(),
+  WHATSAPP_PHONE_NUMBER_ID: z.string().optional(),
+  WHATSAPP_WABA_ID: z.string().optional(),
+  WHATSAPP_BUSINESS_ID: z.string().optional(),
 });
 
-export type AppConfig = z.infer<typeof schema> & { corsOrigins: string[]; isProd: boolean; googleWalletEnabled: boolean };
+export type AppConfig = z.infer<typeof schema> & { corsOrigins: string[]; isProd: boolean; googleWalletEnabled: boolean; whatsappEnabled: boolean };
 
 let cached: AppConfig | null = null;
 
@@ -42,6 +47,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     corsOrigins: value.CORS_ORIGINS.split(",").map((o) => o.trim()).filter(Boolean),
     isProd: value.NODE_ENV === "production",
     googleWalletEnabled: Boolean(value.GOOGLE_WALLET_ISSUER_ID && value.GOOGLE_WALLET_SERVICE_ACCOUNT_JSON),
+    whatsappEnabled: Boolean(value.WHATSAPP_TOKEN && value.WHATSAPP_PHONE_NUMBER_ID),
   };
   return cached;
 }

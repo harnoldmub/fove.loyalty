@@ -7,6 +7,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { useCan } from "@/components/app/me-context";
 import { Button } from "@/components/ui/button";
+import { CountrySelect, getCountryOption } from "@/components/ui/country-select";
 import { Field, Input, Select } from "@/components/ui/field";
 import { ErrorNote, PageHeader, Panel, Skeleton } from "@/components/ui/misc";
 import { api, errorMessage } from "@/lib/api";
@@ -155,12 +156,17 @@ function SettingsForm({ data }: { data: Tenant }) {
             <div className="grid gap-4 sm:grid-cols-3">
               <Field label="Pays">
                 {(p) => (
-                  <Select {...p} value={f.country ?? "CD"} onChange={set("country")}>
-                    <option value="CD">RD Congo</option>
-                    <option value="CG">Congo</option>
-                    <option value="FR">France</option>
-                    <option value="BE">Belgique</option>
-                  </Select>
+                  <CountrySelect
+                    {...p}
+                    value={f.country ?? "CD"}
+                    onChange={(code) =>
+                      setF({
+                        ...f,
+                        country: code,
+                        timezone: getCountryOption(code)?.timezone ?? f.timezone ?? "Africa/Kinshasa",
+                      })
+                    }
+                  />
                 )}
               </Field>
               <Field label="Devise" hint="Utilisée pour les nouveaux programmes. Les programmes existants conservent leur devise.">

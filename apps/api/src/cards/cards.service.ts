@@ -9,6 +9,7 @@ import { newAccessToken, readAccessToken } from "../loyalty/cards";
 import type { WalletCardState } from "../loyalty/wallet";
 import { renderCardPdf, renderCardPng, type CardDesign } from "./card-render";
 import { GoogleWalletProvider } from "./google-wallet";
+import { WhatsAppService } from "../notifications/whatsapp.service";
 
 export function cardUrl(accessToken: string): string {
   return `${loadConfig().APP_URL}/card/${accessToken}`;
@@ -28,6 +29,7 @@ export class CardsService {
     private readonly prisma: PrismaService,
     private readonly audit: AuditService,
     readonly wallet: GoogleWalletProvider,
+    private readonly whatsapp: WhatsAppService,
   ) {}
 
   private load(where: { id: string; tenantId: string } | { accessTokenHash: string }) {
@@ -61,8 +63,15 @@ export class CardsService {
     const reward = await this.firstReward(account.tenantId, account.programId);
     const greeting = account.customer.firstName ? `Bonjour ${account.customer.firstName}, voici` : "Voici";
     const message = `${greeting} votre carte de fidélité ${account.tenant.name} : ${url}\nPrésentez son QR code à chaque passage. ${this.rule(account.program, reward?.name)}.`;
-    const phone = (account.customer.phone ?? "").replace(/\D/g, "");
-    return { url, message, hasPhone: phone.length >= 8, whatsapp: `https://wa.me/${phone.length >= 8 ? phone : ""}?text=${encodeURIComponent(message)}` };
+    const rawPhone = account.customer.phone ?? "";
+    const phone = rawPhone.replace(/\D/g, "");
+    const hasPhone = phone.length >= 8;
+    let cloudSent = false;
+    if (hasPhone && this.whatsapp.isConfigured()) {
+      const sent = await this.whatsapp.send(rawPhone, message);
+      cloudSent = sent.sent;
+    }
+    return { url, message, hasPhone, cloudSent, whatsapp: `https://wa.me/${hasPhone ? phone : ""}?text=${encodeURIComponent(message)}` };
   }
 
   private firstReward(tenantId: string, programId: string) {

@@ -7,14 +7,21 @@ import { toast } from "sonner";
 import { useCan } from "@/components/app/me-context";
 import type { Establishment } from "@/components/app/types";
 import { Button } from "@/components/ui/button";
+import { CitySelect, CountrySelect, SUGGESTED_CITIES } from "@/components/ui/country-select";
 import { ConfirmDialog, DialogContent, DialogRoot } from "@/components/ui/dialog";
 import { Field, Input } from "@/components/ui/field";
 import { Badge, EmptyState, ErrorNote, PageHeader, Panel } from "@/components/ui/misc";
 import { api, errorMessage } from "@/lib/api";
 
-function EstablishmentForm({ value, onDone }: { value?: Establishment; onDone: () => void }) {
+function EstablishmentForm({ value, defaultCountry = "CD", onDone }: { value?: Establishment; defaultCountry?: string; onDone: () => void }) {
   const qc = useQueryClient();
-  const [f, setF] = useState({ name: value?.name ?? "", address: value?.address ?? "", city: value?.city ?? "", phone: value?.phone ?? "" });
+  const [country, setCountry] = useState(defaultCountry);
+  const [f, setF] = useState({
+    name: value?.name ?? "",
+    address: value?.address ?? "",
+    city: value?.city ?? (SUGGESTED_CITIES[defaultCountry]?.[0] ?? "Kinshasa"),
+    phone: value?.phone ?? "",
+  });
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   return (
@@ -40,9 +47,23 @@ function EstablishmentForm({ value, onDone }: { value?: Establishment; onDone: (
     >
       {error && <ErrorNote>{error}</ErrorNote>}
       <Field label="Nom">{(p) => <Input {...p} value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} />}</Field>
-      <Field label="Adresse">{(p) => <Input {...p} value={f.address} onChange={(e) => setF({ ...f, address: e.target.value })} />}</Field>
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="Ville">{(p) => <Input {...p} value={f.city} onChange={(e) => setF({ ...f, city: e.target.value })} />}</Field>
+        <Field label="Pays">
+          {(p) => (
+            <CountrySelect
+              {...p}
+              value={country}
+              onChange={(code) => {
+                setCountry(code);
+                setF({ ...f, city: SUGGESTED_CITIES[code]?.[0] ?? "" });
+              }}
+            />
+          )}
+        </Field>
+        <Field label="Ville">{(p) => <CitySelect {...p} countryCode={country} value={f.city} onChange={(city) => setF({ ...f, city })} />}</Field>
+      </div>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Field label="Adresse">{(p) => <Input {...p} value={f.address} onChange={(e) => setF({ ...f, address: e.target.value })} />}</Field>
         <Field label="Téléphone">{(p) => <Input {...p} type="tel" value={f.phone} onChange={(e) => setF({ ...f, phone: e.target.value })} />}</Field>
       </div>
       <Button type="submit" loading={busy} disabled={f.name.trim().length < 2}>{value ? "Enregistrer" : "Ajouter l’établissement"}</Button>

@@ -6,6 +6,7 @@ import { Check, Coffee, ImageUp, Printer, Smartphone, Sparkles } from "lucide-re
 import { QRCodeSVG } from "qrcode.react";
 import { Logo } from "@/components/brand";
 import { Button } from "@/components/ui/button";
+import { CitySelect, CountrySelect, getCountryOption, SUGGESTED_CITIES } from "@/components/ui/country-select";
 import { Field, Input, Select } from "@/components/ui/field";
 import { ErrorNote } from "@/components/ui/misc";
 import { api, errorMessage } from "@/lib/api";
@@ -44,6 +45,7 @@ export function OnboardingWizard({ userName, tenant }: { userName: string; tenan
   const [color, setColor] = useState(COLORS[0]!);
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [estName, setEstName] = useState("");
+  const [estCountry, setEstCountry] = useState("CD");
   const [estCity, setEstCity] = useState("Kinshasa");
   const [mode, setMode] = useState<"POINTS" | "STAMPS">("STAMPS");
   const [spendStep, setSpendStep] = useState("1000");
@@ -58,7 +60,16 @@ export function OnboardingWizard({ userName, tenant }: { userName: string; tenan
     if (!tenant) return;
     (async () => {
       try {
-        const [ests, programs] = await Promise.all([api.get<{ id: string }[]>("/app/establishments"), api.get<Program[]>("/app/programs")]);
+        const [ests, programs, tenantData] = await Promise.all([
+          api.get<{ id: string }[]>("/app/establishments"),
+          api.get<Program[]>("/app/programs"),
+          api.get<{ settings?: { country?: string } }>("/app/tenant").catch(() => null),
+        ]);
+        const savedCountry = tenantData?.settings?.country;
+        if (savedCountry) {
+          setEstCountry(savedCountry);
+          setEstCity(SUGGESTED_CITIES[savedCountry]?.[0] ?? "Kinshasa");
+        }
         if (programs.length > 0) {
           setProgram(programs[0]!);
           setStep(4);
@@ -85,8 +96,12 @@ export function OnboardingWizard({ userName, tenant }: { userName: string; tenan
     e.preventDefault();
     if (step === 0)
       return run(async () => {
-        await api.post("/app/tenants", { name, slug: slug || slugify(name), currency, country: currency === "CDF" ? "CD" : "FR", timezone: currency === "CDF" ? "Africa/Kinshasa" : "Europe/Paris" });
+        const defaultCountry = currency === "EUR" ? "FR" : "CD";
+        const defaultTimezone = currency === "EUR" ? "Europe/Paris" : "Africa/Kinshasa";
+        await api.post("/app/tenants", { name, slug: slug || slugify(name), currency, country: defaultCountry, timezone: defaultTimezone });
         setEstName(name);
+        setEstCountry(defaultCountry);
+        setEstCity(SUGGESTED_CITIES[defaultCountry]?.[0] ?? "Kinshasa");
         setStep(1);
       });
     if (step === 1)
@@ -97,7 +112,11 @@ export function OnboardingWizard({ userName, tenant }: { userName: string; tenan
       });
     if (step === 2)
       return run(async () => {
-        await api.post("/app/establishments", { name: estName, city: estCity || null });
+        const timezone = getCountryOption(estCountry)?.timezone ?? "Africa/Kinshasa";
+        await Promise.all([
+          api.patch("/app/tenant", { country: estCountry, timezone }),
+          api.post("/app/establishments", { name: estName, city: estCity || null }),
+        ]);
         setStep(3);
       });
     if (step === 3)
@@ -243,7 +262,21 @@ export function OnboardingWizard({ userName, tenant }: { userName: string; tenan
                 <h1 className="font-display text-3xl font-semibold">Votre point de vente</h1>
                 <p className="-mt-2 text-ink-2">Vous pourrez en ajouter d’autres ensuite.</p>
                 <Field label="Nom de l’établissement">{(p) => <Input {...p} value={estName} onChange={(e) => setEstName(e.target.value)} />}</Field>
-                <Field label="Ville">{(p) => <Input {...p} value={estCity} onChange={(e) => setEstCity(e.target.value)} />}</Field>
+                <Field label="Pays">
+                  {(p) => (
+                    <CountrySelect
+                      {...p}
+                      value={estCountry}
+                      onChange={(code) => {
+                        setEstCountry(code);
+                        setEstCity(SUGGESTED_CITIES[code]?.[0] ?? "");
+                      }}
+                    />
+                  )}
+                </Field>
+                <Field label="Ville">
+                  {(p) => <CitySelect {...p} countryCode={estCountry} value={estCity} onChange={setEstCity} />}
+                </Field>
                 <Button type="submit" loading={busy} disabled={estName.trim().length < 2}>Continuer</Button>
               </>
             )}
