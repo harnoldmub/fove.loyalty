@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">FOVE</string>
+    <string name="title_activity_main">FOVE</string>
+    <string name="package_name">digital.fove.app</string>
+    <string name="custom_url_scheme">digital.fove.app</string>
+</resources>

@@ -3,6 +3,7 @@
 import { Camera, LoaderCircle } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { hapticImpact } from "@/lib/native";
 
 type QrScannerInstance = { start: () => Promise<void>; stop: () => void; destroy: () => void };
 
@@ -42,7 +43,7 @@ export function QrCamera({ onCode, busy }: { onCode: (code: string) => void; bus
             setError("Ce QR code n’est pas une carte de fidélité.");
             return;
           }
-          navigator.vibrate?.(60);
+          void hapticImpact("medium");
           stop();
           setState("stopped");
           handler.current(result.data);

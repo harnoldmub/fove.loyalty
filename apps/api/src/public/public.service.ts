@@ -37,7 +37,7 @@ export class PublicService {
     private readonly audit: AuditService,
     private readonly webhooks: WebhooksService,
     private readonly cards: CardsService,
-  ) {}
+  ) { }
 
   private async link(tokenOrSlug: string) {
     const include = {

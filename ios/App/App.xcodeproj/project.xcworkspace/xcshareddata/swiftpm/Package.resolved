@@ -1,0 +1,24 @@
+{
+  "originHash" : "757f39ed319e9738bf4bdd5f9b8dc53200b7047e146b29930d50d038dde8cf1a",
+  "pins" : [
+    {
+      "identity" : "capacitor-swift-pm",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/ionic-team/capacitor-swift-pm.git",
+      "state" : {
+        "revision" : "e9e932f7748d3b948bc47f5791c761ac5221ec6a",
+        "version" : "8.6.0"
+      }
+    },
+    {
+      "identity" : "osbarcodelib-ios",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/OutSystems/OSBarcodeLib-iOS.git",
+      "state" : {
+        "revision" : "c97a837b5faaca004b28c03c309a1578f2bd6c21",
+        "version" : "3.0.0"
+      }
+    }
+  ],
+  "version" : 3
+}
