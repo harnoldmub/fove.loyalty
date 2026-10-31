@@ -43,7 +43,8 @@ export function getClubExplanations(tenantName: string, isStamps: boolean, targe
             "• À chaque passage en boutique, présentez votre carte et faites scanner le QR code.",
             "• Le passage s'ajoute automatiquement à votre carte (un par jour).",
             "• Les commandes payées en ligne sont également comptabilisées.",
-            `• Après ${plural(target, "passage", "passages")}, votre récompense est disponible en caisse.`,
+            `• Dès ${plural(target, "tampon obtenu", "tampons obtenus")}, votre récompense est disponible en caisse !`,
+            "• Une fois l'offre appliquée en boutique, votre carte revient à 0 pour entamer un nouveau cycle.",
           ].join("\n")
         : [
             "• À chaque achat en boutique ou commande en ligne, présentez votre QR code.",
@@ -90,8 +91,8 @@ export function getClubMemberSummary(params: {
       `• Membre depuis ${params.since}`,
       params.isStamps
         ? left > 0
-          ? `• Plus que ${plural(left, "passage", "passages")} pour obtenir votre récompense.`
-          : `• Votre récompense est disponible : demandez-la à la caisse !`
+          ? `• Plus que ${plural(left, "tampon", "tampons")} pour obtenir votre récompense.`
+          : `• Votre récompense est disponible : demandez-la en boutique (votre carte reviendra ensuite à 0).`
         : `• Cumulez des points pour débloquer vos prochaines récompenses.`,
     ].join("\n"),
   };

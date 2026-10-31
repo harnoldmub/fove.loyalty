@@ -116,12 +116,14 @@ export class RewardsService {
           const { count } = await tx.reward.updateMany({ where: { id: reward.id, stock: { gt: 0 } }, data: { stock: { decrement: 1 } } });
           if (count === 0) throw unprocessable("out_of_stock", "Récompense épuisée");
         }
+        // En mode STAMPS (tampons), l'application de la récompense remet la carte à 0
+        const delta = program.mode === "STAMPS" ? -account.balance : -reward.cost;
         const { transaction } = await this.ledger.post(
           ctx,
           {
             accountId: account.id,
             kind: "REDEMPTION",
-            delta: -reward.cost,
+            delta,
             idempotencyKey: ledgerKey,
             source,
             reason: reward.name,

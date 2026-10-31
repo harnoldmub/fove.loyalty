@@ -112,8 +112,13 @@ export class AppleWalletServiceController {
   async getUpdatedPasses(
     @Param("deviceLibraryIdentifier") deviceLibraryIdentifier: string,
     @Param("passTypeIdentifier") passTypeIdentifier: string,
+    @Req() req: Request,
     @Res() res: Response,
   ) {
+    const passesUpdatedSince = req.query.passesUpdatedSince as string | undefined;
+    const sinceDate = passesUpdatedSince ? new Date(passesUpdatedSince) : null;
+    const validSince = sinceDate && !isNaN(sinceDate.getTime()) ? sinceDate : null;
+
     const registrations = await this.prisma.client.appleWalletRegistration.findMany({
       where: { deviceLibraryIdentifier, passTypeIdentifier },
       select: { serialNumber: true },
@@ -123,9 +128,32 @@ export class AppleWalletServiceController {
       return res.status(HttpStatus.NO_CONTENT).send();
     }
 
+    const serials = registrations.map((r) => r.serialNumber);
+    const accounts = await this.prisma.client.loyaltyAccount.findMany({
+      where: { id: { in: serials } },
+      select: { id: true, lastActivityAt: true },
+    });
+
+    const updatedSerials: string[] = [];
+    let maxUpdatedAt = 0;
+
+    for (const acc of accounts) {
+      const updatedAt = acc.lastActivityAt.getTime();
+      if (updatedAt > maxUpdatedAt) {
+        maxUpdatedAt = updatedAt;
+      }
+      if (!validSince || updatedAt > validSince.getTime()) {
+        updatedSerials.push(acc.id);
+      }
+    }
+
+    if (validSince && updatedSerials.length === 0) {
+      return res.status(HttpStatus.NO_CONTENT).send();
+    }
+
     return res.status(HttpStatus.OK).json({
-      lastUpdated: new Date().toISOString(),
-      serialNumbers: registrations.map((r) => r.serialNumber),
+      lastUpdated: new Date(maxUpdatedAt || Date.now()).toISOString(),
+      serialNumbers: updatedSerials,
     });
   }
 
@@ -159,6 +187,7 @@ export class AppleWalletServiceController {
   async getLatestPass(
     @Param("serialNumber") serialNumber: string,
     @Headers("authorization") authHeader: string | undefined,
+    @Req() req: Request,
     @Res() res: Response,
   ) {
     const authToken = this.extractToken(authHeader);
@@ -173,6 +202,18 @@ export class AppleWalletServiceController {
 
     if (!account || account.qrToken !== authToken) {
       return res.status(HttpStatus.UNAUTHORIZED).send();
+    }
+
+    // Gestion du cache Apple Wallet : renvoie 304 Not Modified si le pass n'a pas changé
+    const ifModifiedSince = req.headers["if-modified-since"];
+    if (ifModifiedSince) {
+      const ifModifiedDate = new Date(ifModifiedSince as string);
+      if (
+        !isNaN(ifModifiedDate.getTime()) &&
+        Math.floor(account.lastActivityAt.getTime() / 1000) <= Math.floor(ifModifiedDate.getTime() / 1000)
+      ) {
+        return res.status(HttpStatus.NOT_MODIFIED).send();
+      }
     }
 
     let logoBuffer: Buffer | null = null;
