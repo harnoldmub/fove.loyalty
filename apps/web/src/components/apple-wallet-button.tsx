@@ -57,3 +57,4 @@ export function AppleWalletButton({ token, className = "" }: { token: string; cl
     </div>
   );
 }
+

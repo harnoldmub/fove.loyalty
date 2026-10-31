@@ -3,6 +3,7 @@ import { HttpStatus, Injectable, Logger } from "@nestjs/common";
 import { loadConfig } from "../config";
 import { AppError } from "../common/errors";
 import type { WalletCardState, WalletProvider } from "../loyalty/wallet";
+import { getClubExplanations, nextRewardValue } from "./club-card";
 
 type ServiceAccount = { client_email: string; private_key: string };
 
@@ -63,14 +64,22 @@ export class GoogleWalletProvider implements WalletProvider {
 
   private loyaltyClass(card: WalletCardState) {
     const logo = card.logoUrl?.startsWith("https://") ? card.logoUrl : `${process.env.NEXT_PUBLIC_SITE_URL ?? "https://fove.digital"}/share-icon.png`;
+    const clubName = card.tenantName.toLowerCase().includes("club") ? card.tenantName : `Club ${card.tenantName}`;
+    const explanations = getClubExplanations(card.tenantName, card.unit === "tampons", 10, card.rewardSummary);
+    const textModulesData = explanations.map((section) => ({
+      id: `fove_${section.key}`,
+      header: section.title,
+      body: section.body,
+    }));
+
     return {
       id: this.classId(card.programId),
       issuerName: card.tenantName.slice(0, 20),
-      programName: card.programName.slice(0, 20),
+      programName: clubName.slice(0, 20),
       programLogo: { sourceUri: { uri: logo } },
-      hexBackgroundColor: card.primaryColor,
+      hexBackgroundColor: "#ffffff",
       reviewStatus: "UNDER_REVIEW",
-      textModulesData: card.rewardSummary ? [{ id: "fove_rewards", header: "Récompenses", body: card.rewardSummary }] : [],
+      textModulesData,
     };
   }
 
@@ -81,7 +90,14 @@ export class GoogleWalletProvider implements WalletProvider {
       state: "ACTIVE",
       accountId: card.cardNumber,
       accountName: card.holder,
-      loyaltyPoints: { label: card.unit === "tampons" ? "Tampons" : "Points", balance: { string: String(Math.max(0, card.balance)) } },
+      loyaltyPoints: {
+        label: card.unit === "tampons" ? "Passages" : "Points",
+        balance: { string: String(Math.max(0, card.balance)) },
+      },
+      secondaryLoyaltyPoints: {
+        label: "Prochain avantage",
+        balance: { string: nextRewardValue(card.balance, 10, card.unit === "tampons") },
+      },
       barcode: { type: "QR_CODE", value: card.qrPayload, alternateText: card.cardNumber },
       linksModuleData: { uris: [{ uri: card.cardUrl, description: "Ma carte en ligne" }] },
     };

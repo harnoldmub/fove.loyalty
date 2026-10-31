@@ -5,6 +5,13 @@ import sharp from "sharp";
 import { PrismaService } from "../common/prisma.service";
 import { loadConfig } from "../config";
 import { WalletBannerService } from "./wallet-banner.service";
+import {
+  getClubExplanations,
+  getClubMemberSummary,
+  MORE_INFO_ICON,
+  MORE_INFO_LABEL,
+  nextRewardValue,
+} from "./club-card";
 
 function certificate(value: string | undefined, label: string): Buffer {
   if (!value) throw new Error(`${label} manquant.`);
@@ -102,12 +109,41 @@ export class AppleWalletProvider {
       this.banners.appleStripImages(account.tenantId),
     ]);
 
+    const target = isStamps ? account.program.stampsTarget : 100;
+    const since = memberSince(account.createdAt);
+    const clubName = account.tenant.name.toLowerCase().includes("club") ? account.tenant.name : `Club ${account.tenant.name}`;
+
+    const sections = getClubExplanations(account.tenant.name, isStamps, target);
+    sections.splice(
+      1,
+      0,
+      getClubMemberSummary({
+        tenantName: account.tenant.name,
+        holder,
+        balance: account.balance,
+        isStamps,
+        target,
+        since,
+      }),
+    );
+
+    const backFields = sections.map((s) => ({
+      key: s.key,
+      label: s.title,
+      value: s.body,
+    }));
+
+    backFields.push(
+      { key: "number", label: "Numéro de carte", value: account.cardNumber },
+      { key: "website", label: "Page du commerce", value: `${cfg.APP_URL}/${account.tenant.slug}` },
+    );
+
     const passJson = {
       formatVersion: 1,
       passTypeIdentifier: cfg.APPLE_WALLET_PASS_TYPE_ID,
       teamIdentifier: cfg.APPLE_WALLET_TEAM_ID,
-      organizationName: account.tenant.name,
-      description: `Carte fidélité ${account.tenant.name}`,
+      organizationName: clubName,
+      description: clubName,
       serialNumber: account.id,
       webServiceURL: `${cfg.API_URL}/api/loyalty/apple-wallet-service`,
       authenticationToken: account.qrToken,
@@ -119,7 +155,7 @@ export class AppleWalletProvider {
           {
             key: "balance",
             label: isStamps ? "PASSAGES" : "POINTS",
-            value: isStamps ? `${Math.max(0, account.balance)}/${account.program.stampsTarget}` : `${Math.max(0, account.balance)}`,
+            value: isStamps ? `${Math.max(0, account.balance)}/${target}` : `${Math.max(0, account.balance)}`,
             changeMessage: `${account.tenant.name} : %@`,
             textAlignment: "PKTextAlignmentRight",
           },
@@ -127,19 +163,13 @@ export class AppleWalletProvider {
         primaryFields: [],
         secondaryFields: [
           { key: "holder", label: "MEMBRE", value: holder },
-          { key: "since", label: "MEMBRE DEPUIS", value: memberSince(account.createdAt), textAlignment: "PKTextAlignmentRight" },
+          { key: "since", label: "MEMBRE DEPUIS", value: since, textAlignment: "PKTextAlignmentRight" },
         ],
-        backFields: [
-          { key: "number", label: "Numéro de carte", value: account.cardNumber },
-          {
-            key: "rules",
-            label: "Fonctionnement",
-            value: isStamps
-              ? `Présentez cette carte à chaque passage en boutique. Après ${account.program.stampsTarget} passages, profitez de votre récompense offerte.`
-              : `Présentez cette carte à chaque achat pour cumuler des points et débloquer des réductions.`,
-          },
-          { key: "website", label: "Page du commerce", value: `${cfg.APP_URL}/${account.tenant.slug}` },
+        auxiliaryFields: [
+          { key: "next", label: "PROCHAIN AVANTAGE", value: nextRewardValue(account.balance, target, isStamps) },
+          { key: "more", label: MORE_INFO_LABEL, value: MORE_INFO_ICON, textAlignment: "PKTextAlignmentRight" },
         ],
+        backFields,
       },
       barcodes: [
         {
@@ -260,3 +290,4 @@ export class AppleWalletProvider {
     return this.sendApnsPassUpdate(registrations.map((r) => r.pushToken));
   }
 }
+

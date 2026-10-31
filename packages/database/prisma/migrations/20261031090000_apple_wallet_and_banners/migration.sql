@@ -31,3 +31,4 @@ CREATE INDEX "AppleWalletRegistration_tenantId_idx" ON "AppleWalletRegistration"
 
 -- AddForeignKey
 ALTER TABLE "AppleWalletRegistration" ADD CONSTRAINT "AppleWalletRegistration_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES "Tenant"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+

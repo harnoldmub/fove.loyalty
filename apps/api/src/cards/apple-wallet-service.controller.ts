@@ -207,3 +207,4 @@ export class AppleWalletServiceController {
     return res.status(HttpStatus.OK).send(passBuffer);
   }
 }
+
