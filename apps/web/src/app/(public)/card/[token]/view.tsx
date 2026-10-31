@@ -7,6 +7,7 @@ import { Download, Gift, Share, Smartphone } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { Button } from "@/components/ui/button";
 import { GoogleWalletButton } from "@/components/google-wallet-button";
+import { AppleWalletButton } from "@/components/apple-wallet-button";
 import { Stamps, stampsStatus } from "@/components/stamps";
 import { rememberCard } from "@/lib/remembered-cards";
 import { Field, Input } from "@/components/ui/field";
@@ -24,6 +25,7 @@ export interface CardData {
   transactions: { id: string; kind: string; delta: number; createdAt: string; reason: string | null }[];
   verification: "EMAIL_OTP" | "IN_STORE" | "NONE" | null;
   googleWallet: boolean;
+  appleWallet?: boolean;
 }
 
 function InstallHint() {
@@ -165,7 +167,10 @@ export function CardView({ token, initial }: { token: string; initial: CardData 
 
         {card.status === "ACTIVE" && (
           <div className="grid justify-items-center gap-3">
-            {data.googleWallet && <GoogleWalletButton token={token} />}
+            <div className="flex flex-wrap items-center justify-center gap-3">
+              {data.appleWallet && <AppleWalletButton token={token} />}
+              {data.googleWallet && <GoogleWalletButton token={token} />}
+            </div>
             {/* Téléchargements : à garder dans la galerie ou à imprimer. */}
             <div className="flex gap-2">
               <Button asChild variant="secondary" size="sm" className="rounded-full">

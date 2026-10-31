@@ -37,6 +37,9 @@ import { JobsController } from "./jobs/jobs.controller";
 import { MediaController } from "./media/media.controller";
 import { CardsService } from "./cards/cards.service";
 import { GoogleWalletProvider } from "./cards/google-wallet";
+import { AppleWalletProvider } from "./cards/apple-wallet";
+import { WalletBannerService } from "./cards/wallet-banner.service";
+import { AppleWalletServiceController } from "./cards/apple-wallet-service.controller";
 
 /**
  * Monolithe modulaire : un seul déploiement, des modules métier séparés par
@@ -63,6 +66,7 @@ import { GoogleWalletProvider } from "./cards/google-wallet";
     AdminController,
     JobsController,
     MediaController,
+    AppleWalletServiceController,
   ],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },
@@ -93,6 +97,8 @@ import { GoogleWalletProvider } from "./cards/google-wallet";
     AdminService,
     CardsService,
     GoogleWalletProvider,
+    AppleWalletProvider,
+    WalletBannerService,
   ],
 })
 export class AppModule {}

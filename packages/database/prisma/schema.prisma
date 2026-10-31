@@ -136,6 +136,7 @@ model Tenant {
   supportGrants  SupportAccessGrant[]
   media          MediaAsset[]
   customerNotes  CustomerNote[]
+  appleWalletRegistrations AppleWalletRegistration[]
 }
 
 model TenantSettings {
@@ -143,6 +144,9 @@ model TenantSettings {
   tenant                Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   primaryColor          String    @default("#1F4FFF")
   logoUrl               String?
+  walletBannerUrl       String?
+  walletBannerVersion   String?
+  instagramHandle       String?
   country               String    @default("CD")
   currency              String    @default("CDF")
   timezone              String    @default("Africa/Kinshasa")
@@ -862,3 +866,21 @@ model ContactMessage {
 
   @@index([status, createdAt])
 }
+
+model AppleWalletRegistration {
+  id                      String   @id @default(uuid()) @db.Uuid
+  tenantId                String   @db.Uuid
+  tenant                  Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  deviceLibraryIdentifier String
+  passTypeIdentifier      String
+  serialNumber            String   /// LoyaltyAccount id
+  pushToken               String
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+
+  @@unique([deviceLibraryIdentifier, serialNumber])
+  @@index([serialNumber])
+  @@index([passTypeIdentifier])
+  @@index([tenantId])
+}
+

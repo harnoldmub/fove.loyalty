@@ -16,9 +16,13 @@ export interface CardDesign {
   tenantName: string;
   /** Logo déjà chargé (PNG/JPEG/WebP), ou null pour l'initiale. */
   logo: Buffer | null;
+  /** Bannière de pub (identique aux cartes Wallet) */
+  banner?: Buffer | null;
   primaryColor: string;
   holder: string;
   cardNumber: string;
+  memberSince?: string | null;
+  instagram?: string | null;
   /** Contenu du QR personnel (identique à celui lu par le scanner). */
   qrPayload: string;
   /** Adresse de la carte en ligne (solde à jour). */
@@ -55,10 +59,75 @@ function safeColor(color: string) {
   return /^#[0-9a-fA-F]{6}$/.test(color) ? color : "#2C55F5";
 }
 
-function tree(design: CardDesign, logo: string | null, qr: string): Node {
+function tree(design: CardDesign, logo: string | null, qr: string, banner: string | null): Node {
   const color = safeColor(design.primaryColor);
   const center = { display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center" };
   const shortUrl = design.url.replace(/^https?:\/\//, "");
+
+  if (banner) {
+    const cardWidth = WIDTH - 80;
+    const labelStyle = { fontSize: 24, fontWeight: 600, letterSpacing: 3, color: MUTED };
+    const valueStyle = { marginTop: 6, fontFamily: "Bricolage", fontWeight: 700, fontSize: 36, lineHeight: 1.05, textTransform: "uppercase" as const, color: INK };
+
+    return h(
+      "div",
+      { style: { width: WIDTH, height: HEIGHT, display: "flex", flexDirection: "column", alignItems: "center", backgroundColor: "#0A0D18", fontFamily: "Figtree", color: INK } },
+      h(
+        "div",
+        { style: { marginTop: 100, width: cardWidth, height: 1610, display: "flex", flexDirection: "column", backgroundColor: "#FFFFFF", borderRadius: 40, overflow: "hidden" } },
+        h(
+          "div",
+          { style: { display: "flex", alignItems: "center", justifyContent: "space-between", padding: "44px 50px" } },
+          logo
+            ? h("img", { src: logo, width: 140, height: 60, style: { objectFit: "contain" } })
+            : h("div", { style: { height: 60, display: "flex", alignItems: "center", fontFamily: "Bricolage", fontSize: 36, fontWeight: 700, color } }, design.tenantName),
+          h(
+            "div",
+            { style: { display: "flex", flexDirection: "column", alignItems: "flex-end", textAlign: "right", maxWidth: 520 } },
+            h("div", { style: { ...labelStyle, color } }, "CARTE FIDÉLITÉ"),
+            h("div", { style: { ...valueStyle, fontSize: design.holder.length > 18 ? 28 : 34 } }, design.holder),
+          ),
+        ),
+        h("img", { src: banner, width: cardWidth, height: Math.round((cardWidth * 432) / 1125), style: { objectFit: "cover" } }),
+        h(
+          "div",
+          { style: { display: "flex", justifyContent: "space-between", padding: "36px 50px 0" } },
+          h(
+            "div",
+            { style: { display: "flex", flexDirection: "column" } },
+            h("div", { style: labelStyle }, "MEMBRE DEPUIS"),
+            h("div", { style: valueStyle }, design.memberSince || "RÉCENT"),
+          ),
+          design.instagram
+            ? h(
+                "div",
+                { style: { display: "flex", flexDirection: "column", alignItems: "flex-end", textAlign: "right" } },
+                h("div", { style: labelStyle }, "INSTAGRAM"),
+                h("div", { style: { ...valueStyle, textTransform: "none" } }, design.instagram),
+              )
+            : h(
+                "div",
+                { style: { display: "flex", flexDirection: "column", alignItems: "flex-end", textAlign: "right" } },
+                h("div", { style: labelStyle }, "PROGRAMME"),
+                h("div", { style: { ...valueStyle, fontSize: 30 } }, design.rule.slice(0, 24)),
+              ),
+        ),
+        h(
+          "div",
+          { style: { flexGrow: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" } },
+          h("img", { src: qr, width: 520, height: 520 }),
+          h("div", { style: { marginTop: 12, fontSize: 30, fontWeight: 600, letterSpacing: 4, color: MUTED } }, design.cardNumber),
+        ),
+      ),
+      h(
+        "div",
+        { style: { position: "absolute", left: 0, right: 0, top: LINK_BOX.top, height: LINK_BOX.height, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center" } },
+        h("div", { style: { fontSize: 26, color: "#8E99B7" } }, "Ma carte en ligne · solde à jour"),
+        h("div", { style: { marginTop: 6, fontSize: 28, fontWeight: 600, color: "#FFFFFF" } }, shortUrl.length > 55 ? `${shortUrl.slice(0, 52)}…` : shortUrl),
+      ),
+    );
+  }
+
   return h(
     "div",
     { style: { width: WIDTH, height: HEIGHT, display: "flex", flexDirection: "column", alignItems: "center", backgroundColor: "#FFFFFF", fontFamily: "Figtree", color: INK } },
@@ -91,13 +160,19 @@ function tree(design: CardDesign, logo: string | null, qr: string): Node {
 /** PNG de la carte (1080 × 1920 px). */
 export async function renderCardPng(design: CardDesign): Promise<Buffer> {
   const { default: satori } = await import("satori");
-  const [fontData, qrPng, logo] = await Promise.all([
+  const [fontData, qrPng, logo, banner] = await Promise.all([
     loadFonts(),
     QRCode.toBuffer(design.qrPayload, { errorCorrectionLevel: "M", width: 620, margin: 2, color: { dark: "#14204A", light: "#FFFFFF" } }),
-    design.logo ? sharp(design.logo).resize(340, 340, { fit: "cover" }).png().toBuffer() : Promise.resolve(null),
+    design.logo ? sharp(design.logo).resize(340, 140, { fit: "contain", background: { r: 0, g: 0, b: 0, alpha: 0 } }).png().toBuffer() : Promise.resolve(null),
+    design.banner ? sharp(design.banner).resize(1000, 384, { fit: "cover" }).jpeg({ quality: 88 }).toBuffer() : Promise.resolve(null),
   ]);
   const svg = await satori(
-    tree(design, logo ? `data:image/png;base64,${logo.toString("base64")}` : null, `data:image/png;base64,${qrPng.toString("base64")}`) as never,
+    tree(
+      design,
+      logo ? `data:image/png;base64,${logo.toString("base64")}` : null,
+      `data:image/png;base64,${qrPng.toString("base64")}`,
+      banner ? `data:image/jpeg;base64,${banner.toString("base64")}` : null,
+    ) as never,
     { width: WIDTH, height: HEIGHT, fonts: fontData },
   );
   return sharp(Buffer.from(svg)).png({ compressionLevel: 9 }).toBuffer();

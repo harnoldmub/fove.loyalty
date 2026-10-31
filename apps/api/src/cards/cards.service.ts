@@ -9,6 +9,8 @@ import { newAccessToken, readAccessToken } from "../loyalty/cards";
 import type { WalletCardState } from "../loyalty/wallet";
 import { renderCardPdf, renderCardPng, type CardDesign } from "./card-render";
 import { GoogleWalletProvider } from "./google-wallet";
+import { AppleWalletProvider, memberSince } from "./apple-wallet";
+import { WalletBannerService } from "./wallet-banner.service";
 import { WhatsAppService } from "../notifications/whatsapp.service";
 
 export function cardUrl(accessToken: string): string {
@@ -19,7 +21,7 @@ const MEDIA_URL = /\/api\/media\/([0-9a-f-]{36})$/;
 
 /**
  * Tout ce qui touche à la carte du client : lien stable, partage WhatsApp,
- * fichiers image/PDF, Google Wallet. Aucune de ces fonctions ne modifie le solde.
+ * fichiers image/PDF, Google Wallet et Apple Wallet. Aucune de ces fonctions ne modifie le solde.
  */
 @Injectable()
 export class CardsService {
@@ -29,6 +31,8 @@ export class CardsService {
     private readonly prisma: PrismaService,
     private readonly audit: AuditService,
     readonly wallet: GoogleWalletProvider,
+    readonly appleWallet: AppleWalletProvider,
+    readonly banners: WalletBannerService,
     private readonly whatsapp: WhatsAppService,
   ) {}
 
@@ -131,12 +135,20 @@ export class CardsService {
     const account = await this.load({ accessTokenHash });
     if (!account || account.status === "CLOSED" || account.tenant.status !== "ACTIVE") throw notFound("Carte");
     const reward = await this.firstReward(account.tenantId, account.programId);
+    const [logo, banner] = await Promise.all([
+      this.logo(account.tenantId, account.tenant.settings?.logoUrl ?? null),
+      this.banners.cardBannerImage(account.tenantId).catch(() => null),
+    ]);
+
     const design: CardDesign = {
       tenantName: account.tenant.name,
-      logo: await this.logo(account.tenantId, account.tenant.settings?.logoUrl ?? null),
+      logo,
+      banner,
       primaryColor: account.tenant.settings?.primaryColor ?? "#2C55F5",
       holder: [account.customer.firstName, account.customer.lastName].filter(Boolean).join(" ") || "Membre",
       cardNumber: account.cardNumber,
+      memberSince: memberSince(account.createdAt),
+      instagram: account.tenant.settings?.instagramHandle ?? null,
       qrPayload: account.qrToken,
       url: await this.linkFor(account.id, account.tenantId),
       rule: this.rule(account.program, reward?.name),
@@ -146,31 +158,72 @@ export class CardsService {
     return { body, filename: `carte-fidelite-${slug}.${format}` };
   }
 
+  /** Pass signé « Ajouter à Apple Wallet » (.pkpass). */
+  async appleWalletPass(accessTokenHash: string) {
+    const account = await this.load({ accessTokenHash });
+    if (!account || account.status === "CLOSED" || account.tenant.status !== "ACTIVE") throw notFound("Carte");
+    const logo = await this.logo(account.tenantId, account.tenant.settings?.logoUrl ?? null);
+    const body = await this.appleWallet.generatePass(
+      {
+        id: account.id,
+        tenantId: account.tenantId,
+        qrToken: account.qrToken,
+        cardNumber: account.cardNumber,
+        balance: account.balance,
+        createdAt: account.createdAt,
+        customer: account.customer,
+        program: account.program,
+        tenant: account.tenant,
+      },
+      logo,
+    );
+    const slug = account.tenant.slug.replace(/[^a-z0-9-]/g, "");
+    return { body, filename: `carte-fidelite-${slug}.pkpass` };
+  }
+
   async walletSaveUrl(accessTokenHash: string) {
     const account = await this.prisma.client.loyaltyAccount.findUnique({ where: { accessTokenHash }, select: { id: true, tenantId: true, status: true } });
     if (!account || account.status === "CLOSED") throw notFound("Carte");
     return this.wallet.createPass(await this.walletState(account.id, account.tenantId));
   }
 
-  /** Solde à jour sur la carte Google Wallet, en arrière-plan. */
+  /** Solde à jour sur la carte Google Wallet et notification push Apple Wallet, en arrière-plan. */
   refreshWallet(tenantId: string, accountId: string): void {
-    if (!this.wallet.isConfigured()) return;
-    void this.walletState(accountId, tenantId)
-      .then((state) => this.wallet.updatePass(state))
-      .catch((error) => this.logger.warn(`Pass ${accountId} : ${error instanceof Error ? error.message : error}`));
+    if (this.wallet.isConfigured()) {
+      void this.walletState(accountId, tenantId)
+        .then((state) => this.wallet.updatePass(state))
+        .catch((error) => this.logger.warn(`Pass Google ${accountId} : ${error instanceof Error ? error.message : error}`));
+    }
+    if (this.appleWallet.isConfigured()) {
+      void this.appleWallet.notifyAccount(accountId)
+        .catch((error) => this.logger.warn(`Pass Apple ${accountId} : ${error instanceof Error ? error.message : error}`));
+    }
+  }
+
+  /** Met à jour le design (bannière/couleur) sur Google Wallet et prévient tous les iPhone enregistrés. */
+  async syncWalletDesign(tenantId: string) {
+    await this.refreshProgramWallet(tenantId);
+    let appleSent = 0;
+    if (this.appleWallet.isConfigured()) {
+      const res = await this.appleWallet.broadcastTenant(tenantId);
+      appleSent = res.sent;
+    }
+    return { google: this.wallet.isConfigured(), appleDevices: appleSent };
   }
 
   async walletMessage(ctx: TenantContext, accountId: string, message: { title: string; body: string }) {
     const account = await this.prisma.client.loyaltyAccount.findFirst({ where: { id: accountId, tenantId: ctx.tenantId } });
     if (!account) throw notFound("Carte");
-    await this.wallet.sendToCard(accountId, message);
+    if (this.wallet.isConfigured()) await this.wallet.sendToCard(accountId, message);
+    if (this.appleWallet.isConfigured()) await this.appleWallet.notifyAccount(accountId);
     await this.audit.forTenant(ctx, "wallet.message_sent", { type: "account", id: accountId }, { title: message.title });
   }
 
   async walletBroadcast(ctx: TenantContext, programId: string, message: { title: string; body: string }) {
     const program = await this.prisma.client.loyaltyProgram.findFirst({ where: { id: programId, tenantId: ctx.tenantId } });
     if (!program) throw notFound("Programme");
-    await this.wallet.broadcast(programId, message);
+    if (this.wallet.isConfigured()) await this.wallet.broadcast(programId, message);
+    if (this.appleWallet.isConfigured()) await this.appleWallet.broadcastTenant(ctx.tenantId);
     await this.audit.forTenant(ctx, "wallet.broadcast_sent", { type: "program", id: programId }, { title: message.title });
   }
 }

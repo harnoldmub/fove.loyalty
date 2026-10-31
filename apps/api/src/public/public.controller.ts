@@ -67,6 +67,28 @@ export class PublicController {
     return this.cards.walletSaveUrl(tokenHash(token));
   }
 
+  /** Pass fidélité signé « Ajouter à Apple Wallet » (.pkpass). */
+  @Get("cards/:token/apple-wallet")
+  @Throttle({ default: { limit: 20, ttl: 60_000 } })
+  async appleWallet(@Param("token") token: string, @Res() res: Response) {
+    if (!tokenPattern.test(token)) return this.notFound();
+    const { body, filename } = await this.cards.appleWalletPass(tokenHash(token));
+    res.setHeader("Cache-Control", "private, no-cache, no-store");
+    res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+    res.type("application/vnd.apple.pkpass").send(body);
+  }
+
+  /** Bannière publique du commerce (utilisée pour l'image de héros Google Wallet et aperçus). */
+  @Get("tenants/:slug/wallet-banner.png")
+  @Throttle({ default: { limit: 60, ttl: 60_000 } })
+  async walletBanner(@Param("slug") slug: string, @Query("format") format: "google" | "apple" | undefined, @Res() res: Response) {
+    const tenant = await this.service.getTenantBySlug(slug);
+    if (!tenant) return this.notFound();
+    const image = await this.cards.banners.bannerImage(tenant.id, format === "google" ? "google" : "apple");
+    res.setHeader("Cache-Control", "public, max-age=3600, s-maxage=86400");
+    res.type("image/png").send(image);
+  }
+
   /** Carte en image (PNG) ou PDF 9:16 ; `?download=1` force l'enregistrement. */
   @Get("cards/:token/:file")
   @Throttle({ default: { limit: 20, ttl: 60_000 } })

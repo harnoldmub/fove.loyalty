@@ -71,6 +71,9 @@ export const createTenantSchema = z.object({
 });
 export const updateTenantSchema = createTenantSchema.partial().extend({
   logoUrl: z.url().max(500).nullable().optional(),
+  walletBannerUrl: z.url().max(500).nullable().optional(),
+  walletBannerVersion: z.string().max(64).nullable().optional(),
+  instagramHandle: z.string().max(64).nullable().optional(),
   legalName: z.string().max(120).nullable().optional(),
   contactEmail: z.email().nullable().optional(),
   privacyPolicyUrl: z.url().max(500).nullable().optional(),

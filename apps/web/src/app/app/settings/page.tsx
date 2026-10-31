@@ -15,11 +15,28 @@ import { api, errorMessage } from "@/lib/api";
 interface Tenant {
   name: string;
   slug: string;
-  settings: { primaryColor: string; logoUrl: string | null; country: string; currency: string; timezone: string; legalName: string | null; contactEmail: string | null; privacyPolicyUrl: string | null };
+  settings: {
+    primaryColor: string;
+    logoUrl: string | null;
+    walletBannerUrl?: string | null;
+    walletBannerVersion?: string | null;
+    instagramHandle?: string | null;
+    country: string;
+    currency: string;
+    timezone: string;
+    legalName: string | null;
+    contactEmail: string | null;
+    privacyPolicyUrl: string | null;
+  };
 }
 
 export default function SettingsPage() {
   const { data, isLoading, error } = useQuery({ queryKey: ["tenant"], queryFn: () => api.get<Tenant>("/app/tenant") });
+  const { data: walletStatus } = useQuery({
+    queryKey: ["wallet-status"],
+    queryFn: () => api.get<{ googleWallet: boolean; appleWallet?: boolean }>("/app/wallet/status"),
+  });
+
   return (
     <>
       <PageHeader
@@ -35,6 +52,46 @@ export default function SettingsPage() {
           ) : undefined
         }
       />
+
+      {/* État des intégrations Portefeuilles & WhatsApp */}
+      <div className="mb-6 grid gap-3 sm:grid-cols-3">
+        <section className="rounded-xl border border-line bg-surface p-4 text-sm shadow-1">
+          <div className="flex items-center justify-between">
+            <h2 className="font-semibold text-ink">Apple Wallet</h2>
+            <span className={walletStatus?.appleWallet ? "rounded-full bg-emerald-500/15 px-2 py-0.5 text-xs font-semibold text-emerald-600" : "rounded-full bg-amber-500/15 px-2 py-0.5 text-xs font-semibold text-amber-600"}>
+              {walletStatus?.appleWallet ? "Configuré" : "Certificats prêts"}
+            </span>
+          </div>
+          <p className="mt-1.5 text-xs text-ink-3">
+            PassKit actif. Cartes synchronisées en direct avec notifications push sur iPhone.
+          </p>
+        </section>
+
+        <section className="rounded-xl border border-line bg-surface p-4 text-sm shadow-1">
+          <div className="flex items-center justify-between">
+            <h2 className="font-semibold text-ink">Google Wallet</h2>
+            <span className={walletStatus?.googleWallet ? "rounded-full bg-emerald-500/15 px-2 py-0.5 text-xs font-semibold text-emerald-600" : "rounded-full bg-amber-500/15 px-2 py-0.5 text-xs font-semibold text-amber-600"}>
+              {walletStatus?.googleWallet ? "Configuré" : "En attente"}
+            </span>
+          </div>
+          <p className="mt-1.5 text-xs text-ink-3">
+            Ajout en 1 clic sur Android avec mise à jour automatique des tampons et points.
+          </p>
+        </section>
+
+        <section className="rounded-xl border border-line bg-surface p-4 text-sm shadow-1">
+          <div className="flex items-center justify-between">
+            <h2 className="font-semibold text-ink">WhatsApp Cloud</h2>
+            <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-xs font-semibold text-emerald-600">
+              Dizayna actif
+            </span>
+          </div>
+          <p className="mt-1.5 text-xs text-ink-3">
+            Envoi instantané du lien de la carte par WhatsApp aux nouveaux clients.
+          </p>
+        </section>
+      </div>
+
       {isLoading && <Skeleton className="h-64" />}
       {error && <ErrorNote>{errorMessage(error)}</ErrorNote>}
       {data && <SettingsForm data={data} />}
@@ -59,6 +116,8 @@ function SettingsForm({ data }: { data: Tenant }) {
       slug: data.slug,
       primaryColor: data.settings.primaryColor,
       logoUrl: data.settings.logoUrl ?? "",
+      walletBannerUrl: data.settings.walletBannerUrl ?? "",
+      instagramHandle: data.settings.instagramHandle ?? "",
       country: data.settings.country,
       currency: data.settings.currency,
       timezone: data.settings.timezone,
@@ -86,6 +145,9 @@ function SettingsForm({ data }: { data: Tenant }) {
                 currency: f.currency,
                 timezone: f.timezone,
                 logoUrl: f.logoUrl || null,
+                walletBannerUrl: f.walletBannerUrl || null,
+                walletBannerVersion: f.walletBannerUrl ? String(Date.now()) : null,
+                instagramHandle: f.instagramHandle ? (f.instagramHandle.startsWith("@") ? f.instagramHandle : `@${f.instagramHandle}`) : null,
                 legalName: f.legalName || null,
                 contactEmail: f.contactEmail || null,
                 privacyPolicyUrl: f.privacyPolicyUrl || null,
@@ -153,6 +215,57 @@ function SettingsForm({ data }: { data: Tenant }) {
               </Field>
               <Field label="Adresse du logo">{(p) => <Input {...p} value={f.logoUrl ?? ""} onChange={set("logoUrl")} />}</Field>
             </div>
+
+            <div className="grid gap-2 rounded-xl border border-line bg-surface-2/60 p-4">
+              <div className="flex items-center justify-between">
+                <label className="text-sm font-semibold text-ink">Bannière des cartes Wallet (Apple & Google)</label>
+                {f.walletBannerUrl && (
+                  <button
+                    type="button"
+                    onClick={() => setF({ ...f, walletBannerUrl: "" })}
+                    className="text-xs font-medium text-rose-600 hover:underline"
+                  >
+                    Revenir au bandeau automatique
+                  </button>
+                )}
+              </div>
+              <p className="text-xs text-ink-3">
+                Visible sous le logo sur iPhone et sous les infos sur Android. Sans image personnalisée, une bannière élégante reprend automatiquement votre nom et votre offre de fidélité.
+              </p>
+              <div className="mt-2 aspect-[375/144] w-full max-w-md overflow-hidden rounded-xl border border-line bg-surface shadow-xs">
+                <img
+                  src={f.walletBannerUrl || `/api/public/tenants/${f.slug}/wallet-banner.png?t=${Date.now()}`}
+                  alt="Bannière des cartes Wallet"
+                  className="size-full object-cover"
+                />
+              </div>
+              <Input
+                type="file"
+                accept="image/png,image/jpeg,image/webp"
+                disabled={uploading}
+                onChange={async (e) => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+                  if (file.size > 1024 * 1024) { setError("La bannière ne doit pas dépasser 1 Mo."); return; }
+                  setUploading(true); setError(null);
+                  try {
+                    const dataBase64 = await new Promise<string>((resolve, reject) => {
+                      const reader = new FileReader();
+                      reader.onload = () => resolve(String(reader.result).split(",")[1] ?? "");
+                      reader.onerror = () => reject(new Error("Lecture impossible"));
+                      reader.readAsDataURL(file);
+                    });
+                    const { url } = await api.post<{ url: string }>("/app/media", { dataBase64 });
+                    setF((current) => ({ ...current, walletBannerUrl: url }));
+                  } catch (err) { setError(errorMessage(err)); } finally { setUploading(false); }
+                }}
+              />
+            </div>
+
+            <Field label="Compte Instagram" hint="Affiché sur les cartes téléchargées (PNG et PDF) de vos clients.">
+              {(p) => <Input {...p} placeholder="@dizayna" value={f.instagramHandle ?? ""} onChange={set("instagramHandle")} />}
+            </Field>
+
             <div className="grid gap-4 sm:grid-cols-3">
               <Field label="Pays">
                 {(p) => (

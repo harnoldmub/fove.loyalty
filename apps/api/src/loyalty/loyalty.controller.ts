@@ -157,7 +157,10 @@ export class LoyaltyController {
   @Get("wallet/status")
   @RequirePermission("programs.read")
   walletStatus() {
-    return { googleWallet: this.cards.wallet.isConfigured() };
+    return {
+      googleWallet: this.cards.wallet.isConfigured(),
+      appleWallet: this.cards.appleWallet.isConfigured(),
+    };
   }
 
   @Post("accounts/:id/status")

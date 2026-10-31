@@ -19,3 +19,4 @@ apps/web/public/widget/
 backups/
 *.sql
 *.sql.gz
+!packages/database/prisma/migrations/**/*.sql

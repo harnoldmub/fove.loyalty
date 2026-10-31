@@ -256,7 +256,15 @@ export class PublicService {
       transactions,
       verification: account.status === "PENDING_VERIFICATION" ? account.program.enrollmentVerification : null,
       googleWallet: this.cards.wallet.isConfigured() && account.status === "ACTIVE",
+      appleWallet: this.cards.appleWallet.isConfigured() && account.status === "ACTIVE",
     };
+  }
+
+  async getTenantBySlug(slug: string) {
+    return this.prisma.client.tenant.findFirst({
+      where: { slug: slug.toLowerCase(), status: "ACTIVE" },
+      include: { settings: true },
+    });
   }
 
   async cardQrSvg(accessToken: string): Promise<string> {

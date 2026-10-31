@@ -20,6 +20,13 @@ const schema = z.object({
   /** Google Wallet : identifiant d'émetteur et compte de service (JSON). Absents = fonction masquée. */
   GOOGLE_WALLET_ISSUER_ID: z.string().regex(/^\d+$/).optional(),
   GOOGLE_WALLET_SERVICE_ACCOUNT_JSON: z.string().optional(),
+  /** Apple Wallet (carte fidélité .pkpass signée). Certificats PEM encodés en base64. */
+  APPLE_WALLET_PASS_TYPE_ID: z.string().optional(),
+  APPLE_WALLET_TEAM_ID: z.string().optional(),
+  APPLE_WALLET_SIGNER_CERT_PEM_BASE64: z.string().optional(),
+  APPLE_WALLET_SIGNER_KEY_PEM_BASE64: z.string().optional(),
+  APPLE_WALLET_SIGNER_KEY_PASSPHRASE: z.string().optional(),
+  APPLE_WALLET_WWDR_PEM_BASE64: z.string().optional(),
   /** WhatsApp Business Cloud API (application Meta « DIZAYNA »). */
   WHATSAPP_TOKEN: z.string().optional(),
   WHATSAPP_PHONE_NUMBER_ID: z.string().optional(),
@@ -27,7 +34,13 @@ const schema = z.object({
   WHATSAPP_BUSINESS_ID: z.string().optional(),
 });
 
-export type AppConfig = z.infer<typeof schema> & { corsOrigins: string[]; isProd: boolean; googleWalletEnabled: boolean; whatsappEnabled: boolean };
+export type AppConfig = z.infer<typeof schema> & {
+  corsOrigins: string[];
+  isProd: boolean;
+  googleWalletEnabled: boolean;
+  appleWalletEnabled: boolean;
+  whatsappEnabled: boolean;
+};
 
 let cached: AppConfig | null = null;
 
@@ -47,6 +60,13 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     corsOrigins: value.CORS_ORIGINS.split(",").map((o) => o.trim()).filter(Boolean),
     isProd: value.NODE_ENV === "production",
     googleWalletEnabled: Boolean(value.GOOGLE_WALLET_ISSUER_ID && value.GOOGLE_WALLET_SERVICE_ACCOUNT_JSON),
+    appleWalletEnabled: Boolean(
+      value.APPLE_WALLET_PASS_TYPE_ID &&
+      value.APPLE_WALLET_TEAM_ID &&
+      value.APPLE_WALLET_SIGNER_CERT_PEM_BASE64 &&
+      value.APPLE_WALLET_SIGNER_KEY_PEM_BASE64 &&
+      value.APPLE_WALLET_WWDR_PEM_BASE64,
+    ),
     whatsappEnabled: Boolean(value.WHATSAPP_TOKEN && value.WHATSAPP_PHONE_NUMBER_ID),
   };
   return cached;

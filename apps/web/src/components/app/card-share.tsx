@@ -95,8 +95,8 @@ export function CardShareDialog({ accountId }: { accountId: string }) {
 }
 
 export function useWalletEnabled() {
-  const { data } = useQuery({ queryKey: ["wallet-status"], queryFn: () => api.get<{ googleWallet: boolean }>("/app/wallet/status"), staleTime: 5 * 60_000 });
-  return data?.googleWallet ?? false;
+  const { data } = useQuery({ queryKey: ["wallet-status"], queryFn: () => api.get<{ googleWallet: boolean; appleWallet?: boolean }>("/app/wallet/status"), staleTime: 5 * 60_000 });
+  return Boolean(data?.googleWallet || data?.appleWallet);
 }
 
 /** Notification Google Wallet à un client (3 au plus par carte et par 24 h, limite Google). */
