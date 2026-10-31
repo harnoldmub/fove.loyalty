@@ -14,3 +14,8 @@ playwright-report
 
 # Généré par packages/widget (pnpm build)
 apps/web/public/widget/
+
+# Sauvegardes locales de base de données
+backups/
+*.sql
+*.sql.gz
