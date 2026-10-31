@@ -124,7 +124,7 @@
   </div>
 
   <script>
-    const TARGET_URL = window.FOVE_REMOTE_URL || "https://app.fove.digital";
+    const TARGET_URL = (window.FOVE_REMOTE_URL || "https://app.fove.digital") + "/app";
 
     function checkAndConnect() {
       const loader = document.getElementById("loader");

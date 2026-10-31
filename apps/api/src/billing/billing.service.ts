@@ -76,12 +76,19 @@ export class BillingService {
     const price = interval === "YEAR" ? plan.stripePriceYearlyId : plan.stripePriceMonthlyId;
     if (!price) throw badRequest("price_missing", "Tarif Stripe non configuré pour cette offre");
     const tenant = await this.prisma.client.tenant.findUniqueOrThrow({ where: { id: ctx.tenantId }, include: { settings: true } });
+    const buyer = ctx.actor.type === "user" ? await this.prisma.client.user.findUnique({ where: { id: ctx.actor.userId }, select: { email: true } }) : null;
     const customerId = current?.stripeCustomerId ?? (await this.stripe.customers.create({
       name: tenant.name,
-      email: tenant.settings?.contactEmail ?? undefined,
+      email: tenant.settings?.contactEmail ?? buyer?.email,
       metadata: { tenantId: tenant.id },
     })).id;
 
+    // Les jours d'essai restants sont conservés : le premier prélèvement a lieu
+    // à la fin de l'essai (Stripe exige une échéance à plus de 48 h).
+    const trialEnd =
+      current?.status === "TRIALING" && current.trialEndsAt && current.trialEndsAt.getTime() > Date.now() + 48 * 3600 * 1000
+        ? Math.floor(current.trialEndsAt.getTime() / 1000)
+        : undefined;
 
     const session = await this.stripe.checkout.sessions.create({
       mode: "subscription",
@@ -91,6 +98,7 @@ export class BillingService {
       subscription_data: {
         billing_mode: { type: "flexible" },
         metadata: { tenantId: tenant.id },
+        ...(trialEnd ? { trial_end: trialEnd } : {}),
       },
       success_url: `${appUrl}/app/billing?checkout=success`,
       cancel_url: `${appUrl}/app/billing?checkout=cancelled`,
@@ -200,40 +208,41 @@ export class BillingService {
   }
 
   private async syncSubscription(remote: Stripe.Subscription) {
-    const tenantId = remote.metadata?.tenantId;
+    const customerId = typeof remote.customer === "string" ? remote.customer : remote.customer.id;
     const item = remote.items.data[0];
     const priceId = item?.price.id;
     const plan = priceId
       ? await this.prisma.client.subscriptionPlan.findFirst({ where: { OR: [{ stripePriceMonthlyId: priceId }, { stripePriceYearlyId: priceId }] } })
       : null;
+    // Abonnement créé depuis le tableau de bord Stripe : pas de métadonnée,
+    // on retrouve l'entreprise par son client Stripe.
+    const tenantId =
+      remote.metadata?.tenantId ??
+      (await this.prisma.client.subscription.findFirst({ where: { stripeCustomerId: customerId }, select: { tenantId: true } }))?.tenantId;
     if (!tenantId || !plan) {
       this.logger.error(`Abonnement ${remote.id} : tenant ou offre introuvable (price ${priceId})`);
       return;
     }
+    const local = await this.prisma.client.subscription.findUnique({ where: { tenantId } });
+    if (local?.stripeSubscriptionId && local.stripeSubscriptionId !== remote.id && local.status !== "CANCELED") {
+      // Événement d'un ancien abonnement : il ne doit pas écraser l'abonnement en cours.
+      this.logger.warn(`Abonnement ${remote.id} ignoré : ${tenantId} est lié à ${local.stripeSubscriptionId}`);
+      return;
+    }
     const status = mapStatus(remote.status);
     const periodEndUnix = (item as unknown as { current_period_end?: number })?.current_period_end;
-    await this.prisma.client.subscription.upsert({
-      where: { tenantId },
-      update: {
-        planId: plan.id,
-        status,
-        provider: "STRIPE",
-        interval: item?.price.recurring?.interval === "year" ? "YEAR" : "MONTH",
-        stripeSubscriptionId: remote.id,
-        stripeCustomerId: typeof remote.customer === "string" ? remote.customer : remote.customer.id,
-        cancelAtPeriodEnd: remote.cancel_at_period_end,
-        trialEndsAt: remote.trial_end ? new Date(remote.trial_end * 1000) : null,
-        currentPeriodEnd: periodEndUnix ? new Date(periodEndUnix * 1000) : null,
-      },
-      create: {
-        tenantId,
-        planId: plan.id,
-        status,
-        provider: "STRIPE",
-        stripeSubscriptionId: remote.id,
-        stripeCustomerId: typeof remote.customer === "string" ? remote.customer : remote.customer.id,
-      },
-    });
+    const data = {
+      planId: plan.id,
+      status,
+      provider: "STRIPE" as const,
+      interval: item?.price.recurring?.interval === "year" ? ("YEAR" as const) : ("MONTH" as const),
+      stripeSubscriptionId: remote.id,
+      stripeCustomerId: customerId,
+      cancelAtPeriodEnd: remote.cancel_at_period_end,
+      trialEndsAt: remote.trial_end ? new Date(remote.trial_end * 1000) : null,
+      currentPeriodEnd: periodEndUnix ? new Date(periodEndUnix * 1000) : null,
+    };
+    await this.prisma.client.subscription.upsert({ where: { tenantId }, update: data, create: { tenantId, ...data } });
     await this.audit.log({ tenantId, action: "billing.subscription_synced", metadata: { status, plan: plan.code } });
   }
 }

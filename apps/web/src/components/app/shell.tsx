@@ -28,6 +28,7 @@ import { Logo } from "@/components/brand";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { api, errorMessage } from "@/lib/api";
+import { useIsNativeApp } from "@/lib/native-app";
 import { cn } from "@/lib/utils";
 import { useActiveTenant, useMe } from "./me-context";
 
@@ -50,7 +51,9 @@ const MOBILE = ["/app", "/app/scanner", "/app/customers", "/app/transactions"];
 
 function useNav() {
   const me = useMe();
-  return NAV.filter((n) => me.permissions.includes(n.permission));
+  const native = useIsNativeApp();
+  // L'abonnement se gère sur le web : pas de paiement dans l'app mobile.
+  return NAV.filter((n) => me.permissions.includes(n.permission) && !(native && n.href === "/app/billing"));
 }
 
 function isActive(pathname: string, href: string) {

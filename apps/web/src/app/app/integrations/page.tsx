@@ -12,6 +12,7 @@ import { ConfirmDialog, DialogContent, DialogRoot } from "@/components/ui/dialog
 import { Checkbox, Field, Input, Select, Textarea } from "@/components/ui/field";
 import { Badge, EmptyState, ErrorNote, PageHeader, Panel } from "@/components/ui/misc";
 import { api, errorMessage } from "@/lib/api";
+import { useIsNativeApp } from "@/lib/native-app";
 import { formatDate } from "@/lib/utils";
 
 interface ApiKey { id: string; name: string; kind: "SECRET" | "PUBLISHABLE"; environment: "TEST" | "LIVE"; prefix: string; scopes: string[]; allowedOrigins: string[]; lastUsedAt: string | null; revokedAt: string | null; createdAt: string }
@@ -179,6 +180,7 @@ function WebhookDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (o
 }
 
 export default function IntegrationsPage() {
+  const native = useIsNativeApp();
   const canWrite = useCan("integrations.write");
   const qc = useQueryClient();
   const [keyOpen, setKeyOpen] = useState(false);
@@ -192,7 +194,7 @@ export default function IntegrationsPage() {
 
   return (
     <>
-      <PageHeader title="Intégrations" description={<>Reliez votre caisse ou votre boutique en ligne. Guide complet dans la <a className="text-cobalt underline" href="/developpeurs">documentation</a>.</>} />
+      <PageHeader title="Intégrations" description={native ? "Reliez votre caisse ou votre boutique en ligne." : <>Reliez votre caisse ou votre boutique en ligne. Guide complet dans la <a className="text-cobalt underline" href="/developpeurs">documentation</a>.</>} />
 
       <section className="grid gap-3" aria-labelledby="boutique">
         <h2 id="boutique" className="font-display text-xl font-semibold">Boutique en ligne</h2>

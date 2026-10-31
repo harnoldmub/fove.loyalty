@@ -12,6 +12,7 @@ import { Checkbox, Field, Input } from "@/components/ui/field";
 import { ErrorNote } from "@/components/ui/misc";
 import { PrivacyDialog, TermsDialog } from "@/components/privacy-dialog";
 import { api, ApiError, errorMessage } from "@/lib/api";
+import { useIsNativeApp } from "@/lib/native-app";
 
 function Heading({ title, children }: { title: string; children?: React.ReactNode }) {
   return (
@@ -27,6 +28,7 @@ export function LoginForm() {
   const next = useSearchParams().get("next");
   const [error, setError] = useState<string | null>(null);
   const [leaving, setLeaving] = useState(false);
+  const native = useIsNativeApp();
   const form = useForm<z.infer<typeof loginSchema>>({ resolver: zodResolver(loginSchema) });
 
   const onSubmit = form.handleSubmit(async (values) => {
@@ -56,7 +58,7 @@ export function LoginForm() {
       </form>
       <div className="mt-6 flex flex-wrap justify-between gap-3 text-sm">
         <Link href="/forgot-password" className="text-cobalt hover:underline">Mot de passe oublié</Link>
-        <Link href="/signup" className="text-ink-2 hover:text-ink">Pas encore de compte ? Créer un compte</Link>
+        {!native && <Link href="/signup" className="text-ink-2 hover:text-ink">Pas encore de compte ? Créer un compte</Link>}
       </div>
     </>
   );

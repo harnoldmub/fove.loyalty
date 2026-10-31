@@ -157,7 +157,10 @@ function BillingView() {
         <section className="mt-10" aria-labelledby="offres">
           <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
             <h2 id="offres" className="font-display text-2xl font-semibold">Changer d’offre</h2>
-            <p className="text-sm text-ink-2">Abonnement annuel, payé à l’avance en dollars US.</p>
+            <p className="text-sm text-ink-2">
+              Abonnement annuel, payé à l’avance en dollars US.
+              {data.mode === "stripe" && sub?.status === "TRIALING" && " Le premier paiement a lieu à la fin de votre essai."}
+            </p>
           </div>
           {!me.user.emailVerifiedAt && <p className="mb-4 text-sm text-danger">Confirmez votre email avant de choisir une offre.</p>}
           <div className="grid gap-4 md:grid-cols-3">

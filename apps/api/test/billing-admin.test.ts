@@ -114,6 +114,38 @@ describe("webhooks Stripe signés", () => {
     const replay = await http().set("stripe-signature", header).send(payload);
     expect(replay.body.duplicate).toBe(true);
   });
+
+  it("ignore l'annulation d'un ancien abonnement et retrouve l'entreprise par son client Stripe", async () => {
+    const o = await ownerWithTenant(app);
+    await db.subscription.update({ where: { tenantId: o.tenantId }, data: { stripeCustomerId: "cus_456", stripeSubscriptionId: "sub_new", status: "ACTIVE" } });
+    const send = async (id: string, sub: string, status: string) => {
+      const payload = JSON.stringify({
+        id,
+        object: "event",
+        type: "customer.subscription.updated",
+        data: {
+          object: {
+            id: sub,
+            object: "subscription",
+            status,
+            customer: "cus_456",
+            cancel_at_period_end: false,
+            trial_end: null,
+            metadata: {},
+            items: { data: [{ id: "si_2", current_period_end: Math.floor(Date.now() / 1000) + 86400, price: { id: "price_business_m", recurring: { interval: "year" } } }] },
+          },
+        },
+      });
+      const header = Stripe.webhooks.generateTestHeaderString({ payload, secret: whsec });
+      return request(app.getHttpServer()).post("/api/billing/stripe/webhook").set("Content-Type", "application/json").set("stripe-signature", header).send(payload);
+    };
+    expect((await send("evt_old", "sub_old", "canceled")).status).toBe(200);
+    expect((await db.subscription.findUniqueOrThrow({ where: { tenantId: o.tenantId } })).status).toBe("ACTIVE");
+    expect((await send("evt_cur", "sub_new", "past_due")).status).toBe(200);
+    const sub = await db.subscription.findUniqueOrThrow({ where: { tenantId: o.tenantId } });
+    expect(sub.status).toBe("PAST_DUE");
+    expect(sub.interval).toBe("YEAR");
+  });
 });
 
 describe("Super Admin FOVE", () => {
