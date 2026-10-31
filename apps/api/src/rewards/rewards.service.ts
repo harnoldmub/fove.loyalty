@@ -112,6 +112,9 @@ export class RewardsService {
         if ((reward.availableFrom && reward.availableFrom > now) || (reward.availableUntil && reward.availableUntil < now)) {
           throw unprocessable("reward_unavailable", "Récompense hors période de disponibilité");
         }
+        // Vérifié ici : en mode tampons le débit est le solde entier, le grand
+        // livre ne peut donc plus détecter un solde insuffisant.
+        if (account.balance < reward.cost) throw unprocessable("insufficient_balance", "Solde insuffisant pour cette récompense");
         if (reward.stock !== null) {
           const { count } = await tx.reward.updateMany({ where: { id: reward.id, stock: { gt: 0 } }, data: { stock: { decrement: 1 } } });
           if (count === 0) throw unprocessable("out_of_stock", "Récompense épuisée");
