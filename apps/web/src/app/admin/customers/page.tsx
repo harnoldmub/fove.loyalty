@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import { ExternalLink, Search, Smartphone, UserCheck, ShieldCheck } from "lucide-react";
+import { ExternalLink, Search, Smartphone, ShieldCheck } from "lucide-react";
 import { Input } from "@/components/ui/field";
 import { Badge, PageHeader, Panel } from "@/components/ui/misc";
 import { api } from "@/lib/api";
@@ -46,11 +46,11 @@ interface PlatformCustomer {
 }
 
 const SEGMENT_BADGES: Record<string, { label: string; tone: "mint" | "cobalt" | "stamp" | "danger" | "neutral" }> = {
-  VIP: { label: "⭐ VIP", tone: "mint" },
+  VIP: { label: "VIP", tone: "mint" },
   REGULAR: { label: "Actif régulier", tone: "cobalt" },
-  AT_RISK: { label: "⚠️ En risque", tone: "stamp" },
-  DORMANT: { label: "💤 Dormant", tone: "danger" },
-  NEW: { label: "🌱 Nouveau", tone: "neutral" },
+  AT_RISK: { label: "En risque", tone: "stamp" },
+  DORMANT: { label: "Dormant", tone: "danger" },
+  NEW: { label: "Nouveau", tone: "neutral" },
 };
 
 export default function AdminCustomersPage() {
@@ -64,20 +64,17 @@ export default function AdminCustomersPage() {
   return (
     <>
       <PageHeader
-        title="Clients & Cartes de fidélité"
-        description="Vue globale de tous les clients et cartes enregistrés sur les commerces de la plateforme."
-        actions={
-          <div className="flex items-center gap-2 text-sm text-ink-3">
-            <UserCheck className="size-4 text-emerald-600" />
-            <span>{customers.length} client{customers.length > 1 ? "s" : ""} référencé{customers.length > 1 ? "s" : ""}</span>
-          </div>
-        }
+        title="Clients et cartes"
+        description={`${customers.length} client${customers.length > 1 ? "s" : ""} sur l’ensemble des commerces de la plateforme.`}
       />
 
-      <div className="mb-4">
+      <div className="relative mb-4">
+        <Search className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-ink-3" aria-hidden />
         <Input
           type="search"
           aria-label="Rechercher un client"
+          placeholder="Nom, téléphone, numéro de carte ou commerce"
+          className="pl-10"
           value={q}
           onChange={(e) => setQ(e.target.value)}
         />
@@ -90,7 +87,7 @@ export default function AdminCustomersPage() {
               <th scope="col" className="px-4 py-3 font-medium">Client</th>
               <th scope="col" className="px-4 py-3 font-medium">Commerce</th>
               <th scope="col" className="px-4 py-3 font-medium">Segment</th>
-              <th scope="col" className="px-4 py-3 font-medium">Carte & Solde</th>
+              <th scope="col" className="px-4 py-3 font-medium">Carte et solde</th>
               <th scope="col" className="px-4 py-3 font-medium">Activité</th>
               <th scope="col" className="px-4 py-3 font-medium text-right">Lien direct carte</th>
             </tr>
@@ -151,7 +148,7 @@ export default function AdminCustomersPage() {
                   <td className="px-4 py-3.5">
                     {account ? (
                       <div>
-                        <span className="font-mono text-xs font-semibold text-ink">
+                        <span className="whitespace-nowrap text-sm font-medium tabular tracking-wide text-ink">
                           {account.cardNumber}
                         </span>
                         <span className="block text-xs font-semibold text-cobalt">

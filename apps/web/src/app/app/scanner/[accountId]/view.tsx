@@ -223,7 +223,7 @@ export function CheckoutView({ accountId }: { accountId: string }) {
                     segment.segment === "VIP"
                       ? "bg-cobalt/15 text-cobalt"
                       : segment.segment === "AT_RISK"
-                      ? "bg-amber-500/15 text-amber-700 dark:text-amber-400"
+                      ? "bg-stamp-soft text-stamp-ink dark:text-stamp"
                       : segment.segment === "NEW"
                       ? "bg-mint/15 text-mint"
                       : "bg-surface text-ink-2"
@@ -302,7 +302,7 @@ export function CheckoutView({ accountId }: { accountId: string }) {
       {(notes.length > 0 || showNoteInput) && (
         <Panel className="p-4">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-wider text-ink-3 flex items-center gap-1">
+            <span className="text-sm font-medium text-ink-2 flex items-center gap-1">
               <StickyNote className="size-3.5" /> Mémoires & Préférences Vendeur
             </span>
             {!showNoteInput && canWriteCustomer && (

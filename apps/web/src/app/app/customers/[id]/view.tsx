@@ -313,7 +313,7 @@ function WhatsAppActionsPanel({ customer, tenantName }: { customer: Customer; te
             </a>
           </Button>
         ) : (
-          <p className="text-xs text-amber-600 dark:text-amber-400">
+          <p className="text-xs text-stamp-ink dark:text-stamp">
             Renseignez un numéro de téléphone pour envoyer directement ce message.
           </p>
         )}
@@ -413,7 +413,7 @@ function NotesAndTagsPanel({ customer }: { customer: Customer }) {
 
       {/* Mémos vendeurs Sidely */}
       <h2 className="mb-2 font-display text-base font-semibold flex items-center gap-1.5 text-ink">
-        <StickyNote className="size-4 text-amber-500" /> Notes & Mémos Vendeurs
+        <StickyNote className="size-4 text-stamp" /> Notes de l’équipe
       </h2>
       <form onSubmit={handleAddNote} className="grid gap-2 mb-4">
         <Input
@@ -493,7 +493,7 @@ export function CustomerDetail({ id }: { id: string }) {
                   segment.segment === "VIP"
                     ? "bg-cobalt/15 text-cobalt"
                     : segment.segment === "AT_RISK"
-                    ? "bg-amber-500/15 text-amber-700 dark:text-amber-400"
+                    ? "bg-stamp-soft text-stamp-ink dark:text-stamp"
                     : segment.segment === "NEW"
                     ? "bg-mint/15 text-mint"
                     : "bg-surface text-ink-2 border border-line"

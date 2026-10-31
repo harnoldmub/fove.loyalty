@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { AdminShell } from "@/components/admin/admin-shell";
 import { requireMe } from "@/lib/session";
 
-export const metadata: Metadata = { title: { default: "Administration FOVE", template: "%s · Administration FOVE" }, robots: { index: false } };
+export const metadata: Metadata = { title: { default: "Administration", template: "%s · Administration FOVE" }, robots: { index: false } };
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const me = await requireMe("/admin");

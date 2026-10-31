@@ -55,35 +55,35 @@ export default function SettingsPage() {
 
       {/* État des intégrations Portefeuilles & WhatsApp */}
       <div className="mb-6 grid gap-3 sm:grid-cols-3">
-        <section className="rounded-xl border border-line bg-surface p-4 text-sm shadow-1">
-          <div className="flex items-center justify-between">
+        <section className="rounded-[var(--radius-lg)] bg-surface p-4 text-sm shadow-1">
+          <div className="flex items-start justify-between gap-2">
             <h2 className="font-semibold text-ink">Apple Wallet</h2>
-            <span className={walletStatus?.appleWallet ? "rounded-full bg-emerald-500/15 px-2 py-0.5 text-xs font-semibold text-emerald-600" : "rounded-full bg-amber-500/15 px-2 py-0.5 text-xs font-semibold text-amber-600"}>
-              {walletStatus?.appleWallet ? "Configuré" : "Certificats prêts"}
+            <span className={walletStatus?.appleWallet ? "shrink-0 whitespace-nowrap rounded-full bg-mint-soft px-2 py-0.5 text-xs font-medium text-mint" : "shrink-0 whitespace-nowrap rounded-full bg-stamp-soft px-2 py-0.5 text-xs font-medium text-stamp-ink dark:text-stamp"}>
+              {walletStatus?.appleWallet ? "Activé" : "À configurer"}
             </span>
           </div>
           <p className="mt-1.5 text-xs text-ink-3">
-            PassKit actif. Cartes synchronisées en direct avec notifications push sur iPhone.
+            {walletStatus?.appleWallet ? "Cartes ajoutées sur iPhone, mises à jour à chaque passage." : "Le bouton Apple Wallet est masqué tant que les certificats ne sont pas installés."}
           </p>
         </section>
 
-        <section className="rounded-xl border border-line bg-surface p-4 text-sm shadow-1">
-          <div className="flex items-center justify-between">
+        <section className="rounded-[var(--radius-lg)] bg-surface p-4 text-sm shadow-1">
+          <div className="flex items-start justify-between gap-2">
             <h2 className="font-semibold text-ink">Google Wallet</h2>
-            <span className={walletStatus?.googleWallet ? "rounded-full bg-emerald-500/15 px-2 py-0.5 text-xs font-semibold text-emerald-600" : "rounded-full bg-amber-500/15 px-2 py-0.5 text-xs font-semibold text-amber-600"}>
-              {walletStatus?.googleWallet ? "Configuré" : "En attente"}
+            <span className={walletStatus?.googleWallet ? "shrink-0 whitespace-nowrap rounded-full bg-mint-soft px-2 py-0.5 text-xs font-medium text-mint" : "shrink-0 whitespace-nowrap rounded-full bg-stamp-soft px-2 py-0.5 text-xs font-medium text-stamp-ink dark:text-stamp"}>
+              {walletStatus?.googleWallet ? "Activé" : "À configurer"}
             </span>
           </div>
           <p className="mt-1.5 text-xs text-ink-3">
-            Ajout en 1 clic sur Android avec mise à jour automatique des tampons et points.
+            {walletStatus?.googleWallet ? "Ajout en un geste sur Android, solde mis à jour automatiquement." : "Le bouton Google Wallet est masqué tant que le compte émetteur n’est pas configuré."}
           </p>
         </section>
 
-        <section className="rounded-xl border border-line bg-surface p-4 text-sm shadow-1">
-          <div className="flex items-center justify-between">
-            <h2 className="font-semibold text-ink">WhatsApp Cloud</h2>
-            <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-xs font-semibold text-emerald-600">
-              Dizayna actif
+        <section className="rounded-[var(--radius-lg)] bg-surface p-4 text-sm shadow-1">
+          <div className="flex items-start justify-between gap-2">
+            <h2 className="font-semibold text-ink">WhatsApp</h2>
+            <span className="shrink-0 whitespace-nowrap rounded-full bg-mint-soft px-2 py-0.5 text-xs font-medium text-mint">
+              Activé
             </span>
           </div>
           <p className="mt-1.5 text-xs text-ink-3">
@@ -218,12 +218,12 @@ function SettingsForm({ data }: { data: Tenant }) {
 
             <div className="grid gap-2 rounded-xl border border-line bg-surface-2/60 p-4">
               <div className="flex items-center justify-between">
-                <label className="text-sm font-semibold text-ink">Bannière des cartes Wallet (Apple & Google)</label>
+                <p className="text-sm font-medium text-ink">Bannière des cartes Wallet</p>
                 {f.walletBannerUrl && (
                   <button
                     type="button"
                     onClick={() => setF({ ...f, walletBannerUrl: "" })}
-                    className="text-xs font-medium text-rose-600 hover:underline"
+                    className="text-xs font-medium text-danger hover:underline"
                   >
                     Revenir au bandeau automatique
                   </button>
@@ -234,7 +234,7 @@ function SettingsForm({ data }: { data: Tenant }) {
               </p>
               <div className="mt-2 aspect-[375/144] w-full max-w-md overflow-hidden rounded-xl border border-line bg-surface shadow-xs">
                 <img
-                  src={f.walletBannerUrl || `/api/public/tenants/${f.slug}/wallet-banner.png?t=${Date.now()}`}
+                  src={f.walletBannerUrl || `/api/public/tenants/${f.slug}/wallet-banner.png?v=${encodeURIComponent(`${f.name ?? ""}-${f.primaryColor ?? ""}`)}`}
                   alt="Bannière des cartes Wallet"
                   className="size-full object-cover"
                 />

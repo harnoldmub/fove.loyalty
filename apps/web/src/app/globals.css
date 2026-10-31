@@ -61,6 +61,13 @@
 
 @theme inline {
   --color-paper: var(--paper);
+  /* Alias utilisés par certains écrans : ils pointent vers les jetons existants. */
+  --color-background: var(--paper);
+  --color-subtle: var(--surface-2);
+  --color-surface-3: color-mix(in srgb, var(--surface-2) 70%, var(--line));
+  --color-line-2: var(--line-strong);
+  --color-cobalt-hover: color-mix(in srgb, var(--cobalt) 85%, var(--ink));
+  --color-mint-ink: color-mix(in srgb, var(--mint) 75%, var(--ink));
   --color-surface: var(--surface);
   --color-surface-2: var(--surface-2);
   --color-ink: var(--ink);
@@ -116,6 +123,27 @@ p { text-wrap: pretty; }
 }
 
 ::selection { background: var(--cobalt-soft); }
+
+/* Champ fichier : le bouton natif prend l'apparence d'un bouton secondaire. */
+input[type="file"] {
+  padding: 0.35rem;
+  line-height: 2rem;
+  color: var(--ink-2);
+  cursor: pointer;
+}
+input[type="file"]::file-selector-button {
+  margin-right: 0.75rem;
+  height: 2rem;
+  padding: 0 0.85rem;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  color: var(--ink);
+  font: inherit;
+  font-weight: 500;
+  cursor: pointer;
+}
+input[type="file"]::file-selector-button:hover { background: var(--line); }
 
 .tabular { font-variant-numeric: tabular-nums; }
 

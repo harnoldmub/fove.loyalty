@@ -107,22 +107,11 @@ export default function HomePage() {
           </div>
           <p className="mt-4 text-sm text-ink-3">Essai gratuit, sans carte bancaire. Configuration seul, en quelques minutes.</p>
 
-          <div className="mt-8 border-t border-line/70 pt-6">
-            <p className="text-xs font-semibold uppercase tracking-wider text-ink-3">Intégration native dans les portefeuilles mobiles</p>
-            <div className="mt-3.5 flex flex-wrap items-center gap-4">
-              <img
-                src="/wallet/add-to-apple-wallet.svg"
-                alt="Ajouter à Apple Wallet"
-                width={135}
-                height={42}
-                className="h-[42px] w-auto shrink-0 select-none drop-shadow-xs"
-              />
-              <img
-                src="/wallet/add-to-google-wallet.svg"
-                alt="Ajouter à Google Wallet"
-                height={42}
-                className="h-[42px] w-auto shrink-0 select-none drop-shadow-xs"
-              />
+          <div className="mt-8 border-t border-line pt-6">
+            <p className="text-sm text-ink-2">Vos clients ajoutent leur carte à leur téléphone en un geste :</p>
+            <div className="mt-3 flex flex-wrap items-center gap-3" aria-label="Compatible Apple Wallet et Google Wallet">
+              <img src="/wallet/add-to-apple-wallet.svg" alt="Apple Wallet" height={40} className="h-10 w-auto shrink-0 select-none" />
+              <img src="/wallet/add-to-google-wallet.svg" alt="Google Wallet" height={40} className="h-10 w-auto shrink-0 select-none" />
             </div>
           </div>
         </div>

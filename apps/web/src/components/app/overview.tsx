@@ -198,7 +198,7 @@ export function OverviewView({ mode }: { mode: "home" | "analytics" }) {
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-2">
                     <Users className="size-5 text-cobalt" />
-                    <h2 className="font-display text-lg font-semibold">Santé de la Base Client (RFM)</h2>
+                    <h2 className="font-display text-lg font-semibold">Santé du fichier clients</h2>
                   </div>
                   <Button asChild variant="ghost" size="sm" className="text-xs">
                     <Link href="/app/customers">Voir les segments</Link>
@@ -230,12 +230,12 @@ export function OverviewView({ mode }: { mode: "home" | "analytics" }) {
                     <span className="font-semibold tabular">{segments.NEW}</span>
                   </div>
 
-                  <div className="flex items-center justify-between p-2 rounded-md bg-amber-500/10 border border-amber-500/20">
-                    <span className="flex items-center gap-2 text-amber-700 dark:text-amber-400">
+                  <div className="flex items-center justify-between p-2 rounded-md bg-stamp-soft border border-stamp/40">
+                    <span className="flex items-center gap-2 text-stamp-ink dark:text-stamp">
                       <AlertTriangle className="size-4" />
                       <span className="font-medium">En risque d&apos;attrition</span>
                     </span>
-                    <span className="font-semibold tabular text-amber-700 dark:text-amber-400">{segments.AT_RISK}</span>
+                    <span className="font-semibold tabular text-stamp-ink dark:text-stamp">{segments.AT_RISK}</span>
                   </div>
 
                   <div className="flex items-center justify-between p-2 rounded-md bg-surface">
@@ -248,11 +248,11 @@ export function OverviewView({ mode }: { mode: "home" | "analytics" }) {
                 </div>
 
                 {segments.AT_RISK > 0 && (
-                  <div className="mt-4 rounded-md bg-amber-500/10 p-3 text-xs text-amber-800 dark:text-amber-300 flex items-center justify-between gap-3">
+                  <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-md bg-stamp-soft p-3 text-sm text-stamp-ink dark:text-stamp">
                     <span>
-                      ⚠️ <strong>{segments.AT_RISK} client(s)</strong> ne sont pas revenus depuis plus de 35 jours.
+                      <strong>{segments.AT_RISK} {segments.AT_RISK > 1 ? "clients ne sont pas revenus" : "client n’est pas revenu"}</strong> depuis plus de 35 jours.
                     </span>
-                    <Button asChild size="sm" variant="secondary" className="shrink-0 h-7 text-xs">
+                    <Button asChild size="sm" variant="secondary" className="shrink-0">
                       <Link href="/app/customers">Relancer</Link>
                     </Button>
                   </div>
@@ -263,7 +263,7 @@ export function OverviewView({ mode }: { mode: "home" | "analytics" }) {
               <Panel className="p-5 sm:p-6">
                 <div className="flex items-center gap-2 mb-4">
                   <Building2 className="size-5 text-cobalt" />
-                  <h2 className="font-display text-lg font-semibold">Performance des Points de Vente</h2>
+                  <h2 className="font-display text-lg font-semibold">Activité par point de vente</h2>
                 </div>
 
                 {data.establishments && data.establishments.length > 0 ? (

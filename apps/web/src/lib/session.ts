@@ -13,6 +13,9 @@ export interface Me {
 
 export async function requireMe(next: string): Promise<Me> {
   const { status, data } = await serverGet<Me>("/auth/me", true);
-  if (status === 401 || !data) redirect(`/login?next=${encodeURIComponent(next)}`);
+  // Seule une session absente ou expirée renvoie vers la connexion ; une panne
+  // de l'API affiche la page d'erreur au lieu d'une boucle de reconnexion.
+  if (status === 401) redirect(`/login?next=${encodeURIComponent(next)}`);
+  if (!data) throw new Error(`Espace indisponible (API ${status})`);
   return data;
 }

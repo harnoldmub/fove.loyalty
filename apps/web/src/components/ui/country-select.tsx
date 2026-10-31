@@ -143,12 +143,9 @@ export function countryFlagEmoji(code: string): string {
 }
 
 export function Flag({ code, className }: { code: string; className?: string }) {
-  const [imgFailed, setImgFailed] = useState(false);
   const clean = code.trim().toLowerCase();
-
-  useEffect(() => {
-    setImgFailed(false);
-  }, [clean]);
+  const [failedCode, setFailedCode] = useState<string | null>(null);
+  const imgFailed = failedCode === clean;
 
   if (imgFailed || !/^[a-z]{2}$/.test(clean)) {
     return (
@@ -163,7 +160,7 @@ export function Flag({ code, className }: { code: string; className?: string }) 
       src={`https://flagcdn.com/${clean}.svg`}
       alt=""
       aria-hidden="true"
-      onError={() => setImgFailed(true)}
+      onError={() => setFailedCode(clean)}
       className={cn("h-4 w-[1.35rem] shrink-0 rounded-[2px] object-cover ring-1 ring-black/10", className)}
     />
   );
@@ -210,7 +207,6 @@ export function CountrySelect({ id, value, onChange, disabled, ...aria }: Countr
 
   useEffect(() => {
     if (!open) return;
-    setActive(Math.max(0, filtered.findIndex((opt) => opt.code === value)));
     requestAnimationFrame(() => search.current?.focus());
     const onPointer = (event: PointerEvent) => {
       if (!root.current?.contains(event.target as Node)) {
@@ -223,11 +219,14 @@ export function CountrySelect({ id, value, onChange, disabled, ...aria }: Countr
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
-  useEffect(() => setActive(0), [query]);
-
   useEffect(() => {
     list.current?.querySelector(`[data-index="${active}"]`)?.scrollIntoView({ block: "nearest" });
   }, [active, open]);
+
+  function openList() {
+    setActive(Math.max(0, filtered.findIndex((opt) => opt.code === value)));
+    setOpen(true);
+  }
 
   function close(focusTrigger = true) {
     setOpen(false);
@@ -275,11 +274,11 @@ export function CountrySelect({ id, value, onChange, disabled, ...aria }: Countr
         aria-expanded={open}
         aria-controls={listId}
         {...aria}
-        onClick={() => setOpen((o) => !o)}
+        onClick={() => (open ? setOpen(false) : openList())}
         onKeyDown={(event) => {
           if (["ArrowDown", "ArrowUp"].includes(event.key)) {
             event.preventDefault();
-            setOpen(true);
+            if (!open) openList();
           }
         }}
         className="flex h-11 w-full items-center gap-2.5 rounded-md bg-surface px-3.5 text-left text-[0.95rem] text-ink shadow-1 transition-shadow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cobalt aria-[invalid=true]:ring-2 aria-[invalid=true]:ring-danger disabled:opacity-60"
@@ -297,7 +296,7 @@ export function CountrySelect({ id, value, onChange, disabled, ...aria }: Countr
               ref={search}
               type="text"
               value={query}
-              onChange={(e) => setQuery(e.target.value)}
+              onChange={(e) => { setQuery(e.target.value); setActive(0); }}
               onKeyDown={onSearchKey}
               placeholder="Rechercher un pays…"
               aria-label="Rechercher un pays"
@@ -397,8 +396,6 @@ export function CitySelect({
 
   useEffect(() => {
     if (!open) return;
-    const idx = filtered.findIndex((c) => normalize(c) === normalize(value));
-    setActive(Math.max(0, idx));
     requestAnimationFrame(() => search.current?.focus());
     const onPointer = (event: PointerEvent) => {
       if (!root.current?.contains(event.target as Node)) {
@@ -411,11 +408,14 @@ export function CitySelect({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
-  useEffect(() => setActive(0), [query]);
-
   useEffect(() => {
     list.current?.querySelector(`[data-index="${active}"]`)?.scrollIntoView({ block: "nearest" });
   }, [active, open]);
+
+  function openList() {
+    setActive(Math.max(0, filtered.findIndex((c) => normalize(c) === normalize(value))));
+    setOpen(true);
+  }
 
   function close(focusTrigger = true) {
     setOpen(false);
@@ -466,11 +466,11 @@ export function CitySelect({
         aria-expanded={open}
         aria-controls={listId}
         {...aria}
-        onClick={() => setOpen((o) => !o)}
+        onClick={() => (open ? setOpen(false) : openList())}
         onKeyDown={(event) => {
           if (["ArrowDown", "ArrowUp"].includes(event.key)) {
             event.preventDefault();
-            setOpen(true);
+            if (!open) openList();
           }
         }}
         className="flex h-11 w-full items-center gap-2.5 rounded-md bg-surface px-3.5 text-left text-[0.95rem] text-ink shadow-1 transition-shadow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cobalt aria-[invalid=true]:ring-2 aria-[invalid=true]:ring-danger disabled:opacity-60"
@@ -488,7 +488,7 @@ export function CitySelect({
               ref={search}
               type="text"
               value={query}
-              onChange={(e) => setQuery(e.target.value)}
+              onChange={(e) => { setQuery(e.target.value); setActive(0); }}
               onKeyDown={onSearchKey}
               placeholder="Rechercher ou saisir une ville…"
               aria-label="Rechercher ou saisir une ville"

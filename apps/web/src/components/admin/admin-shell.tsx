@@ -5,7 +5,6 @@ import { usePathname } from "next/navigation";
 import { useState, type ReactNode } from "react";
 import {
   Activity,
-  ArrowUpRight,
   Building2,
   CreditCard,
   LogOut,
@@ -18,7 +17,6 @@ import {
 } from "lucide-react";
 import { Logo } from "@/components/brand";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { Badge } from "@/components/ui/misc";
 import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
@@ -33,7 +31,7 @@ interface AdminShellProps {
 
 const NAV_GROUPS = [
   {
-    title: "GESTION COMMERCES",
+    title: "Commerces",
     items: [
       {
         href: "/admin",
@@ -43,35 +41,35 @@ const NAV_GROUPS = [
       },
       {
         href: "/admin/customers",
-        label: "Clients & Cartes",
+        label: "Clients et cartes",
         icon: Users,
         exact: false,
       },
     ],
   },
   {
-    title: "RELATION COMMERCIALE",
+    title: "Relation commerciale",
     items: [
       {
         href: "/admin/messages",
-        label: "Messages & Leads",
+        label: "Messages et prospects",
         icon: MessageSquare,
         exact: false,
       },
     ],
   },
   {
-    title: "CONFIGURATION & SYSTÈME",
+    title: "Configuration",
     items: [
       {
         href: "/admin/plans",
-        label: "Offres & Abonnements",
+        label: "Offres et abonnements",
         icon: CreditCard,
         exact: false,
       },
       {
         href: "/admin/system",
-        label: "Intégrations & Erreurs",
+        label: "Intégrations et erreurs",
         icon: Activity,
         exact: false,
       },
@@ -103,17 +101,15 @@ export function AdminShell({ user, hasMerchantAccess, children }: AdminShellProp
       <div>
         <div className="flex h-16 items-center gap-3 border-b border-line px-5">
           <Link href="/admin" className="flex items-center gap-2.5 focus-visible:outline-none">
-            <Logo className="text-xl" />
+            <Logo className="text-lg" />
           </Link>
-          <span className="rounded-md border border-line bg-surface-2 px-1.5 py-0.5 text-[0.68rem] font-semibold tracking-wider text-ink-3 uppercase">
-            Admin
-          </span>
+          <span className="ml-auto rounded-md bg-surface-2 px-2 py-0.5 text-xs font-medium text-ink-2">Admin</span>
         </div>
 
         <nav aria-label="Menu administration" className="grid gap-6 p-4">
           {NAV_GROUPS.map((group) => (
             <div key={group.title}>
-              <p className="px-3 text-[0.68rem] font-semibold tracking-wider text-ink-3 uppercase mb-1.5">
+              <p className="mb-1.5 px-3 text-xs font-medium text-ink-3">
                 {group.title}
               </p>
               <ul className="grid gap-1">
@@ -126,13 +122,11 @@ export function AdminShell({ user, hasMerchantAccess, children }: AdminShellProp
                         href={item.href}
                         onClick={() => setMobileOpen(false)}
                         className={cn(
-                          "flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium transition-colors",
-                          active
-                            ? "bg-cobalt text-white shadow-xs font-semibold"
-                            : "text-ink-2 hover:bg-surface-2 hover:text-ink"
+                          "flex items-center gap-3 rounded-md px-3 py-2 text-[0.95rem] transition-colors",
+                          active ? "bg-surface-2 font-medium text-ink" : "text-ink-2 hover:bg-surface-2 hover:text-ink"
                         )}
                       >
-                        <Icon className={cn("size-4 shrink-0", active ? "text-white" : "text-ink-3")} aria-hidden />
+                        <Icon className={cn("size-[18px] shrink-0", active ? "text-cobalt" : "text-ink-3")} aria-hidden />
                         <span className="flex-1 truncate">{item.label}</span>
                       </Link>
                     </li>
@@ -149,35 +143,30 @@ export function AdminShell({ user, hasMerchantAccess, children }: AdminShellProp
         {hasMerchantAccess && (
           <Link
             href="/app"
-            className="mb-3 flex items-center justify-between rounded-xl border border-line bg-surface-2 px-3 py-2 text-xs font-medium text-ink transition-colors hover:bg-surface-3 hover:border-line-2"
+            className="mb-3 flex items-center gap-2 rounded-md px-3 py-2 text-sm text-ink-2 transition-colors hover:bg-surface-2 hover:text-ink"
           >
-            <span className="flex items-center gap-2">
-              <Store className="size-3.5 text-cobalt" />
-              <span>Espace Commerçant</span>
-            </span>
-            <ArrowUpRight className="size-3.5 text-ink-3" />
+            <Store className="size-4 text-ink-3" aria-hidden />
+            Mon espace commerçant
           </Link>
         )}
 
-        <div className="flex items-center justify-between gap-3 rounded-xl bg-surface-2/60 p-2.5">
-          <div className="min-w-0 flex-1">
+        <div className="grid gap-2 rounded-md bg-surface-2 p-3">
+          <div className="min-w-0" title={`${user.name} · ${user.email}`}>
             <div className="flex items-center gap-1.5">
-              <ShieldCheck className="size-3.5 text-emerald-600" />
-              <span className="truncate text-xs font-semibold text-ink">{user.name}</span>
+              <ShieldCheck className="size-4 shrink-0 text-mint" aria-hidden />
+              <span className="truncate text-sm font-medium text-ink">{user.name}</span>
             </div>
-            <span className="block truncate text-[0.7rem] text-ink-3">{user.email}</span>
+            <span className="block truncate text-xs text-ink-3">{user.email}</span>
           </div>
-
-          <div className="flex items-center gap-1">
-            <ThemeToggle />
+          <div className="flex items-center justify-between">
             <button
               type="button"
               onClick={handleLogout}
-              aria-label="Se déconnecter"
-              className="grid size-8 place-items-center rounded-lg text-ink-3 transition-colors hover:bg-surface-3 hover:text-danger"
+              className="inline-flex h-9 items-center gap-2 rounded-md px-2 text-sm text-ink-2 transition-colors hover:bg-surface hover:text-ink"
             >
-              <LogOut className="size-4" />
+              <LogOut className="size-4" aria-hidden /> Déconnexion
             </button>
+            <ThemeToggle />
           </div>
         </div>
       </div>
@@ -185,7 +174,7 @@ export function AdminShell({ user, hasMerchantAccess, children }: AdminShellProp
   );
 
   return (
-    <div className="min-h-dvh bg-background lg:grid lg:grid-cols-[16rem_1fr]">
+    <div className="min-h-dvh bg-paper lg:grid lg:grid-cols-[16rem_1fr]">
       {/* Sidebar Desktop fixe */}
       <aside className="hidden border-r border-line bg-surface lg:block lg:min-h-dvh">
         <div className="sticky top-0 h-dvh overflow-y-auto">
@@ -197,9 +186,7 @@ export function AdminShell({ user, hasMerchantAccess, children }: AdminShellProp
       <header className="sticky top-0 z-40 flex h-14 items-center justify-between border-b border-line bg-surface px-4 lg:hidden">
         <Link href="/admin" className="flex items-center gap-2">
           <Logo className="text-lg" />
-          <span className="rounded bg-surface-2 px-1.5 py-0.5 text-[0.68rem] font-semibold text-ink-3 uppercase">
-            Admin
-          </span>
+          <span className="rounded-md bg-surface-2 px-2 py-0.5 text-xs font-medium text-ink-2">Admin</span>
         </Link>
 
         <div className="flex items-center gap-2">
@@ -219,17 +206,18 @@ export function AdminShell({ user, hasMerchantAccess, children }: AdminShellProp
       {mobileOpen && (
         <div className="fixed inset-0 z-50 lg:hidden">
           <div
-            className="fixed inset-0 bg-black/50 backdrop-blur-xs transition-opacity"
+            className="fixed inset-0 bg-[rgb(13_20_48/0.45)]"
             onClick={() => setMobileOpen(false)}
+            aria-hidden
           />
-          <aside className="fixed inset-y-0 left-0 w-72 max-w-[85vw] border-r border-line bg-surface shadow-2xl">
+          <aside className="fixed inset-y-0 left-0 w-72 max-w-[85vw] border-r border-line bg-surface shadow-2" role="dialog" aria-modal="true" aria-label="Menu administration">
             {navContent}
           </aside>
         </div>
       )}
 
       {/* Contenu principal */}
-      <main id="contenu" className="min-w-0 px-4 py-8 sm:px-8 max-w-7xl">
+      <main id="contenu" className="mx-auto w-full min-w-0 max-w-6xl px-4 py-8 sm:px-8 lg:py-10">
         {children}
       </main>
     </div>

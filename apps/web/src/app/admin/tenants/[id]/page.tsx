@@ -7,7 +7,8 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog, DialogContent, DialogRoot } from "@/components/ui/dialog";
 import { Field, Input, Select } from "@/components/ui/field";
-import { ExternalLink, Smartphone, Users } from "lucide-react";
+import { ArrowLeft, Smartphone, Users } from "lucide-react";
+import Link from "next/link";
 import { Badge, ErrorNote, PageHeader, Panel, Skeleton } from "@/components/ui/misc";
 import { api, errorMessage } from "@/lib/api";
 import { formatDate, formatNumber } from "@/lib/utils";
@@ -48,6 +49,10 @@ interface Detail {
   }[];
 }
 
+const SUB_STATUS: Record<string, string> = { TRIALING: "essai", ACTIVE: "actif", PAST_DUE: "paiement en échec", CANCELED: "résilié", INCOMPLETE: "en attente" };
+const PROVIDER: Record<string, string> = { STRIPE: "Stripe", MOCK: "simulé", MANUAL: "manuel" };
+const ROLE: Record<string, string> = { OWNER: "Propriétaire", MANAGER: "Manager", CASHIER: "Caissier", VIEWER: "Lecteur" };
+
 export default function AdminTenant() {
   const { id } = useParams<{ id: string }>();
   const qc = useQueryClient();
@@ -57,12 +62,16 @@ export default function AdminTenant() {
   const [supportReason, setSupportReason] = useState("");
   const [supportError, setSupportError] = useState<string | null>(null);
   const [plan, setPlan] = useState("business");
+  const { data: plans = [] } = useQuery({ queryKey: ["admin-plans"], queryFn: () => api.get<{ code: string; name: string }[]>("/admin/plans") });
   const [planStatus, setPlanStatus] = useState<"ACTIVE" | "TRIALING" | "CANCELED">("ACTIVE");
   if (!data) return <Skeleton className="h-96" />;
   const suspended = data.status === "SUSPENDED";
 
   return (
     <>
+      <Link href="/admin" className="mb-4 inline-flex items-center gap-1.5 text-sm text-ink-2 hover:text-ink">
+        <ArrowLeft className="size-4" aria-hidden /> Entreprises
+      </Link>
       <PageHeader
         title={data.name}
         description={`${data.slug} · créée le ${formatDate(data.createdAt)}`}
@@ -102,16 +111,18 @@ export default function AdminTenant() {
         <Panel className="grid gap-3 p-5">
           <h2 className="font-display text-lg font-semibold">Abonnement</h2>
           <p className="text-sm text-ink-2">
-            {data.subscription ? `${data.subscription.plan.name}, ${data.subscription.status.toLowerCase()} (${data.subscription.provider.toLowerCase()})` : "Aucun"}
+            {data.subscription
+              ? `${data.subscription.plan.name} · ${SUB_STATUS[data.subscription.status] ?? data.subscription.status} · ${PROVIDER[data.subscription.provider] ?? data.subscription.provider}`
+              : "Aucun abonnement"}
             {data.subscription?.trialEndsAt && `, essai jusqu’au ${formatDate(data.subscription.trialEndsAt)}`}
           </p>
-          <div className="flex flex-wrap gap-2">
-            <Select aria-label="Offre" className="w-auto" value={plan} onChange={(e) => setPlan(e.target.value)}>
-              <option value="starter">Starter</option>
-              <option value="business">Business</option>
-              <option value="premium">Premium</option>
+          <div className="grid gap-2 sm:grid-cols-2 [&>button]:sm:col-span-2 [&>button]:sm:justify-self-start">
+            <Select aria-label="Offre" value={plan} onChange={(e) => setPlan(e.target.value)}>
+              {(plans.length ? plans : [{ code: "starter", name: "Essentiel" }, { code: "business", name: "Business" }, { code: "premium", name: "Réseau" }]).map((p) => (
+                <option key={p.code} value={p.code}>{p.name}</option>
+              ))}
             </Select>
-            <Select aria-label="Statut" className="w-auto" value={planStatus} onChange={(e) => setPlanStatus(e.target.value as typeof planStatus)}>
+            <Select aria-label="Statut" value={planStatus} onChange={(e) => setPlanStatus(e.target.value as typeof planStatus)}>
               <option value="ACTIVE">Actif (manuel)</option>
               <option value="TRIALING">Essai</option>
               <option value="CANCELED">Résilié</option>
@@ -130,17 +141,27 @@ export default function AdminTenant() {
         </Panel>
         <Panel className="p-5">
           <h2 className="mb-3 font-display text-lg font-semibold">Équipe</h2>
-          <ul className="grid gap-2 text-sm">
-            {data.memberships.map((m) => (
-              <li key={m.id} className="flex justify-between gap-3"><span>{m.user.name} <span className="text-ink-3">{m.user.email}</span></span><Badge>{m.role.key}</Badge></li>
-            ))}
-          </ul>
+          {data.memberships.length === 0 ? (
+            <p className="text-sm text-ink-3">Aucun collaborateur pour l’instant.</p>
+          ) : (
+            <ul className="grid gap-2.5 text-sm">
+              {data.memberships.map((m) => (
+                <li key={m.id} className="flex items-center justify-between gap-3">
+                  <span className="min-w-0">
+                    <span className="block truncate font-medium">{m.user.name}</span>
+                    <span className="block truncate text-ink-3">{m.user.email}</span>
+                  </span>
+                  <Badge>{ROLE[m.role.key] ?? m.role.key}</Badge>
+                </li>
+              ))}
+            </ul>
+          )}
         </Panel>
         <Panel className="p-5 lg:col-span-2">
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-display text-lg font-semibold flex items-center gap-2">
               <Users className="size-4 text-cobalt" />
-              Clients & Cartes de fidélité ({data.customers?.length ?? 0})
+              Clients et cartes ({data.customers?.length ?? 0})
             </h2>
           </div>
 
@@ -153,10 +174,10 @@ export default function AdminTenant() {
                   <tr>
                     <th scope="col" className="pb-2 font-medium">Client</th>
                     <th scope="col" className="pb-2 font-medium">Segment</th>
-                    <th scope="col" className="pb-2 font-medium">Carte & Solde</th>
+                    <th scope="col" className="pb-2 font-medium">Carte et solde</th>
                     <th scope="col" className="pb-2 font-medium">Passages</th>
                     <th scope="col" className="pb-2 font-medium">Dernière visite</th>
-                    <th scope="col" className="pb-2 font-medium text-right">Lien direct carte</th>
+                    <th scope="col" className="pb-2 font-medium text-right"><span className="sr-only">Carte du client</span></th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-line">
@@ -182,7 +203,7 @@ export default function AdminTenant() {
                         <td className="py-3">
                           {acc ? (
                             <div>
-                              <span className="font-mono text-xs font-semibold text-ink">{acc.cardNumber}</span>
+                              <span className="whitespace-nowrap text-sm font-medium tabular tracking-wide text-ink">{acc.cardNumber}</span>
                               <span className="block text-xs font-semibold text-cobalt">{acc.balance} {acc.program.mode === "POINTS" ? "points" : "tampons"}</span>
                             </div>
                           ) : (
@@ -199,9 +220,8 @@ export default function AdminTenant() {
                               rel="noopener noreferrer"
                               className="inline-flex items-center gap-1.5 rounded-lg border border-line bg-surface px-2.5 py-1 text-xs font-medium text-ink shadow-xs transition-colors hover:border-cobalt hover:text-cobalt"
                             >
-                              <Smartphone className="size-3.5 text-cobalt" />
-                              <span>Ouvrir</span>
-                              <ExternalLink className="size-3 opacity-60" />
+                              <Smartphone className="size-3.5 text-cobalt" aria-hidden />
+                              <span>Voir la carte</span>
                             </a>
                           ) : (
                             <span className="text-xs text-ink-3">—</span>
@@ -218,11 +238,15 @@ export default function AdminTenant() {
 
         <Panel className="p-5">
           <h2 className="mb-3 font-display text-lg font-semibold">Journal d’audit</h2>
-          <ul className="grid max-h-80 gap-1.5 overflow-y-auto text-sm">
-            {data.audit.map((a) => (
-              <li key={a.id} className="flex justify-between gap-3"><code>{a.action}</code><span className="shrink-0 text-ink-3">{formatDate(a.createdAt, true)}</span></li>
-            ))}
-          </ul>
+          {data.audit.length === 0 ? (
+            <p className="text-sm text-ink-3">Aucune action enregistrée.</p>
+          ) : (
+            <ul className="grid max-h-80 gap-1.5 overflow-y-auto text-sm">
+              {data.audit.map((a) => (
+                <li key={a.id} className="flex justify-between gap-3"><code className="truncate">{a.action}</code><span className="shrink-0 text-ink-3">{formatDate(a.createdAt, true)}</span></li>
+              ))}
+            </ul>
+          )}
         </Panel>
       </div>
 

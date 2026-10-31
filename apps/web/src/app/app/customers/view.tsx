@@ -206,25 +206,24 @@ export function CustomersView() {
       <div className="flex flex-col gap-3 mb-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="relative flex-1">
           <Search className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-ink-3" aria-hidden />
-          <Input type="search" aria-label="Rechercher un client" className="pl-10" value={q} onChange={(e) => setQ(e.target.value)} />
+          <Input type="search" aria-label="Rechercher un client" placeholder="Nom, téléphone, email ou numéro de carte" className="pl-10" value={q} onChange={(e) => setQ(e.target.value)} />
         </div>
-        <div className="flex flex-wrap gap-1 text-xs">
+        <div role="group" aria-label="Filtrer par segment" className="flex flex-wrap gap-1 rounded-md bg-surface-2 p-1 text-sm">
           {[
             { id: "ALL", label: "Tous" },
-            { id: "VIP", label: "🌟 VIP" },
-            { id: "REGULAR", label: "🟢 Actifs" },
-            { id: "AT_RISK", label: "⚠️ En risque" },
-            { id: "DORMANT", label: "💤 Dormants" },
-            { id: "NEW", label: "🆕 Nouveaux" },
+            { id: "VIP", label: "VIP" },
+            { id: "REGULAR", label: "Actifs" },
+            { id: "AT_RISK", label: "En risque" },
+            { id: "DORMANT", label: "Dormants" },
+            { id: "NEW", label: "Nouveaux" },
           ].map((s) => (
             <button
               key={s.id}
               type="button"
+              aria-pressed={selectedSegment === s.id}
               onClick={() => setSelectedSegment(s.id)}
-              className={`rounded-full px-2.5 py-1 transition-colors ${
-                selectedSegment === s.id
-                  ? "bg-ink text-paper font-medium"
-                  : "bg-surface hover:bg-surface-2 text-ink-2"
+              className={`h-8 rounded-sm px-3 font-medium transition-colors ${
+                selectedSegment === s.id ? "bg-surface text-ink shadow-1" : "text-ink-2 hover:text-ink"
               }`}
             >
               {s.label}
@@ -255,7 +254,7 @@ export function CustomersView() {
                             c.segment.segment === "VIP"
                               ? "bg-cobalt/15 text-cobalt"
                               : c.segment.segment === "AT_RISK"
-                              ? "bg-amber-500/15 text-amber-700 dark:text-amber-400"
+                              ? "bg-stamp-soft text-stamp-ink dark:text-stamp"
                               : c.segment.segment === "NEW"
                               ? "bg-mint/15 text-mint"
                               : "bg-surface text-ink-3"

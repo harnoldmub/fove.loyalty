@@ -1,20 +1,20 @@
 "use client";
 
 import { LoaderCircle } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 
 /**
  * Bouton officiel « Ajouter à Apple Wallet » conforme aux directives Apple :
  * https://developer.apple.com/wallet/add-to-apple-wallet-guidelines/
  */
 export function AppleWalletButton({ token, className = "" }: { token: string; className?: string }) {
-  const [apple, setApple] = useState(false);
+  // Affiché sur iPhone, iPad, iPod ou Mac.
+  const apple = useSyncExternalStore(
+    () => () => undefined,
+    () => /Macintosh|iPhone|iPad|iPod/.test(navigator.userAgent),
+    () => false,
+  );
   const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    // Affiche sur iPhone, iPad, iPod ou Mac avec Safari/Chrome
-    setApple(/Macintosh|iPhone|iPad|iPod/.test(navigator.userAgent));
-  }, []);
 
   // Débloque le chargement dès que la feuille native PassKit apparaît ou que la page reprend le focus
   useEffect(() => {

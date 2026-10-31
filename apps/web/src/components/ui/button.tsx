@@ -23,6 +23,8 @@ const buttonVariants = cva(
         icon: "size-10 rounded-md",
       },
     },
+    // Un lien reste un lien : ni hauteur ni marge intérieure de bouton.
+    compoundVariants: [{ variant: "link", className: "h-auto px-0 py-0 active:scale-100" }],
     defaultVariants: { variant: "primary", size: "md" },
   },
 );

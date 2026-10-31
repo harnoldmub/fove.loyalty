@@ -26,12 +26,14 @@ export function LoginForm() {
   const router = useRouter();
   const next = useSearchParams().get("next");
   const [error, setError] = useState<string | null>(null);
+  const [leaving, setLeaving] = useState(false);
   const form = useForm<z.infer<typeof loginSchema>>({ resolver: zodResolver(loginSchema) });
 
   const onSubmit = form.handleSubmit(async (values) => {
     setError(null);
     try {
       await api.post("/auth/login", values);
+      setLeaving(true);
       router.replace(next?.startsWith("/") && !next.startsWith("//") ? next : "/app");
       router.refresh();
     } catch (e) {
@@ -50,7 +52,7 @@ export function LoginForm() {
         <Field label="Mot de passe" error={form.formState.errors.password?.message}>
           {(p) => <Input {...p} type="password" autoComplete="current-password" {...form.register("password")} />}
         </Field>
-        <Button type="submit" loading={form.formState.isSubmitting}>Se connecter</Button>
+        <Button type="submit" loading={form.formState.isSubmitting || leaving}>{leaving ? "Ouverture de votre espace…" : "Se connecter"}</Button>
       </form>
       <div className="mt-6 flex flex-wrap justify-between gap-3 text-sm">
         <Link href="/forgot-password" className="text-cobalt hover:underline">Mot de passe oublié</Link>
@@ -70,11 +72,13 @@ const signupForm = z.object({
 export function SignupForm() {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
+  const [leaving, setLeaving] = useState(false);
   const form = useForm<z.infer<typeof signupForm>>({ resolver: zodResolver(signupForm), defaultValues: { acceptTerms: false } });
   const onSubmit = form.handleSubmit(async (values) => {
     setError(null);
     try {
       await api.post("/auth/signup", values);
+      setLeaving(true);
       router.replace("/onboarding");
     } catch (e) {
       setError(errorMessage(e));
@@ -106,7 +110,7 @@ export function SignupForm() {
           />
           {e.acceptTerms && <p className="text-sm text-danger">{e.acceptTerms.message}</p>}
         </div>
-        <Button type="submit" loading={form.formState.isSubmitting}>Créer mon compte</Button>
+        <Button type="submit" loading={form.formState.isSubmitting || leaving}>{leaving ? "Préparation de votre espace…" : "Créer mon compte"}</Button>
       </form>
       <p className="mt-6 text-sm text-ink-2">
         Déjà inscrit ? <Link href="/login" className="text-cobalt hover:underline">Se connecter</Link>

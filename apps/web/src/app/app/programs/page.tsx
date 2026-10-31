@@ -245,19 +245,19 @@ export default function ProgramsPage() {
       )}
 
       <section aria-labelledby="qr" className="mt-12">
-        <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div className="mb-4 grid gap-4">
           <div>
             <h2 id="qr" className="font-display text-2xl font-semibold">QR codes d’inscription</h2>
             <p className="text-ink-2">Différents du QR personnel de chaque carte : ils servent seulement à créer une carte.</p>
           </div>
           {canWrite && programs && programs.length > 0 && establishments.length > 0 && (
-            <div className="flex flex-wrap items-end gap-2">
-              <Select aria-label="Programme" value={linkProgram} onChange={(e) => setLinkProgram(e.target.value)} className="w-auto">
-                <option value="">Programme</option>
+            <div className="grid gap-2 rounded-[var(--radius-lg)] bg-surface p-3 shadow-1 sm:grid-cols-[1fr_1fr_auto]">
+              <Select aria-label="Programme" value={linkProgram} onChange={(e) => setLinkProgram(e.target.value)}>
+                <option value="">Choisir un programme</option>
                 {programs.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
               </Select>
-              <Select aria-label="Établissement" value={linkEst} onChange={(e) => setLinkEst(e.target.value)} className="w-auto">
-                <option value="">Établissement</option>
+              <Select aria-label="Établissement" value={linkEst} onChange={(e) => setLinkEst(e.target.value)}>
+                <option value="">Choisir un établissement</option>
                 {establishments.map((e) => <option key={e.id} value={e.id}>{e.name}</option>)}
               </Select>
               <Button
@@ -273,7 +273,7 @@ export default function ProgramsPage() {
                   }
                 }}
               >
-                <QrCode /> Créer un QR par établissement
+                <QrCode /> Créer le QR code
               </Button>
             </div>
           )}

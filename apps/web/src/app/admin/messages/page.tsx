@@ -62,24 +62,17 @@ export default function AdminMessagesPage() {
   return (
     <>
       <PageHeader
-        title="Messages & Demandes"
-        description="Leads entrants, demandes de démonstrations et messages reçus depuis le site web."
-        actions={
-          newCount > 0 ? (
-            <Badge tone="cobalt" className="px-3 py-1 text-sm font-semibold">
-              {newCount} nouveau{newCount > 1 ? "x" : ""}
-            </Badge>
-          ) : null
-        }
+        title="Messages et prospects"
+        description={newCount > 0 ? `Demandes reçues depuis le site. ${newCount} à traiter.` : "Demandes de démonstration et messages reçus depuis le site."}
       />
 
       {/* Onglets de filtre de statut */}
-      <div className="mb-6 flex flex-wrap gap-2">
+      <div role="group" aria-label="Filtrer par statut" className="mb-6 inline-flex flex-wrap gap-1 rounded-md bg-surface-2 p-1">
         {[
           { key: "ALL", label: "Tous les messages" },
           { key: "NEW", label: "Nouveaux" },
-          { key: "IN_PROGRESS", label: "En cours de traitement" },
-          { key: "CONTACTED", label: "Contactés / Traités" },
+          { key: "IN_PROGRESS", label: "En cours" },
+          { key: "CONTACTED", label: "Traités" },
           { key: "ARCHIVED", label: "Archivés" },
         ].map((tab) => (
           <button
@@ -89,10 +82,9 @@ export default function AdminMessagesPage() {
               setFilter(tab.key);
               setSelectedMessage(null);
             }}
-            className={`rounded-lg px-3.5 py-1.5 text-sm font-medium transition-colors ${
-              filter === tab.key
-                ? "bg-ink text-surface shadow-xs"
-                : "bg-surface-2 text-ink-2 hover:bg-surface-3 hover:text-ink"
+            aria-pressed={filter === tab.key}
+            className={`h-9 rounded-sm px-3.5 text-sm font-medium transition-colors ${
+              filter === tab.key ? "bg-surface text-ink shadow-1" : "text-ink-2 hover:text-ink"
             }`}
           >
             {tab.label}
@@ -185,7 +177,7 @@ export default function AdminMessagesPage() {
                     href={`mailto:${selectedMessage.email}?subject=Suite à votre demande FOVE`}
                     className="text-xs font-semibold text-cobalt hover:underline"
                   >
-                    Envoyer un email ›
+                    Envoyer un email
                   </a>
                 </div>
 
@@ -199,9 +191,9 @@ export default function AdminMessagesPage() {
                       href={`https://wa.me/${selectedMessage.phone.replace(/\D/g, "")}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-xs font-semibold text-emerald-600 hover:underline"
+                      className="text-xs font-semibold text-mint hover:underline"
                     >
-                      WhatsApp direct ›
+                      WhatsApp direct
                     </a>
                   </div>
                 )}
@@ -209,7 +201,7 @@ export default function AdminMessagesPage() {
 
               {/* Contenu du message */}
               <div className="mt-5">
-                <h4 className="text-xs font-semibold uppercase tracking-wider text-ink-3">Message</h4>
+                <h4 className="text-sm font-medium text-ink-2">Message</h4>
                 <p className="mt-2 rounded-xl border border-line bg-surface p-4 text-sm leading-relaxed text-ink whitespace-pre-wrap">
                   {selectedMessage.message}
                 </p>
@@ -217,7 +209,7 @@ export default function AdminMessagesPage() {
 
               {/* Modification du statut */}
               <div className="mt-5 border-t border-line pt-4">
-                <label className="block text-xs font-semibold uppercase tracking-wider text-ink-3 mb-2">
+                <label className="block text-sm font-medium text-ink-2 mb-2">
                   Changer le statut
                 </label>
                 <div className="flex flex-wrap gap-2">
@@ -239,7 +231,7 @@ export default function AdminMessagesPage() {
 
               {/* Notes internes */}
               <div className="mt-5 border-t border-line pt-4">
-                <label className="block text-xs font-semibold uppercase tracking-wider text-ink-3 mb-2">
+                <label className="block text-sm font-medium text-ink-2 mb-2">
                   Notes internes (équipe commerciale)
                 </label>
                 <textarea
