@@ -52,7 +52,10 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     throw new Error(`Configuration invalide :\n${issues}`);
   }
   const value = parsed.data;
-  if (value.STRIPE_SECRET_KEY?.startsWith("sk_live") && value.STRIPE_ALLOW_LIVE !== "true") {
+  if (
+    (value.STRIPE_SECRET_KEY?.startsWith("sk_live") || value.STRIPE_SECRET_KEY?.startsWith("rk_live")) &&
+    value.STRIPE_ALLOW_LIVE !== "true"
+  ) {
     throw new Error("Clé Stripe live refusée : poser STRIPE_ALLOW_LIVE=true après validation.");
   }
   cached = {

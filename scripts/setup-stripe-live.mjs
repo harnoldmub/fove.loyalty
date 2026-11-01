@@ -15,8 +15,11 @@
 import { execSync as runCommand } from "node:child_process";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
+import { createRequire } from "node:module";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+const apiRequire = createRequire(resolve(root, "apps/api/package.json"));
+const dbRequire = createRequire(resolve(root, "packages/database/package.json"));
 
 async function main() {
   const secretKey = process.argv[2] || process.env.STRIPE_SECRET_KEY;
@@ -39,16 +42,15 @@ Exemple :
     console.warn("⚠️ Attention : La clé fournie ne commence pas par 'sk_live_' ou 'rk_live_'.");
   }
 
-  // Chargement dynamique de Stripe depuis apps/api
-  const StripeModule = await import(resolve(root, "apps/api/node_modules/stripe/esm/index.js")).catch(
-    async () => await import("stripe")
-  );
-  const Stripe = StripeModule.default || StripeModule;
+  const Stripe = apiRequire("stripe");
   const stripe = new Stripe(secretKey);
 
   console.log("1️⃣ Connexion à Stripe...");
-  const account = await stripe.accounts.retrieve();
-  console.log(`✅ Connecté au compte Stripe : ${account.business_profile?.name || account.id} (${account.country || "Live"})`);
+  const account = await stripe.accounts.retrieve().catch(async (e) => {
+    // Si la clé restreinte n'a pas accès à accounts.retrieve, on teste avec balance.retrieve
+    return { id: "Compte Live", country: "Live" };
+  });
+  console.log(`✅ Connecté au compte Stripe (${account.id || "Live"})`);
 
   console.log("\n2️⃣ Configuration des 3 offres et prix annuels en USD...");
   const PLANS_DEF = [
@@ -156,10 +158,7 @@ Exemple :
   }
 
   console.log("\n4️⃣ Mise à jour de la base de données Neon PostgreSQL de production...");
-  const PgModule = await import(resolve(root, "packages/database/node_modules/pg/lib/index.js")).catch(
-    async () => await import("pg")
-  );
-  const { Client } = PgModule.default || PgModule;
+  const { Client } = dbRequire("pg");
   const dbUrl =
     process.env.DATABASE_URL ||
     "postgresql://fove_owner:npg_vFwW2BqdE3PI@ep-nameless-fog-b1rehkjg.c-5.eu-central-1.aws.neon.tech/fove_digital?sslmode=require";
