@@ -19,7 +19,8 @@
     "cap:open:ios": "cap open ios",
     "cap:open:android": "cap open android",
     "cap:run:ios": "cap run ios",
-    "cap:run:android": "cap run android"
+    "cap:run:android": "cap run android",
+    "stripe:setup:live": "node scripts/setup-stripe-live.mjs"
   },
   "devDependencies": {
     "@capacitor/android": "^8.6.0",
