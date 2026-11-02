@@ -77,22 +77,43 @@ export class AuthService {
       orderBy: { createdAt: "asc" },
     });
     const active = memberships.find((m) => m.tenantId === auth.activeTenantId);
+    const tenants = memberships.map((m) => ({
+      id: m.tenant.id,
+      name: m.tenant.name,
+      slug: m.tenant.slug,
+      status: m.tenant.status,
+      role: m.role.key,
+      logoUrl: m.tenant.settings?.logoUrl ?? null,
+      primaryColor: m.tenant.settings?.primaryColor ?? "#1F4FFF",
+      onboardingCompleted: Boolean(m.tenant.settings?.onboardingCompletedAt),
+    }));
+
+    if (auth.supportGrantId && auth.activeTenantId && !tenants.some((t) => t.id === auth.activeTenantId)) {
+      const supported = await this.prisma.client.tenant.findUnique({
+        where: { id: auth.activeTenantId },
+        include: { settings: true },
+      });
+      if (supported) {
+        tenants.unshift({
+          id: supported.id,
+          name: supported.name,
+          slug: supported.slug,
+          status: supported.status,
+          role: "SUPPORT",
+          logoUrl: supported.settings?.logoUrl ?? null,
+          primaryColor: supported.settings?.primaryColor ?? "#1F4FFF",
+          onboardingCompleted: Boolean(supported.settings?.onboardingCompletedAt),
+        });
+      }
+    }
+
     return {
       user: auth.user,
       activeTenantId: auth.activeTenantId,
       support: auth.supportGrantId !== null,
       role: active?.role.key ?? (auth.supportGrantId ? "SUPPORT" : null),
       permissions: active?.role.permissions ?? [],
-      tenants: memberships.map((m) => ({
-        id: m.tenant.id,
-        name: m.tenant.name,
-        slug: m.tenant.slug,
-        status: m.tenant.status,
-        role: m.role.key,
-        logoUrl: m.tenant.settings?.logoUrl ?? null,
-        primaryColor: m.tenant.settings?.primaryColor ?? "#1F4FFF",
-        onboardingCompleted: Boolean(m.tenant.settings?.onboardingCompletedAt),
-      })),
+      tenants,
     };
   }
 

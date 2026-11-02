@@ -81,6 +81,7 @@ export class AdminService {
       take: 100,
       orderBy: { createdAt: "desc" },
       include: {
+        settings: { select: { logoUrl: true, primaryColor: true } },
         subscription: { include: { plan: { select: { code: true, name: true } } } },
         _count: { select: { customers: true, accounts: true, memberships: true } },
       },
@@ -171,7 +172,14 @@ export class AdminService {
       orderBy: { createdAt: "desc" },
       take: 100,
       include: {
-        tenant: { select: { id: true, name: true, slug: true } },
+        tenant: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+            settings: { select: { logoUrl: true, primaryColor: true } },
+          },
+        },
         accounts: {
           select: {
             id: true,

@@ -11,7 +11,7 @@ import { api } from "@/lib/api";
 import { formatDate, formatNumber, formatPrice } from "@/lib/utils";
 
 interface Stats { tenants: number; suspended: number; newTenants30d: number; subscriptionsByStatus: Record<string, number>; activeByPlan: Record<string, number>; mrrCents: number; customers: number; accounts: number; transactions30d: number }
-interface TenantRow { id: string; name: string; slug: string; status: string; createdAt: string; subscription: { status: string; provider: string; plan: { code: string; name: string } } | null; _count: { customers: number; accounts: number; memberships: number } }
+interface TenantRow { id: string; name: string; slug: string; status: string; createdAt: string; settings?: { logoUrl: string | null; primaryColor: string } | null; subscription: { status: string; provider: string; plan: { code: string; name: string } } | null; _count: { customers: number; accounts: number; memberships: number } }
 
 export default function AdminHome() {
   const [q, setQ] = useState("");
@@ -51,6 +51,13 @@ export default function AdminHome() {
           {tenants.map((t) => (
             <li key={t.id}>
               <Link href={`/admin/tenants/${t.id}`} className="flex items-center gap-3 px-4 py-3.5 hover:bg-surface-2">
+                {t.settings?.logoUrl ? (
+                  <img src={t.settings.logoUrl} alt="" className="size-10 shrink-0 rounded-lg border border-line bg-surface object-cover" />
+                ) : (
+                  <span className="grid size-10 shrink-0 place-items-center rounded-lg font-display text-sm font-bold text-white shadow-xs" style={{ background: t.settings?.primaryColor ?? "var(--cobalt)" }}>
+                    {t.name.slice(0, 1).toUpperCase()}
+                  </span>
+                )}
                 <span className="min-w-0 flex-1">
                   <span className="block truncate font-medium text-ink">{t.name}</span>
                   <span className="block truncate text-sm text-ink-3">
@@ -91,10 +98,21 @@ export default function AdminHome() {
               return (
                 <tr key={t.id} className="transition-colors hover:bg-surface-2">
                   <td className="px-4 py-3">
-                    <Link href={`/admin/tenants/${t.id}`} className="font-semibold text-ink hover:text-cobalt hover:underline">
-                      {t.name}
-                    </Link>
-                    <span className="block text-xs text-ink-3">{t.slug}</span>
+                    <div className="flex items-center gap-3">
+                      {t.settings?.logoUrl ? (
+                        <img src={t.settings.logoUrl} alt="" className="size-9 shrink-0 rounded-lg border border-line bg-surface object-cover" />
+                      ) : (
+                        <span className="grid size-9 shrink-0 place-items-center rounded-lg font-display text-xs font-bold text-white shadow-xs" style={{ background: t.settings?.primaryColor ?? "var(--cobalt)" }}>
+                          {t.name.slice(0, 1).toUpperCase()}
+                        </span>
+                      )}
+                      <div className="min-w-0">
+                        <Link href={`/admin/tenants/${t.id}`} className="font-semibold text-ink hover:text-cobalt hover:underline block truncate">
+                          {t.name}
+                        </Link>
+                        <span className="block text-xs text-ink-3">{t.slug}</span>
+                      </div>
+                    </div>
                   </td>
                   <td className="px-4 py-3">
                     {t.subscription ? (

@@ -76,9 +76,13 @@ function TenantSwitcher() {
   return (
     <Menu.Root>
       <Menu.Trigger className="flex w-full items-center gap-3 rounded-md px-2 py-2 text-left hover:bg-surface-2">
-        <span className="grid size-9 shrink-0 place-items-center rounded-sm font-display font-bold text-white" style={{ background: tenant?.primaryColor ?? "var(--cobalt)" }}>
-          {tenant?.name.slice(0, 1).toUpperCase() ?? "?"}
-        </span>
+        {tenant?.logoUrl ? (
+          <img src={tenant.logoUrl} alt="" className="size-9 shrink-0 rounded-sm border border-line bg-white object-cover" />
+        ) : (
+          <span className="grid size-9 shrink-0 place-items-center rounded-sm font-display font-bold text-white" style={{ background: tenant?.primaryColor ?? "var(--cobalt)" }}>
+            {tenant?.name.slice(0, 1).toUpperCase() ?? "?"}
+          </span>
+        )}
         <span className="min-w-0 flex-1">
           <span className="block truncate font-medium">{tenant?.name ?? "Support"}</span>
           <span className="block truncate text-xs text-ink-3">{me.user.name}</span>
@@ -89,7 +93,11 @@ function TenantSwitcher() {
         <Menu.Content align="start" sideOffset={6} className="z-50 min-w-60 rounded-md bg-surface p-1 shadow-2">
           {me.tenants.map((t) => (
             <Menu.Item key={t.id} onSelect={() => t.id !== me.activeTenantId && switchTo(t.id)} className="flex cursor-pointer items-center gap-2 rounded-sm px-2.5 py-2 text-sm outline-none data-[highlighted]:bg-surface-2">
-              <span className="size-2.5 rounded-full" style={{ background: t.primaryColor }} />
+              {t.logoUrl ? (
+                <img src={t.logoUrl} alt="" className="size-5 shrink-0 rounded-full border border-line bg-white object-cover" />
+              ) : (
+                <span className="size-2.5 rounded-full" style={{ background: t.primaryColor }} />
+              )}
               <span className="flex-1 truncate">{t.name}</span>
               {t.id === me.activeTenantId && <span className="text-xs text-ink-3">actif</span>}
             </Menu.Item>

@@ -7,9 +7,9 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog, DialogContent, DialogRoot } from "@/components/ui/dialog";
 import { Field, Input, Select } from "@/components/ui/field";
-import { ArrowLeft, Smartphone, Users } from "lucide-react";
+import { ArrowLeft, ExternalLink, Globe, Palette, Smartphone, Users } from "lucide-react";
 import Link from "next/link";
-import { Badge, ErrorNote, PageHeader, Panel, Skeleton } from "@/components/ui/misc";
+import { Badge, ErrorNote, Panel, Skeleton } from "@/components/ui/misc";
 import { api, errorMessage } from "@/lib/api";
 import { formatDate, formatNumber } from "@/lib/utils";
 
@@ -20,6 +20,18 @@ interface Detail {
   status: "ACTIVE" | "SUSPENDED";
   suspendedReason: string | null;
   createdAt: string;
+  settings?: {
+    logoUrl: string | null;
+    primaryColor: string;
+    walletBannerUrl?: string | null;
+    country: string;
+    currency: string;
+    timezone: string;
+    legalName?: string | null;
+    contactEmail?: string | null;
+    instagramHandle?: string | null;
+    privacyPolicyUrl?: string | null;
+  } | null;
   subscription: { status: string; provider: string; trialEndsAt: string | null; plan: { code: string; name: string } } | null;
   memberships: { id: string; user: { email: string; name: string }; role: { key: string } }[];
   integrations: { id: string; name: string; provider: string; lastSyncAt: string | null; lastError: string | null }[];
@@ -72,32 +84,69 @@ export default function AdminTenant() {
       <Link href="/admin" className="mb-4 inline-flex items-center gap-1.5 text-sm text-ink-2 hover:text-ink">
         <ArrowLeft className="size-4" aria-hidden /> Entreprises
       </Link>
-      <PageHeader
-        title={data.name}
-        description={`${data.slug} · créée le ${formatDate(data.createdAt)}`}
-        actions={
-          <>
-            <Button variant="secondary" onClick={() => setSupportOpen(true)}>Accès support</Button>
-            <ConfirmDialog
-              trigger={<Button variant={suspended ? "primary" : "danger"}>{suspended ? "Réactiver" : "Suspendre"}</Button>}
-              title={suspended ? "Réactiver cette entreprise ?" : "Suspendre cette entreprise ?"}
-              consequence={suspended ? "Son équipe retrouve l’accès immédiatement." : "Son équipe, ses clés API et ses pages publiques sont bloquées. Aucune donnée n’est supprimée."}
-              confirmLabel={suspended ? "Réactiver" : "Suspendre"}
-              destructive={!suspended}
-              onConfirm={async () => {
-                try {
-                  await api.post(`/admin/tenants/${id}/status`, { status: suspended ? "ACTIVE" : "SUSPENDED", reason: reason || (suspended ? "Réactivation" : "Suspension administrative") });
-                  qc.invalidateQueries({ queryKey: ["admin-tenant", id] });
-                } catch (e) {
-                  toast.error(errorMessage(e));
-                }
-              }}
+      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div className="flex items-center gap-4">
+          {data.settings?.logoUrl ? (
+            <img
+              src={data.settings.logoUrl}
+              alt={data.name}
+              className="size-16 shrink-0 rounded-2xl border border-line bg-surface object-cover shadow-xs"
+            />
+          ) : (
+            <div
+              className="grid size-16 shrink-0 place-items-center rounded-2xl font-display text-2xl font-bold text-white shadow-xs"
+              style={{ background: data.settings?.primaryColor ?? "var(--cobalt)" }}
             >
-              <Field label="Motif (journalisé)">{(p) => <Input {...p} value={reason} onChange={(e) => setReason(e.target.value)} />}</Field>
-            </ConfirmDialog>
-          </>
-        }
-      />
+              {data.name.slice(0, 1).toUpperCase()}
+            </div>
+          )}
+          <div className="min-w-0">
+            <h1 className="font-display text-2xl font-semibold text-ink sm:text-[1.75rem]">{data.name}</h1>
+            <div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-ink-2">
+              <span className="font-mono text-xs text-ink-3">{data.slug}</span>
+              <span>·</span>
+              <span>créée le {formatDate(data.createdAt)}</span>
+              {data.settings?.primaryColor && (
+                <>
+                  <span>·</span>
+                  <span className="inline-flex items-center gap-1.5 text-xs text-ink-3">
+                    <span className="size-2.5 rounded-full border border-black/10" style={{ background: data.settings.primaryColor }} />
+                    {data.settings.primaryColor}
+                  </span>
+                </>
+              )}
+              <span>·</span>
+              <Link
+                href={`/${data.slug}`}
+                target="_blank"
+                className="inline-flex items-center gap-1 text-xs text-cobalt hover:underline"
+              >
+                Page publique <ExternalLink className="size-3" aria-hidden />
+              </Link>
+            </div>
+          </div>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button variant="secondary" onClick={() => setSupportOpen(true)}>Accès support</Button>
+          <ConfirmDialog
+            trigger={<Button variant={suspended ? "primary" : "danger"}>{suspended ? "Réactiver" : "Suspendre"}</Button>}
+            title={suspended ? "Réactiver cette entreprise ?" : "Suspendre cette entreprise ?"}
+            consequence={suspended ? "Son équipe retrouve l’accès immédiatement." : "Son équipe, ses clés API et ses pages publiques sont bloquées. Aucune donnée n’est supprimée."}
+            confirmLabel={suspended ? "Réactiver" : "Suspendre"}
+            destructive={!suspended}
+            onConfirm={async () => {
+              try {
+                await api.post(`/admin/tenants/${id}/status`, { status: suspended ? "ACTIVE" : "SUSPENDED", reason: reason || (suspended ? "Réactivation" : "Suspension administrative") });
+                qc.invalidateQueries({ queryKey: ["admin-tenant", id] });
+              } catch (e) {
+                toast.error(errorMessage(e));
+              }
+            }}
+          >
+            <Field label="Motif (journalisé)">{(p) => <Input {...p} value={reason} onChange={(e) => setReason(e.target.value)} />}</Field>
+          </ConfirmDialog>
+        </div>
+      </div>
       {suspended && <p className="mb-4"><Badge tone="danger">Suspendue : {data.suspendedReason}</Badge></p>}
       <div className="grid gap-6 lg:grid-cols-2">
         <Panel className="p-5">
@@ -156,6 +205,56 @@ export default function AdminTenant() {
               ))}
             </ul>
           )}
+        </Panel>
+        <Panel className="p-5">
+          <h2 className="mb-3 font-display text-lg font-semibold flex items-center gap-2">
+            <Palette className="size-4 text-cobalt" />
+            Identité et Marque
+          </h2>
+          <div className="grid gap-3 text-sm">
+            <div className="flex items-center justify-between gap-3 border-b border-line pb-2.5">
+              <span className="text-ink-2">Logo officiel</span>
+              {data.settings?.logoUrl ? (
+                <div className="flex items-center gap-2">
+                  <img src={data.settings.logoUrl} alt="Logo" className="size-8 rounded-lg border border-line bg-surface object-cover" />
+                  <a href={data.settings.logoUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs text-cobalt hover:underline">
+                    Ouvrir <ExternalLink className="size-3" />
+                  </a>
+                </div>
+              ) : (
+                <span className="text-xs text-ink-3">Aucun logo téléversé</span>
+              )}
+            </div>
+            <div className="flex items-center justify-between gap-3 border-b border-line pb-2.5">
+              <span className="text-ink-2">Couleur principale</span>
+              <span className="inline-flex items-center gap-1.5 font-mono text-xs">
+                <span className="size-3.5 rounded-full border border-black/10" style={{ background: data.settings?.primaryColor ?? "#1F4FFF" }} />
+                {data.settings?.primaryColor ?? "#1F4FFF"}
+              </span>
+            </div>
+            <div className="flex items-center justify-between gap-3 border-b border-line pb-2.5">
+              <span className="text-ink-2">Pays et Devise</span>
+              <span className="font-medium">{data.settings?.country ?? "CD"} · {data.settings?.currency ?? "CDF"}</span>
+            </div>
+            {data.settings?.contactEmail && (
+              <div className="flex items-center justify-between gap-3 border-b border-line pb-2.5">
+                <span className="text-ink-2">Email contact</span>
+                <span className="truncate text-xs font-mono">{data.settings.contactEmail}</span>
+              </div>
+            )}
+            {data.settings?.instagramHandle && (
+              <div className="flex items-center justify-between gap-3 border-b border-line pb-2.5">
+                <span className="text-ink-2">Instagram</span>
+                <span className="text-xs font-medium">@{data.settings.instagramHandle.replace(/^@/, "")}</span>
+              </div>
+            )}
+            {data.settings?.walletBannerUrl && (
+              <div>
+                <span className="block mb-1.5 text-xs text-ink-2">Bannière Wallet personnalisée</span>
+                <img src={data.settings.walletBannerUrl} alt="Bannière Wallet" className="aspect-[375/144] w-full rounded-lg border border-line object-cover" />
+              </div>
+            )}
+          </div>
         </Panel>
         <Panel className="p-5 lg:col-span-2">
           <div className="flex items-center justify-between mb-4">

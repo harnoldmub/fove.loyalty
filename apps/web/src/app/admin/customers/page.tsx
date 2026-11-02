@@ -25,6 +25,7 @@ interface PlatformCustomer {
     id: string;
     name: string;
     slug: string;
+    settings?: { logoUrl: string | null; primaryColor: string } | null;
   };
   segment?: {
     segment: "VIP" | "REGULAR" | "AT_RISK" | "DORMANT" | "NEW";
@@ -135,10 +136,21 @@ export default function AdminCustomersPage() {
                   </td>
 
                   <td className="px-4 py-3.5">
-                    <Link href={`/admin/tenants/${c.tenant.id}`} className="font-medium text-cobalt hover:underline">
-                      {c.tenant.name}
-                    </Link>
-                    <span className="block text-xs text-ink-3">{c.tenant.slug}</span>
+                    <div className="flex items-center gap-2.5">
+                      {c.tenant.settings?.logoUrl ? (
+                        <img src={c.tenant.settings.logoUrl} alt="" className="size-7 shrink-0 rounded-md border border-line bg-surface object-cover" />
+                      ) : (
+                        <span className="grid size-7 shrink-0 place-items-center rounded-md font-display text-xs font-bold text-white shadow-xs" style={{ background: c.tenant.settings?.primaryColor ?? "var(--cobalt)" }}>
+                          {c.tenant.name.slice(0, 1).toUpperCase()}
+                        </span>
+                      )}
+                      <div className="min-w-0">
+                        <Link href={`/admin/tenants/${c.tenant.id}`} className="font-medium text-ink hover:text-cobalt hover:underline block truncate">
+                          {c.tenant.name}
+                        </Link>
+                        <span className="block text-xs text-ink-3">{c.tenant.slug}</span>
+                      </div>
+                    </div>
                   </td>
 
                   <td className="px-4 py-3.5">
