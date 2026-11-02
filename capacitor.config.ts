@@ -1,5 +1,7 @@
 import type { CapacitorConfig } from "@capacitor/cli";
 
+const origin = process.env.CAP_SERVER_URL ?? "https://fove.digital";
+
 const config: CapacitorConfig = {
   appId: "digital.fove.app",
   appName: "FOVE",
@@ -8,9 +10,11 @@ const config: CapacitorConfig = {
   appendUserAgent: "FoveApp",
   server: {
     androidScheme: "https",
-    cleartext: true,
-    // Permet de pointer vers l'instance de production ou un serveur de dév local (ex: CAP_SERVER_URL=http://192.168.1.XX:5290)
-    url: `${process.env.CAP_SERVER_URL ?? "https://app.fove.digital"}/app`,
+    // HTTP non chiffré seulement pour un serveur de dév local (ex: CAP_SERVER_URL=http://192.168.1.XX:5290).
+    cleartext: origin.startsWith("http://"),
+    url: `${origin}/app`,
+    // Sans réseau au lancement : page locale qui se reconnecte (mobile-shell/index.html).
+    errorPath: "index.html",
   },
   ios: {
     preferredContentMode: "mobile",

@@ -24,12 +24,9 @@ if (variables !== before) {
   console.log("minSdkVersion porté à 26 (requis pour le scanner)");
 }
 
-// Permissions nécessaires au scan, vibrations haptiques et notifications.
-const permissions = [
-  "android.permission.CAMERA",
-  "android.permission.VIBRATE",
-  "android.permission.POST_NOTIFICATIONS",
-];
+// Permissions nécessaires au scan et aux vibrations haptiques. Pas de
+// POST_NOTIFICATIONS : l'app n'envoie pas de notifications (Google Play la refuse sans usage).
+const permissions = ["android.permission.CAMERA", "android.permission.VIBRATE"];
 let manifest = readFileSync(manifestPath, "utf8");
 const missing = permissions.filter((permission) => !manifest.includes(permission));
 if (missing.length) {

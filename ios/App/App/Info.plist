@@ -5,7 +5,7 @@
   <key>CAPACITOR_DEBUG</key>
 	<string>$(CAPACITOR_DEBUG)</string>
 	<key>CFBundleDevelopmentRegion</key>
-	<string>en</string>
+	<string>fr</string>
 	<key>CFBundleDisplayName</key>
         <string>FOVE</string>
 	<key>CFBundleExecutable</key>
@@ -49,13 +49,11 @@
 	<string>Main</string>
 	<key>UIRequiredDeviceCapabilities</key>
 	<array>
-		<string>armv7</string>
+		<string>arm64</string>
 	</array>
 	<key>UISupportedInterfaceOrientations</key>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>
-		<string>UIInterfaceOrientationLandscapeLeft</string>
-		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
 	<key>UISupportedInterfaceOrientations~ipad</key>
 	<array>
@@ -69,7 +67,7 @@
 	<key>NSCameraUsageDescription</key>
 	<string>FOVE utilise l'appareil photo pour scanner les cartes de fidélité et créditer les passages en caisse.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>FOVE a besoin d'accéder à vos photos pour personnaliser le logo et l'image de votre commerce.</string>
+	<string>FOVE accède à vos photos uniquement pour choisir le logo ou la bannière de votre commerce.</string>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
 </dict>
