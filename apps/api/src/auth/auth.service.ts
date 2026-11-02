@@ -117,6 +117,45 @@ export class AuthService {
       to: email,
       subject: "Confirmez votre adresse email — FOVE",
       text: `Bienvenue sur FOVE.\n\nConfirmez votre adresse en ouvrant ce lien (valable 48 h) :\n${link}\n\nSi vous n'êtes pas à l'origine de cette inscription, ignorez ce message.`,
+      html: `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Confirmez votre adresse email</title>
+</head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f9fafb; margin: 0; padding: 24px; color: #111827;">
+  <table width="100%" border="0" cellspacing="0" cellpadding="0" style="max-width: 520px; margin: 0 auto; background: #ffffff; border-radius: 12px; border: 1px solid #e5e7eb; overflow: hidden;">
+    <tr>
+      <td style="padding: 32px 32px 24px;">
+        <h2 style="font-size: 20px; font-weight: 700; margin-top: 0; margin-bottom: 16px; color: #0d1322;">Bienvenue sur FOVE</h2>
+        <p style="font-size: 15px; line-height: 24px; color: #4b5563; margin-top: 0; margin-bottom: 24px;">
+          Confirmez votre adresse email en cliquant sur le bouton ci-dessous pour activer toutes les fonctionnalités de votre commerce (valable 48 h) :
+        </p>
+        <table border="0" cellspacing="0" cellpadding="0" style="margin-bottom: 24px;">
+          <tr>
+            <td align="center" style="border-radius: 8px;" bgcolor="#2C55F5">
+              <a href="${link}" target="_blank" rel="noopener noreferrer" style="font-size: 15px; font-weight: 600; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 8px; display: inline-block;">
+                Confirmer mon adresse email
+              </a>
+            </td>
+          </tr>
+        </table>
+        <p style="font-size: 13px; line-height: 20px; color: #6b7280; margin-bottom: 8px;">
+          Si le bouton ne fonctionne pas, copiez-collez l'adresse suivante dans votre navigateur :
+        </p>
+        <p style="font-size: 12px; line-height: 18px; color: #2C55F5; word-break: break-all; margin-top: 0; margin-bottom: 24px;">
+          <a href="${link}" style="color: #2C55F5;">${link}</a>
+        </p>
+        <hr style="border: 0; border-top: 1px solid #e5e7eb; margin: 24px 0;">
+        <p style="font-size: 12px; line-height: 18px; color: #9ca3af; margin: 0;">
+          Si vous n'êtes pas à l'origine de cette inscription, vous pouvez ignorer cet email.
+        </p>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`,
     });
   }
 
@@ -155,10 +194,51 @@ export class AuthService {
     await this.prisma.client.authToken.create({
       data: { type: "PASSWORD_RESET", tokenHash: sha256(token), userId: user.id, expiresAt: new Date(Date.now() + 3_600_000) },
     });
+    const resetUrl = `${loadConfig().APP_URL}/reset-password?token=${token}`;
     await this.email.send({
       to: user.email,
       subject: "Réinitialisation de votre mot de passe — FOVE",
-      text: `Pour choisir un nouveau mot de passe, ouvrez ce lien (valable 1 h) :\n${loadConfig().APP_URL}/reset-password?token=${token}\n\nSi vous n'avez rien demandé, ignorez ce message.`,
+      text: `Bonjour,\n\nVous avez demandé la réinitialisation de votre mot de passe pour votre compte FOVE.\n\nPour choisir un nouveau mot de passe, ouvrez ce lien (valable 1 heure) :\n${resetUrl}\n\nSi vous n'êtes pas à l'origine de cette demande, vous pouvez ignorer cet email en toute sécurité.\n\nL'équipe FOVE`,
+      html: `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Réinitialisation de votre mot de passe</title>
+</head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f9fafb; margin: 0; padding: 24px; color: #111827;">
+  <table width="100%" border="0" cellspacing="0" cellpadding="0" style="max-width: 520px; margin: 0 auto; background: #ffffff; border-radius: 12px; border: 1px solid #e5e7eb; overflow: hidden;">
+    <tr>
+      <td style="padding: 32px 32px 24px;">
+        <h2 style="font-size: 20px; font-weight: 700; margin-top: 0; margin-bottom: 16px; color: #0d1322;">Réinitialisation de mot de passe</h2>
+        <p style="font-size: 15px; line-height: 24px; color: #4b5563; margin-top: 0; margin-bottom: 24px;">
+          Bonjour,<br><br>
+          Vous avez demandé à réinitialiser le mot de passe de votre compte <strong>FOVE</strong>. Cliquez sur le bouton ci-dessous pour choisir votre nouveau mot de passe (ce lien est valable 1 heure) :
+        </p>
+        <table border="0" cellspacing="0" cellpadding="0" style="margin-bottom: 24px;">
+          <tr>
+            <td align="center" style="border-radius: 8px;" bgcolor="#2C55F5">
+              <a href="${resetUrl}" target="_blank" rel="noopener noreferrer" style="font-size: 15px; font-weight: 600; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 8px; display: inline-block;">
+                Réinitialiser mon mot de passe
+              </a>
+            </td>
+          </tr>
+        </table>
+        <p style="font-size: 13px; line-height: 20px; color: #6b7280; margin-bottom: 8px;">
+          Si le bouton ne fonctionne pas, copiez-collez l'adresse suivante dans votre navigateur :
+        </p>
+        <p style="font-size: 12px; line-height: 18px; color: #2C55F5; word-break: break-all; margin-top: 0; margin-bottom: 24px;">
+          <a href="${resetUrl}" style="color: #2C55F5;">${resetUrl}</a>
+        </p>
+        <hr style="border: 0; border-top: 1px solid #e5e7eb; margin: 24px 0;">
+        <p style="font-size: 12px; line-height: 18px; color: #9ca3af; margin: 0;">
+          Si vous n'êtes pas à l'origine de cette demande, vous pouvez ignorer cet email. Votre mot de passe actuel reste inchangé.
+        </p>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`,
     });
   }
 

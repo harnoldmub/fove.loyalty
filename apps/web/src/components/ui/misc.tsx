@@ -51,3 +51,11 @@ export function ErrorNote({ children }: { children: ReactNode }) {
     </p>
   );
 }
+
+export function SuccessNote({ children }: { children: ReactNode }) {
+  return (
+    <p role="status" className="rounded-md bg-mint-soft px-3.5 py-2.5 text-sm text-mint">
+      {children}
+    </p>
+  );
+}

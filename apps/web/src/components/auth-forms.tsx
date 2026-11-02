@@ -9,7 +9,7 @@ import { z } from "zod";
 import { loginSchema, password as passwordRule } from "@fove/shared";
 import { Button } from "@/components/ui/button";
 import { Checkbox, Field, Input } from "@/components/ui/field";
-import { ErrorNote } from "@/components/ui/misc";
+import { ErrorNote, SuccessNote } from "@/components/ui/misc";
 import { PrivacyDialog, TermsDialog } from "@/components/privacy-dialog";
 import { api, ApiError, errorMessage } from "@/lib/api";
 import { useIsNativeApp } from "@/lib/native-app";
@@ -25,7 +25,9 @@ function Heading({ title, children }: { title: string; children?: React.ReactNod
 
 export function LoginForm() {
   const router = useRouter();
-  const next = useSearchParams().get("next");
+  const searchParams = useSearchParams();
+  const next = searchParams.get("next");
+  const isResetSuccess = searchParams.get("reset") === "1";
   const [error, setError] = useState<string | null>(null);
   const [leaving, setLeaving] = useState(false);
   const native = useIsNativeApp();
@@ -47,6 +49,9 @@ export function LoginForm() {
     <>
       <Heading title="Connexion">Accédez à l’espace de votre commerce.</Heading>
       <form onSubmit={onSubmit} className="grid gap-5" noValidate>
+        {isResetSuccess && (
+          <SuccessNote>Votre mot de passe a bien été mis à jour. Vous pouvez vous connecter.</SuccessNote>
+        )}
         {error && <ErrorNote>{error}</ErrorNote>}
         <Field label="Email" error={form.formState.errors.email?.message}>
           {(p) => <Input {...p} type="email" autoComplete="email" inputMode="email" {...form.register("email")} />}
@@ -136,9 +141,14 @@ export function ForgotForm() {
   });
   if (sent) {
     return (
-      <Heading title="Vérifiez votre boîte mail">
-        Si un compte existe pour cette adresse, un lien de réinitialisation vient d’être envoyé. Il est valable une heure.
-      </Heading>
+      <div className="grid gap-6">
+        <Heading title="Vérifiez votre boîte mail">
+          Si un compte existe pour cette adresse, un email avec un lien de réinitialisation sécurisé vient d’être envoyé. Pensez à vérifier vos courriers indésirables (spams). Le lien est valable 1 heure.
+        </Heading>
+        <Button asChild variant="secondary">
+          <Link href="/login">Retour à la connexion</Link>
+        </Button>
+      </div>
     );
   }
   return (
@@ -151,34 +161,76 @@ export function ForgotForm() {
         </Field>
         <Button type="submit" loading={form.formState.isSubmitting}>Envoyer le lien</Button>
       </form>
+      <div className="mt-6 text-center text-sm">
+        <Link href="/login" className="text-ink-2 hover:text-ink">Retour à la connexion</Link>
+      </div>
     </>
   );
 }
 
 export function ResetForm() {
-  const token = useSearchParams().get("token") ?? "";
+  const token = useSearchParams().get("token")?.trim() ?? "";
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
+  const [isTokenError, setIsTokenError] = useState(false);
   const form = useForm<{ password: string }>({ resolver: zodResolver(z.object({ password: passwordRule })) });
+
+  if (!token) {
+    return (
+      <div className="grid gap-6">
+        <Heading title="Lien manquant ou incomplet">
+          Le lien de réinitialisation est incomplet ou invalide. Pour définir un nouveau mot de passe, demandez un lien depuis la page dédiée.
+        </Heading>
+        <div className="grid gap-3">
+          <Button asChild>
+            <Link href="/forgot-password">Demander un nouveau lien</Link>
+          </Button>
+          <Button asChild variant="ghost">
+            <Link href="/login">Retour à la connexion</Link>
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   const onSubmit = form.handleSubmit(async ({ password }) => {
     setError(null);
+    setIsTokenError(false);
     try {
       await api.post("/auth/reset-password", { token, password });
       router.replace("/login?reset=1");
     } catch (e) {
-      setError(errorMessage(e));
+      if (e instanceof ApiError && (e.code === "invalid_token" || e.status === 400)) {
+        setIsTokenError(true);
+        setError("Ce lien a expiré (durée de validité : 1 heure) ou a déjà été utilisé.");
+      } else {
+        setError(errorMessage(e));
+      }
     }
   });
+
   return (
     <>
       <Heading title="Nouveau mot de passe">Vos autres sessions seront déconnectées.</Heading>
       <form onSubmit={onSubmit} className="grid gap-5" noValidate>
-        {error && <ErrorNote>{error}</ErrorNote>}
+        {error && (
+          <div className="grid gap-3">
+            <ErrorNote>{error}</ErrorNote>
+            {isTokenError && (
+              <Button asChild variant="secondary" size="sm">
+                <Link href="/forgot-password">Demander un nouveau lien</Link>
+              </Button>
+            )}
+          </div>
+        )}
         <Field label="Nouveau mot de passe" hint="10 caractères minimum, avec au moins une lettre et un chiffre." error={form.formState.errors.password?.message}>
           {(p) => <Input {...p} type="password" autoComplete="new-password" {...form.register("password")} />}
         </Field>
         <Button type="submit" loading={form.formState.isSubmitting}>Enregistrer le mot de passe</Button>
       </form>
+      <div className="mt-6 text-center text-sm">
+        <Link href="/login" className="text-ink-2 hover:text-ink">Retour à la connexion</Link>
+      </div>
     </>
   );
 }
