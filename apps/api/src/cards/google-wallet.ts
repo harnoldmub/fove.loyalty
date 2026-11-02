@@ -3,7 +3,7 @@ import { HttpStatus, Injectable, Logger } from "@nestjs/common";
 import { loadConfig } from "../config";
 import { AppError } from "../common/errors";
 import type { WalletCardState, WalletProvider } from "../loyalty/wallet";
-import { getClubExplanations, nextRewardValue } from "./club-card";
+import { getClubExplanations } from "./club-card";
 
 type ServiceAccount = { client_email: string; private_key: string };
 
@@ -93,10 +93,6 @@ export class GoogleWalletProvider implements WalletProvider {
       loyaltyPoints: {
         label: card.unit === "tampons" ? "Passages" : "Points",
         balance: { string: String(Math.max(0, card.balance)) },
-      },
-      secondaryLoyaltyPoints: {
-        label: "Prochain avantage",
-        balance: { string: nextRewardValue(card.balance, 10, card.unit === "tampons") },
       },
       barcode: { type: "QR_CODE", value: card.qrPayload, alternateText: card.cardNumber },
       linksModuleData: { uris: [{ uri: card.cardUrl, description: "Ma carte en ligne" }] },

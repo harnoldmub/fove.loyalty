@@ -35,8 +35,13 @@ const CARD_ALPHABET = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ";
 export function cardNumber(prefix = "FV"): string {
   const cleanPrefix = (prefix || "FV").trim().toUpperCase().slice(0, 2);
   const pick = () => CARD_ALPHABET[randomInt(0, CARD_ALPHABET.length)];
-  const block = () => Array.from({ length: 4 }, pick).join("");
-  return `${cleanPrefix}-${block()}-${block()}`;
+  const generate = () => `${Array.from({ length: 4 }, pick).join("")}-${Array.from({ length: 4 }, pick).join("")}`;
+  let blocks = generate();
+  // Garantit la présence d'au moins un chiffre (2-9) et d'au moins une lettre (A-Z)
+  while (!/\d/.test(blocks) || !/[A-Z]/.test(blocks)) {
+    blocks = generate();
+  }
+  return `${cleanPrefix}-${blocks}`;
 }
 
 // --- Mots de passe (scrypt, format auto-descriptif) ------------------------

@@ -8,9 +8,6 @@ import { WalletBannerService } from "./wallet-banner.service";
 import {
   getClubExplanations,
   getClubMemberSummary,
-  MORE_INFO_ICON,
-  MORE_INFO_LABEL,
-  nextRewardValue,
 } from "./club-card";
 
 function certificate(value: string | undefined, label: string): Buffer {
@@ -165,10 +162,7 @@ export class AppleWalletProvider {
           { key: "holder", label: "MEMBRE", value: holder },
           { key: "since", label: "MEMBRE DEPUIS", value: since, textAlignment: "PKTextAlignmentRight" },
         ],
-        auxiliaryFields: [
-          { key: "next", label: "PROCHAIN AVANTAGE", value: nextRewardValue(account.balance, target, isStamps) },
-          { key: "more", label: MORE_INFO_LABEL, value: MORE_INFO_ICON, textAlignment: "PKTextAlignmentRight" },
-        ],
+        auxiliaryFields: [],
         backFields,
       },
       barcodes: [
