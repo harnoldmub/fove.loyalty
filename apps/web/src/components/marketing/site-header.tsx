@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 
 const links = [
   { href: "/fonctionnalites", label: "Fonctionnalités" },
-  { href: "/tarifs", label: "Tarifs" },
+  { href: "/#tarifs", label: "Tarifs" },
   { href: "/developpeurs", label: "Développeurs" },
   { href: "/contact", label: "Contact" },
 ];
@@ -61,7 +61,7 @@ export function SiteFooter() {
         <nav aria-label="Produit" className="grid content-start gap-2 text-sm">
           <p className="font-medium text-ink">Produit</p>
           <Link className="text-ink-2 hover:text-ink transition-colors" href="/fonctionnalites">Fonctionnalités</Link>
-          <Link className="text-ink-2 hover:text-ink transition-colors" href="/tarifs">Tarifs</Link>
+          <Link className="text-ink-2 hover:text-ink transition-colors" href="/#tarifs">Tarifs</Link>
           <Link className="text-ink-2 hover:text-ink transition-colors" href="/developpeurs">Documentation API</Link>
           <Link className="text-ink-2 hover:text-ink transition-colors" href="/contact">Contact & Démo</Link>
         </nav>

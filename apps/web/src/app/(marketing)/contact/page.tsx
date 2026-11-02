@@ -70,7 +70,7 @@ export default function ContactPage() {
                 <Link href="/signup">Démarrer l’essai gratuit</Link>
               </Button>
               <Button asChild variant="secondary" size="sm">
-                <Link href="/tarifs">Consulter les offres</Link>
+                <Link href="/#tarifs">Consulter les offres</Link>
               </Button>
             </div>
           </div>

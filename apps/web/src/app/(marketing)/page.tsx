@@ -102,7 +102,7 @@ export default function HomePage() {
               <Link href="/signup">Créer mon programme</Link>
             </Button>
             <Button asChild size="lg" variant="secondary">
-              <Link href="/tarifs">Voir les tarifs</Link>
+              <Link href="/#tarifs">Voir les tarifs</Link>
             </Button>
           </div>
           <p className="mt-4 text-sm text-ink-3">Essai gratuit, sans carte bancaire. Configuration seul, en quelques minutes.</p>
@@ -188,8 +188,8 @@ export default function HomePage() {
         </pre>
       </section>
 
-      <section aria-labelledby="tarifs" className="mx-auto max-w-6xl px-4 py-16 sm:px-6">
-        <h2 id="tarifs" className="font-display text-3xl font-semibold sm:text-4xl">Un prix fixe, sans commission sur vos ventes</h2>
+      <section id="tarifs" aria-labelledby="tarifs-titre" className="mx-auto max-w-6xl scroll-mt-20 px-4 py-16 sm:px-6">
+        <h2 id="tarifs-titre" className="font-display text-3xl font-semibold sm:text-4xl">Un prix fixe, sans commission sur vos ventes</h2>
         <p className="mt-3 max-w-xl text-ink-2">Changez d’offre quand vous voulez : vos cartes, vos clients et leur historique restent intacts.</p>
         <div className="mt-10">
           <Pricing />
