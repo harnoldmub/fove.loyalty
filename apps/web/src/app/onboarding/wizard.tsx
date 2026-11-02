@@ -15,6 +15,16 @@ import { cn } from "@/lib/utils";
 const STEPS = ["Votre commerce", "Logo et couleur", "Établissement", "Programme", "Récompense", "QR code"] as const;
 const COLORS = ["#2C55F5", "#0E7C66", "#C2410C", "#7C3AED", "#BE123C", "#14204A", "#B45309", "#0369A1"];
 
+const EUR_COUNTRIES = new Set([
+  "FR", "BE", "DE", "ES", "IT", "PT", "NL", "IE", "AT", "FI", "GR", "LU", "MC", "AD", "SM", "VA", "ME", "XK", "EE", "LV", "LT", "SK", "SI", "CY", "MT", "HR"
+]);
+
+function defaultCurrencyForCountry(code: string): string {
+  if (EUR_COUNTRIES.has(code.toUpperCase())) return "EUR";
+  if (code.toUpperCase() === "CD") return "CDF";
+  return "USD";
+}
+
 function slugify(v: string) {
   return v
     .normalize("NFD")
@@ -63,12 +73,15 @@ export function OnboardingWizard({ userName, tenant }: { userName: string; tenan
         const [ests, programs, tenantData] = await Promise.all([
           api.get<{ id: string }[]>("/app/establishments"),
           api.get<Program[]>("/app/programs"),
-          api.get<{ settings?: { country?: string } }>("/app/tenant").catch(() => null),
+          api.get<{ settings?: { country?: string; currency?: string } }>("/app/tenant").catch(() => null),
         ]);
         const savedCountry = tenantData?.settings?.country;
         if (savedCountry) {
           setEstCountry(savedCountry);
           setEstCity(SUGGESTED_CITIES[savedCountry]?.[0] ?? "Kinshasa");
+        }
+        if (tenantData?.settings?.currency) {
+          setCurrency(tenantData.settings.currency);
         }
         if (programs.length > 0) {
           setProgram(programs[0]!);
@@ -96,12 +109,15 @@ export function OnboardingWizard({ userName, tenant }: { userName: string; tenan
     e.preventDefault();
     if (step === 0)
       return run(async () => {
-        const defaultCountry = currency === "EUR" ? "FR" : "CD";
-        const defaultTimezone = currency === "EUR" ? "Europe/Paris" : "Africa/Kinshasa";
-        await api.post("/app/tenants", { name, slug: slug || slugify(name), currency, country: defaultCountry, timezone: defaultTimezone });
+        const timezone = getCountryOption(estCountry)?.timezone ?? (currency === "EUR" ? "Europe/Paris" : "Africa/Kinshasa");
+        await api.post("/app/tenants", {
+          name,
+          slug: slug || slugify(name),
+          currency,
+          country: estCountry,
+          timezone,
+        });
         setEstName(name);
-        setEstCountry(defaultCountry);
-        setEstCity(SUGGESTED_CITIES[defaultCountry]?.[0] ?? "Kinshasa");
         setStep(1);
       });
     if (step === 1)
@@ -200,27 +216,47 @@ export function OnboardingWizard({ userName, tenant }: { userName: string; tenan
                     />
                   )}
                 </Field>
-                <Field label="Adresse de votre page" hint={`app.fove.digital/${slug || "votre-commerce"}`}>
-                  {(p) => (
-                    <Input
-                      {...p}
-                      value={slug}
-                      onChange={(e) => {
-                        setSlugTouched(true);
-                        setSlug(slugify(e.target.value));
-                      }}
-                    />
-                  )}
-                </Field>
-                <Field label="Devise de vos ventes">
-                  {(p) => (
-                    <Select {...p} value={currency} onChange={(e) => setCurrency(e.target.value)}>
-                      <option value="CDF">Franc congolais (CDF)</option>
-                      <option value="USD">Dollar américain (USD)</option>
-                      <option value="EUR">Euro (EUR)</option>
-                    </Select>
-                  )}
-                </Field>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <Field label="Pays">
+                    {(p) => (
+                      <CountrySelect
+                        {...p}
+                        value={estCountry}
+                        onChange={(code) => {
+                          setEstCountry(code);
+                          setEstCity(SUGGESTED_CITIES[code]?.[0] ?? "");
+                          setCurrency(defaultCurrencyForCountry(code));
+                        }}
+                      />
+                    )}
+                  </Field>
+                  <Field label="Ville">
+                    {(p) => <CitySelect {...p} countryCode={estCountry} value={estCity} onChange={setEstCity} />}
+                  </Field>
+                </div>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <Field label="Devise de vos ventes">
+                    {(p) => (
+                      <Select {...p} value={currency} onChange={(e) => setCurrency(e.target.value)}>
+                        <option value="EUR">Euro (EUR)</option>
+                        <option value="CDF">Franc congolais (CDF)</option>
+                        <option value="USD">Dollar américain (USD)</option>
+                      </Select>
+                    )}
+                  </Field>
+                  <Field label="Adresse de votre page" hint={`app.fove.digital/${slug || "votre-commerce"}`}>
+                    {(p) => (
+                      <Input
+                        {...p}
+                        value={slug}
+                        onChange={(e) => {
+                          setSlugTouched(true);
+                          setSlug(slugify(e.target.value));
+                        }}
+                      />
+                    )}
+                  </Field>
+                </div>
                 <Button type="submit" loading={busy} disabled={name.trim().length < 2}>Créer mon commerce</Button>
               </>
             )}

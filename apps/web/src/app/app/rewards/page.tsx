@@ -133,6 +133,7 @@ export default function RewardsPage() {
   const canCancel = useCan("redemptions.cancel");
   const qc = useQueryClient();
   const [editing, setEditing] = useState<Reward | "new" | null>(null);
+  const { data: tenant } = useQuery({ queryKey: ["tenant"], queryFn: () => api.get<{ settings: { currency: string } }>("/app/tenant") });
   const { data: programs = [] } = useQuery({ queryKey: ["programs"], queryFn: () => api.get<Program[]>("/app/programs") });
   const { data: rewards, isLoading } = useQuery({ queryKey: ["rewards"], queryFn: () => api.get<Reward[]>("/app/rewards") });
   const { data: redemptions } = useQuery({ queryKey: ["redemptions"], queryFn: () => api.get<{ data: Redemption[] }>("/app/redemptions?limit=20") });
@@ -161,7 +162,7 @@ export default function RewardsPage() {
                       {r.stock === 0 && <Badge tone="danger">Épuisée</Badge>}
                     </p>
                     <p className="text-sm text-ink-3">
-                      {rewardValueLabel(r, program?.currency ?? "CDF")} · {program?.name} · {formatNumber(r._count.redemptions)} utilisations
+                      {rewardValueLabel(r, program?.currency ?? tenant?.settings.currency ?? "EUR")} · {program?.name} · {formatNumber(r._count.redemptions)} utilisations
                       {r.stock !== null && ` · ${r.stock} en stock`}
                       {r.availableUntil && ` · jusqu’au ${formatDate(r.availableUntil)}`}
                     </p>

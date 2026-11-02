@@ -20,3 +20,11 @@ backups/
 *.sql
 *.sql.gz
 !packages/database/prisma/migrations/**/*.sql
+
+# Vidéos : jamais versionnées (rendus dans marketing/videos/out, régénérables)
+*.mp4
+*.mov
+*.webm
+*.m4v
+*.avi
+*.mkv

@@ -3,7 +3,7 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus, Printer, QrCode, Settings2 } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useCan } from "@/components/app/me-context";
 import { useWalletEnabled, WalletBroadcast } from "@/components/app/card-share";
@@ -48,6 +48,13 @@ function ProgramForm({ program, onDone }: { program?: Program; onDone: () => voi
   });
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    if (tenant?.settings?.currency && !program) {
+      setF((curr) => ({ ...curr, currency: tenant.settings.currency }));
+    }
+  }, [tenant?.settings?.currency, program]);
+
   const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => setF({ ...f, [k]: e.target.value });
 
   const submit = async (e: React.FormEvent) => {

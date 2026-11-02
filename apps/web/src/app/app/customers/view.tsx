@@ -6,11 +6,12 @@ import { useInfiniteQuery, useQuery, useQueryClient } from "@tanstack/react-quer
 import { FileUp, Search, UserPlus, Users } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { useCan } from "@/components/app/me-context";
+import { useActiveTenant, useCan } from "@/components/app/me-context";
 import type { CustomerRow, Page, Program } from "@/components/app/types";
 import { Button } from "@/components/ui/button";
 import { DialogContent, DialogRoot } from "@/components/ui/dialog";
 import { Checkbox, Field, Input, Select } from "@/components/ui/field";
+import { PhoneInput } from "@/components/ui/phone-input";
 import { EmptyState, ErrorNote, PageHeader, Panel, Skeleton } from "@/components/ui/misc";
 import { api, errorMessage } from "@/lib/api";
 import { formatDate, formatNumber } from "@/lib/utils";
@@ -66,8 +67,14 @@ function NewCustomerDialog({ open, onOpenChange, programs }: { open: boolean; on
             <Field label="Prénom">{(p) => <Input {...p} required value={form.firstName} onChange={(e) => setForm({ ...form, firstName: e.target.value })} />}</Field>
             <Field label="Nom">{(p) => <Input {...p} value={form.lastName} onChange={(e) => setForm({ ...form, lastName: e.target.value })} />}</Field>
           </div>
-          <Field label="Téléphone" hint="Format local ou international : 081 234 5678 ou +243…">
-            {(p) => <Input {...p} type="tel" inputMode="tel" autoComplete="off" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />}
+          <Field label="Téléphone">
+            {(p) => (
+              <PhoneInput
+                {...p}
+                value={form.phone}
+                onChange={(phone) => setForm({ ...form, phone })}
+              />
+            )}
           </Field>
           <Field label="Email (facultatif)">{(p) => <Input {...p} type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />}</Field>
           {programs.length > 0 && (

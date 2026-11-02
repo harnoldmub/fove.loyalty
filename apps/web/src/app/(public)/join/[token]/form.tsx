@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState, useSyncExternalStore } from "react";
 import { Button } from "@/components/ui/button";
 import { Checkbox, Field, Input } from "@/components/ui/field";
+import { PhoneInput } from "@/components/ui/phone-input";
 import { ErrorNote } from "@/components/ui/misc";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { api, ApiError, errorMessage } from "@/lib/api";
@@ -105,8 +106,15 @@ export function JoinForm({ token, data }: { token: string; data: JoinPage }) {
                   <Field label="Prénom">{(p) => <Input {...p} autoComplete="given-name" value={f.firstName} onChange={(e) => setF({ ...f, firstName: e.target.value })} />}</Field>
                   <Field label="Nom">{(p) => <Input {...p} autoComplete="family-name" value={f.lastName} onChange={(e) => setF({ ...f, lastName: e.target.value })} />}</Field>
                 </div>
-                <Field label="Téléphone" hint={tenant.country === "CD" ? "Ex. 081 234 5678" : undefined}>
-                  {(p) => <Input {...p} type="tel" inputMode="tel" autoComplete="tel" value={f.phone} onChange={(e) => setF({ ...f, phone: e.target.value })} />}
+                <Field label="Téléphone">
+                  {(p) => (
+                    <PhoneInput
+                      {...p}
+                      defaultCountry={tenant.country}
+                      value={f.phone}
+                      onChange={(phone) => setF({ ...f, phone })}
+                    />
+                  )}
                 </Field>
                 <Field label={needsEmail ? "Email" : "Email (facultatif)"} hint={needsEmail ? "Un code de validation vous sera envoyé." : "Pour retrouver votre carte si vous changez de téléphone."}>
                   {(p) => <Input {...p} type="email" autoComplete="email" value={f.email} onChange={(e) => setF({ ...f, email: e.target.value })} />}
