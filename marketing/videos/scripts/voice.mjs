@@ -1,11 +1,14 @@
 // Voix off : fait lire le texte `voice` de chaque scène par Higgsfield
-// (Inworld, 2 crédits par phrase), puis resserre les silences.
+// (ElevenLabs preset via text2speech_v2, ~0.15 crédit par phrase), puis resserre les silences.
 //
 //   node scripts/voice.mjs            -> génère seulement les phrases nouvelles ou modifiées
 //   node scripts/voice.mjs --process  -> retraite les fichiers déjà téléchargés, sans crédit
-//   VOICE="Mathieu (fr)" node scripts/voice.mjs --force   -> tout régénérer avec une autre voix
+//   node scripts/voice.mjs --force    -> tout régénérer avec la voix ElevenLabs par défaut (Ines)
+//   VOICE_ID="04e867c7-9e41-5cff-80d3-5284e74d7bd1" node scripts/voice.mjs --force -> régénérer avec Luc
 //
-// Voix françaises disponibles : Hélène (fr), Alain (fr), Mathieu (fr), Étienne (fr).
+// Voix recommandées :
+// - Ines (023ebf5e-1970-40d8-825c-a5ef6a1dd4ff) : voix féminine française naturelle, chaleureuse et fluide
+// - Luc (04e867c7-9e41-5cff-80d3-5284e74d7bd1) : voix masculine française posée et professionnelle
 import { execFile } from "node:child_process";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
@@ -19,7 +22,11 @@ const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const dir = join(root, "src/audio/voice");
 const rawDir = join(dir, "raw");
 const manifestPath = join(dir, "manifest.json");
-const voice = process.env.VOICE ?? "Hélène (fr)";
+
+const DEFAULT_VOICE_ID = "023ebf5e-1970-40d8-825c-a5ef6a1dd4ff"; // Ines
+const voiceId = process.env.VOICE_ID ?? DEFAULT_VOICE_ID;
+const voiceName = process.env.VOICE_NAME ?? (voiceId === "04e867c7-9e41-5cff-80d3-5284e74d7bd1" ? "Luc" : "Ines");
+
 const force = process.argv.includes("--force");
 const processOnly = process.argv.includes("--process");
 
@@ -29,22 +36,29 @@ const manifest = existsSync(manifestPath) ? JSON.parse(await readFile(manifestPa
 const todo = Object.entries(scenes).filter(([name, s]) => {
   if (!s.voice || processOnly) return false;
   const prev = manifest[name];
-  return force || !prev || prev.text !== s.voice || prev.voice !== voice || !existsSync(join(rawDir, `${name}.flac`));
+  return force || !prev || prev.text !== s.voice || prev.voiceId !== voiceId || !existsSync(join(rawDir, `${name}.flac`));
 });
 
-if (todo.length) console.log(`Génération de ${todo.length} phrase(s) avec ${voice}, environ ${todo.length * 2} crédits.`);
+if (todo.length) console.log(`Génération de ${todo.length} phrase(s) avec ${voiceName} (${voiceId}), environ ${(todo.length * 0.15).toFixed(2)} crédits.`);
 // Chaque phrase est enregistrée dès qu'elle arrive : une erreur sur l'une ne fait pas perdre les autres (déjà payées).
 const results = await Promise.allSettled(todo.map(async ([name, s]) => {
-  const { stdout } = await run("higgsfield", ["generate", "create", "inworld_text_to_speech", "--prompt", s.voice, "--voice", voice, "--wait", "--json"], { maxBuffer: 1 << 20 });
+  const { stdout } = await run("higgsfield", [
+    "generate", "create", "text2speech_v2",
+    "--prompt", s.voice,
+    "--variant", "elevenlabs",
+    "--voice-id", voiceId,
+    "--voice-type", "preset",
+    "--wait", "--json",
+  ], { maxBuffer: 1 << 20 });
   const job = JSON.parse(stdout)[0];
   if (job.status !== "completed" || !job.result_url) throw new Error(`Voix « ${name} » : tâche ${job.id} en état ${job.status}`);
   const res = await fetch(job.result_url);
   if (!res.ok) throw new Error(`Téléchargement de « ${name} » impossible (${res.status})`);
-  const wav = join(rawDir, `${name}.wav`);
-  await writeFile(wav, Buffer.from(await res.arrayBuffer()));
-  await run("ffmpeg", ["-y", "-loglevel", "error", "-i", wav, "-c:a", "flac", join(rawDir, `${name}.flac`)]);
-  await run("rm", [wav]);
-  manifest[name] = { text: s.voice, voice, job: job.id };
+  const tmpAudio = join(rawDir, `${name}.mp3`);
+  await writeFile(tmpAudio, Buffer.from(await res.arrayBuffer()));
+  await run("ffmpeg", ["-y", "-loglevel", "error", "-i", tmpAudio, "-c:a", "flac", join(rawDir, `${name}.flac`)]);
+  await run("rm", [tmpAudio]);
+  manifest[name] = { text: s.voice, voice: voiceName, voiceId, job: job.id };
   await writeFile(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
   console.log(`  ${name} : ${s.voice}`);
 }));

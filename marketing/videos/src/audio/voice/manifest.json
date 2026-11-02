@@ -1,32 +1,38 @@
 {
   "hook": {
     "text": "Les cartes en papier se perdent. Avec Fove, la fidélité vit dans le téléphone.",
-    "voice": "Hélène (fr)",
-    "job": "24b3b686-7783-4505-ae85-6fd0ff072deb"
+    "voice": "Ines",
+    "voiceId": "023ebf5e-1970-40d8-825c-a5ef6a1dd4ff",
+    "job": "448030ac-d5b4-4aab-bca3-10b36764ace9"
   },
   "qr": {
     "text": "Votre client scanne le QR code en caisse. Sa carte est créée en trente secondes.",
-    "voice": "Hélène (fr)",
-    "job": "b7341249-871d-484c-aa94-366c3977c8a5"
+    "voice": "Ines",
+    "voiceId": "023ebf5e-1970-40d8-825c-a5ef6a1dd4ff",
+    "job": "94f1e130-7902-491c-9594-14a68157320d"
   },
   "wallet": {
     "text": "Elle s’ajoute à Apple Wallet ou Google Wallet, sans application à installer.",
-    "voice": "Hélène (fr)",
-    "job": "15a44960-6bca-44f5-be0c-1750e0ea690e"
+    "voice": "Ines",
+    "voiceId": "023ebf5e-1970-40d8-825c-a5ef6a1dd4ff",
+    "job": "c1a319cb-f2ba-4848-aa33-b5361323706e"
   },
   "scan": {
     "text": "À chaque achat, vous scannez sa carte. Le tampon s’ajoute tout seul.",
-    "voice": "Hélène (fr)",
-    "job": "ad2ba738-a282-4c70-a94d-581c4d0fc717"
+    "voice": "Ines",
+    "voiceId": "023ebf5e-1970-40d8-825c-a5ef6a1dd4ff",
+    "job": "2cd7d438-fb1e-4047-9c16-dc882c83caca"
   },
   "reward": {
     "text": "La récompense se débloque, et votre client revient.",
-    "voice": "Hélène (fr)",
-    "job": "3c53880f-478c-4e49-9f1c-bf1df7a9aceb"
+    "voice": "Ines",
+    "voiceId": "023ebf5e-1970-40d8-825c-a5ef6a1dd4ff",
+    "job": "3bca0cf4-fc32-439e-bae8-3a115fe93248"
   },
   "outro": {
     "text": "Fove : transformez vos clients en habitués. Essai gratuit sur fove point digital.",
-    "voice": "Hélène (fr)",
-    "job": "0c8918e1-af6a-47d9-97e6-16cbf21caca3"
+    "voice": "Ines",
+    "voiceId": "023ebf5e-1970-40d8-825c-a5ef6a1dd4ff",
+    "job": "8fa9497e-bc41-47b8-b495-10cc6850a173"
   }
 }
