@@ -28,7 +28,8 @@ export class Timeline {
     this.tweens = [];
     this.texts = [];
     this.classes = [];
-    this.elements = new Set();
+    // Tous les acteurs, y compris ceux des scènes absentes du montage : ils restent masqués.
+    this.elements = new Set(root.querySelectorAll("[data-actor]"));
     this.duration = 0;
     this.win = [0, Infinity];
   }

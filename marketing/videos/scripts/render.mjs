@@ -1,9 +1,10 @@
 // Rend une composition en MP4 : Chrome (sans fenêtre) affiche chaque image à
 // l'instant exact demandé, ffmpeg assemble les captures en H.264.
 //
-//   node scripts/render.mjs                      -> toutes les vidéos, tous les formats
+//   node scripts/render.mjs                      -> toutes les vidéos en 9:16
+//   node scripts/render.mjs --all                -> toutes les vidéos, tous les formats
 //   node scripts/render.mjs explainer 9x16       -> une vidéo, un format
-//   node scripts/render.mjs explainer 9x16 --still 12.5   -> une image PNG à 12,5 s
+//   node scripts/render.mjs explainer 9x16 --still 3,12.5 -> images PNG à 3 s et 12,5 s
 import { spawn } from "node:child_process";
 import { mkdir } from "node:fs/promises";
 import { dirname, join } from "node:path";
@@ -16,12 +17,14 @@ const FORMATS = { "9x16": [1080, 1920], "1x1": [1080, 1080], "16x9": [1920, 1080
 const FPS = 30;
 const CHROME = process.env.CHROME_PATH ?? "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
 
+const allFormats = process.argv.includes("--all");
 const args = process.argv.slice(2).filter((a) => a !== "--all");
 const stillIdx = args.indexOf("--still");
-const still = stillIdx >= 0 ? Number(args.splice(stillIdx, 2)[1]) : null;
+const stills = stillIdx >= 0 ? args.splice(stillIdx, 2)[1].split(",").map(Number) : null;
 const { default: videos } = await import(join(root, "src/videos.js"));
 const ids = args[0] ? [args[0]] : Object.keys(videos);
-const formats = args[1] ? [args[1]] : Object.keys(FORMATS);
+// 9:16 (Reels, TikTok, Stories) par défaut ; --all ajoute le carré et le 16:9.
+const formats = args[1] ? [args[1]] : allFormats ? Object.keys(FORMATS) : ["9x16"];
 
 const { server, url } = await startServer();
 const browser = await puppeteer.launch({ executablePath: CHROME, headless: true, args: ["--force-color-profile=srgb", "--hide-scrollbars", "--font-render-hinting=none"] });
@@ -39,11 +42,13 @@ try {
       await page.evaluate(() => window.__ready);
       const duration = await page.evaluate(() => window.__duration);
 
-      if (still !== null) {
-        await page.evaluate((t) => window.__render(t), still);
-        const file = join(root, "out", `${id}-${format}-${String(still).replace(".", "_")}s.png`);
-        await page.screenshot({ path: file });
-        console.log(`Image : ${file}`);
+      if (stills) {
+        for (const still of stills) {
+          await page.evaluate((t) => window.__render(t), still);
+          const file = join(root, "out", `${id}-${format}-${String(still).replace(".", "_")}s.png`);
+          await page.screenshot({ path: file });
+          console.log(`Image : ${file}`);
+        }
         await page.close();
         continue;
       }

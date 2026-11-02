@@ -58,7 +58,7 @@ export const scenes = {
       s.type("#typePhone", 3.65, 0.8, "081 234 56 78");
       s.to("#tapCreate", 4.55, 0.25, { opacity: [0, 1], scale: [0.4, 1] }).to("#tapCreate", 4.8, 0.2, { opacity: [1, 0] });
       s.cls("#btnCreate", 4.55, "pressed", 4.85);
-      s.out("#scrForm", 4.95, { dur: 0.3, y: 0 });
+      s.out("#scrForm", 5.15, { dur: 0.25, y: 0 });
 
       s.to("#standee", 4.9, 0.4, { opacity: [1, 0], x: [0, -90] }, "in");
       s.to("#poseA", 4.9, 0.5, { x: [A_RIGHT.x, A_CENTER.x], y: [A_RIGHT.y, A_CENTER.y] }, "inOut");
@@ -74,7 +74,7 @@ export const scenes = {
       s.set("#poseA", 0, A_CENTER);
       if (first) s.in("#phoneA", 0, { y: 200, dur: 0.7 });
       else s.set("#phoneA", 0, { opacity: 1 });
-      s.to("#scrPass", 0, 0.3, { opacity: [0, 1] });
+      s.to("#scrPass", 0, 0.2, { opacity: [0, 1] });
       s.to("#pass", 0.1, 0.8, { opacity: [0, 1], y: [140, 0], scale: [0.9, 1] }, "back");
       s.cls(stamp(1), 0.65, "on").to(stamp(1), 0.65, 0.6, { scale: [1.5, 1] }, "spring");
       s.set("#passCount1", 0, { opacity: 1 });
@@ -106,7 +106,7 @@ export const scenes = {
 
       s.set("#poseB", 0, B_RIGHT);
       s.to("#phoneB", 0.2, 0.8, { opacity: [0, 1], x: [140, 0] }, "out");
-      s.set("#scrScanner", 0, { opacity: 1 });
+      s.set("#scrScanner", 0, { opacity: 1 }).set("#flash, #scanline", 0, { opacity: 0 });
       s.to("#scanline", 0.8, 0.6, { opacity: [1, 1], y: [0, 250] }, "inOut").to("#scanline", 1.4, 0.6, { opacity: [1, 1], y: [250, 0] }, "inOut");
       s.set("#scanline", 2.0, { opacity: 0 });
       s.to("#finderB", 1.9, 0.6, { scale: [1.12, 1] }, "spring");
@@ -124,7 +124,7 @@ export const scenes = {
 
       s.to("#phoneB", 4.6, 0.45, { opacity: [1, 0], x: [0, 140] }, "in");
       s.to("#poseA", 4.8, 0.6, { x: [A_LEFT.x, A_CENTER.x], y: [A_LEFT.y, A_CENTER.y] }, "inOut");
-      s.out("#scrPass", 4.95, { dur: 0.3, y: 0 });
+      s.out("#scrPass", 5.15, { dur: 0.25, y: 0 });
     },
   },
 
@@ -137,7 +137,7 @@ export const scenes = {
       s.set("#poseA", 0, A_CENTER);
       if (first) s.in("#phoneA", 0, { y: 200, dur: 0.7 });
       else s.set("#phoneA", 0, { opacity: 1 });
-      s.to("#scrLock", 0, 0.35, { opacity: [0, 1] });
+      s.to("#scrLock", 0, 0.2, { opacity: [0, 1] });
       s.to("#notif", 0.7, 0.7, { opacity: [0, 1], y: [-70, 0], scale: [0.94, 1] }, "back");
       s.to("#burst1", 0.75, 1.4, { opacity: [0.9, 0], scale: [0.5, 1.5] }, "out");
       s.to("#burst2", 1.1, 1.4, { opacity: [0.7, 0], scale: [0.5, 1.6] }, "out");

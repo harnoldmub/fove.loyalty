@@ -7,7 +7,7 @@
     "assets": "node scripts/assets.mjs",
     "preview": "node scripts/serve.mjs",
     "render": "node scripts/render.mjs",
-    "render:all": "node scripts/render.mjs --all"
+    "render:all-formats": "node scripts/render.mjs --all"
   },
   "dependencies": {
     "@fontsource-variable/bricolage-grotesque": "^5.1.0",
