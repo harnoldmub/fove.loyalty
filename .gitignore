@@ -21,8 +21,8 @@ backups/
 *.sql.gz
 !packages/database/prisma/migrations/**/*.sql
 
-# Marketing : dossier local non poussé
-marketing/
+# Marketing studio vidéo local non poussé
+/marketing/
 
 # Vidéos : jamais versionnées (rendus dans marketing/videos/out, régénérables)
 *.mp4
