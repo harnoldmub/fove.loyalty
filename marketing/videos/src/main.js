@@ -1,6 +1,7 @@
 // Point d'entrée : monte la vidéo demandée (?video=…&format=…) puis, selon le
 // mode, l'expose au script de rendu (?render=1) ou la joue dans le navigateur.
 import { Timeline } from "./engine.js";
+import { planVideo } from "./plan.js";
 import { scenes } from "./scenes.js";
 import videos from "./videos.js";
 
@@ -14,13 +15,13 @@ document.body.classList.add(`f-${format}`);
 document.body.classList.toggle("no-steps", Boolean(video.hideSteps));
 document.title = `${video.title} · ${format}`;
 
+// Durées des voix off (scripts/voice.mjs) : sans elles, montage au rythme d'origine.
+const timings = await fetch("audio/voice/timings.json").then((r) => (r.ok ? r.json() : {})).catch(() => ({}));
+const plan = planVideo(video, timings);
+
 const stage = document.getElementById("stage");
 const tl = new Timeline(stage);
-let t0 = 0;
-video.scenes.forEach((name, i) => {
-  const scene = scenes[name];
-  t0 = tl.scene(t0, scene.dur, (s) => scene.build(s, { first: i === 0 }));
-});
+plan.forEach(({ name, t0, len, k }, i) => tl.scene(t0, len, (s) => scenes[name].build(s, { first: i === 0 }), k));
 
 window.__duration = tl.duration;
 window.__render = (t) => tl.render(t);

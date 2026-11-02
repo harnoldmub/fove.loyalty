@@ -41,21 +41,24 @@ export class Timeline {
     return els;
   }
 
-  /** Monte une scène à partir de t0 ; les temps passés à `build` sont relatifs à t0. */
-  scene(t0, dur, build) {
-    this.win = [t0, t0 + dur];
-    build(this.#api(t0));
-    this.duration = Math.max(this.duration, t0 + dur);
-    return t0 + dur;
+  /**
+   * Monte une scène de durée `len` à partir de t0. Les temps passés à `build`
+   * sont relatifs à t0 et multipliés par `k` (ralenti pour caler la voix off).
+   */
+  scene(t0, len, build, k = 1) {
+    this.win = [t0, t0 + len];
+    build(this.#api(t0, k));
+    this.duration = Math.max(this.duration, t0 + len);
+    return t0 + len;
   }
 
-  #api(t0) {
+  #api(t0, k) {
     const win = this.win;
     const api = {
       // props : { y: [40, 0], opacity: [0, 1] }
       to: (sel, at, dur, props, easing = "out") => {
         for (const el of this.$(sel)) for (const [prop, [from, to]] of Object.entries(props)) {
-          this.tweens.push({ el, prop, start: t0 + at, dur: Math.max(dur, 1e-6), from, to, ease: ease[easing] ?? easing, win });
+          this.tweens.push({ el, prop, start: t0 + at * k, dur: Math.max(dur * k, 1e-6), from, to, ease: ease[easing] ?? easing, win });
         }
         return api;
       },
@@ -67,12 +70,12 @@ export class Timeline {
         api.to(sel, at, dur, { opacity: [1, 0], y: [0, y], ...(x !== undefined && { x: [0, x] }), ...(scale !== undefined && { scale: [1, scale] }) }, "in"),
       // Texte qui se tape caractère par caractère.
       type: (sel, at, dur, text) => {
-        for (const el of this.$(sel)) this.texts.push({ el, start: t0 + at, dur, text, win });
+        for (const el of this.$(sel)) this.texts.push({ el, start: t0 + at * k, dur: dur * k, text, win });
         return api;
       },
       // Classe CSS présente entre `at` et `until` (fin de scène par défaut).
       cls: (sel, at, name, until = Infinity) => {
-        for (const el of this.$(sel)) this.classes.push({ el, name, start: t0 + at, end: t0 + until, win });
+        for (const el of this.$(sel)) this.classes.push({ el, name, start: t0 + at * k, end: t0 + until * k, win });
         return api;
       },
     };

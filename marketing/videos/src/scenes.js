@@ -1,4 +1,6 @@
-// Les scènes du récit FOVE. Chaque scène place elle-même tout ce qu'elle
+// Les scènes du récit FOVE.
+// `voice` est le texte lu en voix off (scripts/voice.mjs le fait générer),
+// `sfx` les bruitages, en secondes depuis le début de la scène. Chaque scène place elle-même tout ce qu'elle
 // montre (positions, écrans, tampons) : on peut donc les monter dans
 // n'importe quel ordre dans videos.js.
 //
@@ -20,6 +22,8 @@ export const scenes = {
   // Accroche : la carte papier tombe, la carte FOVE apparaît dans le téléphone.
   hook: {
     dur: 4.2,
+    voice: "Les cartes en papier se perdent. Avec Fove, la fidélité vit dans le téléphone.",
+    sfx: [],
     build(s, { first }) {
       corner(s, first);
       s.in("#c-hook1", 0.15, { dur: 0.7, y: 40 }).out("#c-hook1", 1.85);
@@ -38,6 +42,8 @@ export const scenes = {
   // Étape 1 : le client scanne le présentoir et remplit le formulaire.
   qr: {
     dur: 5.4,
+    voice: "Votre client scanne le QR code en caisse. Sa carte est créée en trente secondes.",
+    sfx: [{ at: 2.5, sound: "tap" }, { at: 4.55, sound: "tap" }],
     build(s, { first }) {
       corner(s, first);
       s.in("#c-qr", 0.15).out("#c-qr", 5.0);
@@ -68,6 +74,8 @@ export const scenes = {
   // Étape 2 : la carte s'affiche puis part dans le Wallet.
   wallet: {
     dur: 4.6,
+    voice: "Elle s’ajoute à Apple Wallet ou Google Wallet, sans application à installer.",
+    sfx: [{ at: 0.65, sound: "pop" }, { at: 1.9, sound: "tap" }, { at: 2.45, sound: "pop" }],
     build(s, { first }) {
       corner(s, first);
       s.in("#c-wallet", 0.1).out("#c-wallet", 4.2);
@@ -93,6 +101,8 @@ export const scenes = {
   // Étape 3 : la caisse scanne la carte, le dixième tampon tombe.
   scan: {
     dur: 5.4,
+    voice: "À chaque achat, vous scannez sa carte. Le tampon s’ajoute tout seul.",
+    sfx: [{ at: 2.05, sound: "beep" }, { at: 2.4, sound: "pop" }],
     build(s, { first }) {
       corner(s, first);
       s.in("#c-scan", 0.1).out("#c-scan", 5.0);
@@ -131,6 +141,8 @@ export const scenes = {
   // La récompense arrive en notification sur l'écran verrouillé.
   reward: {
     dur: 4.4,
+    voice: "La récompense se débloque, et votre client revient.",
+    sfx: [{ at: 0.7, sound: "chime" }],
     build(s, { first }) {
       corner(s, first);
       s.in("#c-reward", 0.1).out("#c-reward", 4.1);
@@ -148,6 +160,10 @@ export const scenes = {
   // Carton de fin : logo, promesse, appel à l'action.
   outro: {
     dur: 4.0,
+    // Le carton de fin tient la pose : on le prolonge au lieu de le ralentir.
+    hold: true,
+    voice: "Fove : transformez vos clients en habitués. Essai gratuit sur fove point digital.",
+    sfx: [],
     build(s) {
       s.to("#outro", 0, 0.45, { opacity: [0, 1] });
       s.to("#outroLogo", 0.25, 0.8, { opacity: [0, 1], y: [24, 0], scale: [0.92, 1] }, "back");
