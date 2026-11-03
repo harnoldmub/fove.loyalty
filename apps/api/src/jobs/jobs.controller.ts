@@ -7,6 +7,7 @@ import { unauthorized } from "../common/errors";
 import { PrismaService } from "../common/prisma.service";
 import { WebhooksService } from "../notifications/webhooks.service";
 import { LoyaltyService } from "../loyalty/loyalty.service";
+import { BillingService } from "../billing/billing.service";
 
 /**
  * Tâches périodiques déclenchées par un cron Railway (toutes les 5 minutes)
@@ -20,6 +21,7 @@ export class JobsController {
     private readonly prisma: PrismaService,
     private readonly webhooks: WebhooksService,
     private readonly loyalty: LoyaltyService,
+    private readonly billing: BillingService,
   ) {}
 
   @Get("health")
@@ -33,7 +35,7 @@ export class JobsController {
   async run(@Headers("x-cron-secret") secret?: string) {
     if (!secret || !safeEqual(secret, loadConfig().CRON_SECRET)) throw unauthorized();
     const now = new Date();
-    const [webhooks, expired] = [await this.webhooks.retryDue(), await this.loyalty.expireInactive(now)];
+    const [webhooks, expired, subscriptions] = [await this.webhooks.retryDue(), await this.loyalty.expireInactive(now), await this.billing.closeExpired(now)];
     const db = this.prisma.client;
     const cleanup = await db.$transaction([
       db.session.deleteMany({ where: { expiresAt: { lt: now } } }),
@@ -41,6 +43,6 @@ export class JobsController {
       db.idempotencyRecord.deleteMany({ where: { createdAt: { lt: new Date(now.getTime() - 86_400_000) } } }),
       db.otpChallenge.deleteMany({ where: { expiresAt: { lt: new Date(now.getTime() - 86_400_000) } } }),
     ]);
-    return { webhooksRetried: webhooks, accountsExpired: expired, cleaned: cleanup.map((c) => c.count) };
+    return { webhooksRetried: webhooks, accountsExpired: expired, subscriptions, cleaned: cleanup.map((c) => c.count) };
   }
 }

@@ -50,6 +50,14 @@ export class BillingController {
     await this.billing.cancel(ctx);
   }
 
+  @Post("app/billing/resume")
+  @HttpCode(204)
+  @TenantRoute()
+  @RequirePermission("billing.write")
+  async resume(@Tenant() ctx: TenantContext) {
+    await this.billing.resume(ctx);
+  }
+
   @Post("billing/stripe/webhook")
   @HttpCode(200)
   @SkipThrottle()

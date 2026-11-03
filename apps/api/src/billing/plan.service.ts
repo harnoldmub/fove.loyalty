@@ -40,8 +40,18 @@ export class PlanService {
   private async effective(tenantId: string): Promise<(Subscription & { plan: SubscriptionPlan }) | null> {
     const sub = await this.prisma.client.subscription.findUnique({ where: { tenantId }, include: { plan: true } });
     if (!sub || sub.status === "CANCELED" || sub.status === "INCOMPLETE") return null;
-    if (sub.status === "TRIALING" && sub.trialEndsAt && sub.trialEndsAt < new Date()) return null;
+    const now = new Date();
+    if (sub.status === "TRIALING" && sub.trialEndsAt && sub.trialEndsAt < now) return null;
+    // Fin d'un contrat attribué par l'admin ou d'une résiliation hors Stripe : effet
+    // immédiat, sans attendre que la tâche planifiée passe l'abonnement à « résilié ».
+    const ended = sub.currentPeriodEnd !== null && sub.currentPeriodEnd < now;
+    if (ended && sub.provider !== "STRIPE" && (sub.provider === "MANUAL" || sub.cancelAtPeriodEnd)) return null;
     return sub;
+  }
+
+  /** Offre dont l'entreprise a les droits aujourd'hui. */
+  async currentPlan(tenantId: string): Promise<SubscriptionPlan> {
+    return (await this.effective(tenantId))?.plan ?? this.freePlan();
   }
 
   async features(tenantId: string): Promise<PlanFeatures> {

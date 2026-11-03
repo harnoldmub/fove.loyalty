@@ -1,6 +1,6 @@
 import { Injectable, Logger } from "@nestjs/common";
 import Stripe from "stripe";
-import { Prisma, type BillingInterval, type SubscriptionStatus } from "@fove/database";
+import { Prisma, type BillingInterval, type Subscription, type SubscriptionPlan, type SubscriptionStatus } from "@fove/database";
 import { loadConfig } from "../config";
 import { PrismaService } from "../common/prisma.service";
 import { AuditService } from "../common/audit.service";
@@ -39,13 +39,15 @@ export class BillingService {
   }
 
   async overview(ctx: TenantContext) {
-    const [subscription, plans, usage, limits] = await Promise.all([
+    const [subscription, plans, usage, limits, current] = await Promise.all([
       this.prisma.client.subscription.findUnique({ where: { tenantId: ctx.tenantId }, include: { plan: true } }),
       this.listPlans(),
       this.plans.usage(ctx.tenantId),
       this.plans.limits(ctx.tenantId),
+      this.plans.currentPlan(ctx.tenantId),
     ]);
-    return { mode: this.mode, subscription, plans, usage, limits };
+    const currentPlan = { code: current.code, name: current.name, kind: current.kind };
+    return { mode: this.mode, subscription, currentPlan, plans, usage, limits };
   }
 
   /** Offre achetable en ligne : le Gratuit s'obtient en résiliant, le Sur-mesure sur devis. */
@@ -149,14 +151,57 @@ export class BillingService {
     return { url: session.url };
   }
 
+  /** Résiliation en fin de période payée : les droits restent jusque-là, puis l'offre Gratuite s'applique. */
   async cancel(ctx: TenantContext) {
-    const sub = await this.prisma.client.subscription.findUnique({ where: { tenantId: ctx.tenantId } });
+    const sub = await this.prisma.client.subscription.findUnique({ where: { tenantId: ctx.tenantId }, include: { plan: true } });
     if (!sub) throw notFound("Abonnement");
+    assertCancellable(sub);
+    if (sub.cancelAtPeriodEnd) return;
     if (this.stripe && sub.stripeSubscriptionId) {
       await this.stripe.subscriptions.update(sub.stripeSubscriptionId, { cancel_at_period_end: true });
     }
     await this.prisma.client.subscription.update({ where: { id: sub.id }, data: { cancelAtPeriodEnd: true } });
     await this.audit.forTenant(ctx, "billing.cancel_requested");
+  }
+
+  /** Annule une résiliation demandée, tant que la période payée n'est pas terminée. */
+  async resume(ctx: TenantContext) {
+    const sub = await this.prisma.client.subscription.findUnique({ where: { tenantId: ctx.tenantId } });
+    const ended = sub?.currentPeriodEnd ? sub.currentPeriodEnd < new Date() : false;
+    if (!sub || !sub.cancelAtPeriodEnd || sub.status === "CANCELED" || ended) {
+      throw badRequest("nothing_to_resume", "Aucune résiliation en cours à annuler");
+    }
+    if (this.stripe && sub.stripeSubscriptionId) {
+      await this.stripe.subscriptions.update(sub.stripeSubscriptionId, { cancel_at_period_end: false });
+    }
+    await this.prisma.client.subscription.update({ where: { id: sub.id }, data: { cancelAtPeriodEnd: false } });
+    await this.audit.forTenant(ctx, "billing.cancel_reverted");
+  }
+
+  /**
+   * Tâche planifiée : fin de période des abonnements gérés par FOVE (Stripe
+   * prévient lui-même par webhook). Un contrat attribué par l'admin ou une
+   * résiliation arrivés à échéance passent à « résilié » (droits du Gratuit) ;
+   * un abonnement simulé non résilié est renouvelé, comme le ferait Stripe.
+   */
+  async closeExpired(now = new Date()) {
+    const db = this.prisma.client;
+    const due = await db.subscription.findMany({
+      where: { provider: { in: ["MANUAL", "MOCK"] }, status: { in: ["ACTIVE", "TRIALING", "PAST_DUE"] }, currentPeriodEnd: { lt: now } },
+    });
+    let ended = 0;
+    let renewed = 0;
+    for (const sub of due) {
+      if (sub.provider === "MOCK" && !sub.cancelAtPeriodEnd) {
+        await db.subscription.update({ where: { id: sub.id }, data: { currentPeriodEnd: periodEnd(sub.interval) } });
+        renewed += 1;
+        continue;
+      }
+      await db.subscription.update({ where: { id: sub.id }, data: { status: "CANCELED", cancelAtPeriodEnd: false } });
+      await this.audit.log({ tenantId: sub.tenantId, action: "billing.subscription_ended", metadata: { provider: sub.provider } });
+      ended += 1;
+    }
+    return { ended, renewed };
   }
 
   // --- Webhooks Stripe -------------------------------------------------------
@@ -267,6 +312,15 @@ function mapStatus(status: Stripe.Subscription.Status): SubscriptionStatus {
       return "CANCELED";
     default:
       return "INCOMPLETE";
+  }
+}
+
+function assertCancellable(sub: Subscription & { plan: SubscriptionPlan }) {
+  if (sub.plan.kind === "FREE" || sub.status === "CANCELED" || sub.status === "TRIALING") {
+    throw badRequest("nothing_to_cancel", "Aucun abonnement payant à résilier");
+  }
+  if (sub.plan.kind === "CUSTOM" || sub.provider === "MANUAL") {
+    throw badRequest("contract_managed", "Votre abonnement est géré par l’équipe FOVE : contactez-nous pour le modifier.");
   }
 }
 
