@@ -126,9 +126,40 @@ describe("webhooks Stripe signés", () => {
     expect((await http().set("stripe-signature", header).send(payload)).status).toBe(200);
     const sub = await db.subscription.findUniqueOrThrow({ where: { tenantId: o.tenantId } });
     expect(sub.status).toBe("PAST_DUE");
+    expect(sub.pastDueSince).not.toBeNull();
     expect(sub.stripeSubscriptionId).toBe("sub_123");
     const replay = await http().set("stripe-signature", header).send(payload);
     expect(replay.body.duplicate).toBe(true);
+  });
+
+  it("garde les droits 7 jours après un paiement échoué, puis applique le Gratuit", async () => {
+    const o = await ownerWithTenant(app);
+    await db.subscription.update({ where: { tenantId: o.tenantId }, data: { stripeCustomerId: "cus_grace", stripeSubscriptionId: "sub_grace", status: "ACTIVE", provider: "STRIPE" } });
+    const send = async (id: string, type: string, object: object) => {
+      const payload = JSON.stringify({ id, object: "event", type, data: { object } });
+      const header = Stripe.webhooks.generateTestHeaderString({ payload, secret: whsec });
+      const res = await request(app.getHttpServer()).post("/api/billing/stripe/webhook").set("Content-Type", "application/json").set("stripe-signature", header).send(payload);
+      expect(res.status).toBe(200);
+    };
+    await send("evt_grace_1", "invoice.payment_failed", { id: "in_1", object: "invoice", customer: "cus_grace" });
+    let sub = await db.subscription.findUniqueOrThrow({ where: { tenantId: o.tenantId } });
+    expect(sub.status).toBe("PAST_DUE");
+    expect(sub.pastDueSince).not.toBeNull();
+    expect((await o.client.get("/api/app/tenant")).body.features.api).toBe(true);
+
+    // Une relance de Stripe ne repousse pas le délai de grâce.
+    const firstFailure = new Date(Date.now() - 8 * 86_400_000);
+    await db.subscription.update({ where: { tenantId: o.tenantId }, data: { pastDueSince: firstFailure } });
+    await send("evt_grace_2", "invoice.payment_failed", { id: "in_2", object: "invoice", customer: "cus_grace" });
+    sub = await db.subscription.findUniqueOrThrow({ where: { tenantId: o.tenantId } });
+    expect(sub.pastDueSince!.getTime()).toBe(firstFailure.getTime());
+    expect((await o.client.get("/api/app/tenant")).body.features.api).toBe(false);
+
+    await send("evt_grace_3", "invoice.paid", { id: "in_3", object: "invoice", customer: "cus_grace" });
+    sub = await db.subscription.findUniqueOrThrow({ where: { tenantId: o.tenantId } });
+    expect(sub.status).toBe("ACTIVE");
+    expect(sub.pastDueSince).toBeNull();
+    expect((await o.client.get("/api/app/tenant")).body.features.api).toBe(true);
   });
 
   it("ignore l'annulation d'un ancien abonnement et retrouve l'entreprise par son client Stripe", async () => {

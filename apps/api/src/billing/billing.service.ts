@@ -128,9 +128,12 @@ export class BillingService {
       const price = interval === "YEAR" ? plan.stripePriceYearlyId : plan.stripePriceMonthlyId;
       if (!price) throw badRequest("price_missing", "Tarif Stripe non configuré pour cette offre");
       const remote = await this.stripe.subscriptions.retrieve(sub.stripeSubscriptionId);
+      // La différence est facturée tout de suite (et non au renouvellement, jusqu'à un an
+      // plus tard) ; si ce paiement échoue, l'offre ne change pas.
       await this.stripe.subscriptions.update(sub.stripeSubscriptionId, {
         items: [{ id: remote.items.data[0]!.id, price }],
-        proration_behavior: "create_prorations",
+        proration_behavior: "always_invoice",
+        payment_behavior: "pending_if_incomplete",
         cancel_at_period_end: false,
       });
       // L'état local est mis à jour par le webhook customer.subscription.updated.
@@ -235,7 +238,10 @@ export class BillingService {
       case "invoice.payment_failed": {
         const invoice = event.data.object as Stripe.Invoice & { customer: string | null };
         if (typeof invoice.customer === "string") {
-          await this.prisma.client.subscription.updateMany({ where: { stripeCustomerId: invoice.customer }, data: { status: "PAST_DUE" } });
+          await this.prisma.client.subscription.updateMany({
+            where: { stripeCustomerId: invoice.customer, status: { in: ["ACTIVE", "TRIALING"] } },
+            data: { status: "PAST_DUE", pastDueSince: new Date() },
+          });
           this.logger.warn(`Paiement échoué pour ${invoice.customer}`);
         }
         break;
@@ -245,7 +251,7 @@ export class BillingService {
         if (typeof invoice.customer === "string") {
           await this.prisma.client.subscription.updateMany({
             where: { stripeCustomerId: invoice.customer, status: "PAST_DUE" },
-            data: { status: "ACTIVE" },
+            data: { status: "ACTIVE", pastDueSince: null },
           });
         }
         break;
@@ -280,6 +286,8 @@ export class BillingService {
       return;
     }
     const status = mapStatus(remote.status);
+    // Le délai de grâce court depuis le premier impayé, pas depuis le dernier événement reçu.
+    const pastDueSince = status === "PAST_DUE" ? (local?.status === "PAST_DUE" && local.pastDueSince ? local.pastDueSince : new Date()) : null;
     const periodEndUnix = (item as unknown as { current_period_end?: number })?.current_period_end;
     const data = {
       planId: plan.id,
@@ -289,6 +297,7 @@ export class BillingService {
       stripeSubscriptionId: remote.id,
       stripeCustomerId: customerId,
       cancelAtPeriodEnd: remote.cancel_at_period_end,
+      pastDueSince,
       trialEndsAt: remote.trial_end ? new Date(remote.trial_end * 1000) : null,
       currentPeriodEnd: periodEndUnix ? new Date(periodEndUnix * 1000) : null,
       ...NO_CONTRACT,

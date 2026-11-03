@@ -623,6 +623,8 @@ model Subscription {
   trialEndsAt          DateTime?
   currentPeriodEnd     DateTime?
   cancelAtPeriodEnd    Boolean            @default(false)
+  /// Début de l'impayé en cours : les droits sont gardés pendant le délai de grâce, puis le Gratuit s'applique.
+  pastDueSince         DateTime?
   stripeCustomerId     String?            @unique
   stripeSubscriptionId String?            @unique
   /// Contrat sur-mesure : quotas et fonctions négociés, prioritaires sur ceux de l'offre.

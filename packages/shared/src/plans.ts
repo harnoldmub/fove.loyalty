@@ -29,6 +29,9 @@ export type PlanLimits = Record<QuotaKey, number | null>;
 /** FREE : offre par défaut ; PAID : achetable en ligne ; CUSTOM : sur devis, attribuée par l'admin. */
 export type PlanKindCode = "FREE" | "PAID" | "CUSTOM";
 
+/** Après un paiement échoué, les droits de l'offre sont gardés ce nombre de jours, puis le Gratuit s'applique. */
+export const PAST_DUE_GRACE_DAYS = 7;
+
 export const PLAN_FEATURE_KEYS = ["api", "widget", "integrations", "exports", "walletCampaigns", "whatsappAuto", "removeBranding"] as const;
 export const QUOTA_KEYS = ["customers", "establishments", "staff", "programs"] as const;
 

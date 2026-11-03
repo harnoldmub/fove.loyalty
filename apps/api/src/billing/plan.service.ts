@@ -1,5 +1,5 @@
 import { Injectable } from "@nestjs/common";
-import { DEFAULT_PLANS, resolveFeatures, resolveLimits, type PlanFeatures, type PlanLimits, type QuotaKey } from "@fove/shared";
+import { DEFAULT_PLANS, PAST_DUE_GRACE_DAYS, resolveFeatures, resolveLimits, type PlanFeatures, type PlanLimits, type QuotaKey } from "@fove/shared";
 import type { Prisma, Subscription, SubscriptionPlan } from "@fove/database";
 import { PrismaService } from "../common/prisma.service";
 import { paymentRequired } from "../common/errors";
@@ -42,6 +42,7 @@ export class PlanService {
     if (!sub || sub.status === "CANCELED" || sub.status === "INCOMPLETE") return null;
     const now = new Date();
     if (sub.status === "TRIALING" && sub.trialEndsAt && sub.trialEndsAt < now) return null;
+    if (sub.status === "PAST_DUE" && sub.pastDueSince && sub.pastDueSince.getTime() + PAST_DUE_GRACE_DAYS * 86_400_000 < now.getTime()) return null;
     // Fin d'un contrat attribué par l'admin ou d'une résiliation hors Stripe : effet
     // immédiat, sans attendre que la tâche planifiée passe l'abonnement à « résilié ».
     const ended = sub.currentPeriodEnd !== null && sub.currentPeriodEnd < now;
