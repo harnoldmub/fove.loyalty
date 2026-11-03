@@ -81,11 +81,12 @@ export function PhoneInput({
   const listRef = useRef<HTMLUListElement>(null);
 
   // Mettre à jour si defaultCountry change et pas de numéro saisi
-  useEffect(() => {
-    if (!value && defaultCountry) {
-      setSelectedCountry(defaultCountry.toUpperCase());
-    }
-  }, [defaultCountry, value]);
+  const resetKey = !value && defaultCountry ? defaultCountry.toUpperCase() : null;
+  const [appliedResetKey, setAppliedResetKey] = useState(resetKey);
+  if (resetKey !== appliedResetKey) {
+    setAppliedResetKey(resetKey);
+    if (resetKey) setSelectedCountry(resetKey);
+  }
 
   // Fermeture du dropdown lors d'un clic extérieur
   useEffect(() => {
