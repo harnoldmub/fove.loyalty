@@ -49,9 +49,9 @@ export function TermsDialog({ trigger }: { trigger?: ReactNode }) {
           </div>
 
           <div>
-            <h3 className="font-semibold text-ink">3. Essai gratuit, abonnement et continuité</h3>
+            <h3 className="font-semibold text-ink">3. Offre gratuite, abonnement et continuité</h3>
             <p className="mt-1 leading-relaxed">
-              L&apos;inscription ouvre droit à une période d&apos;essai gratuit sans carte bancaire. À l&apos;issue de l&apos;essai ou en cas de changement d&apos;offre, aucune carte ni aucun solde de points existant n&apos;est supprimé : seules les créations au-delà des quotas de l&apos;offre active sont suspendues jusqu&apos;à mise à niveau.
+              L&apos;inscription ouvre droit à l&apos;offre Gratuite, sans limite de durée et sans carte bancaire. À la fin d&apos;un abonnement ou en cas de changement d&apos;offre, aucune carte ni aucun solde de points existant n&apos;est supprimé : seules les créations au-delà des quotas de l&apos;offre active sont suspendues jusqu&apos;à mise à niveau.
             </p>
           </div>
 

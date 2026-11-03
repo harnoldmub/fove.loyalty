@@ -29,7 +29,8 @@ const highlights = [
   },
 ];
 
-export default function ContactPage() {
+export default async function ContactPage({ searchParams }: { searchParams: Promise<{ offre?: string }> }) {
+  const { offre } = await searchParams;
   return (
     <div className="mx-auto max-w-6xl px-4 pt-14 sm:px-6">
       <div className="grid gap-12 lg:grid-cols-[1fr_1.25fr] lg:items-start">
@@ -63,11 +64,11 @@ export default function ContactPage() {
           <div className="rounded-[var(--radius-lg)] border border-line bg-surface p-5">
             <h2 className="font-display text-lg font-semibold">Vous préférez tester immédiatement ?</h2>
             <p className="mt-1 text-sm text-ink-2">
-              Créez votre compte en autonomie en 2 minutes. Essai gratuit sans carte bancaire.
+              Créez votre compte en autonomie en 2 minutes. Offre Gratuite, sans carte bancaire.
             </p>
             <div className="mt-4 flex flex-wrap gap-3">
               <Button asChild size="sm">
-                <Link href="/signup">Démarrer l’essai gratuit</Link>
+                <Link href="/signup">Commencer gratuitement</Link>
               </Button>
               <Button asChild variant="secondary" size="sm">
                 <Link href="/#tarifs">Consulter les offres</Link>
@@ -76,7 +77,7 @@ export default function ContactPage() {
           </div>
         </div>
 
-        <ContactForm />
+        <ContactForm customPlan={offre === "sur-mesure"} />
       </div>
     </div>
   );

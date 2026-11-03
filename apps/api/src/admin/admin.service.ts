@@ -69,8 +69,13 @@ export class AdminService {
     const byStatus: Record<string, number> = {};
     const byPlan: Record<string, number> = {};
     let mrrCents = 0;
+    let paying = 0;
+    let free = 0;
     for (const s of subs) {
       byStatus[s.status] = (byStatus[s.status] ?? 0) + 1;
+      const running = s.status === "ACTIVE" || s.status === "PAST_DUE";
+      if (running && s.plan.kind === "FREE") free += 1;
+      else if (running) paying += 1;
       if (s.status === "ACTIVE" || s.status === "PAST_DUE") {
         byPlan[s.plan.code] = (byPlan[s.plan.code] ?? 0) + 1;
         // Le MRR ne compte que les abonnements réellement facturés : Stripe et contrats sur-mesure.
@@ -78,7 +83,9 @@ export class AdminService {
         else if (s.provider === "MANUAL" && s.contractPriceYearlyCents) mrrCents += Math.round(s.contractPriceYearlyCents / 12);
       }
     }
-    return { tenants, suspended, newTenants30d: newTenants, subscriptionsByStatus: byStatus, activeByPlan: byPlan, mrrCents, customers, accounts, transactions30d };
+    // Une entreprise sans abonnement en cours (résilié, essai expiré) relève aussi du Gratuit.
+    free += tenants - subs.filter((s) => s.status === "ACTIVE" || s.status === "PAST_DUE" || s.status === "TRIALING").length;
+    return { tenants, suspended, newTenants30d: newTenants, subscriptionsByStatus: byStatus, activeByPlan: byPlan, paying, free, mrrCents, customers, accounts, transactions30d };
   }
 
   async listTenants(q: string | undefined) {
@@ -91,7 +98,7 @@ export class AdminService {
       orderBy: { createdAt: "desc" },
       include: {
         settings: { select: { logoUrl: true, primaryColor: true } },
-        subscription: { include: { plan: { select: { code: true, name: true } } } },
+        subscription: { include: { plan: { select: { code: true, name: true, kind: true } } } },
         _count: { select: { customers: true, accounts: true, memberships: true } },
       },
     });

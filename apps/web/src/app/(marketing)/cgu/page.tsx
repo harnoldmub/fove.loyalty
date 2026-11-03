@@ -28,12 +28,12 @@ export default function TermsPage() {
         <li>Chaque opération réalisée au scanner ou depuis le tableau de bord est rattachée à l’utilisateur connecté et consignée dans un journal d’audit horodaté.</li>
       </ul>
 
-      <h2>3. Essai gratuit, tarifs et continuité des données</h2>
+      <h2>3. Offre gratuite, tarifs et continuité des données</h2>
       <ul>
-        <li>Toute inscription bénéficie d’une période d’essai gratuit sans obligation de renseigner une carte bancaire.</li>
+        <li>Toute inscription donne accès à l’offre Gratuite, sans limite de durée et sans obligation de renseigner une carte bancaire, dans la limite de ses quotas.</li>
         <li>Aucune commission n’est prélevée sur le chiffre d’affaires ou les ventes du Commerçant.</li>
         <li>
-          <strong>Garantie de non-destruction :</strong> à la fin de l’essai ou lors d’un passage à une offre inférieure, aucune carte client ni aucun historique de points n’est supprimé. Seules les fonctionnalités ou nouvelles créations dépassant les quotas de l’offre active sont restreintes.
+          <strong>Garantie de non-destruction :</strong> à la fin d’un abonnement ou lors d’un passage à une offre inférieure, aucune carte client ni aucun historique de points n’est supprimé. Seules les fonctionnalités ou nouvelles créations dépassant les quotas de l’offre active sont restreintes.
         </li>
       </ul>
 

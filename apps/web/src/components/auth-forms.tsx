@@ -94,7 +94,7 @@ export function SignupForm() {
   const e = form.formState.errors;
   return (
     <>
-      <Heading title="Créer votre compte">Essai gratuit, sans carte bancaire. Votre programme est prêt en quelques minutes.</Heading>
+      <Heading title="Créer votre compte">Gratuit jusqu’à 100 clients, sans carte bancaire. Votre programme est prêt en quelques minutes.</Heading>
       <form onSubmit={onSubmit} className="grid gap-5" noValidate>
         {error && <ErrorNote>{error}</ErrorNote>}
         <Field label="Votre nom" error={e.name?.message}>

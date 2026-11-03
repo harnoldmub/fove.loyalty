@@ -236,12 +236,16 @@ describe("Super Admin FOVE", () => {
     expect((await admin.get("/api/app/customers")).status).toBe(403);
   });
 
-  it("les statistiques SaaS ne comptent pas l'essai simulé comme du revenu", async () => {
+  it("les statistiques SaaS ne comptent ni l'abonnement simulé ni le Gratuit comme du revenu", async () => {
     const admin = await superAdmin();
+    const before = (await admin.get("/api/admin/stats")).body;
+    await ownerWithTenant(app, { plan: "free" });
     const stats = await admin.get("/api/admin/stats");
     expect(stats.status).toBe(200);
     expect(stats.body.mrrCents).toBe(0);
-    expect(stats.body.tenants).toBeGreaterThan(0);
+    expect(stats.body.free).toBe(before.free + 1);
+    expect(stats.body.paying).toBe(before.paying);
+    expect(stats.body.paying + stats.body.free).toBeLessThanOrEqual(stats.body.tenants);
   });
 
   it("modifie le prix d'une offre sans toucher au code", async () => {

@@ -105,7 +105,7 @@ export default function HomePage() {
               <Link href="/#tarifs">Voir les tarifs</Link>
             </Button>
           </div>
-          <p className="mt-4 text-sm text-ink-3">Essai gratuit, sans carte bancaire. Configuration seul, en quelques minutes.</p>
+          <p className="mt-4 text-sm text-ink-3">Gratuit jusqu’à 100 clients, sans carte bancaire. Configuration seul, en quelques minutes.</p>
 
           <div className="mt-8 border-t border-line pt-6">
             <p className="text-sm text-ink-2">Vos clients ajoutent leur carte à leur téléphone en un geste :</p>

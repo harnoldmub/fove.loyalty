@@ -24,6 +24,17 @@ describe("widget", () => {
     expect(link.href).toBe("https://app.fove.digital/join/abc123def456");
   });
 
+  it("affiche « Propulsé par FOVE » seulement quand l'offre l'exige", () => {
+    const free = document.createElement("div");
+    render(free, { ...config, poweredBy: true }, options);
+    const brand = free.shadowRoot!.querySelector<HTMLAnchorElement>(".foot a.brand")!;
+    expect(brand.textContent).toBe("FOVE");
+    expect(brand.href).toBe("https://fove.digital/");
+    const paid = document.createElement("div");
+    render(paid, config, options);
+    expect(paid.shadowRoot!.querySelector(".foot")!.textContent).not.toContain("FOVE");
+  });
+
   it("ignore les liens dangereux et les couleurs invalides", () => {
     const host = document.createElement("div");
     render(host, { tenant: { name: "X", logoUrl: "javascript:alert(1)", primaryColor: "red;background:url(x)" }, programs: [{ name: "P", mode: "STAMPS", joinUrl: "javascript:alert(1)" }] }, options);

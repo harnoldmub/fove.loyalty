@@ -7,15 +7,19 @@ import { Field, Input, Select, Textarea } from "@/components/ui/field";
 import { ErrorNote, Panel } from "@/components/ui/misc";
 import { api, errorMessage } from "@/lib/api";
 
+const CUSTOM_PLAN_SUBJECT = "Offre Sur-mesure (quotas, accompagnement, contrat)";
+
 const SUBJECTS = [
   "Demande de démonstration & essai accompagné",
+  CUSTOM_PLAN_SUBJECT,
   "Déploiement multi-boutiques / Offre Réseau",
   "Question sur les tarifs & moyens de paiement (RDC / International)",
   "Intégration caisse (POS) ou boutique e-commerce",
   "Partenariat ou autre demande",
 ];
 
-export function ContactForm() {
+/** `customPlan` : demande venue du bandeau Sur-mesure de la page tarifs. */
+export function ContactForm({ customPlan = false }: { customPlan?: boolean }) {
   const [sent, setSent] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -24,7 +28,7 @@ export function ContactForm() {
     email: "",
     phone: "",
     company: "",
-    subject: SUBJECTS[0]!,
+    subject: customPlan ? CUSTOM_PLAN_SUBJECT : SUBJECTS[0]!,
     message: "",
     website: "",
   });
@@ -41,7 +45,7 @@ export function ContactForm() {
         companyName: form.company.trim() || null,
         subject: form.subject,
         message: form.message.trim(),
-        source: "WEBSITE",
+        source: form.subject === CUSTOM_PLAN_SUBJECT ? "CUSTOM_PLAN" : "WEBSITE",
         website: form.website || undefined,
       });
       setSent(true);

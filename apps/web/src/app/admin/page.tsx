@@ -10,8 +10,8 @@ import { Badge, PageHeader, Panel } from "@/components/ui/misc";
 import { api } from "@/lib/api";
 import { formatDate, formatNumber, formatPrice } from "@/lib/utils";
 
-interface Stats { tenants: number; suspended: number; newTenants30d: number; subscriptionsByStatus: Record<string, number>; activeByPlan: Record<string, number>; mrrCents: number; customers: number; accounts: number; transactions30d: number }
-interface TenantRow { id: string; name: string; slug: string; status: string; createdAt: string; settings?: { logoUrl: string | null; primaryColor: string } | null; subscription: { status: string; provider: string; plan: { code: string; name: string } } | null; _count: { customers: number; accounts: number; memberships: number } }
+interface Stats { tenants: number; suspended: number; newTenants30d: number; subscriptionsByStatus: Record<string, number>; activeByPlan: Record<string, number>; paying: number; free: number; mrrCents: number; customers: number; accounts: number; transactions30d: number }
+interface TenantRow { id: string; name: string; slug: string; status: string; createdAt: string; settings?: { logoUrl: string | null; primaryColor: string } | null; subscription: { status: string; provider: string; plan: { code: string; name: string; kind: "FREE" | "PAID" | "CUSTOM" } } | null; _count: { customers: number; accounts: number; memberships: number } }
 
 export default function AdminHome() {
   const [q, setQ] = useState("");
@@ -25,7 +25,7 @@ export default function AdminHome() {
           <dl className="grid grid-cols-2 gap-x-6 gap-y-5 sm:grid-cols-4">
             {[
               ["Entreprises", stats.tenants, `${formatNumber(stats.newTenants30d)} nouvelles en 30 jours`],
-              ["Payantes", (stats.subscriptionsByStatus.ACTIVE ?? 0) + (stats.subscriptionsByStatus.PAST_DUE ?? 0), `${formatNumber(stats.subscriptionsByStatus.TRIALING ?? 0)} en essai`],
+              ["Payantes", stats.paying, `${formatNumber(stats.free)} sur le Gratuit · ${formatNumber(stats.subscriptionsByStatus.TRIALING ?? 0)} en essai`],
               ["Cartes", stats.accounts, `${formatNumber(stats.transactions30d)} opérations en 30 jours`],
               ["Suspendues", stats.suspended, "accès bloqué"],
             ].map(([l, v, help]) => (
@@ -37,7 +37,7 @@ export default function AdminHome() {
             ))}
           </dl>
           <p className="mt-5 border-t border-line pt-4 text-sm text-ink-2">
-            Revenu mensuel facturé par Stripe : <strong className="text-ink tabular">{formatPrice(stats.mrrCents)}</strong>. Les essais et abonnements simulés ne sont pas comptés.
+            Revenu mensuel facturé (Stripe et contrats sur-mesure) : <strong className="text-ink tabular">{formatPrice(stats.mrrCents)}</strong>. Les essais, l’offre Gratuite et les abonnements simulés ne sont pas comptés.
           </p>
         </Panel>
       )}
@@ -68,7 +68,7 @@ export default function AdminHome() {
                   <Badge tone="danger">Suspendue</Badge>
                 ) : t.subscription?.status === "TRIALING" ? (
                   <Badge tone="cobalt">Essai</Badge>
-                ) : t.subscription?.status === "ACTIVE" ? (
+                ) : t.subscription?.status === "ACTIVE" && t.subscription.plan.kind !== "FREE" ? (
                   <Badge tone="mint">Payant</Badge>
                 ) : null}
               </Link>
@@ -93,7 +93,7 @@ export default function AdminHome() {
             {tenants.map((t) => {
               const subStatus = t.subscription?.status;
               const isTrial = subStatus === "TRIALING";
-              const isActive = subStatus === "ACTIVE";
+              const isActive = subStatus === "ACTIVE" && t.subscription?.plan.kind !== "FREE";
 
               return (
                 <tr key={t.id} className="transition-colors hover:bg-surface-2">
@@ -119,7 +119,7 @@ export default function AdminHome() {
                       <div className="flex items-center gap-1.5">
                         <span className="font-medium text-ink">{t.subscription.plan.name}</span>
                         <Badge tone={isActive ? "mint" : isTrial ? "cobalt" : "neutral"}>
-                          {isTrial ? "Essai" : isActive ? "Payant" : t.subscription.status}
+                          {isTrial ? "Essai" : isActive ? "Payant" : subStatus === "ACTIVE" ? "Actif" : t.subscription.status}
                         </Badge>
                       </div>
                     ) : (

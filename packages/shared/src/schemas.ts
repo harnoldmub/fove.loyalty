@@ -219,7 +219,7 @@ export const contactMessageSchema = z.object({
   companyName: z.string().trim().max(120).nullable().default(null),
   subject: z.string().trim().max(150).nullable().default(null),
   message: z.string().trim().min(10, "Décrivez brièvement votre besoin (10 caractères min.)").max(4000),
-  source: z.enum(["WEBSITE", "DEMO_REQUEST", "PRICING_PAGE"]).default("WEBSITE"),
+  source: z.enum(["WEBSITE", "DEMO_REQUEST", "PRICING_PAGE", "CUSTOM_PLAN"]).default("WEBSITE"),
   /** Champ piège anti-robot : doit rester vide. */
   website: z.string().max(0).optional(),
 });
