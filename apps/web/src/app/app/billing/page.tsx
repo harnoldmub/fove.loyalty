@@ -1,16 +1,17 @@
 "use client";
 
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { PAST_DUE_GRACE_DAYS } from "@fove/shared";
-import { useCan, useMe } from "@/components/app/me-context";
+import { useCan } from "@/components/app/me-context";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/dialog";
 import { Badge, PageHeader, Panel, Skeleton } from "@/components/ui/misc";
 import { api, errorMessage } from "@/lib/api";
+import { clearPlanChoice } from "@/lib/plan-choice";
 import { cn, formatDate, formatNumber, formatPrice } from "@/lib/utils";
 
 interface Plan {
@@ -53,7 +54,7 @@ const USAGE_LABEL: Record<string, string> = { customers: "Clients", establishmen
 
 function BillingView() {
   const params = useSearchParams();
-  const me = useMe();
+  const router = useRouter();
   const canWrite = useCan("billing.write");
   const qc = useQueryClient();
   const interval = "YEAR" as const;
@@ -66,6 +67,40 @@ function BillingView() {
     refetchInterval: (q) => (awaitingStripe && q.state.data?.subscription?.provider !== "STRIPE" && q.state.dataUpdateCount < 10 ? 3000 : false),
   });
 
+  // Offre choisie sur la page tarifs avant l'inscription : on lance son paiement, une seule fois.
+  const wanted = params.get("offre");
+  const [launching, setLaunching] = useState<string | null>(null);
+  const launched = useRef(false);
+  useEffect(() => {
+    if (!wanted || !data || launched.current) return;
+    launched.current = true;
+    clearPlanChoice();
+    const plan = data.plans.find((p) => p.code === wanted && p.kind === "PAID");
+    const sub = data.subscription;
+    const alreadyPaying = sub?.provider === "STRIPE" && sub.status !== "CANCELED" && sub.plan.code === data.currentPlan.code;
+    // Déjà abonné : le changement d'offre facturé au prorata passe par la confirmation de la carte.
+    if (!plan || !canWrite || data.mode === "unavailable" || alreadyPaying || data.currentPlan.code === plan.code) {
+      router.replace("/app/billing");
+      return;
+    }
+    void (async () => {
+      setLaunching(plan.name);
+      try {
+        const res = await api.post<{ url: string }>("/app/billing/checkout", { planCode: plan.code, interval: "YEAR" });
+        if (data.mode === "stripe") {
+          window.location.assign(res.url);
+          return;
+        }
+        await qc.invalidateQueries({ queryKey: ["billing"] });
+        toast.success(`Offre ${plan.name} activée (mode simulé, aucun paiement)`);
+      } catch (e) {
+        toast.error(errorMessage(e));
+      }
+      setLaunching(null);
+      router.replace("/app/billing");
+    })();
+  }, [wanted, data, canWrite, qc, router]);
+
   useEffect(() => {
     const c = params.get("checkout");
     if (c === "success") toast.success("Paiement reçu : votre offre s’active dans quelques instants");
@@ -74,6 +109,14 @@ function BillingView() {
   }, [params]);
 
   if (!data) return <Skeleton className="h-96" />;
+  if (launching) {
+    return (
+      <Panel className="grid place-items-center gap-2 p-10 text-center">
+        <p className="font-display text-xl font-semibold">Offre {launching}</p>
+        <p className="text-ink-2">Ouverture du paiement sécurisé…</p>
+      </Panel>
+    );
+  }
   const sub = data.subscription;
   const current = data.currentPlan;
   // Abonnement terminé (résilié, impayé prolongé) : on affiche l'offre réellement appliquée.
@@ -209,11 +252,10 @@ function BillingView() {
             <h2 id="offres" className="font-display text-2xl font-semibold">Changer d’offre</h2>
             <p className="text-sm text-ink-2">Abonnement annuel, payé à l’avance en dollars US.</p>
           </div>
-          {!me.user.emailVerifiedAt && <p className="mb-4 text-sm text-danger">Confirmez votre email avant de choisir une offre.</p>}
           <div className="grid gap-4 md:grid-cols-3">
             {data.plans.filter((p) => p.kind === "PAID").map((p) => {
               const isCurrent = current.code === p.code && subApplies && sub?.status !== "CANCELED";
-              const disabled = isCurrent || !me.user.emailVerifiedAt || data.mode === "unavailable";
+              const disabled = isCurrent || data.mode === "unavailable";
               const label = isCurrent ? "Offre actuelle" : `Passer à ${p.name}`;
               return (
                 <Panel key={p.id} className={cn("grid gap-3 p-5", isCurrent && "ring-2 ring-cobalt")}>

@@ -189,6 +189,32 @@ export class AuthService {
     await this.sendVerification(auth.user.id, auth.user.email);
   }
 
+  /**
+   * Tâche planifiée : une seule relance, 24 h après l'inscription, pour un email
+   * toujours pas confirmé. Rien n'est bloqué (l'abonnement payé reste actif) ;
+   * seules les clés API et les webhooks attendent la confirmation.
+   */
+  async sendVerificationReminders(now = new Date()): Promise<number> {
+    const users = await this.prisma.client.user.findMany({
+      where: {
+        emailVerifiedAt: null,
+        isSuperAdmin: false,
+        createdAt: { lt: new Date(now.getTime() - 86_400_000), gt: new Date(now.getTime() - 7 * 86_400_000) },
+      },
+      select: { id: true, email: true },
+      take: 200,
+    });
+    let sent = 0;
+    for (const user of users) {
+      const already = await this.prisma.client.auditLog.count({ where: { actorUserId: user.id, action: "auth.verification_reminder" } });
+      if (already > 0) continue;
+      await this.sendVerification(user.id, user.email);
+      await this.audit.log({ actorUserId: user.id, action: "auth.verification_reminder" });
+      sent += 1;
+    }
+    return sent;
+  }
+
   private async consumeToken(type: "EMAIL_VERIFY" | "PASSWORD_RESET", token: string) {
     const record = await this.prisma.client.authToken.findUnique({ where: { tokenHash: sha256(token) } });
     if (!record || record.type !== type || record.usedAt || record.expiresAt < new Date()) {

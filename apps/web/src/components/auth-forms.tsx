@@ -13,6 +13,40 @@ import { ErrorNote, SuccessNote } from "@/components/ui/misc";
 import { PrivacyDialog, TermsDialog } from "@/components/privacy-dialog";
 import { api, ApiError, errorMessage } from "@/lib/api";
 import { useIsNativeApp } from "@/lib/native-app";
+import { afterAuthPath, clearPlanChoice, rememberPlanChoice, withPlanChoice } from "@/lib/plan-choice";
+
+/**
+ * Offre choisie sur la page tarifs (`?offre=business`) : retenue pour la suite
+ * du parcours, et nom affiché pour rassurer. Un visiteur déjà connecté part
+ * directement au paiement.
+ */
+function usePlanChoice(source: "signup" | "login") {
+  const router = useRouter();
+  const offre = useSearchParams().get("offre");
+  const [planName, setPlanName] = useState<string | null>(null);
+  useEffect(() => {
+    if (offre) rememberPlanChoice(offre);
+    // « Commencer » (Gratuit) mène à l'inscription sans offre : on oublie un ancien choix.
+    else if (source === "signup") clearPlanChoice();
+    if (!offre) return;
+    let cancelled = false;
+    api
+      .get<{ code: string; name: string; kind: string }[]>("/plans")
+      .then((plans) => {
+        const plan = plans.find((p) => p.code === offre && p.kind === "PAID");
+        if (!cancelled && plan) setPlanName(plan.name);
+      })
+      .catch(() => undefined);
+    api
+      .get("/auth/me")
+      .then(() => !cancelled && router.replace(afterAuthPath()))
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, [offre, source, router]);
+  return { offre, planName };
+}
 
 function Heading({ title, children }: { title: string; children?: React.ReactNode }) {
   return (
@@ -31,6 +65,7 @@ export function LoginForm() {
   const [error, setError] = useState<string | null>(null);
   const [leaving, setLeaving] = useState(false);
   const native = useIsNativeApp();
+  const { offre, planName } = usePlanChoice("login");
   const form = useForm<z.infer<typeof loginSchema>>({ resolver: zodResolver(loginSchema) });
 
   const onSubmit = form.handleSubmit(async (values) => {
@@ -38,7 +73,7 @@ export function LoginForm() {
     try {
       await api.post("/auth/login", values);
       setLeaving(true);
-      router.replace(next?.startsWith("/") && !next.startsWith("//") ? next : "/app");
+      router.replace(next?.startsWith("/") && !next.startsWith("//") ? next : afterAuthPath());
       router.refresh();
     } catch (e) {
       setError(errorMessage(e));
@@ -47,7 +82,9 @@ export function LoginForm() {
 
   return (
     <>
-      <Heading title="Connexion">Accédez à l’espace de votre commerce.</Heading>
+      <Heading title="Connexion">
+        {planName ? `Connectez-vous pour activer l’offre ${planName} : le paiement suit.` : "Accédez à l’espace de votre commerce."}
+      </Heading>
       <form onSubmit={onSubmit} className="grid gap-5" noValidate>
         {isResetSuccess && (
           <SuccessNote>Votre mot de passe a bien été mis à jour. Vous pouvez vous connecter.</SuccessNote>
@@ -63,7 +100,7 @@ export function LoginForm() {
       </form>
       <div className="mt-6 flex flex-wrap justify-between gap-3 text-sm">
         <Link href="/forgot-password" className="text-cobalt hover:underline">Mot de passe oublié</Link>
-        {!native && <Link href="/signup" className="text-ink-2 hover:text-ink">Pas encore de compte ? Créer un compte</Link>}
+        {!native && <Link href={withPlanChoice("/signup", offre)} className="text-ink-2 hover:text-ink">Pas encore de compte ? Créer un compte</Link>}
       </div>
     </>
   );
@@ -78,6 +115,7 @@ const signupForm = z.object({
 
 export function SignupForm() {
   const router = useRouter();
+  const { offre, planName } = usePlanChoice("signup");
   const [error, setError] = useState<string | null>(null);
   const [leaving, setLeaving] = useState(false);
   const form = useForm<z.infer<typeof signupForm>>({ resolver: zodResolver(signupForm), defaultValues: { acceptTerms: false } });
@@ -94,7 +132,11 @@ export function SignupForm() {
   const e = form.formState.errors;
   return (
     <>
-      <Heading title="Créer votre compte">Gratuit jusqu’à 100 clients, sans carte bancaire. Votre programme est prêt en quelques minutes.</Heading>
+      <Heading title="Créer votre compte">
+        {planName
+          ? `Vous avez choisi l’offre ${planName}. Créez votre compte et votre commerce, puis réglez votre abonnement.`
+          : "Gratuit jusqu’à 100 clients, sans carte bancaire. Votre programme est prêt en quelques minutes."}
+      </Heading>
       <form onSubmit={onSubmit} className="grid gap-5" noValidate>
         {error && <ErrorNote>{error}</ErrorNote>}
         <Field label="Votre nom" error={e.name?.message}>
@@ -120,7 +162,7 @@ export function SignupForm() {
         <Button type="submit" loading={form.formState.isSubmitting || leaving}>{leaving ? "Préparation de votre espace…" : "Créer mon compte"}</Button>
       </form>
       <p className="mt-6 text-sm text-ink-2">
-        Déjà inscrit ? <Link href="/login" className="text-cobalt hover:underline">Se connecter</Link>
+        Déjà inscrit ? <Link href={withPlanChoice("/login", offre)} className="text-cobalt hover:underline">Se connecter</Link>
       </p>
     </>
   );

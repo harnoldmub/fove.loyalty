@@ -23,11 +23,12 @@ describe("facturation en mode simulé et quotas", () => {
     expect(billing.body.limits).toEqual({ customers: 3, establishments: 1, staff: 1, programs: 1 });
   });
 
-  it("le paiement exige un email vérifié, puis change l'offre sans paiement réel", async () => {
+  it("le paiement n'attend pas la confirmation de l'email, les clés API si", async () => {
     const o = await ownerWithTenant(app);
-    expect((await o.client.post("/api/app/billing/checkout", { planCode: "premium", interval: "YEAR" })).status).toBe(403);
-    await db.user.update({ where: { email: o.email }, data: { emailVerifiedAt: new Date() } });
+    const key = await o.client.post("/api/app/integrations/keys", { name: "Serveur", kind: "SECRET", scopes: ["customers:read"] });
+    expect(key.status).toBe(403);
     const res = await o.client.post("/api/app/billing/checkout", { planCode: "premium", interval: "YEAR" });
+    expect(res.status).toBe(201);
     expect(res.body.mode).toBe("mock");
     const sub = await db.subscription.findUniqueOrThrow({ where: { tenantId: o.tenantId }, include: { plan: true } });
     expect(sub.plan.code).toBe("premium");

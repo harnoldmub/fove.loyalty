@@ -50,7 +50,8 @@ function quota(plan: Plan, key: QuotaKey): string {
 function cta(plan: Plan): { href: string; label: string } {
   if (plan.kind === "CUSTOM") return { href: "/contact?offre=sur-mesure", label: "Nous contacter" };
   if (plan.kind === "FREE") return { href: "/signup", label: "Commencer" };
-  return { href: "/signup", label: `Choisir ${plan.name}` };
+  // L'offre suit l'inscription (ou la connexion) jusqu'au paiement.
+  return { href: `/signup?offre=${plan.code}`, label: `Choisir ${plan.name}` };
 }
 
 /** Première colonne : reste visible quand le tableau défile horizontalement sur mobile. */
@@ -186,7 +187,6 @@ export async function Pricing() {
           </tbody>
         </table>
       </div>
-      <p className="text-sm text-ink-3">Toutes les offres démarrent sur le Gratuit : vous changez d’offre à tout moment depuis votre espace, sans perdre vos clients ni leurs points.</p>
     </div>
   );
 }

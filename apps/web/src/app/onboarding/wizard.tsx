@@ -10,6 +10,7 @@ import { CitySelect, CountrySelect, getCountryOption, SUGGESTED_CITIES } from "@
 import { Field, Input, Select } from "@/components/ui/field";
 import { ErrorNote } from "@/components/ui/misc";
 import { api, errorMessage } from "@/lib/api";
+import { afterAuthPath } from "@/lib/plan-choice";
 import { cn } from "@/lib/utils";
 
 const STEPS = ["Votre commerce", "Logo et couleur", "Établissement", "Programme", "Récompense", "QR code"] as const;
@@ -165,7 +166,8 @@ export function OnboardingWizard({ userName, tenant }: { userName: string; tenan
       });
     return run(async () => {
       await api.post("/app/tenant/onboarding/complete");
-      window.location.assign("/app");
+      // Offre payante choisie sur la page tarifs : direction le paiement.
+      window.location.assign(afterAuthPath("/app"));
     });
   };
 

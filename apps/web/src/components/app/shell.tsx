@@ -173,7 +173,7 @@ function VerifyBanner() {
   if (me.user.emailVerifiedAt || me.support) return null;
   return (
     <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 bg-cobalt-soft px-4 py-2 text-center text-sm text-ink">
-      Confirmez votre email ({me.user.email}) pour activer l’abonnement et les intégrations.
+      Confirmez votre email ({me.user.email}) pour sécuriser votre compte et activer les intégrations.
       <button
         className="font-medium text-cobalt underline disabled:opacity-60"
         disabled={sent}

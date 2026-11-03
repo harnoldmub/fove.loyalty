@@ -5,7 +5,7 @@ import type { Request } from "express";
 import { checkoutSchema } from "@fove/shared";
 import type { z } from "zod";
 import { ZodPipe } from "../common/zod.pipe";
-import { RequirePermission, RequireVerified, Tenant } from "../common/decorators";
+import { RequirePermission, Tenant } from "../common/decorators";
 import type { TenantContext } from "../common/context";
 import { TenantRoute } from "../auth/guards";
 import { BillingService } from "./billing.service";
@@ -27,9 +27,9 @@ export class BillingController {
     return this.billing.overview(ctx);
   }
 
+  /** Ouvert avant la confirmation de l'email : on ne perd pas une vente ; l'email est relancé ensuite. */
   @Post("app/billing/checkout")
   @TenantRoute()
-  @RequireVerified()
   @RequirePermission("billing.write")
   checkout(@Tenant() ctx: TenantContext, @Body(new ZodPipe(checkoutSchema)) body: z.infer<typeof checkoutSchema>) {
     return this.billing.checkout(ctx, body.planCode, body.interval);

@@ -82,13 +82,16 @@ export class BillingService {
 
     const price = interval === "YEAR" ? plan.stripePriceYearlyId : plan.stripePriceMonthlyId;
     if (!price) throw badRequest("price_missing", "Tarif Stripe non configuré pour cette offre");
-    const tenant = await this.prisma.client.tenant.findUniqueOrThrow({ where: { id: ctx.tenantId }, include: { settings: true } });
-    const buyer = ctx.actor.type === "user" ? await this.prisma.client.user.findUnique({ where: { id: ctx.actor.userId }, select: { email: true } }) : null;
-    const customerId = current?.stripeCustomerId ?? (await this.stripe.customers.create({
-      name: tenant.name,
-      email: tenant.settings?.contactEmail ?? buyer?.email,
-      metadata: { tenantId: tenant.id },
-    })).id;
+    const tenant = await this.prisma.client.tenant.findUniqueOrThrow({ where: { id: ctx.tenantId } });
+    const buyer = ctx.actor.type === "user"
+      ? await this.prisma.client.user.findUnique({ where: { id: ctx.actor.userId }, select: { email: true, emailVerifiedAt: true } })
+      : null;
+    // Le paiement est ouvert avant la confirmation de l'email (pour ne pas perdre la vente) :
+    // sans adresse confirmée, c'est Stripe qui la demande, pour que factures et reçus
+    // arrivent à une adresse saisie au moment de payer. Le client Stripe est créé par
+    // Checkout et rattaché à l'entreprise par le webhook (metadata.tenantId).
+    const customerId = current?.stripeCustomerId ?? null;
+    const customerEmail = !customerId && buyer?.emailVerifiedAt ? buyer.email : undefined;
 
     // Les jours d'essai restants sont conservés : le premier prélèvement a lieu
     // à la fin de l'essai (Stripe exige une échéance à plus de 48 h).
@@ -99,7 +102,7 @@ export class BillingService {
 
     const session = await this.stripe.checkout.sessions.create({
       mode: "subscription",
-      customer: customerId,
+      ...(customerId ? { customer: customerId } : customerEmail ? { customer_email: customerEmail } : {}),
       client_reference_id: tenant.id,
       line_items: [{ price, quantity: 1 }],
       subscription_data: {
@@ -111,9 +114,10 @@ export class BillingService {
       cancel_url: `${appUrl}/app/billing?checkout=cancelled`,
       allow_promotion_codes: true,
     });
+    // L'offre en cours (le Gratuit en général) reste active jusqu'au webhook de Stripe.
     await this.prisma.client.subscription.upsert({
       where: { tenantId: tenant.id },
-      update: { stripeCustomerId: customerId },
+      update: {},
       create: { tenantId: tenant.id, planId: plan.id, status: "INCOMPLETE", interval, provider: "STRIPE", stripeCustomerId: customerId },
     });
     return { url: session.url!, mode: "stripe" as const };

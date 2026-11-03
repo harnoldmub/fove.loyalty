@@ -6,7 +6,7 @@ Les tests automatisés couvrent le mode simulé et des webhooks Stripe signés f
 
 1. Dans `.env.local` : `STRIPE_SECRET_KEY=sk_test_…`, et les identifiants de prix annuels de test dans `/admin/plans` pour Essentiel, Business et Réseau.
 2. Relayer les webhooks vers l'API locale : `stripe listen --forward-to localhost:5291/api/billing/stripe/webhook`, puis copier le secret affiché dans `STRIPE_WEBHOOK_SECRET`.
-3. Créer un commerçant neuf (il démarre sur l'offre Gratuite) et confirmer son email.
+3. Créer un commerçant neuf (il démarre sur l'offre Gratuite). Pour le scénario 1, ne pas confirmer l'email.
 
 Cartes de test Stripe : `4242 4242 4242 4242` (paiement accepté), `4000 0025 0000 3155` (authentification 3-D Secure demandée), `4000 0000 0000 0341` (carte enregistrée, puis prélèvements refusés).
 
@@ -14,7 +14,7 @@ Cartes de test Stripe : `4242 4242 4242 4242` (paiement accepté), `4000 0025 00
 
 | # | Scénario | Résultat attendu |
 |---|---|---|
-| 1 | Gratuit → Essentiel avec `4242…` | Retour sur `/app/billing?checkout=success`, offre Essentiel active après le webhook, quota de 500 clients |
+| 1 | Sur `/tarifs`, « Choisir Essentiel », inscription sans confirmer l'email, création du commerce, paiement avec `4242…` | Arrivée directe sur le paiement Stripe, qui demande l'email de facturation ; retour sur `/app/billing?checkout=success`, offre Essentiel active après le webhook, quota de 500 clients |
 | 2 | Essentiel → Business | Facture du prorata émise et payée **immédiatement** dans Stripe ; offre Business active |
 | 3 | Passage à une offre supérieure avec `4000 0025 0000 3155` sans valider l'authentification | L'offre ne change pas (mise à jour en attente dans Stripe) |
 | 4 | Business → Essentiel | Avoir du prorata sur le solde client Stripe ; quotas d'Essentiel |
