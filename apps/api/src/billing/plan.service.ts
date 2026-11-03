@@ -1,6 +1,6 @@
 import { Injectable } from "@nestjs/common";
 import { DEFAULT_PLANS, resolveFeatures, resolveLimits, type PlanFeatures, type PlanLimits, type QuotaKey } from "@fove/shared";
-import type { Subscription, SubscriptionPlan } from "@fove/database";
+import type { Prisma, Subscription, SubscriptionPlan } from "@fove/database";
 import { PrismaService } from "../common/prisma.service";
 import { paymentRequired } from "../common/errors";
 
@@ -73,6 +73,22 @@ export class PlanService {
     const used = (await this.usage(tenantId))[key];
     if (used + adding > limit) {
       throw paymentRequired("quota_exceeded", `Limite de ${limit} ${QUOTA_LABEL[key]} atteinte pour votre offre`);
+    }
+  }
+
+  /**
+   * Contrôle du quota de clients dans la transaction qui crée le client. Le
+   * verrou par entreprise sérialise les créations simultanées (QR affiché lors
+   * d'un événement) : sans lui, chacune compterait avant que les autres
+   * n'enregistrent et le quota serait dépassé.
+   */
+  async assertCustomerQuotaInTx(tx: Prisma.TransactionClient, tenantId: string): Promise<void> {
+    const limit = (await this.limits(tenantId)).customers;
+    if (limit === null) return;
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${`quota:customers:${tenantId}`}, 0))`;
+    const used = await tx.customer.count({ where: { tenantId, anonymizedAt: null } });
+    if (used + 1 > limit) {
+      throw paymentRequired("quota_exceeded", `Limite de ${limit} ${QUOTA_LABEL.customers} atteinte pour votre offre`);
     }
   }
 

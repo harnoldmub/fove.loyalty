@@ -3,6 +3,7 @@ import type { NestExpressApplication } from "@nestjs/platform-express";
 import request from "supertest";
 import { agent, createPointsProgram, db, ownerWithTenant, randomPhone, resetDatabase, setPlan, startApp, type Client } from "./helpers";
 import { hashPassword } from "../src/common/crypto";
+import { PlanService } from "../src/billing/plan.service";
 
 let app: NestExpressApplication;
 const http = () => request(app.getHttpServer());
@@ -58,7 +59,52 @@ describe("offre Gratuite : quotas sur chaque chemin de création de client", () 
     for (let i = 0; i < 3; i++) {
       expect((await http().post(`/api/public/join/${token}`).send({ firstName: `Q${i}`, phone: randomPhone(), acceptTerms: true })).status).toBe(201);
     }
-    expect((await http().post(`/api/public/join/${token}`).send({ firstName: "Trop", phone: randomPhone(), acceptTerms: true })).status).toBe(402);
+    const over = await http().post(`/api/public/join/${token}`).send({ firstName: "Trop", phone: randomPhone(), acceptTerms: true });
+    expect(over.status).toBe(409);
+    expect(over.body.error.code).toBe("enrollment_closed");
+    // Le client ne voit jamais l'offre ni la limite du commerçant.
+    expect(JSON.stringify(over.body)).not.toMatch(/offre|limite|\b3\b/i);
+  });
+
+  it("deux créations simultanées ne dépassent jamais le quota", async () => {
+    const { client, tenantId } = await verifiedOwner("free");
+    for (let i = 0; i < 2; i++) await client.post("/api/app/customers", { firstName: `C${i}`, phone: randomPhone() });
+    const plans = app.get(PlanService);
+    // A prend la dernière place mais tarde à valider ; B arrive pendant ce temps.
+    let counted!: () => void;
+    const aCounted = new Promise<void>((resolve) => (counted = resolve));
+    const a = db.$transaction(async (tx) => {
+      await plans.assertCustomerQuotaInTx(tx, tenantId);
+      counted();
+      await new Promise((resolve) => setTimeout(resolve, 300));
+      await tx.customer.create({ data: { tenantId, firstName: "A" } });
+    });
+    await aCounted;
+    const b = db.$transaction(async (tx) => {
+      await plans.assertCustomerQuotaInTx(tx, tenantId);
+      await tx.customer.create({ data: { tenantId, firstName: "B" } });
+    });
+    const [ra, rb] = await Promise.allSettled([a, b]);
+    expect(ra.status).toBe("fulfilled");
+    expect(rb.status).toBe("rejected");
+    expect(await db.customer.count({ where: { tenantId } })).toBe(3);
+  });
+
+  it("prévient le commerçant une fois, à la dernière place puis au premier refus", async () => {
+    const { client, tenantId } = await verifiedOwner("free");
+    const contact = (await db.tenantSettings.findUniqueOrThrow({ where: { tenantId } })).contactEmail!;
+    const program = await createPointsProgram(client);
+    const token = ((await client.get("/api/app/enrollment-links")).body as { token: string; programId: string }[]).find((l) => l.programId === program.id)!.token;
+    // Le contact du commerce est aussi l'adresse du propriétaire (email de vérification) : on ne garde que les alertes.
+    const alerts = async () => (await db.emailOutbox.findMany({ where: { to: contact }, orderBy: { createdAt: "asc" } })).filter((m) => /atteint|rejoindre/.test(m.subject));
+    const join = () => http().post(`/api/public/join/${token}`).send({ firstName: "Q", phone: randomPhone(), acceptTerms: true });
+    for (let i = 0; i < 3; i++) await join();
+    expect((await alerts()).map((m) => m.subject)).toEqual([expect.stringMatching(/a atteint 3 clients/)]);
+    await join();
+    await join();
+    const all = await alerts();
+    expect(all).toHaveLength(2);
+    expect(all[1]!.subject).toMatch(/n'a pas pu rejoindre/);
   });
 
   it("par l'API et le connecteur boutique, le quota négocié s'applique aussi", async () => {
