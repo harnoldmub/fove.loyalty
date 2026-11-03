@@ -1,12 +1,15 @@
 import { Injectable, Logger } from "@nestjs/common";
 import Stripe from "stripe";
-import type { BillingInterval, SubscriptionStatus } from "@fove/database";
+import { Prisma, type BillingInterval, type SubscriptionStatus } from "@fove/database";
 import { loadConfig } from "../config";
 import { PrismaService } from "../common/prisma.service";
 import { AuditService } from "../common/audit.service";
 import { badRequest, notFound } from "../common/errors";
 import type { TenantContext } from "../common/context";
 import { PlanService } from "./plan.service";
+
+/** Un abonnement payé remplace un éventuel contrat sur-mesure et ses dérogations. */
+const NO_CONTRACT = { limitsOverride: Prisma.DbNull, featuresOverride: Prisma.DbNull, contractPriceYearlyCents: null };
 
 /**
  * Facturation. Sans STRIPE_SECRET_KEY, le fournisseur simulé (MOCK) applique
@@ -45,9 +48,11 @@ export class BillingService {
     return { mode: this.mode, subscription, plans, usage, limits };
   }
 
+  /** Offre achetable en ligne : le Gratuit s'obtient en résiliant, le Sur-mesure sur devis. */
   private async plan(code: string) {
     const plan = await this.prisma.client.subscriptionPlan.findFirst({ where: { code, active: true } });
     if (!plan) throw notFound("Offre");
+    if (plan.kind !== "PAID") throw badRequest("plan_not_purchasable", "Cette offre ne s'achète pas en ligne");
     return plan;
   }
 
@@ -61,7 +66,7 @@ export class BillingService {
       if (loadConfig().isProd) throw badRequest("stripe_disabled", "Le paiement n’est pas encore disponible. Contactez FOVE.");
       await this.prisma.client.subscription.upsert({
         where: { tenantId: ctx.tenantId },
-        update: { planId: plan.id, status: "ACTIVE", interval, provider: "MOCK", cancelAtPeriodEnd: false, currentPeriodEnd: periodEnd(interval) },
+        update: { planId: plan.id, status: "ACTIVE", interval, provider: "MOCK", cancelAtPeriodEnd: false, currentPeriodEnd: periodEnd(interval), ...NO_CONTRACT },
         create: { tenantId: ctx.tenantId, planId: plan.id, status: "ACTIVE", interval, provider: "MOCK", currentPeriodEnd: periodEnd(interval) },
       });
       await this.audit.forTenant(ctx, "billing.mock_checkout", undefined, { plan: plan.code, interval });
@@ -241,6 +246,7 @@ export class BillingService {
       cancelAtPeriodEnd: remote.cancel_at_period_end,
       trialEndsAt: remote.trial_end ? new Date(remote.trial_end * 1000) : null,
       currentPeriodEnd: periodEndUnix ? new Date(periodEndUnix * 1000) : null,
+      ...NO_CONTRACT,
     };
     await this.prisma.client.subscription.upsert({ where: { tenantId }, update: data, create: { tenantId, ...data } });
     await this.audit.log({ tenantId, action: "billing.subscription_synced", metadata: { status, plan: plan.code } });

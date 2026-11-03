@@ -5,6 +5,7 @@ import { loadConfig } from "../config";
 import { Tenant } from "../common/decorators";
 import type { TenantContext } from "../common/context";
 import { PrismaService } from "../common/prisma.service";
+import { paymentRequired } from "../common/errors";
 import { PublishableKeyGuard } from "../auth/guards";
 import { PlanService } from "../billing/plan.service";
 
@@ -21,7 +22,8 @@ export class WidgetController {
 
   @Get("config")
   async config(@Tenant() ctx: TenantContext) {
-    await this.plans.assertFeature(ctx.tenantId, "widget");
+    const features = await this.plans.features(ctx.tenantId);
+    if (!features.widget) throw paymentRequired("plan_feature_unavailable", "Cette fonction n'est pas incluse dans votre offre");
     const tenant = await this.prisma.client.tenant.findUniqueOrThrow({
       where: { id: ctx.tenantId },
       include: {
@@ -34,6 +36,7 @@ export class WidgetController {
       tenant: { name: tenant.name, logoUrl: tenant.settings?.logoUrl ?? null, primaryColor: tenant.settings?.primaryColor ?? "#1F4FFF" },
       programs: tenant.enrollmentLinks.map((l) => ({ name: l.program.name, mode: l.program.mode, joinUrl: `${appUrl}/join/${l.token}` })),
       cardUrlPattern: `${appUrl}/card/`,
+      poweredBy: !features.removeBranding,
     };
   }
 }

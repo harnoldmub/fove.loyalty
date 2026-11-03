@@ -561,9 +561,17 @@ model OtpChallenge {
 // Abonnements
 // ---------------------------------------------------------------------------
 
+/// FREE : offre par défaut (une seule) ; PAID : achetable en ligne ; CUSTOM : sur devis, attribuée par l'admin.
+enum PlanKind {
+  FREE
+  PAID
+  CUSTOM
+}
+
 model SubscriptionPlan {
   id                  String         @id @default(uuid()) @db.Uuid
   code                String         @unique
+  kind                PlanKind       @default(PAID)
   name                String
   description         String         @default("")
   currency            String         @default("EUR")
@@ -572,7 +580,7 @@ model SubscriptionPlan {
   stripePriceMonthlyId String?
   stripePriceYearlyId  String?
   trialDays           Int            @default(14)
-  /// Fonctions incluses : { api: bool, widget: bool, integrations: bool, exports: bool }.
+  /// Fonctions incluses : { api, widget, integrations, exports, walletCampaigns, whatsappAuto, removeBranding } (booléens).
   features            Json
   /// Quotas : { customers, establishments, staff, programs } (null = illimité).
   limits              Json
@@ -617,6 +625,11 @@ model Subscription {
   cancelAtPeriodEnd    Boolean            @default(false)
   stripeCustomerId     String?            @unique
   stripeSubscriptionId String?            @unique
+  /// Contrat sur-mesure : quotas et fonctions négociés, prioritaires sur ceux de l'offre.
+  limitsOverride       Json?
+  featuresOverride     Json?
+  /// Prix annuel du contrat sur-mesure, facturé hors Stripe (statistiques admin).
+  contractPriceYearlyCents Int?
   createdAt            DateTime           @default(now())
   updatedAt            DateTime           @updatedAt
 }

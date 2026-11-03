@@ -60,4 +60,5 @@ Base PostgreSQL partagée, isolation logique stricte :
 
 - Offres (`SubscriptionPlan`) en base : prix, ID de prix Stripe, essai, quotas, fonctions. Modifiables dans `/admin/plans`, jamais codés en dur (le seed fournit seulement les valeurs initiales).
 - Sans `STRIPE_SECRET_KEY`, fournisseur **simulé** : aucun paiement, changement immédiat. Les clés `sk_live_` sont refusées tant que `STRIPE_ALLOW_LIVE=true` n'est pas posé.
-- Un changement d'offre ne supprime ni ne bloque jamais les cartes et opérations existantes ; les quotas ne limitent que les nouvelles créations. Essai expiré ou abonnement résilié : droits Starter.
+- Cinq offres (`kind`) : **Gratuit** (`FREE`, offre par défaut de toute nouvelle entreprise), **Essentiel**, **Business**, **Réseau** (`PAID`, achetables via Stripe) et **Sur-mesure** (`CUSTOM`, sur devis, attribuée par l'admin avec quotas, fonctions et prix de contrat propres à l'entreprise). Valeurs initiales dans `packages/shared/src/plans.ts`.
+- Un changement d'offre ne supprime ni ne bloque jamais les cartes et opérations existantes ; les quotas ne limitent que les nouvelles créations. Essai expiré, abonnement résilié ou paiement jamais abouti : droits de l'offre Gratuite.

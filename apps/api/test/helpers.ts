@@ -19,10 +19,15 @@ import { createApp } from "../src/bootstrap";
 
 export const db = createPrismaClient(process.env.TEST_DATABASE_URL);
 
-const PLANS = [
-  { code: "starter", name: "Starter", priceMonthlyCents: 1290, priceYearlyCents: 12900, features: { api: false, widget: true, integrations: false, exports: true }, limits: { customers: 3, establishments: 1, staff: 3, programs: 1 }, sortOrder: 1 },
-  { code: "business", name: "Business", priceMonthlyCents: 2490, priceYearlyCents: 24900, features: { api: true, widget: true, integrations: true, exports: true }, limits: { customers: 5000, establishments: 5, staff: 15, programs: 3 }, sortOrder: 2, stripePriceMonthlyId: "price_business_m" },
-  { code: "premium", name: "Premium", priceMonthlyCents: 4990, priceYearlyCents: 49900, features: { api: true, widget: true, integrations: true, exports: true }, limits: { customers: null, establishments: null, staff: null, programs: null }, sortOrder: 3 },
+const PAID = { exports: true, widget: true, walletCampaigns: true, whatsappAuto: true, removeBranding: true };
+const NONE = { customers: null, establishments: null, staff: null, programs: null };
+/** Quotas réduits pour tester les limites sans créer des centaines de clients. */
+export const PLANS = [
+  { code: "free", kind: "FREE" as const, name: "Gratuit", priceMonthlyCents: 0, priceYearlyCents: 0, trialDays: 0, features: { api: false, widget: true, integrations: false, exports: true, walletCampaigns: false, whatsappAuto: false, removeBranding: false }, limits: { customers: 3, establishments: 1, staff: 1, programs: 1 }, sortOrder: 0 },
+  { code: "starter", name: "Starter", priceMonthlyCents: 1290, priceYearlyCents: 12900, features: { ...PAID, api: false, integrations: false }, limits: { customers: 3, establishments: 1, staff: 3, programs: 1 }, sortOrder: 1 },
+  { code: "business", name: "Business", priceMonthlyCents: 2490, priceYearlyCents: 24900, features: { ...PAID, api: true, integrations: true }, limits: { customers: 5000, establishments: 5, staff: 15, programs: 3 }, sortOrder: 2, stripePriceMonthlyId: "price_business_m" },
+  { code: "premium", name: "Premium", priceMonthlyCents: 4990, priceYearlyCents: 49900, features: { ...PAID, api: true, integrations: true }, limits: NONE, sortOrder: 3 },
+  { code: "custom", kind: "CUSTOM" as const, name: "Sur-mesure", priceMonthlyCents: 0, priceYearlyCents: 0, trialDays: 0, features: { ...PAID, api: true, integrations: true }, limits: NONE, sortOrder: 4 },
 ];
 
 export async function resetDatabase() {
@@ -69,8 +74,12 @@ export function uniq(prefix: string) {
   return `${prefix}${Date.now().toString(36)}${counter}`;
 }
 
-/** Inscrit un propriétaire et crée son entreprise (essai Business). */
-export async function ownerWithTenant(app: NestExpressApplication, opts: { slug?: string } = {}) {
+/**
+ * Inscrit un propriétaire et crée son entreprise. Une entreprise démarre sur
+ * l'offre Gratuite ; par défaut on la passe en Business pour tester les
+ * fonctions sans se heurter aux quotas.
+ */
+export async function ownerWithTenant(app: NestExpressApplication, opts: { slug?: string; plan?: string } = {}) {
   const client = agent(app);
   const email = `${uniq("owner")}@test.fove`;
   const signup = await client.post("/api/auth/signup", { name: "Owner Test", email, password: "motdepasse123", acceptTerms: true });
@@ -78,7 +87,15 @@ export async function ownerWithTenant(app: NestExpressApplication, opts: { slug?
   const slug = opts.slug ?? uniq("shop-");
   const tenant = await client.post("/api/app/tenants", { name: `Commerce ${slug}`, slug });
   if (tenant.status !== 201) throw new Error(`tenant ${tenant.status} ${JSON.stringify(tenant.body)}`);
-  return { client, email, tenantId: tenant.body.id as string };
+  const tenantId = tenant.body.id as string;
+  if ((opts.plan ?? "business") !== "free") await setPlan(tenantId, opts.plan ?? "business");
+  return { client, email, tenantId };
+}
+
+/** Attribue directement une offre active (comme l'admin), sans passer par la facturation. */
+export async function setPlan(tenantId: string, code: string, data: object = {}) {
+  const plan = await db.subscriptionPlan.findUniqueOrThrow({ where: { code } });
+  await db.subscription.update({ where: { tenantId }, data: { planId: plan.id, status: "ACTIVE", provider: "MANUAL", ...data } });
 }
 
 export async function createPointsProgram(client: Client, overrides: object = {}) {

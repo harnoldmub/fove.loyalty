@@ -1,7 +1,7 @@
 import { Injectable } from "@nestjs/common";
-import type { Prisma } from "@fove/database";
+import { Prisma } from "@fove/database";
 import { z } from "zod";
-import { computeCustomerSegment } from "@fove/shared";
+import { computeCustomerSegment, PLAN_FEATURE_KEYS, QUOTA_KEYS } from "@fove/shared";
 import { PrismaService } from "../common/prisma.service";
 import { AuditService } from "../common/audit.service";
 import { badRequest, notFound } from "../common/errors";
@@ -16,16 +16,24 @@ export const updatePlanSchema = z.object({
   stripePriceMonthlyId: z.string().max(100).nullable().optional(),
   stripePriceYearlyId: z.string().max(100).nullable().optional(),
   trialDays: z.int().min(0).max(90).optional(),
-  features: z.object({ api: z.boolean(), widget: z.boolean(), integrations: z.boolean(), exports: z.boolean() }).optional(),
-  limits: z
-    .object({
-      customers: z.int().min(1).nullable(),
-      establishments: z.int().min(1).nullable(),
-      staff: z.int().min(1).nullable(),
-      programs: z.int().min(1).nullable(),
-    })
-    .optional(),
+  features: z.object(Object.fromEntries(PLAN_FEATURE_KEYS.map((k) => [k, z.boolean()])) as Record<(typeof PLAN_FEATURE_KEYS)[number], z.ZodBoolean>).optional(),
+  limits: z.object(Object.fromEntries(QUOTA_KEYS.map((k) => [k, z.int().min(1).nullable()])) as Record<(typeof QUOTA_KEYS)[number], z.ZodNullable<z.ZodInt>>).optional(),
   active: z.boolean().optional(),
+});
+
+/**
+ * Abonnement attribué par l'admin (essai accordé, contrat sur-mesure). Chaque
+ * appel décrit le contrat complet : une dérogation absente est retirée.
+ */
+export const setSubscriptionSchema = z.object({
+  planCode: z.string().min(2).max(40),
+  status: z.enum(["TRIALING", "ACTIVE", "CANCELED"]),
+  trialDays: z.int().min(1).max(365).optional(),
+  /** Fin du contrat ; à cette date l'entreprise repasse sur l'offre Gratuite. */
+  currentPeriodEnd: z.iso.datetime().nullable().optional(),
+  limitsOverride: z.object(Object.fromEntries(QUOTA_KEYS.map((k) => [k, z.int().min(1).nullable()]))).partial().nullable().optional(),
+  featuresOverride: z.object(Object.fromEntries(PLAN_FEATURE_KEYS.map((k) => [k, z.boolean()]))).partial().nullable().optional(),
+  contractPriceYearlyCents: z.int().min(0).max(100_000_000).nullable().optional(),
 });
 
 export const supportAccessSchema = z.object({
@@ -65,8 +73,9 @@ export class AdminService {
       byStatus[s.status] = (byStatus[s.status] ?? 0) + 1;
       if (s.status === "ACTIVE" || s.status === "PAST_DUE") {
         byPlan[s.plan.code] = (byPlan[s.plan.code] ?? 0) + 1;
-        // Le MRR ne compte que les abonnements réellement facturés par Stripe.
+        // Le MRR ne compte que les abonnements réellement facturés : Stripe et contrats sur-mesure.
         if (s.provider === "STRIPE") mrrCents += s.interval === "YEAR" ? Math.round(s.plan.priceYearlyCents / 12) : s.plan.priceMonthlyCents;
+        else if (s.provider === "MANUAL" && s.contractPriceYearlyCents) mrrCents += Math.round(s.contractPriceYearlyCents / 12);
       }
     }
     return { tenants, suspended, newTenants30d: newTenants, subscriptionsByStatus: byStatus, activeByPlan: byPlan, mrrCents, customers, accounts, transactions30d };
@@ -216,16 +225,29 @@ export class AdminService {
     await this.audit.log({ tenantId: id, actorUserId: auth.user.id, action: status === "SUSPENDED" ? "admin.tenant_suspended" : "admin.tenant_reactivated", metadata: { reason } });
   }
 
-  async setSubscription(auth: AuthState, tenantId: string, planCode: string, status: "TRIALING" | "ACTIVE" | "CANCELED", trialDays?: number) {
-    const plan = await this.prisma.client.subscriptionPlan.findUnique({ where: { code: planCode } });
+  async setSubscription(auth: AuthState, tenantId: string, input: z.infer<typeof setSubscriptionSchema>) {
+    const plan = await this.prisma.client.subscriptionPlan.findUnique({ where: { code: input.planCode } });
     if (!plan) throw notFound("Offre");
-    const trialEndsAt = status === "TRIALING" ? new Date(Date.now() + (trialDays ?? plan.trialDays) * 86_400_000) : null;
-    await this.prisma.client.subscription.upsert({
-      where: { tenantId },
-      update: { planId: plan.id, status, trialEndsAt, provider: "MANUAL" },
-      create: { tenantId, planId: plan.id, status, trialEndsAt, provider: "MANUAL" },
+    const { status } = input;
+    const trialEndsAt = status === "TRIALING" ? new Date(Date.now() + (input.trialDays ?? plan.trialDays) * 86_400_000) : null;
+    const data = {
+      planId: plan.id,
+      status,
+      trialEndsAt,
+      provider: "MANUAL" as const,
+      currentPeriodEnd: input.currentPeriodEnd ? new Date(input.currentPeriodEnd) : null,
+      cancelAtPeriodEnd: false,
+      limitsOverride: input.limitsOverride ?? Prisma.DbNull,
+      featuresOverride: input.featuresOverride ?? Prisma.DbNull,
+      contractPriceYearlyCents: input.contractPriceYearlyCents ?? null,
+    };
+    await this.prisma.client.subscription.upsert({ where: { tenantId }, update: data, create: { tenantId, ...data } });
+    await this.audit.log({
+      tenantId,
+      actorUserId: auth.user.id,
+      action: "admin.subscription_set",
+      metadata: { ...input, limitsOverride: input.limitsOverride ?? null, featuresOverride: input.featuresOverride ?? null } as Prisma.InputJsonValue,
     });
-    await this.audit.log({ tenantId, actorUserId: auth.user.id, action: "admin.subscription_set", metadata: { planCode, status } });
   }
 
   listPlans() {

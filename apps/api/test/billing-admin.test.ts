@@ -13,12 +13,14 @@ describe("facturation en mode simulé et quotas", () => {
   });
   afterAll(() => app.close());
 
-  it("démarre l'essai gratuit à la création de l'entreprise", async () => {
-    const { client } = await ownerWithTenant(app);
+  it("une nouvelle entreprise démarre sur l'offre Gratuite, sans essai", async () => {
+    const { client } = await ownerWithTenant(app, { plan: "free" });
     const billing = await client.get("/api/app/billing");
     expect(billing.body.mode).toBe("mock");
-    expect(billing.body.subscription.status).toBe("TRIALING");
-    expect(billing.body.subscription.plan.code).toBe("business");
+    expect(billing.body.subscription.status).toBe("ACTIVE");
+    expect(billing.body.subscription.plan.code).toBe("free");
+    expect(billing.body.subscription.trialEndsAt).toBeNull();
+    expect(billing.body.limits).toEqual({ customers: 3, establishments: 1, staff: 1, programs: 1 });
   });
 
   it("le paiement exige un email vérifié, puis change l'offre sans paiement réel", async () => {
@@ -41,7 +43,7 @@ describe("facturation en mode simulé et quotas", () => {
     expect(res.status).toBe(400);
     const after = await db.subscription.findUniqueOrThrow({ where: { tenantId: o.tenantId } });
     expect(after.planId).toBe(before.planId);
-    expect(after.status).toBe("TRIALING");
+    expect(after.status).toBe(before.status);
   });
 
   it("un passage à une offre inférieure bloque les créations, jamais les cartes existantes", async () => {
@@ -62,12 +64,26 @@ describe("facturation en mode simulé et quotas", () => {
     expect(earn.status).toBe(201);
   });
 
-  it("un essai expiré retombe sur les droits Starter", async () => {
+  it("un essai expiré ou un abonnement résilié retombe sur l'offre Gratuite", async () => {
     const o = await ownerWithTenant(app);
-    await db.subscription.update({ where: { tenantId: o.tenantId }, data: { trialEndsAt: new Date(Date.now() - 1000) } });
-    const tenant = await o.client.get("/api/app/tenant");
+    await db.subscription.update({ where: { tenantId: o.tenantId }, data: { status: "TRIALING", trialEndsAt: new Date(Date.now() - 1000) } });
+    let tenant = await o.client.get("/api/app/tenant");
     expect(tenant.body.features.api).toBe(false);
-    expect(tenant.body.limits.customers).toBe(500);
+    expect(tenant.body.limits.customers).toBe(3);
+    await db.subscription.update({ where: { tenantId: o.tenantId }, data: { status: "CANCELED", trialEndsAt: null } });
+    tenant = await o.client.get("/api/app/tenant");
+    expect(tenant.body.features.walletCampaigns).toBe(false);
+    expect(tenant.body.limits.customers).toBe(3);
+  });
+
+  it("le Gratuit et le Sur-mesure ne s'achètent pas en ligne", async () => {
+    const o = await ownerWithTenant(app, { plan: "free" });
+    await db.user.update({ where: { email: o.email }, data: { emailVerifiedAt: new Date() } });
+    for (const planCode of ["free", "custom"]) {
+      const res = await o.client.post("/api/app/billing/checkout", { planCode, interval: "YEAR" });
+      expect(res.status).toBe(400);
+      expect(res.body.error.code).toBe("plan_not_purchasable");
+    }
   });
 });
 

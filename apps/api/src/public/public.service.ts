@@ -196,7 +196,7 @@ export class PublicService {
         text,
       });
     }
-    if (phone && this.whatsapp.isConfigured()) {
+    if (phone && this.whatsapp.isConfigured() && (await this.plans.features(link.tenantId)).whatsappAuto) {
       await this.whatsapp.send(phone, text);
     }
   }
@@ -257,6 +257,7 @@ export class PublicService {
       verification: account.status === "PENDING_VERIFICATION" ? account.program.enrollmentVerification : null,
       googleWallet: this.cards.wallet.isConfigured() && account.status === "ACTIVE",
       appleWallet: this.cards.appleWallet.isConfigured() && account.status === "ACTIVE",
+      poweredBy: !(await this.plans.features(account.tenantId)).removeBranding,
     };
   }
 

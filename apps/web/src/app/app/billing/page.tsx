@@ -14,6 +14,7 @@ import { cn, formatDate, formatNumber, formatPrice } from "@/lib/utils";
 interface Plan {
   id: string;
   code: string;
+  kind: "FREE" | "PAID" | "CUSTOM";
   name: string;
   description: string;
   currency: string;
@@ -112,7 +113,7 @@ function BillingView() {
                     <ConfirmDialog
                       trigger={<Button variant="ghost">Résilier</Button>}
                       title="Résilier l’abonnement ?"
-                      consequence="Il reste actif jusqu’à la fin de la période payée, puis votre compte passe aux limites Essentiel. Aucune carte n’est supprimée."
+                      consequence="Il reste actif jusqu’à la fin de la période payée, puis votre compte passe à l’offre Gratuite. Aucune carte n’est supprimée."
                       confirmLabel="Résilier"
                       destructive
                       onConfirm={async () => {
@@ -126,7 +127,7 @@ function BillingView() {
               )}
             </div>
           ) : (
-            <p className="text-ink-2">Aucun abonnement : votre compte utilise les limites Essentiel.</p>
+            <p className="text-ink-2">Aucun abonnement : votre compte utilise l’offre Gratuite.</p>
           )}
         </Panel>
         <Panel className="p-5 sm:p-6">
@@ -164,7 +165,7 @@ function BillingView() {
           </div>
           {!me.user.emailVerifiedAt && <p className="mb-4 text-sm text-danger">Confirmez votre email avant de choisir une offre.</p>}
           <div className="grid gap-4 md:grid-cols-3">
-            {data.plans.map((p) => {
+            {data.plans.filter((p) => p.kind === "PAID").map((p) => {
               const current = sub?.plan.code === p.code && sub.status === "ACTIVE" && sub.interval === "YEAR";
               return (
                 <Panel key={p.id} className={cn("grid gap-3 p-5", current && "ring-2 ring-cobalt")}>
