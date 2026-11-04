@@ -13,19 +13,22 @@ describe("facturation en mode simulé et quotas", () => {
   });
   afterAll(() => app.close());
 
-  it("démarre l'essai gratuit à la création de l'entreprise", async () => {
-    const { client } = await ownerWithTenant(app);
+  it("une nouvelle entreprise démarre sur l'offre Gratuite, sans essai", async () => {
+    const { client } = await ownerWithTenant(app, { plan: "free" });
     const billing = await client.get("/api/app/billing");
     expect(billing.body.mode).toBe("mock");
-    expect(billing.body.subscription.status).toBe("TRIALING");
-    expect(billing.body.subscription.plan.code).toBe("business");
+    expect(billing.body.subscription.status).toBe("ACTIVE");
+    expect(billing.body.subscription.plan.code).toBe("free");
+    expect(billing.body.subscription.trialEndsAt).toBeNull();
+    expect(billing.body.limits).toEqual({ customers: 3, establishments: 1, staff: 1, programs: 1 });
   });
 
-  it("le paiement exige un email vérifié, puis change l'offre sans paiement réel", async () => {
+  it("le paiement n'attend pas la confirmation de l'email, les clés API si", async () => {
     const o = await ownerWithTenant(app);
-    expect((await o.client.post("/api/app/billing/checkout", { planCode: "premium", interval: "YEAR" })).status).toBe(403);
-    await db.user.update({ where: { email: o.email }, data: { emailVerifiedAt: new Date() } });
+    const key = await o.client.post("/api/app/integrations/keys", { name: "Serveur", kind: "SECRET", scopes: ["customers:read"] });
+    expect(key.status).toBe(403);
     const res = await o.client.post("/api/app/billing/checkout", { planCode: "premium", interval: "YEAR" });
+    expect(res.status).toBe(201);
     expect(res.body.mode).toBe("mock");
     const sub = await db.subscription.findUniqueOrThrow({ where: { tenantId: o.tenantId }, include: { plan: true } });
     expect(sub.plan.code).toBe("premium");
@@ -41,7 +44,7 @@ describe("facturation en mode simulé et quotas", () => {
     expect(res.status).toBe(400);
     const after = await db.subscription.findUniqueOrThrow({ where: { tenantId: o.tenantId } });
     expect(after.planId).toBe(before.planId);
-    expect(after.status).toBe("TRIALING");
+    expect(after.status).toBe(before.status);
   });
 
   it("un passage à une offre inférieure bloque les créations, jamais les cartes existantes", async () => {
@@ -62,12 +65,26 @@ describe("facturation en mode simulé et quotas", () => {
     expect(earn.status).toBe(201);
   });
 
-  it("un essai expiré retombe sur les droits Starter", async () => {
+  it("un essai expiré ou un abonnement résilié retombe sur l'offre Gratuite", async () => {
     const o = await ownerWithTenant(app);
-    await db.subscription.update({ where: { tenantId: o.tenantId }, data: { trialEndsAt: new Date(Date.now() - 1000) } });
-    const tenant = await o.client.get("/api/app/tenant");
+    await db.subscription.update({ where: { tenantId: o.tenantId }, data: { status: "TRIALING", trialEndsAt: new Date(Date.now() - 1000) } });
+    let tenant = await o.client.get("/api/app/tenant");
     expect(tenant.body.features.api).toBe(false);
-    expect(tenant.body.limits.customers).toBe(500);
+    expect(tenant.body.limits.customers).toBe(3);
+    await db.subscription.update({ where: { tenantId: o.tenantId }, data: { status: "CANCELED", trialEndsAt: null } });
+    tenant = await o.client.get("/api/app/tenant");
+    expect(tenant.body.features.walletCampaigns).toBe(false);
+    expect(tenant.body.limits.customers).toBe(3);
+  });
+
+  it("le Gratuit et le Sur-mesure ne s'achètent pas en ligne", async () => {
+    const o = await ownerWithTenant(app, { plan: "free" });
+    await db.user.update({ where: { email: o.email }, data: { emailVerifiedAt: new Date() } });
+    for (const planCode of ["free", "custom"]) {
+      const res = await o.client.post("/api/app/billing/checkout", { planCode, interval: "YEAR" });
+      expect(res.status).toBe(400);
+      expect(res.body.error.code).toBe("plan_not_purchasable");
+    }
   });
 });
 
@@ -110,9 +127,40 @@ describe("webhooks Stripe signés", () => {
     expect((await http().set("stripe-signature", header).send(payload)).status).toBe(200);
     const sub = await db.subscription.findUniqueOrThrow({ where: { tenantId: o.tenantId } });
     expect(sub.status).toBe("PAST_DUE");
+    expect(sub.pastDueSince).not.toBeNull();
     expect(sub.stripeSubscriptionId).toBe("sub_123");
     const replay = await http().set("stripe-signature", header).send(payload);
     expect(replay.body.duplicate).toBe(true);
+  });
+
+  it("garde les droits 7 jours après un paiement échoué, puis applique le Gratuit", async () => {
+    const o = await ownerWithTenant(app);
+    await db.subscription.update({ where: { tenantId: o.tenantId }, data: { stripeCustomerId: "cus_grace", stripeSubscriptionId: "sub_grace", status: "ACTIVE", provider: "STRIPE" } });
+    const send = async (id: string, type: string, object: object) => {
+      const payload = JSON.stringify({ id, object: "event", type, data: { object } });
+      const header = Stripe.webhooks.generateTestHeaderString({ payload, secret: whsec });
+      const res = await request(app.getHttpServer()).post("/api/billing/stripe/webhook").set("Content-Type", "application/json").set("stripe-signature", header).send(payload);
+      expect(res.status).toBe(200);
+    };
+    await send("evt_grace_1", "invoice.payment_failed", { id: "in_1", object: "invoice", customer: "cus_grace" });
+    let sub = await db.subscription.findUniqueOrThrow({ where: { tenantId: o.tenantId } });
+    expect(sub.status).toBe("PAST_DUE");
+    expect(sub.pastDueSince).not.toBeNull();
+    expect((await o.client.get("/api/app/tenant")).body.features.api).toBe(true);
+
+    // Une relance de Stripe ne repousse pas le délai de grâce.
+    const firstFailure = new Date(Date.now() - 8 * 86_400_000);
+    await db.subscription.update({ where: { tenantId: o.tenantId }, data: { pastDueSince: firstFailure } });
+    await send("evt_grace_2", "invoice.payment_failed", { id: "in_2", object: "invoice", customer: "cus_grace" });
+    sub = await db.subscription.findUniqueOrThrow({ where: { tenantId: o.tenantId } });
+    expect(sub.pastDueSince!.getTime()).toBe(firstFailure.getTime());
+    expect((await o.client.get("/api/app/tenant")).body.features.api).toBe(false);
+
+    await send("evt_grace_3", "invoice.paid", { id: "in_3", object: "invoice", customer: "cus_grace" });
+    sub = await db.subscription.findUniqueOrThrow({ where: { tenantId: o.tenantId } });
+    expect(sub.status).toBe("ACTIVE");
+    expect(sub.pastDueSince).toBeNull();
+    expect((await o.client.get("/api/app/tenant")).body.features.api).toBe(true);
   });
 
   it("ignore l'annulation d'un ancien abonnement et retrouve l'entreprise par son client Stripe", async () => {
@@ -189,12 +237,16 @@ describe("Super Admin FOVE", () => {
     expect((await admin.get("/api/app/customers")).status).toBe(403);
   });
 
-  it("les statistiques SaaS ne comptent pas l'essai simulé comme du revenu", async () => {
+  it("les statistiques SaaS ne comptent ni l'abonnement simulé ni le Gratuit comme du revenu", async () => {
     const admin = await superAdmin();
+    const before = (await admin.get("/api/admin/stats")).body;
+    await ownerWithTenant(app, { plan: "free" });
     const stats = await admin.get("/api/admin/stats");
     expect(stats.status).toBe(200);
     expect(stats.body.mrrCents).toBe(0);
-    expect(stats.body.tenants).toBeGreaterThan(0);
+    expect(stats.body.free).toBe(before.free + 1);
+    expect(stats.body.paying).toBe(before.paying);
+    expect(stats.body.paying + stats.body.free).toBeLessThanOrEqual(stats.body.tenants);
   });
 
   it("modifie le prix d'une offre sans toucher au code", async () => {

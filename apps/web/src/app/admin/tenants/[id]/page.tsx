@@ -11,7 +11,10 @@ import { ArrowLeft, ExternalLink, Globe, Palette, Smartphone, Users } from "luci
 import Link from "next/link";
 import { Badge, ErrorNote, Panel, Skeleton } from "@/components/ui/misc";
 import { api, errorMessage } from "@/lib/api";
-import { formatDate, formatNumber } from "@/lib/utils";
+import { formatDate, formatNumber, formatPrice } from "@/lib/utils";
+
+type QuotaKey = "customers" | "establishments" | "staff" | "programs";
+const QUOTAS: Record<QuotaKey, string> = { customers: "Clients", establishments: "Établissements", staff: "Collaborateurs", programs: "Programmes" };
 
 interface Detail {
   id: string;
@@ -32,7 +35,15 @@ interface Detail {
     instagramHandle?: string | null;
     privacyPolicyUrl?: string | null;
   } | null;
-  subscription: { status: string; provider: string; trialEndsAt: string | null; plan: { code: string; name: string } } | null;
+  subscription: {
+    status: string;
+    provider: string;
+    trialEndsAt: string | null;
+    currentPeriodEnd: string | null;
+    limitsOverride: Partial<Record<QuotaKey, number | null>> | null;
+    contractPriceYearlyCents: number | null;
+    plan: { code: string; name: string };
+  } | null;
   memberships: { id: string; user: { email: string; name: string }; role: { key: string } }[];
   integrations: { id: string; name: string; provider: string; lastSyncAt: string | null; lastError: string | null }[];
   _count: { customers: number; accounts: number; transactions: number; programs: number; establishments: number };
@@ -73,9 +84,6 @@ export default function AdminTenant() {
   const [supportOpen, setSupportOpen] = useState(false);
   const [supportReason, setSupportReason] = useState("");
   const [supportError, setSupportError] = useState<string | null>(null);
-  const [plan, setPlan] = useState("business");
-  const { data: plans = [] } = useQuery({ queryKey: ["admin-plans"], queryFn: () => api.get<{ code: string; name: string }[]>("/admin/plans") });
-  const [planStatus, setPlanStatus] = useState<"ACTIVE" | "TRIALING" | "CANCELED">("ACTIVE");
   if (!data) return <Skeleton className="h-96" />;
   const suspended = data.status === "SUSPENDED";
 
@@ -164,29 +172,10 @@ export default function AdminTenant() {
               ? `${data.subscription.plan.name} · ${SUB_STATUS[data.subscription.status] ?? data.subscription.status} · ${PROVIDER[data.subscription.provider] ?? data.subscription.provider}`
               : "Aucun abonnement"}
             {data.subscription?.trialEndsAt && `, essai jusqu’au ${formatDate(data.subscription.trialEndsAt)}`}
+            {data.subscription?.currentPeriodEnd && `, jusqu’au ${formatDate(data.subscription.currentPeriodEnd)}`}
+            {data.subscription?.contractPriceYearlyCents ? `, contrat ${formatPrice(data.subscription.contractPriceYearlyCents, "USD")}/an` : ""}
           </p>
-          <div className="grid gap-2 sm:grid-cols-2 [&>button]:sm:col-span-2 [&>button]:sm:justify-self-start">
-            <Select aria-label="Offre" value={plan} onChange={(e) => setPlan(e.target.value)}>
-              {(plans.length ? plans : [{ code: "starter", name: "Essentiel" }, { code: "business", name: "Business" }, { code: "premium", name: "Réseau" }]).map((p) => (
-                <option key={p.code} value={p.code}>{p.name}</option>
-              ))}
-            </Select>
-            <Select aria-label="Statut" value={planStatus} onChange={(e) => setPlanStatus(e.target.value as typeof planStatus)}>
-              <option value="ACTIVE">Actif (manuel)</option>
-              <option value="TRIALING">Essai</option>
-              <option value="CANCELED">Résilié</option>
-            </Select>
-            <ConfirmDialog
-              trigger={<Button variant="secondary">Appliquer</Button>}
-              title="Modifier l’abonnement manuellement ?"
-              consequence="L’abonnement est remplacé sans passer par Stripe. Utile pour un partenaire ou une période offerte."
-              confirmLabel="Appliquer"
-              onConfirm={async () => {
-                await api.post(`/admin/tenants/${id}/subscription`, { planCode: plan, status: planStatus });
-                qc.invalidateQueries({ queryKey: ["admin-tenant", id] });
-              }}
-            />
-          </div>
+          <SubscriptionForm tenantId={id} current={data.subscription} />
         </Panel>
         <Panel className="p-5">
           <h2 className="mb-3 font-display text-lg font-semibold">Équipe</h2>
@@ -371,5 +360,92 @@ export default function AdminTenant() {
         </DialogContent>
       </DialogRoot>
     </>
+  );
+}
+
+/**
+ * Attribution manuelle : période offerte, essai ou contrat sur-mesure (quotas
+ * négociés, fin de contrat, prix facturé hors Stripe). Chaque envoi redéfinit
+ * tout le contrat.
+ */
+function SubscriptionForm({ tenantId, current }: { tenantId: string; current: Detail["subscription"] }) {
+  const qc = useQueryClient();
+  const { data: plans = [] } = useQuery({ queryKey: ["admin-plans"], queryFn: () => api.get<{ code: string; name: string; kind: string }[]>("/admin/plans") });
+  const [plan, setPlan] = useState(current?.plan.code ?? "free");
+  const [status, setStatus] = useState<"ACTIVE" | "TRIALING" | "CANCELED">("ACTIVE");
+  const [end, setEnd] = useState(current?.currentPeriodEnd?.slice(0, 10) ?? "");
+  const [price, setPrice] = useState(current?.contractPriceYearlyCents ? String(current.contractPriceYearlyCents / 100) : "");
+  const [limits, setLimits] = useState<Record<QuotaKey, string>>(() => {
+    const o = current?.limitsOverride ?? {};
+    const show = (k: QuotaKey) => (k in o ? (o[k] === null ? "illimité" : String(o[k])) : "");
+    return { customers: show("customers"), establishments: show("establishments"), staff: show("staff"), programs: show("programs") };
+  });
+  const custom = plans.find((p) => p.code === plan)?.kind === "CUSTOM";
+  // Abonnement Stripe en cours : il est arrêté au moment où le contrat manuel le remplace.
+  const stripeRunning = current?.provider === "STRIPE" && current.status !== "CANCELED";
+
+  const submit = async () => {
+    const limitsOverride: Partial<Record<QuotaKey, number | null>> = {};
+    for (const [k, v] of Object.entries(limits) as [QuotaKey, string][]) {
+      const t = v.trim().toLowerCase();
+      if (t === "") continue;
+      limitsOverride[k] = t === "illimité" || t === "illimite" ? null : Number(t);
+    }
+    const yearly = Number(price.replace(",", "."));
+    await api.post(`/admin/tenants/${tenantId}/subscription`, {
+      planCode: plan,
+      status,
+      currentPeriodEnd: end ? new Date(`${end}T23:59:59`).toISOString() : null,
+      limitsOverride: Object.keys(limitsOverride).length ? limitsOverride : null,
+      contractPriceYearlyCents: price.trim() && Number.isFinite(yearly) ? Math.round(yearly * 100) : null,
+    });
+    qc.invalidateQueries({ queryKey: ["admin-tenant", tenantId] });
+    toast.success("Abonnement mis à jour");
+  };
+
+  return (
+    <div className="grid gap-3">
+      <div className="grid gap-2 sm:grid-cols-2">
+        <Select aria-label="Offre" value={plan} onChange={(e) => setPlan(e.target.value)}>
+          {plans.map((p) => (
+            <option key={p.code} value={p.code}>{p.name}</option>
+          ))}
+        </Select>
+        <Select aria-label="Statut" value={status} onChange={(e) => setStatus(e.target.value as typeof status)}>
+          <option value="ACTIVE">Actif (manuel)</option>
+          <option value="TRIALING">Essai</option>
+          <option value="CANCELED">Résilié</option>
+        </Select>
+      </div>
+      <div className="grid gap-2 sm:grid-cols-2">
+        <Field label="Fin du contrat" hint="Vide = sans échéance. À cette date, l’entreprise repasse sur le Gratuit.">
+          {(f) => <Input {...f} type="date" value={end} onChange={(e) => setEnd(e.target.value)} />}
+        </Field>
+        <Field label="Prix annuel du contrat (USD)" hint="Facturé hors Stripe, compté dans le revenu.">
+          {(f) => <Input {...f} inputMode="decimal" placeholder="—" value={price} onChange={(e) => setPrice(e.target.value)} />}
+        </Field>
+      </div>
+      {custom && (
+        <fieldset className="grid gap-2 sm:grid-cols-2">
+          <legend className="mb-1 text-sm font-medium">Quotas négociés (vide = ceux de l’offre, « illimité » accepté)</legend>
+          {(Object.keys(QUOTAS) as QuotaKey[]).map((k) => (
+            <Field key={k} label={QUOTAS[k]}>
+              {(f) => <Input {...f} value={limits[k]} placeholder="illimité" onChange={(e) => setLimits({ ...limits, [k]: e.target.value })} />}
+            </Field>
+          ))}
+        </fieldset>
+      )}
+      <ConfirmDialog
+        trigger={<Button variant="secondary" className="justify-self-start">Appliquer</Button>}
+        title="Modifier l’abonnement manuellement ?"
+        consequence={[
+          "L’abonnement est remplacé sans passer par Stripe : période offerte, essai ou contrat sur-mesure. Les quotas et le prix non renseignés sont retirés.",
+          stripeRunning ? " L’abonnement Stripe en cours sera résilié immédiatement, sans remboursement automatique : remboursez la période restante depuis Stripe si besoin." : "",
+        ].join("")}
+
+        confirmLabel="Appliquer"
+        onConfirm={submit}
+      />
+    </div>
   );
 }

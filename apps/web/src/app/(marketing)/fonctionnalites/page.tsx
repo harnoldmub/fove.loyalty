@@ -69,7 +69,7 @@ export default function FeaturesPage() {
       <div className="mt-20 flex flex-wrap items-center gap-4 rounded-[var(--radius-lg)] bg-cobalt px-6 py-8 text-cobalt-ink sm:px-10">
         <p className="mr-auto max-w-lg font-display text-2xl font-semibold">Votre QR code peut être au comptoir dès aujourd’hui.</p>
         <Button asChild variant="stamp" size="lg">
-          <Link href="/signup">Commencer l’essai</Link>
+          <Link href="/signup">Commencer gratuitement</Link>
         </Button>
       </div>
     </div>

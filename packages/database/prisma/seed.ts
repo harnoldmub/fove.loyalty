@@ -4,48 +4,12 @@
  * depuis l'administration FOVE (jamais lus en dur par le code).
  */
 import { createHash, randomBytes, scryptSync } from "node:crypto";
-import { PERMISSIONS, ROLE_PERMISSIONS, TENANT_ROLES } from "@fove/shared";
+import { DEFAULT_PLANS, PERMISSIONS, ROLE_PERMISSIONS, TENANT_ROLES } from "@fove/shared";
 import { createPrismaClient } from "../src/index";
 
 const prisma = createPrismaClient(process.env.DIRECT_DATABASE_URL ?? process.env.DATABASE_URL);
 
 const ROLE_NAMES = { OWNER: "Propriétaire", MANAGER: "Manager", CASHIER: "Caissier", VIEWER: "Lecteur" } as const;
-
-const PLANS = [
-  {
-    code: "starter",
-    name: "Essentiel",
-    description: "Pour les petits commerces, salons et indépendants.",
-    currency: "USD",
-    priceMonthlyCents: 0,
-    priceYearlyCents: 9900,
-    features: { api: false, widget: true, integrations: false, exports: true },
-    limits: { customers: 500, establishments: 1, staff: 3, programs: 1 },
-    sortOrder: 1,
-  },
-  {
-    code: "business",
-    name: "Business",
-    description: "Pour les boutiques qui veulent développer leur clientèle.",
-    currency: "USD",
-    priceMonthlyCents: 0,
-    priceYearlyCents: 19900,
-    features: { api: true, widget: true, integrations: true, exports: true },
-    limits: { customers: 2000, establishments: 1, staff: 15, programs: 3 },
-    sortOrder: 2,
-  },
-  {
-    code: "premium",
-    name: "Réseau",
-    description: "Pour les enseignes qui gèrent plusieurs boutiques.",
-    currency: "USD",
-    priceMonthlyCents: 0,
-    priceYearlyCents: 39900,
-    features: { api: true, widget: true, integrations: true, exports: true },
-    limits: { customers: 10000, establishments: 3, staff: null, programs: null },
-    sortOrder: 3,
-  },
-];
 
 function hashPassword(password: string): string {
   const salt = randomBytes(16);
@@ -66,7 +30,7 @@ export async function seedReferenceData(): Promise<void> {
       create: { id: uuid, key, name: ROLE_NAMES[key], permissions: [...ROLE_PERMISSIONS[key]], isSystem: true },
     });
   }
-  for (const plan of PLANS) {
+  for (const plan of DEFAULT_PLANS) {
     await prisma.subscriptionPlan.upsert({ where: { code: plan.code }, update: {}, create: plan });
   }
 }

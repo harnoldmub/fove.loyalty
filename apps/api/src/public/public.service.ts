@@ -5,9 +5,10 @@ import type { z } from "zod";
 import { PrismaService } from "../common/prisma.service";
 import { AuditService } from "../common/audit.service";
 import { randomDigits, sha256 } from "../common/crypto";
-import { badRequest, conflict, isUniqueViolation, notFound } from "../common/errors";
+import { AppError, badRequest, conflict, isUniqueViolation, notFound } from "../common/errors";
 import type { TenantContext } from "../common/context";
 import { PlanService } from "../billing/plan.service";
+import { QuotaAlertService } from "../billing/quota-alert.service";
 import { EmailService } from "../notifications/email.service";
 import { WhatsAppService } from "../notifications/whatsapp.service";
 import { WebhooksService } from "../notifications/webhooks.service";
@@ -37,6 +38,7 @@ export class PublicService {
     private readonly audit: AuditService,
     private readonly webhooks: WebhooksService,
     private readonly cards: CardsService,
+    private readonly quotaAlerts: QuotaAlertService,
   ) { }
 
   private async link(tokenOrSlug: string) {
@@ -125,7 +127,6 @@ export class PublicService {
       // Ne jamais révéler la carte d'un client existant à quelqu'un qui tape son numéro.
       throw conflict("already_enrolled", "Vous êtes déjà inscrit(e). Utilisez « Retrouver ma carte » ou demandez au commerçant.");
     }
-    await this.plans.assertQuota(tenantId, "customers");
 
     const status = program.enrollmentVerification === "NONE" ? "ACTIVE" : "PENDING_VERIFICATION";
     try {
@@ -155,9 +156,15 @@ export class PublicService {
       await this.audit.log({ tenantId, action: "customer.self_enrolled", targetType: "account", targetId: card.accountId, ip });
       await this.webhooks.emit(tenantId, "customer.created", { id: customerId, externalRef: null });
       await this.webhooks.emit(tenantId, "loyalty_account.created", { id: card.accountId, customerId, programId: program.id });
+      await this.quotaAlerts.afterCustomerCreated(tenantId);
       return { cardUrl: cardUrl(card.accessToken), cardToken: card.accessToken, status };
     } catch (error) {
       if (isUniqueViolation(error)) throw conflict("already_enrolled", "Vous êtes déjà inscrit(e).");
+      if (error instanceof AppError && error.code === "quota_exceeded") {
+        // Le client ne voit pas l'offre du commerçant ; le commerçant est prévenu.
+        await this.quotaAlerts.customerBlocked(tenantId);
+        throw conflict("enrollment_closed", "Les inscriptions sont momentanément fermées. Demandez votre carte directement au commerçant.");
+      }
       throw error;
     }
   }
@@ -196,7 +203,7 @@ export class PublicService {
         text,
       });
     }
-    if (phone && this.whatsapp.isConfigured()) {
+    if (phone && this.whatsapp.isConfigured() && (await this.plans.features(link.tenantId)).whatsappAuto) {
       await this.whatsapp.send(phone, text);
     }
   }
@@ -257,6 +264,7 @@ export class PublicService {
       verification: account.status === "PENDING_VERIFICATION" ? account.program.enrollmentVerification : null,
       googleWallet: this.cards.wallet.isConfigured() && account.status === "ACTIVE",
       appleWallet: this.cards.appleWallet.isConfigured() && account.status === "ACTIVE",
+      poweredBy: !(await this.plans.features(account.tenantId)).removeBranding,
     };
   }
 

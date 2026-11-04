@@ -12,6 +12,7 @@ import { GoogleWalletProvider } from "./google-wallet";
 import { AppleWalletProvider, memberSince } from "./apple-wallet";
 import { WalletBannerService } from "./wallet-banner.service";
 import { WhatsAppService } from "../notifications/whatsapp.service";
+import { PlanService } from "../billing/plan.service";
 
 export function cardUrl(accessToken: string): string {
   return `${loadConfig().APP_URL}/card/${accessToken}`;
@@ -34,6 +35,7 @@ export class CardsService {
     readonly appleWallet: AppleWalletProvider,
     readonly banners: WalletBannerService,
     private readonly whatsapp: WhatsAppService,
+    private readonly plans: PlanService,
   ) {}
 
   private load(where: { id: string; tenantId: string } | { accessTokenHash: string }) {
@@ -71,7 +73,8 @@ export class CardsService {
     const phone = rawPhone.replace(/\D/g, "");
     const hasPhone = phone.length >= 8;
     let cloudSent = false;
-    if (hasPhone && this.whatsapp.isConfigured()) {
+    // Envoi automatique réservé aux offres payantes ; sinon le commerçant envoie le lien wa.me.
+    if (hasPhone && this.whatsapp.isConfigured() && (await this.plans.features(ctx.tenantId)).whatsappAuto) {
       const sent = await this.whatsapp.send(rawPhone, message);
       cloudSent = sent.sent;
     }
@@ -222,6 +225,7 @@ export class CardsService {
   async walletBroadcast(ctx: TenantContext, programId: string, message: { title: string; body: string }) {
     const program = await this.prisma.client.loyaltyProgram.findFirst({ where: { id: programId, tenantId: ctx.tenantId } });
     if (!program) throw notFound("Programme");
+    await this.plans.assertFeature(ctx.tenantId, "walletCampaigns");
     if (this.wallet.isConfigured()) await this.wallet.broadcast(programId, message);
     if (this.appleWallet.isConfigured()) await this.appleWallet.broadcastTenant(ctx.tenantId);
     await this.audit.forTenant(ctx, "wallet.broadcast_sent", { type: "program", id: programId }, { title: message.title });

@@ -561,9 +561,17 @@ model OtpChallenge {
 // Abonnements
 // ---------------------------------------------------------------------------
 
+/// FREE : offre par défaut (une seule) ; PAID : achetable en ligne ; CUSTOM : sur devis, attribuée par l'admin.
+enum PlanKind {
+  FREE
+  PAID
+  CUSTOM
+}
+
 model SubscriptionPlan {
   id                  String         @id @default(uuid()) @db.Uuid
   code                String         @unique
+  kind                PlanKind       @default(PAID)
   name                String
   description         String         @default("")
   currency            String         @default("EUR")
@@ -572,7 +580,7 @@ model SubscriptionPlan {
   stripePriceMonthlyId String?
   stripePriceYearlyId  String?
   trialDays           Int            @default(14)
-  /// Fonctions incluses : { api: bool, widget: bool, integrations: bool, exports: bool }.
+  /// Fonctions incluses : { api, widget, integrations, exports, walletCampaigns, whatsappAuto, removeBranding } (booléens).
   features            Json
   /// Quotas : { customers, establishments, staff, programs } (null = illimité).
   limits              Json
@@ -581,7 +589,8 @@ model SubscriptionPlan {
   createdAt           DateTime       @default(now())
   updatedAt           DateTime       @updatedAt
 
-  subscriptions Subscription[]
+  subscriptions Subscription[] @relation("CurrentPlan")
+  scheduledSubscriptions Subscription[] @relation("ScheduledPlan")
 }
 
 enum SubscriptionStatus {
@@ -608,15 +617,26 @@ model Subscription {
   tenantId             String             @unique @db.Uuid
   tenant               Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   planId               String             @db.Uuid
-  plan                 SubscriptionPlan   @relation(fields: [planId], references: [id])
+  plan                 SubscriptionPlan   @relation("CurrentPlan", fields: [planId], references: [id])
+  /// Offre inférieure choisie par le commerçant : appliquée au renouvellement, l'offre payée reste jusque-là.
+  scheduledPlanId      String?            @db.Uuid
+  scheduledPlan        SubscriptionPlan?  @relation("ScheduledPlan", fields: [scheduledPlanId], references: [id])
+
   status               SubscriptionStatus
   interval             BillingInterval    @default(MONTH)
   provider             BillingProvider    @default(MOCK)
   trialEndsAt          DateTime?
   currentPeriodEnd     DateTime?
   cancelAtPeriodEnd    Boolean            @default(false)
+  /// Début de l'impayé en cours : les droits sont gardés pendant le délai de grâce, puis le Gratuit s'applique.
+  pastDueSince         DateTime?
   stripeCustomerId     String?            @unique
   stripeSubscriptionId String?            @unique
+  /// Contrat sur-mesure : quotas et fonctions négociés, prioritaires sur ceux de l'offre.
+  limitsOverride       Json?
+  featuresOverride     Json?
+  /// Prix annuel du contrat sur-mesure, facturé hors Stripe (statistiques admin).
+  contractPriceYearlyCents Int?
   createdAt            DateTime           @default(now())
   updatedAt            DateTime           @updatedAt
 }

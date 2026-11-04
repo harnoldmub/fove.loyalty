@@ -26,6 +26,8 @@ export interface CardData {
   verification: "EMAIL_OTP" | "IN_STORE" | "NONE" | null;
   googleWallet: boolean;
   appleWallet?: boolean;
+  /** Mention « Propulsé par FOVE », retirée dans les offres payantes. */
+  poweredBy?: boolean;
 }
 
 function InstallHint() {
@@ -234,6 +236,14 @@ export function CardView({ token, initial }: { token: string; initial: CardData 
 
         <InstallHint />
         <p className="text-center text-xs text-ink-3">Membre depuis le {formatDate(card.memberSince)}. Ce lien est personnel : ne le partagez pas.</p>
+        {data.poweredBy && (
+          <p className="text-center text-xs text-ink-3">
+            Propulsé par{" "}
+            <a href="https://fove.digital" target="_blank" rel="noopener" className="font-medium underline underline-offset-2">
+              FOVE
+            </a>
+          </p>
+        )}
       </main>
     </div>
   );

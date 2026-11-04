@@ -14,6 +14,7 @@ import { AuditService } from "../common/audit.service";
 import { badRequest, conflict, isUniqueViolation, notFound } from "../common/errors";
 import type { TenantContext } from "../common/context";
 import { PlanService } from "../billing/plan.service";
+import { QuotaAlertService } from "../billing/quota-alert.service";
 import { WebhooksService } from "../notifications/webhooks.service";
 import { createCard, readAccessToken } from "../loyalty/cards";
 import { cardUrl } from "../cards/cards.service";
@@ -62,9 +63,14 @@ export class CustomersService {
     private readonly audit: AuditService,
     private readonly plans: PlanService,
     private readonly webhooks: WebhooksService,
+    private readonly quotaAlerts: QuotaAlertService,
   ) {}
 
-  /** Création stricte : refuse si un identifiant appartient déjà à un client (pas de fusion automatique). */
+  /**
+   * Création stricte : refuse si un identifiant appartient déjà à un client (pas
+   * de fusion automatique) ou si le quota de clients de l'offre est atteint.
+   * Toutes les créations de client passent ici.
+   */
   async createInTx(
     tx: Db,
     ctx: TenantContext,
@@ -79,6 +85,7 @@ export class CustomersService {
     const { identities, phone, email, externalRef } = buildIdentities(input, country);
     const existing = await findByIdentities(tx, ctx.tenantId, identities);
     if (existing) throw conflict("customer_exists", "Un client existe déjà avec ce téléphone, cet email ou cette référence");
+    await this.plans.assertCustomerQuotaInTx(tx, ctx.tenantId);
     const now = new Date();
     const customer = await tx.customer.create({
       data: {
@@ -110,7 +117,6 @@ export class CustomersService {
     },
     source: CustomerSource = "DASHBOARD",
   ) {
-    await this.plans.assertQuota(ctx.tenantId, "customers");
     try {
       const result = await this.prisma.client.$transaction(async (tx) => {
         const customer = await this.createInTx(tx, ctx, input, source);
@@ -124,6 +130,7 @@ export class CustomersService {
       });
       await this.audit.forTenant(ctx, "customer.created", { type: "customer", id: result.customer.id }, { source });
       await this.webhooks.emit(ctx.tenantId, "customer.created", { id: result.customer.id, externalRef: result.customer.externalRef });
+      await this.quotaAlerts.afterCustomerCreated(ctx.tenantId);
       return result;
     } catch (error) {
       if (isUniqueViolation(error)) throw conflict("customer_exists", "Un client existe déjà avec ces coordonnées");
@@ -279,9 +286,7 @@ export class CustomersService {
   }
 
   async import(ctx: TenantContext, input: z.infer<typeof importCustomersSchema>) {
-    const limits = await this.plans.limits(ctx.tenantId);
-    const usage = await this.plans.usage(ctx.tenantId);
-    let room = limits.customers === null ? Infinity : limits.customers - usage.customers;
+    let full = false;
     const program = input.programId
       ? await this.prisma.client.loyaltyProgram.findFirst({ where: { id: input.programId, tenantId: ctx.tenantId } })
       : null;
@@ -302,7 +307,7 @@ export class CustomersService {
         results.push({ row, status: "invalid", message: parsed.error.issues[0]?.message });
         continue;
       }
-      if (room <= 0) {
+      if (full) {
         results.push({ row, status: "quota", message: "Limite de clients de l'offre atteinte" });
         continue;
       }
@@ -311,11 +316,13 @@ export class CustomersService {
           const customer = await this.createInTx(tx, ctx, parsed.data, "IMPORT");
           if (program) await createCard(tx, { tenantId: ctx.tenantId, programId: program.id, customerId: customer.id, status: "ACTIVE" });
         });
-        room -= 1;
         results.push({ row, status: "created" });
       } catch (error) {
         const code = (error as { response?: { error?: { code?: string; message?: string } } }).response?.error;
-        if (code?.code === "customer_exists" || isUniqueViolation(error)) results.push({ row, status: "duplicate" });
+        if (code?.code === "quota_exceeded") {
+          full = true;
+          results.push({ row, status: "quota", message: "Limite de clients de l'offre atteinte" });
+        } else if (code?.code === "customer_exists" || isUniqueViolation(error)) results.push({ row, status: "duplicate" });
         else results.push({ row, status: "invalid", message: code?.message ?? "Ligne invalide" });
       }
     }
@@ -326,6 +333,7 @@ export class CustomersService {
       overQuota: results.filter((r) => r.status === "quota").length,
     };
     await this.audit.forTenant(ctx, "customer.imported", undefined, summary);
+    if (summary.created > 0) await this.quotaAlerts.afterCustomerCreated(ctx.tenantId);
     return { summary, results };
   }
 

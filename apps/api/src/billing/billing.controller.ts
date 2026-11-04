@@ -5,7 +5,7 @@ import type { Request } from "express";
 import { checkoutSchema } from "@fove/shared";
 import type { z } from "zod";
 import { ZodPipe } from "../common/zod.pipe";
-import { RequirePermission, RequireVerified, Tenant } from "../common/decorators";
+import { RequirePermission, Tenant } from "../common/decorators";
 import type { TenantContext } from "../common/context";
 import { TenantRoute } from "../auth/guards";
 import { BillingService } from "./billing.service";
@@ -27,9 +27,9 @@ export class BillingController {
     return this.billing.overview(ctx);
   }
 
+  /** Ouvert avant la confirmation de l'email : on ne perd pas une vente ; l'email est relancé ensuite. */
   @Post("app/billing/checkout")
   @TenantRoute()
-  @RequireVerified()
   @RequirePermission("billing.write")
   checkout(@Tenant() ctx: TenantContext, @Body(new ZodPipe(checkoutSchema)) body: z.infer<typeof checkoutSchema>) {
     return this.billing.checkout(ctx, body.planCode, body.interval);
@@ -49,6 +49,24 @@ export class BillingController {
   async cancel(@Tenant() ctx: TenantContext) {
     await this.billing.cancel(ctx);
   }
+
+  @Post("app/billing/resume")
+  @HttpCode(204)
+  @TenantRoute()
+  @RequirePermission("billing.write")
+  async resume(@Tenant() ctx: TenantContext) {
+    await this.billing.resume(ctx);
+  }
+
+  /** Annule le passage à une offre inférieure programmé au renouvellement. */
+  @Post("app/billing/scheduled-change/cancel")
+  @HttpCode(204)
+  @TenantRoute()
+  @RequirePermission("billing.write")
+  async cancelScheduledChange(@Tenant() ctx: TenantContext) {
+    await this.billing.cancelScheduledChange(ctx);
+  }
+
 
   @Post("billing/stripe/webhook")
   @HttpCode(200)

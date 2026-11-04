@@ -3,6 +3,7 @@ import { CardsService } from "../cards/cards.service";
 import { Injectable } from "@nestjs/common";
 import {
   createTenantSchema,
+  DEFAULT_PLANS,
   establishmentSchema,
   PERMISSIONS,
   ROLE_PERMISSIONS,
@@ -17,42 +18,6 @@ import type { AuthState, TenantContext } from "../common/context";
 import { PlanService } from "../billing/plan.service";
 
 const ROLE_NAMES = { OWNER: "Propriétaire", MANAGER: "Manager", CASHIER: "Caissier", VIEWER: "Lecteur" } as const;
-
-const DEFAULT_PLANS = [
-  {
-    code: "starter",
-    name: "Essentiel",
-    description: "Pour les petits commerces, salons et indépendants.",
-    currency: "USD",
-    priceMonthlyCents: 0,
-    priceYearlyCents: 9900,
-    features: { api: false, widget: true, integrations: false, exports: true },
-    limits: { customers: 500, establishments: 1, staff: 3, programs: 1 },
-    sortOrder: 1,
-  },
-  {
-    code: "business",
-    name: "Business",
-    description: "Pour les boutiques qui veulent développer leur clientèle.",
-    currency: "USD",
-    priceMonthlyCents: 0,
-    priceYearlyCents: 19900,
-    features: { api: true, widget: true, integrations: true, exports: true },
-    limits: { customers: 2000, establishments: 1, staff: 15, programs: 3 },
-    sortOrder: 2,
-  },
-  {
-    code: "premium",
-    name: "Réseau",
-    description: "Pour les enseignes qui gèrent plusieurs boutiques.",
-    currency: "USD",
-    priceMonthlyCents: 0,
-    priceYearlyCents: 39900,
-    features: { api: true, widget: true, integrations: true, exports: true },
-    limits: { customers: 10000, establishments: 3, staff: null, programs: null },
-    sortOrder: 3,
-  },
-];
 
 export async function ensureSystemReferenceData(prisma: PrismaService): Promise<void> {
   for (const perm of PERMISSIONS) {
@@ -91,12 +56,10 @@ export class TenantsService {
     private readonly cards: CardsService,
   ) {}
 
-  /** Crée l'entreprise, l'adhésion propriétaire, les réglages et l'essai gratuit. */
+  /** Crée l'entreprise, l'adhésion propriétaire, les réglages et l'abonnement à l'offre Gratuite. */
   async create(auth: AuthState, input: z.infer<typeof createTenantSchema>) {
     const ownerRoleId = await systemRoleId(this.prisma, "OWNER");
-    const trialPlan = await this.prisma.client.subscriptionPlan.findFirst({
-      where: { code: process.env.TRIAL_PLAN_CODE ?? "business", active: true },
-    });
+    const freePlan = await this.plans.freePlan();
     try {
       const tenant = await this.prisma.client.$transaction(async (tx) => {
         const tenant = await tx.tenant.create({ data: { name: input.name, slug: input.slug } });
@@ -111,18 +74,9 @@ export class TenantsService {
           },
         });
         await tx.tenantMembership.create({ data: { tenantId: tenant.id, userId: auth.user.id, roleId: ownerRoleId } });
-        if (trialPlan) {
-          await tx.subscription.create({
-            data: {
-              tenantId: tenant.id,
-              planId: trialPlan.id,
-              status: "TRIALING",
-              interval: "YEAR",
-              provider: "MOCK",
-              trialEndsAt: new Date(Date.now() + trialPlan.trialDays * 86_400_000),
-            },
-          });
-        }
+        await tx.subscription.create({
+          data: { tenantId: tenant.id, planId: freePlan.id, status: "ACTIVE", interval: "YEAR", provider: "MANUAL" },
+        });
         await tx.session.update({ where: { id: auth.sessionId }, data: { activeTenantId: tenant.id, supportGrantId: null } });
         return tenant;
       });

@@ -6,6 +6,8 @@
 export interface WidgetConfig {
   tenant: { name: string; logoUrl: string | null; primaryColor: string };
   programs: { name: string; mode: "POINTS" | "STAMPS"; joinUrl: string }[];
+  /** Mention « Propulsé par FOVE », retirée dans les offres payantes. */
+  poweredBy?: boolean;
 }
 
 export interface WidgetOptions {
@@ -34,6 +36,7 @@ const STYLE = `
 .secondary { background: #eef1f8; color: #14204a; }
 .close { position: absolute; top: 10px; right: 10px; border: 0; background: transparent; font-size: 20px; line-height: 1; color: #6f7896; cursor: pointer; padding: 4px; }
 .foot { margin: 12px 0 0; font-size: 11px; color: #6f7896; text-align: center; }
+.foot .brand { display: inline; padding: 0; margin: 0; font-size: inherit; color: inherit; text-decoration: underline; }
 @media (prefers-reduced-motion: no-preference) { .panel { animation: in .18s ease-out; } @keyframes in { from { opacity: 0; transform: translateY(6px); } } }
 `;
 
@@ -98,7 +101,11 @@ export function render(host: HTMLElement, config: WidgetConfig, options: WidgetO
     panel.append(join, recover);
   }
   if (config.programs.length === 0) panel.appendChild(el("p", { class: "sub" }, "Le programme n’est pas encore ouvert."));
-  panel.appendChild(el("p", { class: "foot" }, "Carte gratuite, sans application à installer."));
+  const foot = el("p", { class: "foot" }, "Carte gratuite, sans application à installer.");
+  if (config.poweredBy) {
+    foot.append(" Propulsé par ", el("a", { class: "brand", href: "https://fove.digital", target: "_blank", rel: "noopener" }, "FOVE"));
+  }
+  panel.appendChild(foot);
 
   const setOpen = (open: boolean) => {
     panel.hidden = !open;

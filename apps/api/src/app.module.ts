@@ -11,6 +11,7 @@ import { AuthService } from "./auth/auth.service";
 import { AuthController } from "./auth/auth.controller";
 import { ApiKeyGuard, PublishableKeyGuard, SessionGuard, SuperAdminGuard, TenantGuard } from "./auth/guards";
 import { PlanService } from "./billing/plan.service";
+import { QuotaAlertService } from "./billing/quota-alert.service";
 import { BillingService } from "./billing/billing.service";
 import { BillingController } from "./billing/billing.controller";
 import { TenantsService } from "./tenants/tenants.service";
@@ -83,6 +84,7 @@ import { AppleWalletServiceController } from "./cards/apple-wallet-service.contr
     ApiKeyGuard,
     PublishableKeyGuard,
     PlanService,
+    QuotaAlertService,
     BillingService,
     TenantsService,
     TeamService,

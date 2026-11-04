@@ -3,14 +3,16 @@ import { pageMeta } from "@/lib/og";
 
 export const metadata = pageMeta(
   "Tarifs — Abonnements programme de fidélité commerçant",
-  "Trois offres FOVE claires (Essentiel, Croissance, Réseau) avec essai gratuit, installation offerte et zéro commission sur vos ventes.",
+  "Commencez gratuitement jusqu’à 100 clients, puis passez à Essentiel, Business ou Réseau, ou à une offre sur-mesure. Zéro commission sur vos ventes.",
   "/tarifs",
   ["tarif carte de fidélité numérique", "prix logiciel fidélité commerçant", "abonnement fidélisation boutique"],
 );
 
 const faq = [
-  { q: "Que se passe-t-il à la fin de l’essai ?", a: "Rien n’est supprimé. Si vous ne choisissez pas d’offre, votre compte passe sur les limites Essentiel : vos clients gardent leurs cartes et leurs points." },
-  { q: "Puis-je changer d’offre ?", a: "Oui, à tout moment depuis l’espace Abonnement. Le changement est calculé au prorata. Un passage à une offre inférieure n’efface aucune carte : seules les nouvelles créations au-delà des limites sont bloquées." },
+  { q: "L’offre Gratuite est-elle limitée dans le temps ?", a: "Non. Elle reste gratuite tant que vous restez dans ses limites : 100 clients, 1 établissement, 1 programme, sans collaborateur. Au-delà, vos clients actuels gardent leurs cartes ; seules les nouvelles inscriptions attendent un passage à une offre supérieure." },
+  { q: "Puis-je changer d’offre ?", a: "Oui, à tout moment depuis l’espace Abonnement. Une offre supérieure s’applique tout de suite : la différence au prorata est facturée immédiatement. Un passage à une offre inférieure n’efface aucune carte : seules les nouvelles créations au-delà des limites sont bloquées." },
+  { q: "Et si je résilie ?", a: "Votre offre reste active jusqu’à la fin de la période payée, et vous pouvez revenir sur votre décision jusque-là. Ensuite, votre compte passe sur l’offre Gratuite : rien n’est supprimé." },
+  { q: "Mon besoin dépasse l’offre Réseau ?", a: "L’offre Sur-mesure s’adapte à vos volumes : nombre de clients, d’établissements et de collaborateurs, accompagnement et contrat sur devis. Contactez-nous." },
   { q: "Mes clients paient-ils quelque chose ?", a: "Non. La carte est gratuite pour eux et s’ouvre dans le navigateur du téléphone." },
   { q: "Comment payer ?", a: "En dollars US, une fois par an et à l’avance. Les factures sont disponibles dans votre espace." },
 ];
@@ -41,7 +43,7 @@ export default function PricingPage() {
         <Pricing />
       </div>
       <p className="mt-6 text-ink-2">Installation et formation offertes : configuration de la fidélité, personnalisation de la carte et affiche QR prête à imprimer.</p>
-      <p className="mt-3 text-sm text-ink-3">Les SMS et WhatsApp ne sont pas compris dans l’abonnement. Les envois automatisés et crédits prépayés seront proposés séparément.</p>
+      <p className="mt-3 text-sm text-ink-3">L’envoi WhatsApp automatique couvre le partage de la carte et « Retrouver ma carte ». Les campagnes SMS et WhatsApp ne sont pas comprises dans l’abonnement ; les crédits prépayés seront proposés séparément.</p>
       <section aria-labelledby="faq" className="mt-20 max-w-3xl">
         <h2 id="faq" className="font-display text-2xl font-semibold">Questions fréquentes</h2>
         <div className="mt-6 divide-y divide-line">

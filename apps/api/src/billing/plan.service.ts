@@ -1,18 +1,10 @@
 import { Injectable } from "@nestjs/common";
+import { DEFAULT_PLANS, PAST_DUE_GRACE_DAYS, resolveFeatures, resolveLimits, type PlanFeatures, type PlanLimits, type QuotaKey } from "@fove/shared";
+import type { Prisma, Subscription, SubscriptionPlan } from "@fove/database";
 import { PrismaService } from "../common/prisma.service";
 import { paymentRequired } from "../common/errors";
 
-export interface PlanFeatures {
-  api: boolean;
-  widget: boolean;
-  integrations: boolean;
-  exports: boolean;
-}
-export type QuotaKey = "customers" | "establishments" | "staff" | "programs";
-export type PlanLimits = Record<QuotaKey, number | null>;
-
-const FALLBACK_FEATURES: PlanFeatures = { api: false, widget: true, integrations: false, exports: true };
-const FALLBACK_LIMITS: PlanLimits = { customers: 500, establishments: 1, staff: 3, programs: 1 };
+export type { PlanFeatures, PlanLimits, QuotaKey };
 
 const QUOTA_LABEL: Record<QuotaKey, string> = {
   customers: "clients",
@@ -24,27 +16,55 @@ const QUOTA_LABEL: Record<QuotaKey, string> = {
 /**
  * Lecture des droits de l'offre. Règle produit : un changement d'offre ne
  * supprime ni ne bloque jamais les cartes et opérations existantes ; les
- * quotas ne limitent que les nouvelles créations.
+ * quotas ne limitent que les nouvelles créations. Sans abonnement en vigueur
+ * (résilié, essai expiré, paiement jamais abouti), les droits sont ceux de
+ * l'offre Gratuite.
  */
 @Injectable()
 export class PlanService {
   constructor(private readonly prisma: PrismaService) {}
 
-  private async currentPlan(tenantId: string) {
+  /** Offre Gratuite, recréée depuis le catalogue si elle a disparu de la base. */
+  async freePlan(): Promise<SubscriptionPlan> {
+    const plan = await this.prisma.client.subscriptionPlan.findFirst({ where: { kind: "FREE" }, orderBy: { sortOrder: "asc" } });
+    if (plan) return plan;
+    const { kind, features, limits, ...free } = DEFAULT_PLANS.find((p) => p.kind === "FREE")!;
+    return this.prisma.client.subscriptionPlan.upsert({
+      where: { code: free.code },
+      update: { kind },
+      create: { ...free, kind, features: { ...features }, limits: { ...limits } },
+    });
+  }
+
+  /** Abonnement qui donne actuellement ses droits, ou null si l'entreprise relève du Gratuit. */
+  private async effective(tenantId: string): Promise<(Subscription & { plan: SubscriptionPlan }) | null> {
     const sub = await this.prisma.client.subscription.findUnique({ where: { tenantId }, include: { plan: true } });
     if (!sub || sub.status === "CANCELED" || sub.status === "INCOMPLETE") return null;
-    if (sub.status === "TRIALING" && sub.trialEndsAt && sub.trialEndsAt < new Date()) return null;
-    return sub.plan;
+    const now = new Date();
+    if (sub.status === "TRIALING" && sub.trialEndsAt && sub.trialEndsAt < now) return null;
+    if (sub.status === "PAST_DUE" && sub.pastDueSince && sub.pastDueSince.getTime() + PAST_DUE_GRACE_DAYS * 86_400_000 < now.getTime()) return null;
+    // Fin d'un contrat attribué par l'admin ou d'une résiliation hors Stripe : effet
+    // immédiat, sans attendre que la tâche planifiée passe l'abonnement à « résilié ».
+    const ended = sub.currentPeriodEnd !== null && sub.currentPeriodEnd < now;
+    if (ended && sub.provider !== "STRIPE" && (sub.provider === "MANUAL" || sub.cancelAtPeriodEnd)) return null;
+    return sub;
+  }
+
+  /** Offre dont l'entreprise a les droits aujourd'hui. */
+  async currentPlan(tenantId: string): Promise<SubscriptionPlan> {
+    return (await this.effective(tenantId))?.plan ?? this.freePlan();
   }
 
   async features(tenantId: string): Promise<PlanFeatures> {
-    const plan = await this.currentPlan(tenantId);
-    return plan ? { ...FALLBACK_FEATURES, ...(plan.features as Partial<PlanFeatures>) } : FALLBACK_FEATURES;
+    const sub = await this.effective(tenantId);
+    if (sub) return resolveFeatures(sub.plan.features, sub.featuresOverride);
+    return resolveFeatures((await this.freePlan()).features);
   }
 
   async limits(tenantId: string): Promise<PlanLimits> {
-    const plan = await this.currentPlan(tenantId);
-    return plan ? { ...FALLBACK_LIMITS, ...(plan.limits as Partial<PlanLimits>) } : FALLBACK_LIMITS;
+    const sub = await this.effective(tenantId);
+    if (sub) return resolveLimits(sub.plan.limits, sub.limitsOverride);
+    return resolveLimits((await this.freePlan()).limits);
   }
 
   async usage(tenantId: string): Promise<Record<QuotaKey, number>> {
@@ -64,6 +84,22 @@ export class PlanService {
     const used = (await this.usage(tenantId))[key];
     if (used + adding > limit) {
       throw paymentRequired("quota_exceeded", `Limite de ${limit} ${QUOTA_LABEL[key]} atteinte pour votre offre`);
+    }
+  }
+
+  /**
+   * Contrôle du quota de clients dans la transaction qui crée le client. Le
+   * verrou par entreprise sérialise les créations simultanées (QR affiché lors
+   * d'un événement) : sans lui, chacune compterait avant que les autres
+   * n'enregistrent et le quota serait dépassé.
+   */
+  async assertCustomerQuotaInTx(tx: Prisma.TransactionClient, tenantId: string): Promise<void> {
+    const limit = (await this.limits(tenantId)).customers;
+    if (limit === null) return;
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${`quota:customers:${tenantId}`}, 0))`;
+    const used = await tx.customer.count({ where: { tenantId, anonymizedAt: null } });
+    if (used + 1 > limit) {
+      throw paymentRequired("quota_exceeded", `Limite de ${limit} ${QUOTA_LABEL.customers} atteinte pour votre offre`);
     }
   }
 

@@ -4,6 +4,7 @@ import type { Prisma } from "@fove/database";
 import { loadConfig } from "../config";
 import { decrypt, hmacSha256 } from "../common/crypto";
 import { PrismaService } from "../common/prisma.service";
+import { PlanService } from "../billing/plan.service";
 
 const MAX_ATTEMPTS = 8;
 /** Délais avant nouvelle tentative (minutes) : 1, 5, 15, 60, 180, 360, 720. */
@@ -18,13 +19,18 @@ const BACKOFF_MINUTES = [1, 5, 15, 60, 180, 360, 720];
 export class WebhooksService {
   private readonly logger = new Logger("Webhooks");
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly plans: PlanService,
+  ) {}
 
   async emit(tenantId: string, event: WebhookEvent, data: Prisma.InputJsonValue): Promise<void> {
     const endpoints = await this.prisma.client.webhookEndpoint.findMany({
       where: { tenantId, active: true, events: { has: event } },
     });
     if (endpoints.length === 0) return;
+    // Webhooks inclus avec l'API : une entreprise passée à une offre sans API n'en reçoit plus.
+    if (!(await this.plans.features(tenantId)).api) return;
     const payload = { id: crypto.randomUUID(), type: event, createdAt: new Date().toISOString(), data };
     const deliveries = await Promise.all(
       endpoints.map((endpoint) =>

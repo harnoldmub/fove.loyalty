@@ -6,11 +6,13 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Checkbox, Field, Input } from "@/components/ui/field";
 import { PageHeader, Panel } from "@/components/ui/misc";
+import type { PlanFeatures } from "@fove/shared";
 import { api, errorMessage } from "@/lib/api";
 
 interface Plan {
   id: string;
   code: string;
+  kind: "FREE" | "PAID" | "CUSTOM";
   name: string;
   description: string;
   priceMonthlyCents: number;
@@ -19,14 +21,23 @@ interface Plan {
   stripePriceMonthlyId: string | null;
   stripePriceYearlyId: string | null;
   trialDays: number;
-  features: { api: boolean; widget: boolean; integrations: boolean; exports: boolean };
+  features: PlanFeatures;
   limits: { customers: number | null; establishments: number | null; staff: number | null; programs: number | null };
   active: boolean;
   _count: { subscriptions: number };
 }
 
 const LIMITS = { customers: "Clients", establishments: "Établissements", staff: "Collaborateurs", programs: "Programmes" } as const;
-const FEATURES = { api: "API", widget: "Widget", integrations: "Boutique en ligne", exports: "Exports" } as const;
+const FEATURES: Record<keyof PlanFeatures, string> = {
+  api: "API et webhooks",
+  widget: "Widget",
+  integrations: "Boutique en ligne",
+  exports: "Exports",
+  walletCampaigns: "Campagnes Wallet",
+  whatsappAuto: "WhatsApp automatique",
+  removeBranding: "Sans mention FOVE",
+};
+const KIND = { FREE: "Offre par défaut", PAID: "Achetable en ligne", CUSTOM: "Sur devis, attribuée par l’admin" } as const;
 
 function PlanEditor({ plan }: { plan: Plan }) {
   const qc = useQueryClient();
@@ -41,8 +52,10 @@ function PlanEditor({ plan }: { plan: Plan }) {
           {plan._count.subscriptions} abonnement{plan._count.subscriptions > 1 ? "s" : ""}
         </span>
       </div>
+      <p className="-mt-2 text-sm text-ink-3">{KIND[plan.kind]}</p>
       <Field label="Nom">{(f) => <Input {...f} value={p.name} onChange={(e) => setP({ ...p, name: e.target.value })} />}</Field>
       <Field label="Description">{(f) => <Input {...f} value={p.description} onChange={(e) => setP({ ...p, description: e.target.value })} />}</Field>
+      {plan.kind === "PAID" && (
       <div className="grid gap-3 sm:grid-cols-2">
         <Field label={`Prix annuel (${p.currency})`} hint="Pour les nouvelles souscriptions.">
           {(f) => (
@@ -59,7 +72,12 @@ function PlanEditor({ plan }: { plan: Plan }) {
         </Field>
         <Field label="Identifiant du prix Stripe">{(f) => <Input {...f} placeholder="price_…" value={p.stripePriceYearlyId ?? ""} onChange={(e) => setP({ ...p, stripePriceYearlyId: e.target.value || null })} />}</Field>
       </div>
-      <Field label="Jours d’essai">{(f) => <Input {...f} type="number" value={p.trialDays} onChange={(e) => setP({ ...p, trialDays: Number(e.target.value) })} />}</Field>
+      )}
+      {plan.kind === "PAID" && (
+        <Field label="Jours d’essai" hint="Durée par défaut d’un essai accordé depuis la fiche entreprise.">
+          {(f) => <Input {...f} type="number" value={p.trialDays} onChange={(e) => setP({ ...p, trialDays: Number(e.target.value) })} />}
+        </Field>
+      )}
       <fieldset className="grid gap-3 sm:grid-cols-2">
         <legend className="mb-2 text-sm font-medium">Quotas (vide = illimité)</legend>
         {(Object.keys(LIMITS) as (keyof typeof LIMITS)[]).map((k) => (
@@ -100,7 +118,7 @@ export default function AdminPlans() {
   return (
     <>
       <PageHeader title="Offres" description="Prix, quotas et fonctions. Les changements s’appliquent immédiatement au site et aux droits des entreprises." />
-      <div className="grid gap-5 xl:grid-cols-3">{data.map((p) => <PlanEditor key={p.id} plan={p} />)}</div>
+      <div className="grid gap-5 lg:grid-cols-2 2xl:grid-cols-3">{data.map((p) => <PlanEditor key={p.id} plan={p} />)}</div>
     </>
   );
 }

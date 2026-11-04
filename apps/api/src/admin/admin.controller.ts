@@ -5,10 +5,9 @@ import { ZodPipe } from "../common/zod.pipe";
 import { Auth } from "../common/decorators";
 import type { AuthState } from "../common/context";
 import { SuperAdminRoute, UserRoute } from "../auth/guards";
-import { AdminService, supportAccessSchema, updateMessageSchema, updatePlanSchema } from "./admin.service";
+import { AdminService, setSubscriptionSchema, supportAccessSchema, updateMessageSchema, updatePlanSchema } from "./admin.service";
 
 const statusSchema = z.object({ status: z.enum(["ACTIVE", "SUSPENDED"]), reason: z.string().trim().min(5).max(300) });
-const subscriptionSchema = z.object({ planCode: z.string().min(2).max(40), status: z.enum(["TRIALING", "ACTIVE", "CANCELED"]), trialDays: z.int().min(1).max(365).optional() });
 
 @ApiTags("admin")
 @Controller("admin")
@@ -61,8 +60,8 @@ export class AdminController {
   @Post("tenants/:id/subscription")
   @HttpCode(204)
   @SuperAdminRoute()
-  async subscription(@Auth() auth: AuthState, @Param("id", ParseUUIDPipe) id: string, @Body(new ZodPipe(subscriptionSchema)) body: z.infer<typeof subscriptionSchema>) {
-    await this.admin.setSubscription(auth, id, body.planCode, body.status, body.trialDays);
+  async subscription(@Auth() auth: AuthState, @Param("id", ParseUUIDPipe) id: string, @Body(new ZodPipe(setSubscriptionSchema)) body: z.infer<typeof setSubscriptionSchema>) {
+    await this.admin.setSubscription(auth, id, body);
   }
 
   @Post("tenants/:id/support")

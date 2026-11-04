@@ -3,6 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { BellRing, Copy, Link2, MessageCircle, RefreshCw } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
+import Link from "next/link";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -145,6 +146,17 @@ export function WalletBroadcast({ programId, programName }: { programId: string;
   const [f, setF] = useState({ title: "", body: "" });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { data: tenant } = useQuery({ queryKey: ["tenant"], queryFn: () => api.get<{ features?: { walletCampaigns?: boolean } }>("/app/tenant") });
+  // Campagnes réservées aux offres payantes : on l'annonce plutôt que d'échouer à l'envoi.
+  if (tenant?.features && !tenant.features.walletCampaigns) {
+    return (
+      <Button asChild size="sm" variant="ghost" title="Les campagnes Wallet sont incluses dans les offres payantes">
+        <Link href="/app/billing">
+          <BellRing /> Campagnes Wallet : offres payantes
+        </Link>
+      </Button>
+    );
+  }
   return (
     <DialogRoot open={step !== "closed"} onOpenChange={(o) => !busy && setStep(o ? "edit" : "closed")}>
       <Button size="sm" variant="ghost" onClick={() => setStep("edit")}>
