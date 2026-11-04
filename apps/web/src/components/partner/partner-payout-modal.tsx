@@ -182,7 +182,6 @@ export function PartnerPayoutModal({
                 <label className="mb-1 block text-[11px] font-medium text-ink-2">Nom & Prénom du titulaire du compte *</label>
                 <Input
                   required
-                  placeholder="Ex : Arnold Mub"
                   value={accountHolder}
                   onChange={(e) => setAccountHolder(e.target.value)}
                 />
@@ -192,7 +191,6 @@ export function PartnerPayoutModal({
                   <label className="mb-1 block text-[11px] font-medium text-ink-2">IBAN / Numéro de compte *</label>
                   <Input
                     required
-                    placeholder="FR76... ou compte bancaire"
                     value={iban}
                     onChange={(e) => setIban(e.target.value)}
                   />
@@ -200,7 +198,6 @@ export function PartnerPayoutModal({
                 <div>
                   <label className="mb-1 block text-[11px] font-medium text-ink-2">Code BIC / SWIFT (optionnel)</label>
                   <Input
-                    placeholder="BNPAFRPP"
                     value={bic}
                     onChange={(e) => setBic(e.target.value)}
                   />
@@ -209,7 +206,6 @@ export function PartnerPayoutModal({
               <div>
                 <label className="mb-1 block text-[11px] font-medium text-ink-2">Établissement bancaire</label>
                 <Input
-                  placeholder="Ex : Rawbank, EquityBCDC, BNP Paribas..."
                   value={bankName}
                   onChange={(e) => setBankName(e.target.value)}
                 />
@@ -236,7 +232,6 @@ export function PartnerPayoutModal({
                   <label className="mb-1 block text-[11px] font-medium text-ink-2">Numéro Mobile Money *</label>
                   <Input
                     required
-                    placeholder="+243 89 000 0000"
                     value={mobileNumber}
                     onChange={(e) => setMobileNumber(e.target.value)}
                   />
@@ -246,7 +241,6 @@ export function PartnerPayoutModal({
                 <label className="mb-1 block text-[11px] font-medium text-ink-2">Nom officiel enregistré sur la ligne *</label>
                 <Input
                   required
-                  placeholder="Ex : Arnold Mub"
                   value={mobileHolder}
                   onChange={(e) => setMobileHolder(e.target.value)}
                 />
@@ -267,3 +261,4 @@ export function PartnerPayoutModal({
     </div>
   );
 }
+

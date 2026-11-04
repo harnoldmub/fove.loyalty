@@ -1,9 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { X, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/field";
+import { CitySelect, CountrySelect, detectClientCountry, getCountryOption } from "@/components/ui/country-select";
+import { PhoneInput } from "@/components/ui/phone-input";
 import { api } from "@/lib/api";
 
 interface PartnerLeadModalProps {
@@ -20,10 +22,21 @@ export function PartnerLeadModal({ open, onClose, onCreated }: PartnerLeadModalP
   const [contactName, setContactName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
-  const [city, setCity] = useState("");
-  const [country, setCountry] = useState("");
+  const [countryCode, setCountryCode] = useState("CD");
+  const [city, setCity] = useState("Kinshasa");
   const [sector, setSector] = useState("");
   const [notes, setNotes] = useState("");
+
+  useEffect(() => {
+    if (open) {
+      const detected = detectClientCountry();
+      setCountryCode(detected);
+      const opt = getCountryOption(detected);
+      if (opt?.defaultCity) {
+        setCity(opt.defaultCity);
+      }
+    }
+  }, [open]);
 
   if (!open) return null;
 
@@ -33,13 +46,15 @@ export function PartnerLeadModal({ open, onClose, onCreated }: PartnerLeadModalP
     setLoading(true);
 
     try {
+      const countryLabel = getCountryOption(countryCode)?.label ?? countryCode;
+
       await api.post("/partner/leads", {
         businessName: businessName.trim(),
         contactName: contactName.trim() || undefined,
         email: email.trim().toLowerCase() || undefined,
         phone: phone.trim() || undefined,
         city: city.trim() || undefined,
-        country: country.trim() || undefined,
+        country: countryLabel,
         sector: sector.trim() || undefined,
         notes: notes.trim() || undefined,
         status: "NEW",
@@ -88,7 +103,6 @@ export function PartnerLeadModal({ open, onClose, onCreated }: PartnerLeadModalP
               <label className="mb-1 block text-xs font-medium text-ink-2">Nom de l&apos;enseigne / commerce *</label>
               <Input
                 required
-                placeholder="Ex : Café Mehdi, Restaurant Le Palmier"
                 value={businessName}
                 onChange={(e) => setBusinessName(e.target.value)}
               />
@@ -96,7 +110,6 @@ export function PartnerLeadModal({ open, onClose, onCreated }: PartnerLeadModalP
             <div>
               <label className="mb-1 block text-xs font-medium text-ink-2">Contact / Gérant</label>
               <Input
-                placeholder="Ex : Mehdi K."
                 value={contactName}
                 onChange={(e) => setContactName(e.target.value)}
               />
@@ -108,53 +121,56 @@ export function PartnerLeadModal({ open, onClose, onCreated }: PartnerLeadModalP
               <label className="mb-1 block text-xs font-medium text-ink-2">Email professionnel</label>
               <Input
                 type="email"
-                placeholder="contact@commerce.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
               />
             </div>
             <div>
               <label className="mb-1 block text-xs font-medium text-ink-2">Téléphone / WhatsApp</label>
-              <Input
-                placeholder="+243 ... / +33 ..."
+              <PhoneInput
                 value={phone}
-                onChange={(e) => setPhone(e.target.value)}
+                onChange={setPhone}
+                defaultCountry={countryCode}
               />
             </div>
           </div>
 
-          <div className="grid grid-cols-3 gap-3">
-            <div>
-              <label className="mb-1 block text-xs font-medium text-ink-2">Ville</label>
-              <Input
-                placeholder="Kinshasa"
-                value={city}
-                onChange={(e) => setCity(e.target.value)}
-              />
-            </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="mb-1 block text-xs font-medium text-ink-2">Pays</label>
-              <Input
-                placeholder="RDC"
-                value={country}
-                onChange={(e) => setCountry(e.target.value)}
+              <CountrySelect
+                value={countryCode}
+                onChange={(code) => {
+                  setCountryCode(code);
+                  const opt = getCountryOption(code);
+                  if (opt?.defaultCity) {
+                    setCity(opt.defaultCity);
+                  }
+                }}
               />
             </div>
             <div>
-              <label className="mb-1 block text-xs font-medium text-ink-2">Secteur</label>
-              <Input
-                placeholder="Restauration, Salon..."
-                value={sector}
-                onChange={(e) => setSector(e.target.value)}
+              <label className="mb-1 block text-xs font-medium text-ink-2">Ville (API)</label>
+              <CitySelect
+                countryCode={countryCode}
+                value={city}
+                onChange={setCity}
               />
             </div>
+          </div>
+
+          <div>
+            <label className="mb-1 block text-xs font-medium text-ink-2">Secteur d&apos;activité</label>
+            <Input
+              value={sector}
+              onChange={(e) => setSector(e.target.value)}
+            />
           </div>
 
           <div>
             <label className="mb-1 block text-xs font-medium text-ink-2">Notes & contexte</label>
             <textarea
               rows={3}
-              placeholder="Ex : Gérant intéressé par la dématérialisation sur Google Wallet. À relancer mardi."
               className="w-full rounded-md border border-line bg-surface p-2.5 text-xs text-ink focus-visible:outline-none focus-visible:border-cobalt"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}

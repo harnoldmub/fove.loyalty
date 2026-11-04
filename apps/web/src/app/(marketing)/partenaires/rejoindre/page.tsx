@@ -1,10 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, CheckCircle2, ShieldCheck, Sparkles } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/field";
+import { CitySelect, CountrySelect, detectClientCountry, getCountryOption } from "@/components/ui/country-select";
+import { PhoneInput } from "@/components/ui/phone-input";
 import { api } from "@/lib/api";
 
 export default function RejoindrePartenairePage() {
@@ -21,13 +23,23 @@ export default function RejoindrePartenairePage() {
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [company, setCompany] = useState("");
-  const [country, setCountry] = useState("République Démocratique du Congo");
+  const [countryCode, setCountryCode] = useState("CD");
   const [city, setCity] = useState("Kinshasa");
   const [partnerType, setPartnerType] = useState("SALES_FREELANCE");
   const [websiteUrl, setWebsiteUrl] = useState("");
   const [promotionStrategy, setPromotionStrategy] = useState("");
   const [networkSizeEstimate, setNetworkSizeEstimate] = useState("11-50");
   const [acceptTerms, setAcceptTerms] = useState(false);
+
+  // Détection automatique de la région du client (fuseau horaire + locale)
+  useEffect(() => {
+    const detected = detectClientCountry();
+    setCountryCode(detected);
+    const opt = getCountryOption(detected);
+    if (opt?.defaultCity) {
+      setCity(opt.defaultCity);
+    }
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,8 +50,15 @@ export default function RejoindrePartenairePage() {
       return;
     }
 
+    if (!city.trim()) {
+      setError("Veuillez renseigner votre ville principale.");
+      return;
+    }
+
     setLoading(true);
     try {
+      const selectedCountryLabel = getCountryOption(countryCode)?.label ?? countryCode;
+
       const res = await api.post<{ success: boolean; partnerId: string; code: string; status: string }>(
         "/partners/apply",
         {
@@ -47,7 +66,7 @@ export default function RejoindrePartenairePage() {
           email: email.trim().toLowerCase(),
           phone: phone.trim(),
           company: company.trim() || undefined,
-          country: country.trim(),
+          country: selectedCountryLabel,
           city: city.trim(),
           partnerType,
           websiteUrl: websiteUrl.trim() || undefined,
@@ -148,7 +167,6 @@ export default function RejoindrePartenairePage() {
               <label className="block text-xs font-medium text-ink-2 mb-1">Prénom & Nom complet *</label>
               <Input
                 required
-                placeholder="Ex : Arnold Mub"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
               />
@@ -161,18 +179,17 @@ export default function RejoindrePartenairePage() {
                 <Input
                   required
                   type="email"
-                  placeholder="partenaire@domaine.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                 />
               </div>
               <div>
                 <label className="block text-xs font-medium text-ink-2 mb-1">Téléphone / WhatsApp *</label>
-                <Input
+                <PhoneInput
                   required
-                  placeholder="+243 89 000 0000"
                   value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
+                  onChange={setPhone}
+                  defaultCountry={countryCode}
                 />
               </div>
             </div>
@@ -184,7 +201,6 @@ export default function RejoindrePartenairePage() {
                   Nom d&apos;agence ou activité (facultatif)
                 </label>
                 <Input
-                  placeholder="Ex : Digital Growth Studio"
                   value={company}
                   onChange={(e) => setCompany(e.target.value)}
                 />
@@ -207,24 +223,27 @@ export default function RejoindrePartenairePage() {
               </div>
             </div>
 
-            {/* Pays & Ville */}
+            {/* Pays (select avec drapeau) & Ville (API) */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-medium text-ink-2 mb-1">Pays *</label>
-                <Input
-                  required
-                  placeholder="Ex : République Démocratique du Congo, France..."
-                  value={country}
-                  onChange={(e) => setCountry(e.target.value)}
+                <CountrySelect
+                  value={countryCode}
+                  onChange={(code) => {
+                    setCountryCode(code);
+                    const opt = getCountryOption(code);
+                    if (opt?.defaultCity) {
+                      setCity(opt.defaultCity);
+                    }
+                  }}
                 />
               </div>
               <div>
                 <label className="block text-xs font-medium text-ink-2 mb-1">Ville principale *</label>
-                <Input
-                  required
-                  placeholder="Ex : Kinshasa, Lubumbashi, Paris..."
+                <CitySelect
+                  countryCode={countryCode}
                   value={city}
-                  onChange={(e) => setCity(e.target.value)}
+                  onChange={setCity}
                 />
               </div>
             </div>
@@ -236,7 +255,6 @@ export default function RejoindrePartenairePage() {
               </label>
               <Input
                 type="url"
-                placeholder="https://..."
                 value={websiteUrl}
                 onChange={(e) => setWebsiteUrl(e.target.value)}
               />
@@ -250,7 +268,6 @@ export default function RejoindrePartenairePage() {
               <textarea
                 required
                 rows={3}
-                placeholder="Décrivez brièvement votre démarche (démarchage direct, clients existants de votre agence, réseau de boutiques, réseaux sociaux...)"
                 className="w-full rounded-md border border-line bg-surface p-3 text-sm text-ink focus-visible:outline-none focus-visible:border-cobalt"
                 value={promotionStrategy}
                 onChange={(e) => setPromotionStrategy(e.target.value)}

@@ -1,4 +1,4 @@
-import { Check, ChevronDown, MapPin, Search } from "lucide-react";
+import { Check, ChevronDown, Loader2, MapPin, Search } from "lucide-react";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 
@@ -133,6 +133,78 @@ export const COUNTRY_OPTIONS: CountryOption[] = (() => {
 
 export function getCountryOption(code: string): CountryOption | undefined {
   return COUNTRY_OPTIONS.find((c) => c.code === code.toUpperCase());
+}
+
+/**
+ * Détecte automatiquement le pays du client en se basant sur :
+ * 1. Le fuseau horaire du navigateur (Intl.DateTimeFormat)
+ * 2. Les locales déclarées (navigator.languages)
+ * 3. Fallback sur "CD" (marché principal)
+ */
+export function detectClientCountry(): string {
+  if (typeof window === "undefined") return "CD";
+
+  // 1. Détection via le fuseau horaire
+  try {
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    if (tz) {
+      for (const [code, cTz] of Object.entries(COUNTRY_TIMEZONES)) {
+        if (cTz === tz) return code;
+      }
+      if (tz.includes("Kinshasa") || tz.includes("Lubumbashi")) return "CD";
+      if (tz.includes("Brazzaville")) return "CG";
+      if (tz.includes("Paris")) return "FR";
+      if (tz.includes("Brussels") || tz.includes("Bruxelles")) return "BE";
+      if (tz.includes("Zurich") || tz.includes("Geneva")) return "CH";
+      if (tz.includes("London")) return "GB";
+      if (tz.includes("Abidjan")) return "CI";
+      if (tz.includes("Dakar")) return "SN";
+      if (tz.includes("Douala") || tz.includes("Yaounde")) return "CM";
+      if (tz.includes("Libreville")) return "GA";
+      if (tz.includes("Luanda")) return "AO";
+      if (tz.includes("Kigali")) return "RW";
+      if (tz.includes("Bujumbura")) return "BI";
+      if (tz.includes("Casablanca")) return "MA";
+      if (tz.includes("Tunis")) return "TN";
+      if (tz.includes("Algiers")) return "DZ";
+      if (tz.includes("Montreal") || tz.includes("Toronto") || tz.includes("Vancouver")) return "CA";
+      if (tz.includes("New_York") || tz.includes("Chicago") || tz.includes("Los_Angeles")) return "US";
+      if (tz.includes("Lome")) return "TG";
+      if (tz.includes("Cotonou")) return "BJ";
+      if (tz.includes("Ouagadougou")) return "BF";
+      if (tz.includes("Bamako")) return "ML";
+      if (tz.includes("Conakry")) return "GN";
+      if (tz.includes("Niamey")) return "NE";
+      if (tz.includes("Ndjamena")) return "TD";
+      if (tz.includes("Bangui")) return "CF";
+      if (tz.includes("Antananarivo")) return "MG";
+      if (tz.includes("Johannesburg")) return "ZA";
+      if (tz.includes("Nairobi")) return "KE";
+      if (tz.includes("Berlin")) return "DE";
+      if (tz.includes("Madrid")) return "ES";
+      if (tz.includes("Rome")) return "IT";
+      if (tz.includes("Lisbon")) return "PT";
+      if (tz.includes("Amsterdam")) return "NL";
+    }
+  } catch {
+    // Continuer
+  }
+
+  // 2. Détection via les locales du navigateur (ex: fr-FR, fr-CD, fr-BE, en-US)
+  try {
+    const list = navigator.languages?.length ? navigator.languages : [navigator.language];
+    for (const lang of list) {
+      if (!lang) continue;
+      const sub = lang.split("-")[1]?.toUpperCase();
+      if (sub && sub.length === 2 && getCountryOption(sub)) {
+        return sub;
+      }
+    }
+  } catch {
+    // Continuer
+  }
+
+  return "CD";
 }
 
 /** Convertit un code ISO alpha-2 ("CD") en emoji drapeau ("🇨🇩"). */
@@ -352,6 +424,14 @@ export function CountrySelect({ id, value, onChange, disabled, ...aria }: Countr
   );
 }
 
+interface CityApiItem {
+  name: string;
+  admin1?: string;
+  countryCode?: string;
+}
+
+const geocodeCache = new Map<string, CityApiItem[]>();
+
 interface CitySelectProps {
   id?: string;
   countryCode: string;
@@ -364,7 +444,8 @@ interface CitySelectProps {
 }
 
 /**
- * Sélecteur de ville adapté au pays sélectionné, avec recherche et saisie libre.
+ * Sélecteur de ville connecté à l'API de géocodage mondiale,
+ * avec suggestions locales par pays, autocomplétion temps réel et saisie libre.
  */
 export function CitySelect({
   id,
@@ -372,7 +453,7 @@ export function CitySelect({
   value,
   onChange,
   disabled,
-  placeholder = "Sélectionner une ville…",
+  placeholder,
   ...aria
 }: CitySelectProps) {
   const fallbackId = useId();
@@ -381,28 +462,109 @@ export function CitySelect({
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [active, setActive] = useState(0);
+  const [apiCities, setApiCities] = useState<CityApiItem[]>([]);
+  const [apiLoading, setApiLoading] = useState(false);
   const root = useRef<HTMLDivElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
   const search = useRef<HTMLInputElement>(null);
   const list = useRef<HTMLUListElement>(null);
 
-  const cities = useMemo(() => {
-    const preset = SUGGESTED_CITIES[countryCode.toUpperCase()] ?? [];
-    if (value && !preset.some((c) => normalize(c) === normalize(value))) {
-      return [value, ...preset];
+  // Villes suggérées par défaut selon le pays choisi
+  const presetCities: CityApiItem[] = useMemo(() => {
+    const list = SUGGESTED_CITIES[countryCode.toUpperCase()] ?? [];
+    const items: CityApiItem[] = list.map((name) => ({
+      name,
+      countryCode: countryCode.toUpperCase(),
+    }));
+    if (value && !items.some((c) => normalize(c.name) === normalize(value))) {
+      items.unshift({ name: value, countryCode: countryCode.toUpperCase() });
     }
-    return preset;
+    return items;
   }, [countryCode, value]);
 
   const trimmedQuery = query.trim();
-  const filtered = useMemo(() => {
-    const q = normalize(trimmedQuery);
-    const matches = q ? cities.filter((c) => normalize(c).includes(q)) : cities;
-    if (trimmedQuery && !matches.some((c) => normalize(c) === q)) {
-      return [...matches, trimmedQuery];
+
+  // Recherche API de villes en temps réel
+  useEffect(() => {
+    if (!open || trimmedQuery.length < 2) {
+      setApiCities([]);
+      setApiLoading(false);
+      return;
     }
-    return matches;
-  }, [cities, trimmedQuery]);
+
+    const cacheKey = `${countryCode.toUpperCase()}:${normalize(trimmedQuery)}`;
+    if (geocodeCache.has(cacheKey)) {
+      setApiCities(geocodeCache.get(cacheKey)!);
+      return;
+    }
+
+    let activeFetch = true;
+    const controller = new AbortController();
+    setApiLoading(true);
+
+    const timer = setTimeout(async () => {
+      try {
+        const countryParam = countryCode ? `&country_code=${encodeURIComponent(countryCode.toLowerCase())}` : "";
+        const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(trimmedQuery)}&count=10&language=fr${countryParam}`;
+        const res = await fetch(url, { signal: controller.signal });
+        if (!res.ok) throw new Error("Geocoding API error");
+        const data = await res.json();
+        if (!activeFetch) return;
+
+        const rawResults: any[] = Array.isArray(data?.results) ? data.results : [];
+        const mapped: CityApiItem[] = rawResults.map((r: any) => ({
+          name: r.name,
+          admin1: r.admin1 || r.admin2 || undefined,
+          countryCode: r.country_code?.toUpperCase(),
+        }));
+
+        geocodeCache.set(cacheKey, mapped);
+        setApiCities(mapped);
+      } catch (err: any) {
+        if (err.name !== "AbortError") {
+          setApiCities([]);
+        }
+      } finally {
+        if (activeFetch) setApiLoading(false);
+      }
+    }, 250);
+
+    return () => {
+      activeFetch = false;
+      controller.abort();
+      clearTimeout(timer);
+    };
+  }, [open, trimmedQuery, countryCode]);
+
+  // Fusion intelligente : résultats API prioritaires + suggestions locales
+  const displayedCities = useMemo(() => {
+    const q = normalize(trimmedQuery);
+    if (!q) return presetCities;
+
+    const presetMatches = presetCities.filter((c) => normalize(c.name).includes(q));
+    const seen = new Set<string>();
+    const combined: CityApiItem[] = [];
+
+    // Priorité aux résultats API
+    for (const item of apiCities) {
+      const key = normalize(item.name);
+      if (!seen.has(key)) {
+        seen.add(key);
+        combined.push(item);
+      }
+    }
+
+    // Ajout des correspondances prédéfinies non encore présentes
+    for (const item of presetMatches) {
+      const key = normalize(item.name);
+      if (!seen.has(key)) {
+        seen.add(key);
+        combined.push(item);
+      }
+    }
+
+    return combined;
+  }, [trimmedQuery, presetCities, apiCities]);
 
   useEffect(() => {
     if (!open) return;
@@ -415,7 +577,6 @@ export function CitySelect({
     };
     document.addEventListener("pointerdown", onPointer);
     return () => document.removeEventListener("pointerdown", onPointer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
   useEffect(() => {
@@ -433,7 +594,7 @@ export function CitySelect({
   }, [active, open]);
 
   function openList() {
-    setActive(Math.max(0, filtered.findIndex((c) => normalize(c) === normalize(value))));
+    setActive(Math.max(0, displayedCities.findIndex((c) => normalize(c.name) === normalize(value))));
     setOpen(true);
   }
 
@@ -443,36 +604,38 @@ export function CitySelect({
     if (focusTrigger) trigger.current?.focus();
   }
 
-  function choose(city: string) {
-    onChange(city);
+  function choose(cityName: string) {
+    onChange(cityName);
     close();
   }
 
   function onSearchKey(event: React.KeyboardEvent) {
     if (event.key === "ArrowDown") {
       event.preventDefault();
-      setActive((i) => Math.min(filtered.length - 1, i + 1));
+      setActive((i) => Math.min(displayedCities.length - 1, i + 1));
     } else if (event.key === "ArrowUp") {
       event.preventDefault();
       setActive((i) => Math.max(0, i - 1));
     } else if (event.key === "Home") {
       setActive(0);
     } else if (event.key === "End") {
-      setActive(filtered.length - 1);
+      setActive(displayedCities.length - 1);
     } else if (event.key === "Enter") {
       event.preventDefault();
-      const option = filtered[active] ?? trimmedQuery;
+      const option = displayedCities[active]?.name ?? trimmedQuery;
       if (option) choose(option);
     } else if (event.key === "Escape") {
       event.preventDefault();
       close();
     } else if (event.key === "Tab") {
-      if (trimmedQuery && filtered.length === 1) {
-        onChange(trimmedQuery);
+      if (trimmedQuery && displayedCities.length === 1 && displayedCities[0]) {
+        onChange(displayedCities[0].name);
       }
       close(false);
     }
   }
+
+  const hasExactMatch = displayedCities.some((c) => normalize(c.name) === normalize(trimmedQuery));
 
   return (
     <div ref={root} className="relative">
@@ -496,55 +659,86 @@ export function CitySelect({
         className="flex h-11 w-full items-center gap-2.5 rounded-md bg-surface px-3.5 text-left text-[0.95rem] text-ink shadow-1 transition-shadow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cobalt aria-[invalid=true]:ring-2 aria-[invalid=true]:ring-danger disabled:opacity-60"
       >
         <MapPin className="size-4 shrink-0 text-ink-3" aria-hidden="true" />
-        <span className={cn("flex-1 truncate", !value && "text-ink-3")}>{value || placeholder}</span>
+        <span className={cn("flex-1 truncate", !value && "text-ink-3")}>
+          {value || placeholder || "Sélectionner une ville"}
+        </span>
         <ChevronDown className={cn("size-4 shrink-0 text-ink-3 transition-transform", open && "rotate-180")} aria-hidden="true" />
       </button>
 
       {open && (
         <div className="absolute inset-x-0 top-full z-50 mt-1.5 overflow-hidden rounded-[var(--radius)] bg-surface shadow-2 ring-1 ring-line">
           <div className="flex items-center gap-2 border-b border-line px-3">
-            <Search className="size-4 shrink-0 text-ink-3" aria-hidden="true" />
+            {apiLoading ? (
+              <Loader2 className="size-4 shrink-0 animate-spin text-cobalt" aria-hidden="true" />
+            ) : (
+              <Search className="size-4 shrink-0 text-ink-3" aria-hidden="true" />
+            )}
             <input
               ref={search}
               type="text"
               value={query}
               onChange={(e) => { setQuery(e.target.value); setActive(0); }}
               onKeyDown={onSearchKey}
-              placeholder="Rechercher ou saisir une ville…"
-              aria-label="Rechercher ou saisir une ville"
-              aria-controls={listId}
+              aria-label="Rechercher une ville"
               autoComplete="off"
               className="h-10 w-full bg-transparent text-sm text-ink outline-none placeholder:text-ink-3"
             />
           </div>
           <ul ref={list} id={listId} role="listbox" aria-label="Ville" className="max-h-60 overflow-y-auto overscroll-contain py-1">
-            {filtered.length === 0 && (
-              <li className="px-3.5 py-3 text-sm text-ink-3">Saisissez le nom de votre ville ci-dessus.</li>
+            {displayedCities.length === 0 && !apiLoading && !trimmedQuery && (
+              <li className="px-3.5 py-3 text-sm text-ink-3">Saisissez un nom de ville pour rechercher.</li>
             )}
-            {filtered.map((city, index) => {
-              const isCustom = trimmedQuery === city && !cities.some((c) => normalize(c) === normalize(city));
-              const isSelected = normalize(city) === normalize(value);
+            {displayedCities.map((item, index) => {
+              const isSelected = normalize(item.name) === normalize(value);
               return (
-                <li key={city} role="presentation">
+                <li key={`${item.name}-${index}`} role="presentation">
                   <div
                     role="option"
                     data-index={index}
                     aria-selected={isSelected}
                     onPointerMove={() => setActive(index)}
-                    onClick={() => choose(city)}
+                    onClick={() => choose(item.name)}
                     className={cn(
-                      "flex cursor-pointer items-center gap-2.5 px-3.5 py-2 text-sm text-ink",
+                      "flex cursor-pointer items-center justify-between gap-2.5 px-3.5 py-2 text-sm text-ink",
                       index === active && "bg-surface-2",
                       isSelected && "font-semibold",
                     )}
                   >
-                    <MapPin className="size-4 shrink-0 text-ink-3" aria-hidden="true" />
-                    <span className="flex-1 truncate">{isCustom ? `Utiliser « ${city} »` : city}</span>
-                    {isSelected && <Check className="size-4 text-cobalt" aria-hidden="true" />}
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <MapPin className="size-4 shrink-0 text-ink-3" aria-hidden="true" />
+                      <span className="truncate">
+                        {item.name}
+                        {item.admin1 && (
+                          <span className="ml-1.5 text-xs font-normal text-ink-3">
+                            ({item.admin1})
+                          </span>
+                        )}
+                      </span>
+                    </div>
+                    {isSelected && <Check className="size-4 shrink-0 text-cobalt" aria-hidden="true" />}
                   </div>
                 </li>
               );
             })}
+            {trimmedQuery && !hasExactMatch && (
+              <li role="presentation" className="border-t border-line mt-1 pt-1">
+                <div
+                  role="option"
+                  data-index={displayedCities.length}
+                  onPointerMove={() => setActive(displayedCities.length)}
+                  onClick={() => choose(trimmedQuery)}
+                  className={cn(
+                    "flex cursor-pointer items-center gap-2.5 px-3.5 py-2 text-sm text-ink",
+                    active === displayedCities.length && "bg-surface-2",
+                  )}
+                >
+                  <MapPin className="size-4 shrink-0 text-cobalt" aria-hidden="true" />
+                  <span className="flex-1 truncate">
+                    Utiliser <strong className="font-semibold text-cobalt">« {trimmedQuery} »</strong>
+                  </span>
+                </div>
+              </li>
+            )}
           </ul>
         </div>
       )}

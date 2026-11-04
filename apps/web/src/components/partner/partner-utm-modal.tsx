@@ -59,7 +59,6 @@ export function PartnerUtmModal({ open, partnerLink, onClose }: PartnerUtmModalP
           <div>
             <label className="block text-xs font-medium text-ink-2 mb-1">Source (utm_source)</label>
             <Input
-              placeholder="whatsapp, linkedin, flyer, email..."
               value={source}
               onChange={(e) => setSource(e.target.value)}
             />
@@ -68,7 +67,6 @@ export function PartnerUtmModal({ open, partnerLink, onClose }: PartnerUtmModalP
           <div>
             <label className="block text-xs font-medium text-ink-2 mb-1">Support (utm_medium)</label>
             <Input
-              placeholder="social, cpc, qr, direct..."
               value={medium}
               onChange={(e) => setMedium(e.target.value)}
             />
@@ -77,7 +75,6 @@ export function PartnerUtmModal({ open, partnerLink, onClose }: PartnerUtmModalP
           <div>
             <label className="block text-xs font-medium text-ink-2 mb-1">Nom de campagne (utm_campaign)</label>
             <Input
-              placeholder="prospection_kinshasa, salon_retail..."
               value={campaign}
               onChange={(e) => setCampaign(e.target.value)}
             />
@@ -99,3 +96,4 @@ export function PartnerUtmModal({ open, partnerLink, onClose }: PartnerUtmModalP
     </div>
   );
 }
+
