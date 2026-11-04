@@ -3,7 +3,8 @@
 import { rewardValueLabel, type RewardKind } from "@fove/shared";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState, useSyncExternalStore } from "react";
-import { CheckCircle2, Download, Gift, PartyPopper, Share, Smartphone, Sparkles } from "lucide-react";
+import { Bookmark, Check, CheckCircle2, Download, Gift, PartyPopper, Share, Smartphone, Sparkles } from "lucide-react";
+import { toast } from "sonner";
 import { QRCodeSVG } from "qrcode.react";
 import { Button } from "@/components/ui/button";
 import { GoogleWalletButton } from "@/components/google-wallet-button";
@@ -63,6 +64,76 @@ function InstallHint() {
   return null;
 }
 
+function useDeviceOS(): "ios" | "android" | "other" {
+  return useSyncExternalStore(
+    () => () => undefined,
+    () => {
+      if (typeof navigator === "undefined") return "other";
+      const ua = navigator.userAgent;
+      if (/iPhone|iPad|iPod/i.test(ua)) return "ios";
+      if (/Macintosh/i.test(ua) && navigator.maxTouchPoints > 1) return "ios";
+      if (/Android/i.test(ua)) return "android";
+      return "other";
+    },
+    () => "other",
+  );
+}
+
+function BookmarkButton({ tenantName }: { tenantName: string }) {
+  const [copied, setCopied] = useState(false);
+
+  const handleBookmark = async () => {
+    const url = typeof window !== "undefined" ? window.location.href : "";
+    const title = `Carte fidélité · ${tenantName}`;
+
+    if (typeof navigator !== "undefined" && typeof navigator.share === "function") {
+      try {
+        await navigator.share({
+          title,
+          text: `Ma carte de fidélité chez ${tenantName}`,
+          url,
+        });
+        return;
+      } catch (err) {
+        if ((err as Error)?.name === "AbortError") return;
+      }
+    }
+
+    if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
+      try {
+        await navigator.clipboard.writeText(url);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2500);
+        const isMac = /Macintosh|Mac OS X/i.test(navigator.userAgent);
+        toast.success(
+          isMac
+            ? "Lien copié ! Appuyez sur Cmd+D pour ajouter cette carte à vos signets."
+            : "Lien copié ! Appuyez sur Ctrl+D pour ajouter cette carte à vos favoris.",
+        );
+        return;
+      } catch {
+        // fallback
+      }
+    }
+
+    toast.message("Astuce : ajoutez cette page aux favoris de votre navigateur pour y accéder rapidement.");
+  };
+
+  return (
+    <Button
+      type="button"
+      variant="secondary"
+      size="sm"
+      className="rounded-full shadow-xs hover:bg-surface-2 transition-all"
+      onClick={handleBookmark}
+      aria-label="Ajouter la carte aux signets ou favoris"
+    >
+      {copied ? <Check className="size-3.5 text-mint" /> : <Bookmark className="size-3.5" />}
+      <span>{copied ? "Lien copié !" : "Ajouter aux signets"}</span>
+    </Button>
+  );
+}
+
 export function CardView({ token, initial }: { token: string; initial: CardData }) {
   const fresh = useSearchParams().get("new") === "1";
   const [data, setData] = useState(initial);
@@ -79,6 +150,15 @@ export function CardView({ token, initial }: { token: string; initial: CardData 
   const { tenant, program, card } = data;
   const stamps = program.mode === "STAMPS";
   const stampReward = stamps ? (data.rewards[0]?.name ?? null) : null;
+
+  const os = useDeviceOS();
+  const isIos = os === "ios";
+  const isAndroid = os === "android";
+  // Sur iPhone : exclusivement Apple Wallet
+  // Sur Android : exclusivement Google Wallet
+  // Sur Ordinateur / Autre : les deux selon disponibilité
+  const showAppleWallet = Boolean(data.appleWallet && (isIos || os === "other"));
+  const showGoogleWallet = isAndroid || os === "other";
 
   // La carte est mémorisée sur ce téléphone : la page d'inscription proposera « Ouvrir ma carte ».
   useEffect(() => {
@@ -239,11 +319,21 @@ export function CardView({ token, initial }: { token: string; initial: CardData 
         </div>
 
         {card.status === "ACTIVE" && (
-          <section aria-label="Ajouter la carte à un portefeuille mobile" className="grid justify-items-center gap-3 rounded-[var(--radius-lg)] bg-surface p-4 shadow-1">
+          <section aria-label="Gardez votre carte toujours à portée de main" className="grid justify-items-center gap-3 rounded-[var(--radius-lg)] bg-surface p-4 shadow-1">
             <p className="text-center text-sm font-medium text-ink-2">Gardez votre carte toujours à portée de main</p>
-            <div className="flex flex-wrap items-center justify-center gap-3">
-              <GoogleWalletButton token={token} />
-              {data.appleWallet && <AppleWalletButton token={token} />}
+            {(showAppleWallet || showGoogleWallet) && (
+              <div className="flex flex-wrap items-center justify-center gap-3">
+                {showAppleWallet && <AppleWalletButton token={token} />}
+                {showGoogleWallet && <GoogleWalletButton token={token} />}
+              </div>
+            )}
+            <div className="flex flex-wrap items-center justify-center gap-2 pt-0.5">
+              <Button asChild variant="secondary" size="sm" className="rounded-full shadow-xs hover:bg-surface-2 transition-all">
+                <a href={`/api/public/cards/${token}/carte.png?download=1`} download aria-label="Télécharger la carte en image (PNG)">
+                  <Download className="size-3.5" /> Enregistrer l'image
+                </a>
+              </Button>
+              <BookmarkButton tenantName={tenant.name} />
             </div>
           </section>
         )}
@@ -299,23 +389,6 @@ export function CardView({ token, initial }: { token: string; initial: CardData 
 
         {stamps && card.status === "ACTIVE" && <p role="status" className="-mt-1 text-center text-sm text-ink-2">{stampsStatus(card.balance, program.stampsTarget, stampReward)}</p>}
 
-        {card.status === "ACTIVE" && (
-          <div className="grid justify-items-center gap-3">
-            {/* Téléchargements : à garder dans la galerie ou à imprimer. */}
-            <div className="flex gap-2">
-              <Button asChild variant="secondary" size="sm" className="rounded-full">
-                <a href={`/api/public/cards/${token}/carte.png?download=1`} download aria-label="Télécharger la carte en image (PNG)">
-                  <Download /> Image
-                </a>
-              </Button>
-              <Button asChild variant="secondary" size="sm" className="rounded-full">
-                <a href={`/api/public/cards/${token}/carte.pdf?download=1`} download aria-label="Télécharger la carte en PDF">
-                  <Download /> PDF
-                </a>
-              </Button>
-            </div>
-          </div>
-        )}
 
         {!stamps && data.nextReward && (
           <div className="rounded-[var(--radius-lg)] bg-surface p-5 shadow-1">
