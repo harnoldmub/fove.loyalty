@@ -49,11 +49,18 @@ export function PhoneInput({
   const inputId = id ?? fallbackId;
   const listId = `${inputId}-country-list`;
 
+  // Liste ordonnée des pays avec indicatif (les indicatifs les plus longs en premier pour éviter les faux positifs)
+  const countriesWithCode = useMemo(() => {
+    return COUNTRY_OPTIONS.map((c) => ({
+      ...c,
+      callingCode: getCallingCode(c.code),
+    })).sort((a, b) => b.callingCode.length - a.callingCode.length);
+  }, []);
+
   // Détection du pays initial à partir de la valeur si elle commence par un "+"
   const [selectedCountry, setSelectedCountry] = useState<string>(() => {
     if (value && value.startsWith("+")) {
-      // Trouver si un pays correspond au préfixe
-      const match = COUNTRY_OPTIONS.find((c) => value.startsWith(getCallingCode(c.code)));
+      const match = countriesWithCode.find((c) => value.startsWith(c.callingCode));
       if (match) return match.code;
     }
     return defaultCountry.toUpperCase();
@@ -62,22 +69,38 @@ export function PhoneInput({
   const callingCode = useMemo(() => getCallingCode(selectedCountry), [selectedCountry]);
 
   // Extraction du numéro local (sans l'indicatif)
-  const localNumber = useMemo(() => {
+  const computeLocalNumber = useMemo(() => {
     if (!value) return "";
     if (value.startsWith(callingCode)) {
       return value.slice(callingCode.length).trim();
     }
+    if (value.startsWith("+")) {
+      const match = countriesWithCode.find((c) => value.startsWith(c.callingCode));
+      if (match) return value.slice(match.callingCode.length).trim();
+    }
     return value;
-  }, [value, callingCode]);
-  // La saisie locale reste indépendante de la valeur E.164 envoyée au formulaire.
-  // Ainsi, le premier « 0 » ne disparaît plus pendant que l'utilisateur tape.
-  const [displayNumber, setDisplayNumber] = useState(localNumber);
+  }, [value, callingCode, countriesWithCode]);
+
+  const [displayNumber, setDisplayNumber] = useState(computeLocalNumber);
   const lastEmittedValue = useRef(value);
 
+  // Synchronisation si la valeur change depuis l'extérieur (ex: réinitialisation du formulaire)
   useEffect(() => {
-    if (value !== lastEmittedValue.current) setDisplayNumber(localNumber);
-    lastEmittedValue.current = value;
-  }, [localNumber, value]);
+    if (value !== lastEmittedValue.current) {
+      if (!value) {
+        setDisplayNumber("");
+      } else if (value.startsWith("+")) {
+        const match = countriesWithCode.find((c) => value.startsWith(c.callingCode));
+        if (match && match.code !== selectedCountry) {
+          setSelectedCountry(match.code);
+        }
+        setDisplayNumber(computeLocalNumber);
+      } else {
+        setDisplayNumber(value);
+      }
+      lastEmittedValue.current = value;
+    }
+  }, [value, computeLocalNumber, countriesWithCode, selectedCountry]);
 
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -112,14 +135,6 @@ export function PhoneInput({
     return () => document.removeEventListener("pointerdown", onPointer);
   }, [open]);
 
-  // Liste filtrée des pays avec leur indicatif
-  const countriesWithCode = useMemo(() => {
-    return COUNTRY_OPTIONS.map((c) => ({
-      ...c,
-      callingCode: getCallingCode(c.code),
-    }));
-  }, []);
-
   const filtered = useMemo(() => {
     const q = normalize(query.trim());
     if (!q) return countriesWithCode;
@@ -133,9 +148,19 @@ export function PhoneInput({
     });
   }, [query, countriesWithCode]);
 
-  // Défilement automatique vers l'élément actif
+  // Défilement automatique interne (uniquement dans la liste, SANS déclencher de scroll sur la page)
   useEffect(() => {
-    listRef.current?.querySelector(`[data-index="${active}"]`)?.scrollIntoView({ block: "nearest" });
+    if (!open || !listRef.current) return;
+    const item = listRef.current.querySelector<HTMLElement>(`[data-index="${active}"]`);
+    if (!item) return;
+    const list = listRef.current;
+    const itemTop = item.offsetTop;
+    const itemBottom = itemTop + item.offsetHeight;
+    if (itemTop < list.scrollTop) {
+      list.scrollTop = itemTop;
+    } else if (itemBottom > list.scrollTop + list.clientHeight) {
+      list.scrollTop = itemBottom - list.clientHeight;
+    }
   }, [active, open]);
 
   function handleSelectCountry(code: string) {
@@ -144,26 +169,36 @@ export function PhoneInput({
     setQuery("");
 
     const newCallingCode = getCallingCode(code);
-    if (displayNumber) {
-      const clean = displayNumber.replace(/\D/g, "").replace(/^0+/, "");
-      const nextValue = `${newCallingCode}${clean}`;
+    const digits = displayNumber.replace(/\D/g, "");
+    const withoutZero = digits.replace(/^0+/, "");
+    if (withoutZero) {
+      const nextValue = `${newCallingCode}${withoutZero}`;
       lastEmittedValue.current = nextValue;
       onChange(nextValue);
+    } else {
+      lastEmittedValue.current = "";
+      onChange("");
     }
     numberInputRef.current?.focus();
   }
 
   function handleNumberChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const raw = e.target.value;
+    let raw = e.target.value;
     setDisplayNumber(raw);
 
-    // Si l'utilisateur colle un numéro international complet commençant par "+"
+    // Si l'utilisateur tape ou colle un numéro au format international (avec "+" ou "00")
+    if (raw.startsWith("00")) {
+      raw = `+${raw.slice(2)}`;
+    }
+
     if (raw.startsWith("+")) {
       const match = countriesWithCode.find((c) => raw.startsWith(c.callingCode));
       if (match) {
         setSelectedCountry(match.code);
-        const nextValue = raw.replace(/[^+\d]/g, "");
-        setDisplayNumber(nextValue.slice(match.callingCode.length));
+        const cleanAll = raw.replace(/[^+\d]/g, "");
+        const localPart = cleanAll.slice(match.callingCode.length).replace(/^0+/, "");
+        setDisplayNumber(localPart);
+        const nextValue = localPart ? `${match.callingCode}${localPart}` : "";
         lastEmittedValue.current = nextValue;
         onChange(nextValue);
         return;
@@ -173,16 +208,24 @@ export function PhoneInput({
       return;
     }
 
-    // Retirer le 0 initial pour le format international canonique E.164
-    const cleanLocal = raw.trim();
-    if (!cleanLocal) {
+    // Numéro national standard
+    const digits = raw.replace(/\D/g, "");
+    const withoutZero = digits.replace(/^0+/, "");
+
+    // Si l'utilisateur n'a encore tapé que des zéros ou a vidé le champ : ne pas envoyer "+243" incomplet
+    if (!withoutZero) {
       lastEmittedValue.current = "";
       onChange("");
       return;
     }
-    const normalizedDigits = cleanLocal.replace(/\D/g, "");
-    const withoutLeadingZero = normalizedDigits.replace(/^0+/, "");
-    const nextValue = `${callingCode}${withoutLeadingZero}`;
+
+    // Si l'utilisateur tape déjà son indicatif pays sans le signe "+" (ex: 24381... avec indicatif +243)
+    const rawCallingDigits = callingCode.replace(/\D/g, "");
+    const cleanDigits = withoutZero.startsWith(rawCallingDigits) && withoutZero.length > rawCallingDigits.length
+      ? withoutZero.slice(rawCallingDigits.length).replace(/^0+/, "")
+      : withoutZero;
+
+    const nextValue = `${callingCode}${cleanDigits}`;
     lastEmittedValue.current = nextValue;
     onChange(nextValue);
   }
@@ -246,7 +289,7 @@ export function PhoneInput({
             id={listId}
             role="listbox"
             aria-label="Sélectionnez un pays pour l’indicatif"
-            className="max-h-[min(14rem,36dvh)] overflow-y-auto overscroll-contain py-1 [scrollbar-gutter:stable]"
+            className="max-h-[min(14rem,36dvh)] overflow-y-auto overscroll-contain py-1"
           >
             {filtered.length === 0 ? (
               <li className="px-3.5 py-3 text-center text-xs text-ink-3">Aucun pays trouvé.</li>

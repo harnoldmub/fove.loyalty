@@ -220,7 +220,17 @@ export function CountrySelect({ id, value, onChange, disabled, ...aria }: Countr
   }, [open]);
 
   useEffect(() => {
-    list.current?.querySelector(`[data-index="${active}"]`)?.scrollIntoView({ block: "nearest" });
+    if (!open || !list.current) return;
+    const item = list.current.querySelector<HTMLElement>(`[data-index="${active}"]`);
+    if (!item) return;
+    const container = list.current;
+    const itemTop = item.offsetTop;
+    const itemBottom = itemTop + item.offsetHeight;
+    if (itemTop < container.scrollTop) {
+      container.scrollTop = itemTop;
+    } else if (itemBottom > container.scrollTop + container.clientHeight) {
+      container.scrollTop = itemBottom - container.clientHeight;
+    }
   }, [active, open]);
 
   function openList() {
@@ -409,7 +419,17 @@ export function CitySelect({
   }, [open]);
 
   useEffect(() => {
-    list.current?.querySelector(`[data-index="${active}"]`)?.scrollIntoView({ block: "nearest" });
+    if (!open || !list.current) return;
+    const item = list.current.querySelector<HTMLElement>(`[data-index="${active}"]`);
+    if (!item) return;
+    const container = list.current;
+    const itemTop = item.offsetTop;
+    const itemBottom = itemTop + item.offsetHeight;
+    if (itemTop < container.scrollTop) {
+      container.scrollTop = itemTop;
+    } else if (itemBottom > container.scrollTop + container.clientHeight) {
+      container.scrollTop = itemBottom - container.clientHeight;
+    }
   }, [active, open]);
 
   function openList() {

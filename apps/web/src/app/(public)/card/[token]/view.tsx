@@ -3,7 +3,7 @@
 import { rewardValueLabel, type RewardKind } from "@fove/shared";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState, useSyncExternalStore } from "react";
-import { Download, Gift, Share, Smartphone } from "lucide-react";
+import { CheckCircle2, Download, Gift, PartyPopper, Share, Smartphone, Sparkles } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { Button } from "@/components/ui/button";
 import { GoogleWalletButton } from "@/components/google-wallet-button";
@@ -13,6 +13,7 @@ import { rememberCard } from "@/lib/remembered-cards";
 import { Field, Input } from "@/components/ui/field";
 import { ErrorNote } from "@/components/ui/misc";
 import { api, errorMessage } from "@/lib/api";
+import { playChime } from "@/lib/sound";
 import { cn, formatDate, formatNumber, KIND_LABEL } from "@/lib/utils";
 
 export interface CardData {
@@ -68,6 +69,13 @@ export function CardView({ token, initial }: { token: string; initial: CardData 
   const [code, setCode] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
+  const [newlyEarned, setNewlyEarned] = useState<number[]>([]);
+  const [liveNotice, setLiveNotice] = useState<{
+    kind: "earn" | "redeem" | "target";
+    message: string;
+    sub?: string;
+  } | null>(null);
+
   const { tenant, program, card } = data;
   const stamps = program.mode === "STAMPS";
   const stampReward = stamps ? (data.rewards[0]?.name ?? null) : null;
@@ -79,10 +87,115 @@ export function CardView({ token, initial }: { token: string; initial: CardData 
 
   const refresh = async () => setData(await api.get<CardData>(`/public/cards/${token}`));
 
+  // Synchronisation en temps réel dès le scan en caisse
+  useEffect(() => {
+    let active = true;
+    let timer: NodeJS.Timeout | null = null;
+
+    const checkUpdate = async () => {
+      if (!active || typeof document === "undefined" || document.visibilityState !== "visible") return;
+      try {
+        const freshData = await api.get<CardData>(`/public/cards/${token}`);
+        if (!active) return;
+        setData((prev) => {
+          if (freshData.card.balance !== prev.card.balance) {
+            const delta = freshData.card.balance - prev.card.balance;
+            if (delta > 0) {
+              playChime("earn");
+              if (typeof navigator !== "undefined" && navigator.vibrate) navigator.vibrate([60, 60, 60]);
+              const indices: number[] = [];
+              for (let i = prev.card.balance; i < freshData.card.balance; i++) indices.push(i);
+              setNewlyEarned(indices);
+              setTimeout(() => { if (active) setNewlyEarned([]); }, 4500);
+
+              if (freshData.program.mode === "STAMPS" && freshData.card.balance >= freshData.program.stampsTarget) {
+                setLiveNotice({
+                  kind: "target",
+                  message: "🎉 Félicitations ! Votre carte est complète !",
+                  sub: `Votre récompense « ${freshData.rewards[0]?.name ?? "Récompense"} » est débloquée.`,
+                });
+              } else {
+                setLiveNotice({
+                  kind: "earn",
+                  message: freshData.program.mode === "STAMPS"
+                    ? `+${delta} tampon${delta > 1 ? "s" : ""} validé en caisse !`
+                    : `+${formatNumber(delta)} point${delta > 1 ? "s" : ""} crédité en caisse !`,
+                  sub: "Votre solde est mis à jour à l’instant.",
+                });
+              }
+              setTimeout(() => { if (active) setLiveNotice(null); }, 6000);
+            } else if (delta < 0) {
+              playChime("redeem");
+              setLiveNotice({
+                kind: "redeem",
+                message: "Récompense validée en caisse ! 🎁",
+                sub: "Merci pour votre fidélité.",
+              });
+              setTimeout(() => { if (active) setLiveNotice(null); }, 6000);
+            }
+            return freshData;
+          }
+          if (freshData.card.status !== prev.card.status) return freshData;
+          return prev;
+        });
+      } catch {
+        // En cas d'aléa réseau en boutique, réessai silencieux au tour suivant
+      }
+    };
+
+    const scheduleNext = () => {
+      timer = setTimeout(async () => {
+        await checkUpdate();
+        if (active) scheduleNext();
+      }, 1500);
+    };
+    scheduleNext();
+
+    const onVisible = () => {
+      if (document.visibilityState === "visible") void checkUpdate();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("focus", onVisible);
+
+    return () => {
+      active = false;
+      if (timer) clearTimeout(timer);
+      document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("focus", onVisible);
+    };
+  }, [token]);
+
   return (
     <div className="min-h-dvh pb-12" style={{ ["--brand" as string]: tenant.primaryColor }}>
       <main id="contenu" className="mx-auto grid max-w-md gap-5 px-4 pt-6">
-        {fresh && card.status === "ACTIVE" && (
+        {/* Notification temps réel lors du passage en caisse */}
+        {liveNotice && (
+          <div
+            role="status"
+            className={cn(
+              "flex items-center gap-3 rounded-[var(--radius-lg)] p-4 text-white shadow-2 animate-in slide-in-from-top-4 duration-300",
+              liveNotice.kind === "target"
+                ? "bg-gradient-to-r from-[#d97706] to-[#b45309]"
+                : liveNotice.kind === "earn"
+                  ? "bg-gradient-to-r from-mint to-[#0e7452]"
+                  : "bg-gradient-to-r from-cobalt to-[#1e3a8a]",
+            )}
+          >
+            {liveNotice.kind === "target" ? (
+              <PartyPopper className="size-6 shrink-0 animate-bounce text-[#fef3c7]" />
+            ) : liveNotice.kind === "earn" ? (
+              <Sparkles className="size-6 shrink-0 text-white" />
+            ) : (
+              <Gift className="size-6 shrink-0 text-white" />
+            )}
+            <div className="min-w-0">
+              <p className="font-display font-semibold text-base leading-tight">{liveNotice.message}</p>
+              {liveNotice.sub && <p className="text-xs text-white/90 mt-0.5">{liveNotice.sub}</p>}
+            </div>
+          </div>
+        )}
+
+        {fresh && card.status === "ACTIVE" && !liveNotice && (
           <p role="status" className="rounded-md bg-mint-soft px-4 py-3 text-sm font-medium text-mint">
             Votre carte est prête, {data.customer.firstName}. Montrez ce QR code en caisse à chaque achat.
           </p>
@@ -99,7 +212,7 @@ export function CardView({ token, initial }: { token: string; initial: CardData 
 
           {stamps ? (
             <div className="mt-6">
-              <Stamps count={card.balance} target={program.stampsTarget} reward={stampReward} tone="brand" />
+              <Stamps count={card.balance} target={program.stampsTarget} reward={stampReward} tone="brand" newlyEarned={newlyEarned} />
             </div>
           ) : (
             <p className="mt-6 font-display text-5xl font-semibold tabular">
@@ -115,6 +228,15 @@ export function CardView({ token, initial }: { token: string; initial: CardData 
             {stamps && <p className="font-display text-2xl font-semibold tabular">{Math.min(card.balance, program.stampsTarget)}<span className="text-base text-white/70">/{program.stampsTarget}</span></p>}
           </div>
         </section>
+
+        {/* Indicateur de direct avec la caisse */}
+        <div className="flex items-center justify-center gap-2 text-xs text-ink-3" aria-live="polite">
+          <span className="relative flex size-2">
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-mint opacity-75" />
+            <span className="relative inline-flex size-2 rounded-full bg-mint" />
+          </span>
+          <span>Passage en caisse synchronisé en temps réel</span>
+        </div>
 
         {card.status === "ACTIVE" && (
           <section aria-label="Ajouter la carte à un portefeuille mobile" className="grid justify-items-center gap-3 rounded-[var(--radius-lg)] bg-surface p-4 shadow-1">
