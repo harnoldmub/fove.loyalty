@@ -26,6 +26,7 @@ model User {
   passwordHash     String
   emailVerifiedAt  DateTime?
   isSuperAdmin     Boolean   @default(false)
+  adminRole        AdminRole?
   failedLoginCount Int       @default(0)
   lockedUntil      DateTime?
   createdAt        DateTime  @default(now())
@@ -137,6 +138,11 @@ model Tenant {
   media          MediaAsset[]
   customerNotes  CustomerNote[]
   appleWalletRegistrations AppleWalletRegistration[]
+  invoices       Invoice[]
+  payments       Payment[]
+  partnerCommissions PartnerCommission[]
+  referralRewardsGiven ReferralReward[] @relation("ReferrerTenant")
+  referralRewardsReceived ReferralReward[] @relation("ReferredTenant")
 }
 
 model TenantSettings {
@@ -642,6 +648,8 @@ model Subscription {
   contractPriceYearlyCents Int?
   createdAt            DateTime           @default(now())
   updatedAt            DateTime           @updatedAt
+
+  invoices             Invoice[]
 }
 
 /// Événements de facturation déjà traités : un webhook rejoué n'a aucun effet.
@@ -905,5 +913,332 @@ model AppleWalletRegistration {
   @@index([serialNumber])
   @@index([passTypeIdentifier])
   @@index([tenantId])
+}
+
+// ---------------------------------------------------------------------------
+// Centre financier, facturation, commissions et trésorerie
+// ---------------------------------------------------------------------------
+
+enum AdminRole {
+  SUPER_ADMIN
+  ASSOCIATE
+  FINANCE_MANAGER
+  SUPPORT
+}
+
+enum InvoiceStatus {
+  DRAFT
+  OPEN
+  PAID
+  VOID
+  UNCOLLECTIBLE
+}
+
+model Invoice {
+  id                  String        @id @default(uuid()) @db.Uuid
+  number              String        @unique /// Numéro séquentiel lisible (ex: INV-2026-0001)
+  tenantId            String        @db.Uuid
+  tenant              Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  subscriptionId      String?       @db.Uuid
+  subscription        Subscription? @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
+
+  status              InvoiceStatus @default(OPEN)
+  currency            String        @default("USD")
+  amountSubtotalCents Int           /// Montant HT en centimes
+  amountTaxCents      Int           @default(0) /// Taxes collectées
+  amountDiscountCents Int           @default(0) /// Remises / crédits appliqués
+  amountTotalCents    Int           /// Montant total TTC facturé
+  amountPaidCents     Int           @default(0) /// Montant réellement encaissé
+  amountDueCents      Int           @default(0) /// Reste à payer
+
+  periodStart         DateTime?
+  periodEnd           DateTime?
+  dueDate             DateTime?
+  paidAt              DateTime?
+  voidedAt            DateTime?
+
+  stripeInvoiceId     String?       @unique
+  pdfUrl              String?
+  hostedInvoiceUrl    String?
+  billingReason       String?       /// subscription_create, subscription_cycle, manual, custom_contract
+  metadata            Json?
+
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @updatedAt
+
+  lines               InvoiceLine[]
+  payments            Payment[]
+  partnerCommissions  PartnerCommission[]
+
+  @@index([tenantId, createdAt])
+  @@index([status])
+}
+
+model InvoiceLine {
+  id                  String   @id @default(uuid()) @db.Uuid
+  invoiceId           String   @db.Uuid
+  invoice             Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  description         String
+  quantity            Int      @default(1)
+  unitAmountCents     Int
+  amountSubtotalCents Int
+  amountTaxCents      Int      @default(0)
+  amountTotalCents    Int
+  currency            String   @default("USD")
+  planId              String?  @db.Uuid
+
+  @@index([invoiceId])
+}
+
+enum PaymentStatus {
+  PENDING
+  PROCESSING
+  SUCCEEDED
+  FAILED
+  CANCELLED
+  PARTIALLY_REFUNDED
+  REFUNDED
+  DISPUTED
+}
+
+enum PaymentProvider {
+  STRIPE
+  MANUAL
+  MOCK
+  BANK_TRANSFER
+  MOBILE_MONEY
+}
+
+model Payment {
+  id                   String          @id @default(uuid()) @db.Uuid
+  reference            String          @unique /// Référence unique (ex: PAY-2026-0001)
+  tenantId             String          @db.Uuid
+  tenant               Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  invoiceId            String?         @db.Uuid
+  invoice              Invoice?        @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
+
+  provider             PaymentProvider @default(STRIPE)
+  providerPaymentId    String?         /// ID Stripe PaymentIntent / Charge
+  amountCents          Int             /// Montant brut payé
+  amountRefundedCents  Int             @default(0)
+  feeCents             Int             @default(0) /// Frais du prestataire (ex: Stripe)
+  netCents             Int             /// Montant net reçu (amountCents - feeCents)
+  currency             String          @default("USD")
+  status               PaymentStatus   @default(PENDING)
+  method               String?         /// card, bank_transfer, airtel_money, orange_money, mpesa, cash
+  failureCode          String?
+  failureMessage       String?
+
+  partnerId            String?         @db.Uuid
+  partner              Partner?        @relation(fields: [partnerId], references: [id], onDelete: SetNull)
+
+  confirmedAt          DateTime?
+  createdAt            DateTime        @default(now())
+  updatedAt            DateTime        @updatedAt
+
+  refunds              Refund[]
+  partnerCommissions   PartnerCommission[]
+
+  @@index([tenantId, createdAt])
+  @@index([status])
+  @@index([providerPaymentId])
+}
+
+enum RefundStatus {
+  PENDING
+  SUCCEEDED
+  FAILED
+}
+
+model Refund {
+  id                  String       @id @default(uuid()) @db.Uuid
+  paymentId           String       @db.Uuid
+  payment             Payment      @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  amountCents         Int
+  currency            String       @default("USD")
+  reason              String
+  status              RefundStatus @default(SUCCEEDED)
+  providerRefundId    String?
+  initiatedByUserId   String?      @db.Uuid
+  createdAt           DateTime     @default(now())
+
+  @@index([paymentId])
+}
+
+enum PartnerStatus {
+  ACTIVE
+  PAUSED
+  INACTIVE
+}
+
+model Partner {
+  id                    String              @id @default(uuid()) @db.Uuid
+  name                  String
+  email                 String              @unique
+  code                  String              @unique /// Code d'apporteur d'affaires (ex: PART-KIKWIT)
+  phone                 String?
+  company               String?
+  commissionRatePercent Decimal             @default(20.00) @db.Decimal(5, 2)
+  status                PartnerStatus       @default(ACTIVE)
+  payoutInfo            Json?               /// Coordonnées bancaires ou Mobile Money masquées
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
+
+  payments              Payment[]
+  commissions           PartnerCommission[]
+  payouts               PartnerPayout[]
+}
+
+enum CommissionStatus {
+  PENDING
+  CONFIRMED
+  AVAILABLE
+  PAID
+  CANCELLED
+  REVERSED
+}
+
+model PartnerCommission {
+  id                    String           @id @default(uuid()) @db.Uuid
+  partnerId             String           @db.Uuid
+  partner               Partner          @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+  tenantId              String           @db.Uuid
+  tenant                Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  paymentId             String?          @db.Uuid
+  payment               Payment?         @relation(fields: [paymentId], references: [id], onDelete: SetNull)
+  invoiceId             String?          @db.Uuid
+  invoice               Invoice?         @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
+
+  amountBaseCents       Int              /// Montant encaissé servant de base
+  commissionRatePercent Decimal          @db.Decimal(5, 2)
+  commissionAmountCents Int              /// Montant de la commission
+  currency              String           @default("USD")
+  status                CommissionStatus @default(PENDING)
+
+  availableAt           DateTime?
+  paidAt                DateTime?
+  payoutId              String?          @db.Uuid
+  payout                PartnerPayout?   @relation(fields: [payoutId], references: [id], onDelete: SetNull)
+
+  createdAt             DateTime         @default(now())
+  updatedAt             DateTime         @updatedAt
+
+  @@index([partnerId])
+  @@index([tenantId])
+}
+
+model PartnerPayout {
+  id                String              @id @default(uuid()) @db.Uuid
+  partnerId         String              @db.Uuid
+  partner           Partner             @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+  amountCents       Int
+  currency          String              @default("USD")
+  method            String              /// Virement, Mobile Money, Cash
+  status            String              @default("PAID") /// PENDING, PAID, FAILED
+  reference         String?
+  proofFileUrl      String?
+  approvedByUserId  String?             @db.Uuid
+  paidAt            DateTime?           @default(now())
+  createdAt         DateTime            @default(now())
+
+  commissions       PartnerCommission[]
+
+  @@index([partnerId])
+}
+
+model ReferralReward {
+  id                  String   @id @default(uuid()) @db.Uuid
+  referrerTenantId    String   @db.Uuid
+  referrerTenant      Tenant   @relation("ReferrerTenant", fields: [referrerTenantId], references: [id], onDelete: Cascade)
+  referredTenantId    String   @db.Uuid
+  referredTenant      Tenant   @relation("ReferredTenant", fields: [referredTenantId], references: [id], onDelete: Cascade)
+  creditAmountCents   Int      /// Montant du crédit accordé
+  creditUsedCents     Int      @default(0)
+  creditRemainingCents Int
+  currency            String   @default("USD")
+  status              String   @default("ACTIVE") /// ACTIVE, EXHAUSTED, CANCELLED
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@unique([referrerTenantId, referredTenantId])
+}
+
+enum ExpenseCategory {
+  HOSTING
+  DATABASE
+  EMAILS
+  DOMAINS
+  SAAS
+  MARKETING
+  ADS
+  DEV
+  FREELANCE
+  BANK_FEES
+  LEGAL
+  OFFICE
+  OTHER
+}
+
+enum ExpenseStatus {
+  PLANNED
+  PAID
+  CANCELLED
+}
+
+model Expense {
+  id                 String          @id @default(uuid()) @db.Uuid
+  reference          String          @unique /// Référence (ex: EXP-2026-0001)
+  title              String
+  supplier           String
+  category           ExpenseCategory
+  amountCents        Int
+  currency           String          @default("USD")
+  taxCents           Int             @default(0)
+  isRecurring        Boolean         @default(false)
+  recurringInterval  String?         /// month, year
+  status             ExpenseStatus   @default(PAID)
+  paymentMethod      String?
+  proofUrl           String?
+  expenseDate        DateTime
+  createdById        String?         @db.Uuid
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
+
+  @@index([category])
+  @@index([expenseDate])
+}
+
+model BankStatementEntry {
+  id                 String    @id @default(uuid()) @db.Uuid
+  entryDate          DateTime
+  label              String
+  amountCents        Int       /// Positif = encaissement/crédit, négatif = décaissement/débit
+  currency           String    @default("USD")
+  reconciled         Boolean   @default(false)
+  reconciledType     String?   /// PAYMENT, EXPENSE, PARTNER_PAYOUT
+  reconciledId       String?   @db.Uuid
+  source             String    @default("MANUAL") /// IMPORT_CSV, MANUAL
+  notes              String?
+  createdAt          DateTime  @default(now())
+
+  @@index([reconciled])
+  @@index([entryDate])
+}
+
+model FinancialAuditLog {
+  id                 String   @id @default(uuid()) @db.Uuid
+  actorUserId        String?  @db.Uuid
+  actorEmail         String
+  action             String   /// expense.create, payment.refund, partner.commission_paid, etc.
+  entityType         String   /// invoice, payment, refund, expense, partner, commission
+  entityId           String
+  oldValue           Json?
+  newValue           Json?
+  reason             String?
+  ip                 String?
+  createdAt          DateTime @default(now())
+
+  @@index([entityType, entityId])
+  @@index([createdAt])
 }
 

@@ -7,7 +7,13 @@ export const metadata: Metadata = { title: { default: "Administration", template
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const me = await requireMe("/admin");
-  if (!me.user.isSuperAdmin) notFound();
+  const canAccessAdmin =
+    me.user.isSuperAdmin ||
+    me.user.adminRole === "SUPER_ADMIN" ||
+    me.user.adminRole === "ASSOCIATE" ||
+    me.user.adminRole === "FINANCE_MANAGER";
+
+  if (!canAccessAdmin) notFound();
 
   return (
     <AdminShell

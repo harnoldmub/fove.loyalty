@@ -34,6 +34,8 @@ import { PublicApiController } from "./public-api/public-api.controller";
 import { WidgetController } from "./public-api/widget.controller";
 import { AdminService } from "./admin/admin.service";
 import { AdminController } from "./admin/admin.controller";
+import { FinanceService } from "./admin/finance/finance.service";
+import { FinanceController } from "./admin/finance/finance.controller";
 import { JobsController } from "./jobs/jobs.controller";
 import { MediaController } from "./media/media.controller";
 import { CardsService } from "./cards/cards.service";
@@ -65,6 +67,7 @@ import { AppleWalletServiceController } from "./cards/apple-wallet-service.contr
     PublicApiController,
     WidgetController,
     AdminController,
+    FinanceController,
     JobsController,
     MediaController,
     AppleWalletServiceController,
@@ -97,6 +100,7 @@ import { AppleWalletServiceController } from "./cards/apple-wallet-service.contr
     IntegrationsService,
     CommerceService,
     AdminService,
+    FinanceService,
     CardsService,
     GoogleWalletProvider,
     AppleWalletProvider,

@@ -5,14 +5,21 @@ import { usePathname } from "next/navigation";
 import { useState, type ReactNode } from "react";
 import {
   Activity,
+  ArrowDownRight,
+  BarChart3,
   Building2,
   CreditCard,
+  FileText,
+  Landmark,
   LogOut,
   Menu,
   MessageSquare,
+  Receipt,
+  RefreshCw,
   ShieldCheck,
   Store,
   Users,
+  WalletCards,
   X,
 } from "lucide-react";
 import { Logo } from "@/components/brand";
@@ -30,6 +37,77 @@ interface AdminShellProps {
 }
 
 const NAV_GROUPS = [
+  {
+    title: "Finances & Associés",
+    items: [
+      {
+        href: "/admin/finance",
+        label: "Vue d'ensemble",
+        icon: Landmark,
+        exact: true,
+      },
+      {
+        href: "/admin/finance/sales",
+        label: "Ventes & Chiffre",
+        icon: Receipt,
+        exact: false,
+      },
+      {
+        href: "/admin/finance/payments",
+        label: "Paiements & Flux",
+        icon: CreditCard,
+        exact: false,
+      },
+      {
+        href: "/admin/finance/subscriptions",
+        label: "Abonnements & MRR",
+        icon: RefreshCw,
+        exact: false,
+      },
+      {
+        href: "/admin/finance/customers",
+        label: "Clients payants",
+        icon: Users,
+        exact: false,
+      },
+      {
+        href: "/admin/finance/invoices",
+        label: "Factures & Pièces",
+        icon: FileText,
+        exact: false,
+      },
+      {
+        href: "/admin/finance/commissions",
+        label: "Partenaires FOVE",
+        icon: WalletCards,
+        exact: false,
+      },
+      {
+        href: "/admin/finance/expenses",
+        label: "Dépenses & Charges",
+        icon: ArrowDownRight,
+        exact: false,
+      },
+      {
+        href: "/admin/finance/treasury",
+        label: "Trésorerie & Banque",
+        icon: Landmark,
+        exact: false,
+      },
+      {
+        href: "/admin/finance/reports",
+        label: "Rapports associés",
+        icon: BarChart3,
+        exact: false,
+      },
+      {
+        href: "/admin/finance/audit",
+        label: "Journal d'audit",
+        icon: ShieldCheck,
+        exact: false,
+      },
+    ],
+  },
   {
     title: "Commerces",
     items: [

@@ -322,6 +322,11 @@ export class BillingService {
             data: { status: "PAST_DUE", pastDueSince: new Date() },
           });
           this.logger.warn(`Paiement échoué pour ${invoice.customer}`);
+          try {
+            await this.recordStripeInvoice(invoice, false);
+          } catch (e) {
+            this.logger.error("Erreur enregistrement facture échouée", e);
+          }
         }
         break;
       }
@@ -332,6 +337,11 @@ export class BillingService {
             where: { stripeCustomerId: invoice.customer, provider: "STRIPE", status: "PAST_DUE" },
             data: { status: "ACTIVE", pastDueSince: null },
           });
+          try {
+            await this.recordStripeInvoice(invoice, true);
+          } catch (e) {
+            this.logger.error("Erreur enregistrement facture payée", e);
+          }
         }
         break;
       }
@@ -386,6 +396,88 @@ export class BillingService {
     };
     await this.prisma.client.subscription.upsert({ where: { tenantId }, update: data, create: { tenantId, ...data } });
     await this.audit.log({ tenantId, action: "billing.subscription_synced", metadata: { status, plan: plan.code } });
+  }
+
+  private async recordStripeInvoice(invoice: Stripe.Invoice, isPaid: boolean) {
+    if (!invoice.customer || typeof invoice.customer !== "string") return;
+    const sub = await this.prisma.client.subscription.findFirst({
+      where: { stripeCustomerId: invoice.customer },
+      select: { id: true, tenantId: true },
+    });
+    if (!sub) return;
+
+    const currency = (invoice.currency || "USD").toUpperCase();
+    const amountTotal = invoice.total ?? 0;
+    const amountSubtotal = invoice.subtotal ?? amountTotal;
+    const amountTax = (invoice as any).tax ?? 0;
+    const amountPaid = isPaid ? (invoice.amount_paid ?? amountTotal) : 0;
+    const amountDue = isPaid ? 0 : (invoice.amount_due ?? amountTotal);
+
+    const invNumber = invoice.number || `INV-STRIPE-${invoice.id.slice(-8)}`;
+
+    const inv = await this.prisma.client.invoice.upsert({
+      where: { stripeInvoiceId: invoice.id },
+      create: {
+        number: invNumber,
+        tenantId: sub.tenantId,
+        subscriptionId: sub.id,
+        status: isPaid ? "PAID" : "OPEN",
+        currency,
+        amountSubtotalCents: amountSubtotal,
+        amountTaxCents: amountTax,
+        amountDiscountCents: 0,
+        amountTotalCents: amountTotal,
+        amountPaidCents: amountPaid,
+        amountDueCents: amountDue,
+        paidAt: isPaid ? new Date() : null,
+        dueDate: invoice.due_date ? new Date(invoice.due_date * 1000) : null,
+        periodStart: invoice.period_start ? new Date(invoice.period_start * 1000) : null,
+        periodEnd: invoice.period_end ? new Date(invoice.period_end * 1000) : null,
+        stripeInvoiceId: invoice.id,
+        pdfUrl: invoice.invoice_pdf || null,
+        hostedInvoiceUrl: invoice.hosted_invoice_url || null,
+      },
+      update: {
+        status: isPaid ? "PAID" : "OPEN",
+        amountPaidCents: amountPaid,
+        amountDueCents: amountDue,
+        paidAt: isPaid ? new Date() : null,
+        pdfUrl: invoice.invoice_pdf || null,
+        hostedInvoiceUrl: invoice.hosted_invoice_url || null,
+      },
+    });
+
+    if (isPaid && amountPaid > 0) {
+      const pi = (invoice as any).payment_intent;
+      const paymentIntentId =
+        typeof pi === "string" ? pi : pi?.id;
+      const ref = paymentIntentId ? `PAY-${paymentIntentId.slice(-10)}` : `PAY-${invoice.id.slice(-10)}`;
+      const feeCents = Math.round(amountPaid * 0.029 + 30);
+      const netCents = Math.max(0, amountPaid - feeCents);
+
+      const existingPayment = paymentIntentId
+        ? await this.prisma.client.payment.findFirst({ where: { providerPaymentId: paymentIntentId } })
+        : null;
+
+      if (!existingPayment) {
+        await this.prisma.client.payment.create({
+          data: {
+            reference: ref,
+            tenantId: sub.tenantId,
+            invoiceId: inv.id,
+            provider: "STRIPE",
+            providerPaymentId: paymentIntentId ?? invoice.id,
+            amountCents: amountPaid,
+            feeCents,
+            netCents,
+            currency,
+            status: "SUCCEEDED",
+            method: "card",
+            confirmedAt: new Date(),
+          },
+        });
+      }
+    }
   }
 }
 

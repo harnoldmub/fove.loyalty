@@ -39,6 +39,7 @@ export interface SessionUser {
   name: string;
   emailVerifiedAt: Date | null;
   isSuperAdmin: boolean;
+  adminRole?: "SUPER_ADMIN" | "ASSOCIATE" | "FINANCE_MANAGER" | "SUPPORT" | null;
 }
 
 export interface AuthState {

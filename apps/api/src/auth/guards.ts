@@ -130,6 +130,27 @@ export class SuperAdminGuard implements CanActivate {
   }
 }
 
+/**
+ * Accès réservé aux associés et à la direction financière :
+ * - Super Administrateurs (isSuperAdmin = true)
+ * - Associés (adminRole = ASSOCIATE)
+ * - Responsables financiers (adminRole = FINANCE_MANAGER)
+ */
+@Injectable()
+export class FinanceAccessGuard implements CanActivate {
+  canActivate(context: ExecutionContext): boolean {
+    const req = context.switchToHttp().getRequest<AppRequest>();
+    const user = req.auth?.user;
+    if (!user) throw forbidden();
+    if (user.isSuperAdmin) return true;
+    const role = user.adminRole;
+    if (role === "SUPER_ADMIN" || role === "ASSOCIATE" || role === "FINANCE_MANAGER") {
+      return true;
+    }
+    throw forbidden("Accès réservé aux associés et à la direction financière");
+  }
+}
+
 function bearer(req: AppRequest): string | null {
   const header = req.headers.authorization;
   if (!header?.startsWith("Bearer ")) return null;
@@ -206,4 +227,5 @@ export class PublishableKeyGuard implements CanActivate {
 export const UserRoute = () => UseGuards(SessionGuard);
 export const TenantRoute = () => applyDecorators(UseGuards(SessionGuard, TenantGuard));
 export const SuperAdminRoute = () => applyDecorators(UseGuards(SessionGuard, SuperAdminGuard));
+export const FinanceRoute = () => applyDecorators(UseGuards(SessionGuard, FinanceAccessGuard));
 export const ApiKeyRoute = () => UseGuards(ApiKeyGuard);

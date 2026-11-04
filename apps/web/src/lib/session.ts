@@ -3,7 +3,14 @@ import { redirect } from "next/navigation";
 import { serverGet } from "./server-api";
 
 export interface Me {
-  user: { id: string; email: string; name: string; emailVerifiedAt: string | null; isSuperAdmin: boolean };
+  user: {
+    id: string;
+    email: string;
+    name: string;
+    emailVerifiedAt: string | null;
+    isSuperAdmin: boolean;
+    adminRole?: "SUPER_ADMIN" | "ASSOCIATE" | "FINANCE_MANAGER" | "SUPPORT" | null;
+  };
   activeTenantId: string | null;
   support: boolean;
   role: "OWNER" | "MANAGER" | "CASHIER" | "VIEWER" | "SUPPORT" | null;
