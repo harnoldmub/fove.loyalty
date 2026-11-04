@@ -147,13 +147,15 @@ export function WalletBroadcast({ programId, programName }: { programId: string;
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { data: tenant } = useQuery({ queryKey: ["tenant"], queryFn: () => api.get<{ features?: { walletCampaigns?: boolean } }>("/app/tenant") });
-  // Campagnes réservées aux offres payantes : on l'annonce plutôt que d'échouer à l'envoi.
-  if (tenant?.features && !tenant.features.walletCampaigns) {
+  const { data: wallet } = useQuery({ queryKey: ["wallet-status"], queryFn: () => api.get<{ googleWallet: boolean; appleWallet?: boolean }>("/app/wallet/status"), staleTime: 5 * 60_000 });
+  const included = tenant?.features?.walletCampaigns;
+  const configured = Boolean(wallet?.googleWallet || wallet?.appleWallet);
+  // L'action reste visible pour rendre la montée en gamme ou la configuration nécessaire compréhensible.
+  if (!included || !configured) {
+    const reason = included === false ? "Disponible avec un abonnement Pro" : included ? "Activez Google Wallet ou Apple Wallet dans les paramètres" : "Vérification de votre abonnement…";
     return (
-      <Button asChild size="sm" variant="ghost" title="Les campagnes Wallet sont incluses dans les offres payantes">
-        <Link href="/app/billing">
-          <BellRing /> Campagnes Wallet : offres payantes
-        </Link>
+      <Button size="sm" variant="ghost" disabled title={reason}>
+        <BellRing /> {included === false ? "Message à tous · Offre Pro" : "Écrire aux clients Wallet"}
       </Button>
     );
   }
@@ -194,6 +196,57 @@ export function WalletBroadcast({ programId, programName }: { programId: string;
               >
                 Envoyer à tous
               </Button>
+            </div>
+          </div>
+        ) : (
+          <form className="grid gap-4" onSubmit={(e) => { e.preventDefault(); setError(null); setStep("confirm"); }}>
+            <Field label="Titre">{(p) => <Input {...p} maxLength={60} value={f.title} onChange={(e) => setF({ ...f, title: e.target.value })} />}</Field>
+            <Field label="Message" hint={`${f.body.length}/180`}>{(p) => <Textarea {...p} maxLength={180} value={f.body} onChange={(e) => setF({ ...f, body: e.target.value })} />}</Field>
+            <Button type="submit" disabled={f.title.trim().length < 2 || f.body.trim().length < 2}>Relire avant l’envoi</Button>
+          </form>
+        )}
+      </DialogContent>
+    </DialogRoot>
+  );
+}
+
+/** Message global depuis la vue d'ensemble, envoyé à tous les programmes actifs. */
+export function TenantWalletBroadcast() {
+  const [step, setStep] = useState<"closed" | "edit" | "confirm">("closed");
+  const [f, setF] = useState({ title: "", body: "" });
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const { data: tenant } = useQuery({ queryKey: ["tenant"], queryFn: () => api.get<{ features?: { walletCampaigns?: boolean } }>("/app/tenant") });
+  const { data: wallet } = useQuery({ queryKey: ["wallet-status"], queryFn: () => api.get<{ googleWallet: boolean; appleWallet?: boolean }>("/app/wallet/status"), staleTime: 5 * 60_000 });
+  const included = Boolean(tenant?.features?.walletCampaigns);
+  const configured = Boolean(wallet?.googleWallet || wallet?.appleWallet);
+  const disabled = !included || !configured;
+  const disabledReason = !included ? "Disponible avec un abonnement Pro" : "Activez Google Wallet ou Apple Wallet dans les paramètres";
+
+  return (
+    <DialogRoot open={step !== "closed"} onOpenChange={(o) => !busy && setStep(o ? "edit" : "closed")}>
+      <Button variant="secondary" disabled={disabled} title={disabled ? disabledReason : undefined} onClick={() => setStep("edit")}>
+        <BellRing /> Envoyer un message à tous
+      </Button>
+      <DialogContent
+        title={step === "confirm" ? "Envoyer ce message à tous les clients ?" : "Message à tous les clients Wallet"}
+        description={step === "confirm" ? "Tous les clients ayant ajouté une carte Wallet recevront cette notification. L’envoi ne peut pas être annulé." : "Le message est envoyé à toutes les cartes Wallet de vos programmes actifs."}
+      >
+        {error && <ErrorNote>{error}</ErrorNote>}
+        {step === "confirm" ? (
+          <div className="grid gap-4">
+            <div className="rounded-md bg-surface-2 p-4"><p className="font-semibold">{f.title}</p><p className="mt-1 text-sm">{f.body}</p></div>
+            <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+              <Button variant="secondary" disabled={busy} onClick={() => setStep("edit")}>Modifier</Button>
+              <Button loading={busy} onClick={async () => {
+                setBusy(true); setError(null);
+                try {
+                  await api.post("/app/wallet-broadcast", f);
+                  toast.success("Message envoyé à tous les clients Wallet");
+                  setF({ title: "", body: "" }); setStep("closed");
+                } catch (e) { setError(errorMessage(e)); }
+                finally { setBusy(false); }
+              }}>Envoyer à tous</Button>
             </div>
           </div>
         ) : (

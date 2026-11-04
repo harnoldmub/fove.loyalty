@@ -154,6 +154,14 @@ export class LoyaltyController {
     await this.cards.walletBroadcast(ctx, id, body);
   }
 
+  /** Notification à tous les clients Wallet de l'entreprise. */
+  @Post("wallet-broadcast")
+  @HttpCode(204)
+  @RequirePermission("programs.write")
+  async walletBroadcastTenant(@Tenant() ctx: TenantContext, @Body(new ZodPipe(walletMessageSchema)) body: z.infer<typeof walletMessageSchema>) {
+    await this.cards.walletBroadcastTenant(ctx, body);
+  }
+
   @Get("wallet/status")
   @RequirePermission("programs.read")
   walletStatus() {

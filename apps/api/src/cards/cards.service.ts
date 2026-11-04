@@ -230,4 +230,18 @@ export class CardsService {
     if (this.appleWallet.isConfigured()) await this.appleWallet.broadcastTenant(ctx.tenantId);
     await this.audit.forTenant(ctx, "wallet.broadcast_sent", { type: "program", id: programId }, { title: message.title });
   }
+
+  /** Notification à toutes les cartes Wallet de l'entreprise, tous programmes actifs confondus. */
+  async walletBroadcastTenant(ctx: TenantContext, message: { title: string; body: string }) {
+    await this.plans.assertFeature(ctx.tenantId, "walletCampaigns");
+    const programs = await this.prisma.client.loyaltyProgram.findMany({
+      where: { tenantId: ctx.tenantId, active: true },
+      select: { id: true },
+    });
+    if (this.wallet.isConfigured()) {
+      await Promise.all(programs.map((program) => this.wallet.broadcast(program.id, message)));
+    }
+    if (this.appleWallet.isConfigured()) await this.appleWallet.broadcastTenant(ctx.tenantId);
+    await this.audit.forTenant(ctx, "wallet.tenant_broadcast_sent", { type: "tenant", id: ctx.tenantId }, { title: message.title, programs: programs.length });
+  }
 }

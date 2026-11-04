@@ -403,6 +403,18 @@ function SubscriptionForm({ tenantId, current }: { tenantId: string; current: De
     toast.success("Abonnement mis à jour");
   };
 
+  const activatePro = async () => {
+    await api.post(`/admin/tenants/${tenantId}/subscription`, {
+      planCode: "business",
+      status: "ACTIVE",
+      currentPeriodEnd: null,
+      limitsOverride: null,
+      contractPriceYearlyCents: null,
+    });
+    await qc.invalidateQueries({ queryKey: ["admin-tenant", tenantId] });
+    toast.success("Abonnement Pro activé");
+  };
+
   return (
     <div className="grid gap-3">
       <div className="grid gap-2 sm:grid-cols-2">
@@ -435,17 +447,25 @@ function SubscriptionForm({ tenantId, current }: { tenantId: string; current: De
           ))}
         </fieldset>
       )}
-      <ConfirmDialog
-        trigger={<Button variant="secondary" className="justify-self-start">Appliquer</Button>}
-        title="Modifier l’abonnement manuellement ?"
-        consequence={[
-          "L’abonnement est remplacé sans passer par Stripe : période offerte, essai ou contrat sur-mesure. Les quotas et le prix non renseignés sont retirés.",
-          stripeRunning ? " L’abonnement Stripe en cours sera résilié immédiatement, sans remboursement automatique : remboursez la période restante depuis Stripe si besoin." : "",
-        ].join("")}
-
-        confirmLabel="Appliquer"
-        onConfirm={submit}
-      />
+      <div className="flex flex-wrap gap-2">
+        <ConfirmDialog
+          trigger={<Button className="justify-self-start">Passer en Pro</Button>}
+          title="Activer l’abonnement Pro ?"
+          consequence="L’offre Business sera activée immédiatement et manuellement, sans paiement Stripe."
+          confirmLabel="Activer Pro"
+          onConfirm={activatePro}
+        />
+        <ConfirmDialog
+          trigger={<Button variant="secondary" className="justify-self-start">Appliquer les réglages avancés</Button>}
+          title="Modifier l’abonnement manuellement ?"
+          consequence={[
+            "L’abonnement est remplacé sans passer par Stripe : période offerte, essai ou contrat sur-mesure. Les quotas et le prix non renseignés sont retirés.",
+            stripeRunning ? " L’abonnement Stripe en cours sera résilié immédiatement, sans remboursement automatique : remboursez la période restante depuis Stripe si besoin." : "",
+          ].join("")}
+          confirmLabel="Appliquer"
+          onConfirm={submit}
+        />
+      </div>
     </div>
   );
 }

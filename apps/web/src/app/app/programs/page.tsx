@@ -6,7 +6,7 @@ import { QRCodeSVG } from "qrcode.react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { useCan } from "@/components/app/me-context";
-import { useWalletEnabled, WalletBroadcast } from "@/components/app/card-share";
+import { WalletBroadcast } from "@/components/app/card-share";
 import type { Establishment, Program } from "@/components/app/types";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog, DialogContent, DialogRoot } from "@/components/ui/dialog";
@@ -194,7 +194,6 @@ function LinkCard({ link }: { link: Link }) {
 
 export default function ProgramsPage() {
   const canWrite = useCan("programs.write");
-  const wallet = useWalletEnabled();
   const qc = useQueryClient();
   const [editing, setEditing] = useState<Program | "new" | null>(null);
   const [linkProgram, setLinkProgram] = useState("");
@@ -245,7 +244,7 @@ export default function ProgramsPage() {
                   >
                     {p.active ? "Mettre en pause" : "Activer"}
                   </Button>
-                  {wallet && p.active && <WalletBroadcast programId={p.id} programName={p.name} />}
+                  {p.active && <WalletBroadcast programId={p.id} programName={p.name} />}
                 </div>
               )}
             </Panel>

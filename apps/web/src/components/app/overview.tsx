@@ -10,6 +10,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { api } from "@/lib/api";
 import { formatNumber } from "@/lib/utils";
 import { useActiveTenant, useCan } from "./me-context";
+import { TenantWalletBroadcast } from "./card-share";
 
 interface Overview {
   periodDays: number;
@@ -93,6 +94,7 @@ export function OverviewView({ mode }: { mode: "home" | "analytics" }) {
   const canScan = useCan("transactions.create");
   const canWrite = useCan("customers.write");
   const canRead = useCan("analytics.read");
+  const canManagePrograms = useCan("programs.write");
   const [days, setDays] = useState("30");
   const { data, isLoading } = useQuery({
     queryKey: ["overview", days],
@@ -141,6 +143,7 @@ export function OverviewView({ mode }: { mode: "home" | "analytics" }) {
                   </Link>
                 </Button>
               )}
+              {canManagePrograms && <TenantWalletBroadcast />}
             </>
           ) : (
             <Tabs value={days} onValueChange={setDays}>
