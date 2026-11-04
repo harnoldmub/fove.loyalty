@@ -177,6 +177,8 @@ export class CardsService {
         customer: account.customer,
         program: account.program,
         tenant: account.tenant,
+        lastWalletMessageTitle: account.lastWalletMessageTitle,
+        lastWalletMessageBody: account.lastWalletMessageBody,
       },
       logo,
     );
@@ -206,6 +208,10 @@ export class CardsService {
   /** Met à jour le design (bannière/couleur) sur Google Wallet et prévient tous les iPhone enregistrés. */
   async syncWalletDesign(tenantId: string) {
     await this.refreshProgramWallet(tenantId);
+    await this.prisma.client.loyaltyAccount.updateMany({
+      where: { tenantId },
+      data: { lastActivityAt: new Date() },
+    });
     let appleSent = 0;
     if (this.appleWallet.isConfigured()) {
       const res = await this.appleWallet.broadcastTenant(tenantId);
@@ -217,18 +223,58 @@ export class CardsService {
   async walletMessage(ctx: TenantContext, accountId: string, message: { title: string; body: string }) {
     const account = await this.prisma.client.loyaltyAccount.findFirst({ where: { id: accountId, tenantId: ctx.tenantId } });
     if (!account) throw notFound("Carte");
-    if (this.wallet.isConfigured()) await this.wallet.sendToCard(accountId, message);
-    if (this.appleWallet.isConfigured()) await this.appleWallet.notifyAccount(accountId);
-    await this.audit.forTenant(ctx, "wallet.message_sent", { type: "account", id: accountId }, { title: message.title });
+
+    const now = new Date();
+    await this.prisma.client.loyaltyAccount.update({
+      where: { id: accountId },
+      data: {
+        lastActivityAt: now,
+        lastWalletMessageTitle: message.title,
+        lastWalletMessageBody: message.body,
+        lastWalletMessageAt: now,
+      },
+    });
+
+    if (this.wallet.isConfigured()) {
+      await this.wallet.sendToCard(accountId, message).catch((error) => {
+        this.logger.warn(`Google Wallet card ${accountId} : ${error instanceof Error ? error.message : error}`);
+      });
+    }
+    if (this.appleWallet.isConfigured()) {
+      await this.appleWallet.notifyAccount(accountId).catch((error) => {
+        this.logger.warn(`Apple Wallet card ${accountId} : ${error instanceof Error ? error.message : error}`);
+      });
+    }
+    await this.audit.forTenant(ctx, "wallet.message_sent", { type: "account", id: accountId }, { title: message.title, body: message.body });
   }
 
   async walletBroadcast(ctx: TenantContext, programId: string, message: { title: string; body: string }) {
     const program = await this.prisma.client.loyaltyProgram.findFirst({ where: { id: programId, tenantId: ctx.tenantId } });
     if (!program) throw notFound("Programme");
     await this.plans.assertFeature(ctx.tenantId, "walletCampaigns");
-    if (this.wallet.isConfigured()) await this.wallet.broadcast(programId, message);
-    if (this.appleWallet.isConfigured()) await this.appleWallet.broadcastTenant(ctx.tenantId);
-    await this.audit.forTenant(ctx, "wallet.broadcast_sent", { type: "program", id: programId }, { title: message.title });
+
+    const now = new Date();
+    await this.prisma.client.loyaltyAccount.updateMany({
+      where: { tenantId: ctx.tenantId, programId },
+      data: {
+        lastActivityAt: now,
+        lastWalletMessageTitle: message.title,
+        lastWalletMessageBody: message.body,
+        lastWalletMessageAt: now,
+      },
+    });
+
+    if (this.wallet.isConfigured()) {
+      await this.wallet.broadcast(programId, message).catch((error) => {
+        this.logger.warn(`Google Wallet broadcast program ${programId} : ${error instanceof Error ? error.message : error}`);
+      });
+    }
+    if (this.appleWallet.isConfigured()) {
+      await this.appleWallet.broadcastTenant(ctx.tenantId).catch((error) => {
+        this.logger.warn(`Apple Wallet broadcast tenant ${ctx.tenantId} : ${error instanceof Error ? error.message : error}`);
+      });
+    }
+    await this.audit.forTenant(ctx, "wallet.broadcast_sent", { type: "program", id: programId }, { title: message.title, body: message.body });
   }
 
   /** Notification à toutes les cartes Wallet de l'entreprise, tous programmes actifs confondus. */
@@ -238,10 +284,32 @@ export class CardsService {
       where: { tenantId: ctx.tenantId, active: true },
       select: { id: true },
     });
+
+    const now = new Date();
+    await this.prisma.client.loyaltyAccount.updateMany({
+      where: { tenantId: ctx.tenantId },
+      data: {
+        lastActivityAt: now,
+        lastWalletMessageTitle: message.title,
+        lastWalletMessageBody: message.body,
+        lastWalletMessageAt: now,
+      },
+    });
+
     if (this.wallet.isConfigured()) {
-      await Promise.all(programs.map((program) => this.wallet.broadcast(program.id, message)));
+      await Promise.allSettled(
+        programs.map((program) =>
+          this.wallet.broadcast(program.id, message).catch((error) => {
+            this.logger.warn(`Google Wallet broadcast program ${program.id} : ${error instanceof Error ? error.message : error}`);
+          }),
+        ),
+      );
     }
-    if (this.appleWallet.isConfigured()) await this.appleWallet.broadcastTenant(ctx.tenantId);
-    await this.audit.forTenant(ctx, "wallet.tenant_broadcast_sent", { type: "tenant", id: ctx.tenantId }, { title: message.title, programs: programs.length });
+    if (this.appleWallet.isConfigured()) {
+      await this.appleWallet.broadcastTenant(ctx.tenantId).catch((error) => {
+        this.logger.warn(`Apple Wallet broadcast tenant ${ctx.tenantId} : ${error instanceof Error ? error.message : error}`);
+      });
+    }
+    await this.audit.forTenant(ctx, "wallet.tenant_broadcast_sent", { type: "tenant", id: ctx.tenantId }, { title: message.title, body: message.body, programs: programs.length });
   }
 }

@@ -184,7 +184,7 @@ export function WalletBroadcast({ programId, programName }: { programId: string;
                   setError(null);
                   try {
                     await api.post(`/app/programs/${programId}/wallet-broadcast`, f);
-                    toast.success("Notification envoyée à tous les clients Google Wallet");
+                    toast.success("Notification envoyée à tous les clients Wallet");
                     setF({ title: "", body: "" });
                     setStep("closed");
                   } catch (e) {

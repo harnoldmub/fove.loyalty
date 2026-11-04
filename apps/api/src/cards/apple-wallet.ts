@@ -58,6 +58,8 @@ export interface AppleWalletCardAccount {
   balance: number;
   createdAt: Date;
   customer: { firstName: string | null; lastName: string | null };
+  lastWalletMessageTitle?: string | null;
+  lastWalletMessageBody?: string | null;
   program: {
     name: string;
     mode: string;
@@ -124,11 +126,32 @@ export class AppleWalletProvider {
       }),
     );
 
+    const hasMessage = Boolean(account.lastWalletMessageTitle || account.lastWalletMessageBody);
+    const messageValue = [account.lastWalletMessageTitle, account.lastWalletMessageBody].filter(Boolean).join(" : ");
+
+    const auxiliaryFields: Array<{ key: string; label: string; value: string; changeMessage?: string; textAlignment?: string }> = [];
+    if (hasMessage) {
+      auxiliaryFields.push({
+        key: "message",
+        label: "MESSAGE",
+        value: messageValue,
+        changeMessage: "%@",
+      });
+    }
+
     const backFields = sections.map((s) => ({
       key: s.key,
       label: s.title,
       value: s.body,
     }));
+
+    if (hasMessage) {
+      backFields.unshift({
+        key: "latestMessageBack",
+        label: account.lastWalletMessageTitle || "Message du commerce",
+        value: account.lastWalletMessageBody || "",
+      });
+    }
 
     backFields.push(
       { key: "number", label: "Numéro de carte", value: account.cardNumber },
@@ -162,7 +185,7 @@ export class AppleWalletProvider {
           { key: "holder", label: "MEMBRE", value: holder },
           { key: "since", label: "MEMBRE DEPUIS", value: since, textAlignment: "PKTextAlignmentRight" },
         ],
-        auxiliaryFields: [],
+        auxiliaryFields,
         backFields,
       },
       barcodes: [

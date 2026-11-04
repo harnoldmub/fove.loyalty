@@ -388,8 +388,11 @@ model LoyaltyAccount {
   balance         Int            @default(0)
   lifetimeEarned  Int            @default(0)
   lifetimeSpent   Int            @default(0)
-  lastActivityAt  DateTime       @default(now())
-  createdAt       DateTime       @default(now())
+  lastActivityAt       DateTime       @default(now())
+  lastWalletMessageTitle String?
+  lastWalletMessageBody  String?
+  lastWalletMessageAt    DateTime?
+  createdAt            DateTime       @default(now())
 
   transactions LoyaltyTransaction[]
   redemptions  RewardRedemption[]

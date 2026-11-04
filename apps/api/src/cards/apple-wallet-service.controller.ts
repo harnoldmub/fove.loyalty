@@ -238,6 +238,8 @@ export class AppleWalletServiceController {
         customer: account.customer,
         program: account.program,
         tenant: account.tenant,
+        lastWalletMessageTitle: account.lastWalletMessageTitle,
+        lastWalletMessageBody: account.lastWalletMessageBody,
       },
       logoBuffer,
     );
