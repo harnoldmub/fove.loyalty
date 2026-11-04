@@ -4,6 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { Copy, Gift, MessageCircle } from "lucide-react";
 import { toast } from "sonner";
 import { useCan } from "@/components/app/me-context";
 import { Button } from "@/components/ui/button";
@@ -91,6 +92,59 @@ export default function SettingsPage() {
           </p>
         </section>
       </div>
+
+      {/* Programme Parrainage Commerçant */}
+      {data && (
+        <Panel className="mb-6 border border-emerald-500/20 bg-emerald-500/5 p-5">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="flex items-start gap-3">
+              <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                <Gift className="size-5" />
+              </span>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h2 className="font-display text-base font-semibold text-ink">Parrainage entre commerçants</h2>
+                  <span className="rounded-full bg-emerald-500/20 px-2 py-0.5 text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
+                    1 mois offert
+                  </span>
+                </div>
+                <p className="mt-1 text-xs text-ink-2 max-w-xl leading-relaxed">
+                  Recommandez FOVE à un confrère commerçant : recevez <strong>20 $ de crédit</strong> déduits de votre abonnement dès sa première souscription.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                className="gap-1.5 text-xs w-full sm:w-auto"
+                onClick={() => {
+                  const url = `https://fove.digital/signup?ref=${data.slug}`;
+                  navigator.clipboard.writeText(url);
+                  toast.success("Lien de parrainage copié dans le presse-papier !");
+                }}
+              >
+                <Copy className="size-3.5" /> Copier mon lien
+              </Button>
+              <Button
+                asChild
+                size="sm"
+                className="gap-1.5 text-xs bg-[#25D366] text-white hover:bg-[#20ba59] w-full sm:w-auto"
+              >
+                <a
+                  href={`https://wa.me/?text=${encodeURIComponent(`Bonjour, je gère la fidélité de mes clients avec FOVE sur Apple Wallet et Google Wallet. Découvre et teste gratuitement ici : https://fove.digital/signup?ref=${data.slug}`)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <MessageCircle className="size-3.5" /> Partager
+                </a>
+              </Button>
+            </div>
+          </div>
+        </Panel>
+      )}
 
       {isLoading && <Skeleton className="h-64" />}
       {error && <ErrorNote>{errorMessage(error)}</ErrorNote>}
@@ -263,7 +317,7 @@ function SettingsForm({ data }: { data: Tenant }) {
             </div>
 
             <Field label="Compte Instagram" hint="Affiché sur les cartes téléchargées (PNG et PDF) de vos clients.">
-              {(p) => <Input {...p} placeholder="@dizayna" value={f.instagramHandle ?? ""} onChange={set("instagramHandle")} />}
+              {(p) => <Input {...p} value={f.instagramHandle ?? ""} onChange={set("instagramHandle")} />}
             </Field>
 
             <div className="grid gap-4 sm:grid-cols-3">

@@ -118,6 +118,17 @@ export function SignupForm() {
   const { offre, planName } = usePlanChoice("signup");
   const [error, setError] = useState<string | null>(null);
   const [leaving, setLeaving] = useState(false);
+
+  // Mémorisation du commerçant parrain (ref) s'il est présent dans l'URL
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const ref = params.get("ref");
+    if (ref) {
+      document.cookie = `fove_ref=${encodeURIComponent(ref.trim().toLowerCase())}; path=/; max-age=${30 * 24 * 3600}; SameSite=Lax`;
+    }
+  }, []);
+
   const form = useForm<z.infer<typeof signupForm>>({ resolver: zodResolver(signupForm), defaultValues: { acceptTerms: false } });
   const onSubmit = form.handleSubmit(async (values) => {
     setError(null);

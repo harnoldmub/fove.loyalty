@@ -117,6 +117,12 @@ export function OnboardingWizard({ userName, tenant }: { userName: string; tenan
               .find((row) => row.startsWith("fove_partner_code="))
               ?.split("=")[1]
           : undefined;
+        const referrerCookie = typeof document !== "undefined"
+          ? document.cookie
+              .split("; ")
+              .find((row) => row.startsWith("fove_ref="))
+              ?.split("=")[1]
+          : undefined;
 
         await api.post("/app/tenants", {
           name,
@@ -125,6 +131,7 @@ export function OnboardingWizard({ userName, tenant }: { userName: string; tenan
           country: estCountry,
           timezone,
           partnerCode: partnerCodeCookie ? decodeURIComponent(partnerCodeCookie) : undefined,
+          referrerSlug: referrerCookie ? decodeURIComponent(referrerCookie) : undefined,
         });
         setEstName(name);
         setStep(1);

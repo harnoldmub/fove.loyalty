@@ -268,6 +268,15 @@ export class CardsService {
       await this.wallet.broadcast(programId, message).catch((error) => {
         this.logger.warn(`Google Wallet broadcast program ${programId} : ${error instanceof Error ? error.message : error}`);
       });
+      // Envoi de la notification push TEXT_AND_NOTIFY à chaque carte active enregistrée
+      const programAccounts = await this.prisma.client.loyaltyAccount.findMany({
+        where: { programId, status: "ACTIVE" },
+        select: { id: true },
+        take: 300,
+      });
+      await Promise.allSettled(
+        programAccounts.map((a) => this.wallet.sendToCard(a.id, message).catch(() => null))
+      );
     }
     if (this.appleWallet.isConfigured()) {
       await this.appleWallet.broadcastTenant(ctx.tenantId).catch((error) => {
@@ -303,6 +312,15 @@ export class CardsService {
             this.logger.warn(`Google Wallet broadcast program ${program.id} : ${error instanceof Error ? error.message : error}`);
           }),
         ),
+      );
+      // Envoi de la notification push TEXT_AND_NOTIFY aux cartes de l'établissement
+      const tenantAccounts = await this.prisma.client.loyaltyAccount.findMany({
+        where: { tenantId: ctx.tenantId, status: "ACTIVE" },
+        select: { id: true },
+        take: 500,
+      });
+      await Promise.allSettled(
+        tenantAccounts.map((a) => this.wallet.sendToCard(a.id, message).catch(() => null))
       );
     }
     if (this.appleWallet.isConfigured()) {

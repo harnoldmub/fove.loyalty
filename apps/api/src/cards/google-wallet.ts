@@ -180,17 +180,32 @@ export class GoogleWalletProvider implements WalletProvider {
     const url = `${WALLET_API}/${resource}`;
     const headers = { authorization: `Bearer ${token}`, "content-type": "application/json" };
     const current = await fetch(url, { headers, signal: AbortSignal.timeout(10_000) });
-    if (current.status === 404) throw new WalletError(notFound);
+    if (current.status === 404) {
+      if (resource.startsWith("loyaltyClass/")) {
+        this.logger.warn(`Classe Google Wallet ${resource} introuvable sur Google Wallet : message de classe ignoré.`);
+        return;
+      }
+      throw new WalletError(notFound);
+    }
     if (!current.ok) throw new WalletError("Google Wallet ne répond pas. Réessayez dans un instant.", HttpStatus.BAD_GATEWAY);
     const { messages = [] } = (await current.json()) as { messages?: unknown[] };
     if (messages.length >= MAX_MESSAGES) {
       const trimmed = await fetch(url, { method: "PATCH", headers, body: JSON.stringify({ messages: messages.slice(-(MAX_MESSAGES - 1)) }) });
       if (!trimmed.ok) throw new WalletError("Impossible de faire de la place pour le nouveau message.", HttpStatus.BAD_GATEWAY);
     }
+    const isClass = resource.startsWith("loyaltyClass/");
+    const messageType = isClass ? "TEXT" : "TEXT_AND_NOTIFY";
     const res = await fetch(`${url}/addMessage`, {
       method: "POST",
       headers,
-      body: JSON.stringify({ message: { id: `fove-${Date.now()}`, header: message.title, body: message.body, messageType: "TEXT_AND_NOTIFY" } }),
+      body: JSON.stringify({
+        message: {
+          id: `fove-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+          header: message.title,
+          body: message.body,
+          messageType,
+        },
+      }),
       signal: AbortSignal.timeout(10_000),
     });
     if (res.ok) return;

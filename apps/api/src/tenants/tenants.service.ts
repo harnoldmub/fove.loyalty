@@ -92,6 +92,45 @@ export class TenantsService {
         }
       }
 
+      if (input.referrerSlug) {
+        try {
+          const cleanRefSlug = input.referrerSlug.trim().toLowerCase();
+          const referrer = await this.prisma.client.tenant.findUnique({
+            where: { slug: cleanRefSlug },
+            select: { id: true },
+          });
+          if (referrer && referrer.id !== tenant.id) {
+            await this.prisma.client.referralReward.upsert({
+              where: {
+                referrerTenantId_referredTenantId: {
+                  referrerTenantId: referrer.id,
+                  referredTenantId: tenant.id,
+                },
+              },
+              create: {
+                referrerTenantId: referrer.id,
+                referredTenantId: tenant.id,
+                creditAmountCents: 2000, // 20,00 $ accordés (~ 1 mois offert)
+                creditRemainingCents: 2000,
+                creditUsedCents: 0,
+                currency: "USD",
+                status: "ACTIVE",
+              },
+              update: {},
+            });
+            await this.audit.log({
+              tenantId: referrer.id,
+              actorUserId: auth.user.id,
+              action: "tenant.referred",
+              targetType: "tenant",
+              targetId: tenant.id,
+            });
+          }
+        } catch {
+          // non-bloquant
+        }
+      }
+
       return tenant;
     } catch (error) {
       if (isUniqueViolation(error)) throw conflict("slug_taken", "Cette adresse est déjà prise, choisissez-en une autre");
