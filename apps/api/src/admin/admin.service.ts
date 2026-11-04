@@ -7,6 +7,7 @@ import { AuditService } from "../common/audit.service";
 import { badRequest, notFound } from "../common/errors";
 import type { AuthState } from "../common/context";
 import { readAccessToken } from "../loyalty/cards";
+import { BillingService } from "../billing/billing.service";
 
 export const updatePlanSchema = z.object({
   name: z.string().min(2).max(40).optional(),
@@ -52,6 +53,7 @@ export class AdminService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly audit: AuditService,
+    private readonly billing: BillingService,
   ) {}
 
   async stats() {
@@ -237,6 +239,9 @@ export class AdminService {
     if (!plan) throw notFound("Offre");
     const { status } = input;
     const trialEndsAt = status === "TRIALING" ? new Date(Date.now() + (input.trialDays ?? plan.trialDays) * 86_400_000) : null;
+    const existing = await this.prisma.client.subscription.findUnique({ where: { tenantId } });
+    // Le contrat remplace l'abonnement Stripe en cours : on l'arrête pour que Stripe ne prélève plus.
+    const stripeEnded = existing ? await this.billing.endStripeSubscription(existing) : false;
     const data = {
       planId: plan.id,
       status,
@@ -247,13 +252,17 @@ export class AdminService {
       limitsOverride: input.limitsOverride ?? Prisma.DbNull,
       featuresOverride: input.featuresOverride ?? Prisma.DbNull,
       contractPriceYearlyCents: input.contractPriceYearlyCents ?? null,
+      scheduledPlanId: null,
+      stripeSubscriptionId: null,
+      pastDueSince: null,
     };
     await this.prisma.client.subscription.upsert({ where: { tenantId }, update: data, create: { tenantId, ...data } });
     await this.audit.log({
       tenantId,
       actorUserId: auth.user.id,
       action: "admin.subscription_set",
-      metadata: { ...input, limitsOverride: input.limitsOverride ?? null, featuresOverride: input.featuresOverride ?? null } as Prisma.InputJsonValue,
+      metadata: { ...input, limitsOverride: input.limitsOverride ?? null, featuresOverride: input.featuresOverride ?? null, stripeEnded } as Prisma.InputJsonValue,
+
     });
   }
 

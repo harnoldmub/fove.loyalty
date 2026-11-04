@@ -589,7 +589,8 @@ model SubscriptionPlan {
   createdAt           DateTime       @default(now())
   updatedAt           DateTime       @updatedAt
 
-  subscriptions Subscription[]
+  subscriptions Subscription[] @relation("CurrentPlan")
+  scheduledSubscriptions Subscription[] @relation("ScheduledPlan")
 }
 
 enum SubscriptionStatus {
@@ -616,7 +617,11 @@ model Subscription {
   tenantId             String             @unique @db.Uuid
   tenant               Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   planId               String             @db.Uuid
-  plan                 SubscriptionPlan   @relation(fields: [planId], references: [id])
+  plan                 SubscriptionPlan   @relation("CurrentPlan", fields: [planId], references: [id])
+  /// Offre inférieure choisie par le commerçant : appliquée au renouvellement, l'offre payée reste jusque-là.
+  scheduledPlanId      String?            @db.Uuid
+  scheduledPlan        SubscriptionPlan?  @relation("ScheduledPlan", fields: [scheduledPlanId], references: [id])
+
   status               SubscriptionStatus
   interval             BillingInterval    @default(MONTH)
   provider             BillingProvider    @default(MOCK)

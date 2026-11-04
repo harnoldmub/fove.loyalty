@@ -58,6 +58,16 @@ export class BillingController {
     await this.billing.resume(ctx);
   }
 
+  /** Annule le passage à une offre inférieure programmé au renouvellement. */
+  @Post("app/billing/scheduled-change/cancel")
+  @HttpCode(204)
+  @TenantRoute()
+  @RequirePermission("billing.write")
+  async cancelScheduledChange(@Tenant() ctx: TenantContext) {
+    await this.billing.cancelScheduledChange(ctx);
+  }
+
+
   @Post("billing/stripe/webhook")
   @HttpCode(200)
   @SkipThrottle()

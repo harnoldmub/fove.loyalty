@@ -23,6 +23,7 @@ interface Plan {
   currency: string;
   priceMonthlyCents: number;
   priceYearlyCents: number;
+  limits: Record<string, number | null>;
 }
 interface Billing {
   mode: "stripe" | "mock" | "unavailable";
@@ -35,6 +36,8 @@ interface Billing {
     pastDueSince: string | null;
     provider: "STRIPE" | "MOCK" | "MANUAL";
     plan: Plan;
+    /** Offre inférieure choisie, appliquée au renouvellement. */
+    scheduledPlan: { code: string; name: string } | null;
   } | null;
   /** Offre dont l'entreprise a réellement les droits (Gratuit après une résiliation, un impayé prolongé…). */
   currentPlan: { code: string; name: string; kind: Plan["kind"] };
@@ -105,6 +108,7 @@ function BillingView() {
     const c = params.get("checkout");
     if (c === "success") toast.success("Paiement reçu : votre offre s’active dans quelques instants");
     if (c === "mock" || c === "updated") toast.success("Abonnement mis à jour");
+    if (c === "scheduled") toast.success("Changement d’offre programmé au renouvellement");
     if (c === "cancelled") toast.message("Paiement annulé, rien n’a été facturé");
   }, [params]);
 
@@ -127,14 +131,36 @@ function BillingView() {
   const canCancel = subApplies && sub !== null && sub.plan.kind === "PAID" && !managedByFove && ["ACTIVE", "PAST_DUE"].includes(sub.status) && !sub.cancelAtPeriodEnd;
   const canResume = subApplies && sub !== null && sub.cancelAtPeriodEnd && sub.status !== "CANCELED";
   const graceEnd = sub?.status === "PAST_DUE" && sub.pastDueSince ? new Date(new Date(sub.pastDueSince).getTime() + PAST_DUE_GRACE_DAYS * 86_400_000) : null;
+  // Abonnement payé en cours : choisir une autre offre la modifie (supérieure tout de suite, inférieure au renouvellement).
+  const paidRunning = subApplies && sub !== null && sub.plan.kind === "PAID" && !managedByFove && sub.status !== "CANCELED" && sub.status !== "INCOMPLETE";
+  const scheduled = paidRunning ? (sub?.scheduledPlan ?? null) : null;
+  const renewal = sub?.currentPeriodEnd ? formatDate(sub.currentPeriodEnd) : "la fin de la période payée";
 
   const refresh = () => qc.invalidateQueries({ queryKey: ["billing"] });
+
+  /** Ce qui dépasse les quotas de l'offre visée : rien n'est supprimé, mais plus rien ne peut être ajouté. */
+  const overQuota = (p: Plan) =>
+    Object.entries(USAGE_LABEL)
+      .filter(([k]) => p.limits[k] != null && (data.usage[k] ?? 0) > p.limits[k]!)
+      .map(([k, label]) => `${label.toLowerCase()} (${formatNumber(data.usage[k] ?? 0)} pour ${formatNumber(p.limits[k]!)} inclus)`);
+
+  const cancelScheduled = async () => {
+    try {
+      await api.post("/app/billing/scheduled-change/cancel");
+      await refresh();
+      toast.success(`Changement annulé : vous restez sur l’offre ${current.name}`);
+    } catch (e) {
+      toast.error(errorMessage(e));
+    }
+  };
 
   const choose = async (code: string) => {
     setPending(code);
     try {
-      const res = await api.post<{ url: string; mode: string }>("/app/billing/checkout", { planCode: code, interval });
-      if (data.mode === "stripe" && !stripeSubscriber) window.location.assign(res.url);
+      const res = await api.post<{ url: string; mode: string; effective?: "now" | "renewal" }>("/app/billing/checkout", { planCode: code, interval });
+      const name = data.plans.find((p) => p.code === code)?.name ?? code;
+      if (data.mode === "stripe" && !paidRunning) window.location.assign(res.url);
+      else if (res.effective === "renewal") await refresh().then(() => toast.success(`Passage à ${name} programmé le ${renewal}`));
       else await refresh().then(() => toast.success(data.mode === "stripe" ? "Offre changée" : "Offre changée (mode simulé, aucun paiement)"));
     } catch (e) {
       toast.error(errorMessage(e));
@@ -168,7 +194,9 @@ function BillingView() {
                   ? `Résiliation demandée : l’offre se termine le ${formatDate(sub.currentPeriodEnd)}, puis votre compte passe à l’offre Gratuite. `
                   : managedByFove
                     ? `Contrat jusqu’au ${formatDate(sub.currentPeriodEnd)}. `
-                    : `Prochain renouvellement le ${formatDate(sub.currentPeriodEnd)}. `)}
+                    : scheduled
+                      ? `Passage à l’offre ${scheduled.name} le ${formatDate(sub.currentPeriodEnd)} ; votre offre ${current.name} reste active jusque-là. `
+                      : `Prochain renouvellement le ${formatDate(sub.currentPeriodEnd)}. `)}
               {graceEnd && subApplies && `Mettez à jour votre moyen de paiement avant le ${formatDate(graceEnd)} pour garder votre offre ; ensuite, votre compte passe à l’offre Gratuite.`}
               {managedByFove && "Votre abonnement est géré par l’équipe FOVE : contactez-nous pour le modifier."}
             </p>
@@ -187,6 +215,11 @@ function BillingView() {
                     }}
                   >
                     Factures et moyen de paiement
+                  </Button>
+                )}
+                {scheduled && (
+                  <Button variant="secondary" onClick={cancelScheduled}>
+                    Rester sur {current.name}
                   </Button>
                 )}
                 {canResume && (
@@ -255,8 +288,11 @@ function BillingView() {
           <div className="grid gap-4 md:grid-cols-3">
             {data.plans.filter((p) => p.kind === "PAID").map((p) => {
               const isCurrent = current.code === p.code && subApplies && sub?.status !== "CANCELED";
-              const disabled = isCurrent || data.mode === "unavailable";
-              const label = isCurrent ? "Offre actuelle" : `Passer à ${p.name}`;
+              const isScheduled = scheduled?.code === p.code;
+              const disabled = isCurrent || isScheduled || data.mode === "unavailable";
+              const downgrade = paidRunning && sub !== null && p.priceYearlyCents < sub.plan.priceYearlyCents;
+              const label = isCurrent ? "Offre actuelle" : isScheduled ? `Prévue le ${renewal}` : downgrade ? `Passer à ${p.name} au renouvellement` : `Passer à ${p.name}`;
+              const over = downgrade ? overQuota(p) : [];
               return (
                 <Panel key={p.id} className={cn("grid gap-3 p-5", isCurrent && "ring-2 ring-cobalt")}>
                   <h3 className="font-display text-xl font-semibold">{p.name}</h3>
@@ -265,17 +301,32 @@ function BillingView() {
                     {formatPrice(p.priceYearlyCents, p.currency)}
                     <span className="text-base font-normal text-ink-3"> /an</span>
                   </p>
-                  {stripeSubscriber && !disabled ? (
-                    // Abonné Stripe : le changement est immédiat et facturé au prorata, on confirme avant.
+                  {downgrade && !disabled ? (
+                    // Offre inférieure : rien ne change avant le renouvellement, et rien n'est remboursé.
+                    <ConfirmDialog
+                      trigger={<Button variant="secondary" loading={pending === p.code}>{label}</Button>}
+                      title={`Passer à ${p.name} au renouvellement ?`}
+                      consequence={[
+                        `Vous gardez l’offre ${current.name} jusqu’au ${renewal}. Ensuite, votre abonnement continue sur ${p.name} à ${formatPrice(p.priceYearlyCents, p.currency)} par an. La période en cours n’est ni remboursée ni créditée.`,
+                        over.length ? ` Vous dépassez les quotas de ${p.name} : ${over.join(", ")}. Rien ne sera supprimé, mais vous ne pourrez plus en ajouter.` : "",
+                        " Vous pouvez annuler ce changement jusqu’au renouvellement.",
+                      ].join("")}
+                      confirmLabel={`Programmer le passage à ${p.name}`}
+                      onConfirm={() => choose(p.code)}
+                    />
+                  ) : stripeSubscriber && !disabled ? (
+                    // Abonné Stripe, offre supérieure : effet immédiat et facturé au prorata, on confirme avant.
                     <ConfirmDialog
                       trigger={<Button loading={pending === p.code}>{label}</Button>}
                       title={`Passer à ${p.name} ?`}
-                      consequence={`Votre offre change tout de suite. La différence au prorata, sur la base de ${formatPrice(p.priceYearlyCents, p.currency)} par an, est facturée immédiatement sur votre moyen de paiement ; un passage à une offre inférieure crédite le trop-perçu sur vos prochaines factures.`}
+                      consequence={`Votre offre change tout de suite. La différence au prorata jusqu’au ${renewal}, sur la base de ${formatPrice(p.priceYearlyCents, p.currency)} par an, est facturée immédiatement sur votre moyen de paiement. Si le paiement échoue, votre offre actuelle est conservée.`}
                       confirmLabel={`Passer à ${p.name}`}
                       onConfirm={() => choose(p.code)}
                     />
                   ) : (
-                    <Button variant={isCurrent ? "secondary" : "primary"} disabled={disabled} loading={pending === p.code} onClick={() => choose(p.code)}>
+
+                    <Button variant={isCurrent || isScheduled ? "secondary" : "primary"} disabled={disabled}
+ loading={pending === p.code} onClick={() => choose(p.code)}>
                       {label}
                     </Button>
                   )}

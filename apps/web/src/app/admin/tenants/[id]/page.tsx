@@ -381,6 +381,8 @@ function SubscriptionForm({ tenantId, current }: { tenantId: string; current: De
     return { customers: show("customers"), establishments: show("establishments"), staff: show("staff"), programs: show("programs") };
   });
   const custom = plans.find((p) => p.code === plan)?.kind === "CUSTOM";
+  // Abonnement Stripe en cours : il est arrêté au moment où le contrat manuel le remplace.
+  const stripeRunning = current?.provider === "STRIPE" && current.status !== "CANCELED";
 
   const submit = async () => {
     const limitsOverride: Partial<Record<QuotaKey, number | null>> = {};
@@ -436,7 +438,11 @@ function SubscriptionForm({ tenantId, current }: { tenantId: string; current: De
       <ConfirmDialog
         trigger={<Button variant="secondary" className="justify-self-start">Appliquer</Button>}
         title="Modifier l’abonnement manuellement ?"
-        consequence="L’abonnement est remplacé sans passer par Stripe : période offerte, essai ou contrat sur-mesure. Les quotas et le prix non renseignés sont retirés."
+        consequence={[
+          "L’abonnement est remplacé sans passer par Stripe : période offerte, essai ou contrat sur-mesure. Les quotas et le prix non renseignés sont retirés.",
+          stripeRunning ? " L’abonnement Stripe en cours sera résilié immédiatement, sans remboursement automatique : remboursez la période restante depuis Stripe si besoin." : "",
+        ].join("")}
+
         confirmLabel="Appliquer"
         onConfirm={submit}
       />

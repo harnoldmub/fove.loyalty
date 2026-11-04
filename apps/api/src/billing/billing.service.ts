@@ -11,6 +11,8 @@ import { PlanService } from "./plan.service";
 /** Un abonnement payé remplace un éventuel contrat sur-mesure et ses dérogations. */
 const NO_CONTRACT = { limitsOverride: Prisma.DbNull, featuresOverride: Prisma.DbNull, contractPriceYearlyCents: null };
 
+type SubscriptionWithPlan = Subscription & { plan: SubscriptionPlan };
+
 /**
  * Facturation. Sans STRIPE_SECRET_KEY, le fournisseur simulé (MOCK) applique
  * les changements immédiatement, sans aucun paiement : utile en développement
@@ -40,7 +42,7 @@ export class BillingService {
 
   async overview(ctx: TenantContext) {
     const [subscription, plans, usage, limits, current] = await Promise.all([
-      this.prisma.client.subscription.findUnique({ where: { tenantId: ctx.tenantId }, include: { plan: true } }),
+      this.prisma.client.subscription.findUnique({ where: { tenantId: ctx.tenantId }, include: { plan: true, scheduledPlan: { select: { code: true, name: true } } } }),
       this.listPlans(),
       this.plans.usage(ctx.tenantId),
       this.plans.limits(ctx.tenantId),
@@ -62,22 +64,21 @@ export class BillingService {
     if (interval !== "YEAR") throw badRequest("annual_only", "Les nouvelles souscriptions sont annuelles.");
     const plan = await this.plan(planCode);
     const appUrl = loadConfig().APP_URL;
-    const current = await this.prisma.client.subscription.findUnique({ where: { tenantId: ctx.tenantId } });
+    const current = await this.prisma.client.subscription.findUnique({ where: { tenantId: ctx.tenantId }, include: { plan: true } });
+
+    // Abonnement payant en cours : changement d'offre, sans nouvelle période.
+    if (current && this.isRunningPaid(current)) return this.changePlan(ctx, current, plan);
 
     if (!this.stripe) {
       if (loadConfig().isProd) throw badRequest("stripe_disabled", "Le paiement n’est pas encore disponible. Contactez FOVE.");
+      const data = { planId: plan.id, status: "ACTIVE" as const, interval, provider: "MOCK" as const, cancelAtPeriodEnd: false, scheduledPlanId: null, currentPeriodEnd: periodEnd(interval) };
       await this.prisma.client.subscription.upsert({
         where: { tenantId: ctx.tenantId },
-        update: { planId: plan.id, status: "ACTIVE", interval, provider: "MOCK", cancelAtPeriodEnd: false, currentPeriodEnd: periodEnd(interval), ...NO_CONTRACT },
-        create: { tenantId: ctx.tenantId, planId: plan.id, status: "ACTIVE", interval, provider: "MOCK", currentPeriodEnd: periodEnd(interval) },
+        update: { ...data, ...NO_CONTRACT },
+        create: { tenantId: ctx.tenantId, ...data },
       });
       await this.audit.forTenant(ctx, "billing.mock_checkout", undefined, { plan: plan.code, interval });
       return { url: `${appUrl}/app/billing?checkout=mock`, mode: "mock" as const };
-    }
-
-    // Abonnement Stripe déjà actif : changement d'offre direct (avec prorata).
-    if (current?.stripeSubscriptionId && current.status !== "CANCELED") {
-      return this.changePlan(ctx, planCode, interval);
     }
 
     const price = interval === "YEAR" ? plan.stripePriceYearlyId : plan.stripePriceMonthlyId;
@@ -123,29 +124,98 @@ export class BillingService {
     return { url: session.url!, mode: "stripe" as const };
   }
 
-  async changePlan(ctx: TenantContext, planCode: string, interval: BillingInterval) {
-    if (interval !== "YEAR") throw badRequest("annual_only", "Les nouvelles souscriptions sont annuelles.");
-    const plan = await this.plan(planCode);
-    const sub = await this.prisma.client.subscription.findUnique({ where: { tenantId: ctx.tenantId } });
-    if (!sub) throw notFound("Abonnement");
-    if (this.stripe && sub.stripeSubscriptionId) {
-      const price = interval === "YEAR" ? plan.stripePriceYearlyId : plan.stripePriceMonthlyId;
-      if (!price) throw badRequest("price_missing", "Tarif Stripe non configuré pour cette offre");
-      const remote = await this.stripe.subscriptions.retrieve(sub.stripeSubscriptionId);
-      // La différence est facturée tout de suite (et non au renouvellement, jusqu'à un an
-      // plus tard) ; si ce paiement échoue, l'offre ne change pas.
-      await this.stripe.subscriptions.update(sub.stripeSubscriptionId, {
-        items: [{ id: remote.items.data[0]!.id, price }],
-        proration_behavior: "always_invoice",
-        payment_behavior: "pending_if_incomplete",
-        cancel_at_period_end: false,
-      });
-      // L'état local est mis à jour par le webhook customer.subscription.updated.
-    } else {
-      await this.prisma.client.subscription.update({ where: { id: sub.id }, data: { planId: plan.id, interval, cancelAtPeriodEnd: false } });
+  /** Abonnement payé en cours : un nouveau choix d'offre le modifie au lieu d'ouvrir une nouvelle période. */
+  private isRunningPaid(sub: SubscriptionWithPlan) {
+    if (sub.plan.kind !== "PAID" || sub.status === "CANCELED" || sub.status === "INCOMPLETE") return false;
+    if (sub.provider === "STRIPE") return Boolean(this.stripe && sub.stripeSubscriptionId);
+    return sub.provider === "MOCK" && !this.stripe && (!sub.currentPeriodEnd || sub.currentPeriodEnd > new Date());
+  }
+
+  /**
+   * Offre supérieure : immédiate, la différence au prorata est facturée tout de suite
+   * (si ce paiement échoue, l'offre ne change pas). Offre inférieure : programmée au
+   * renouvellement, sans avoir ; l'offre payée reste jusqu'à la fin de la période.
+   * Un nouveau choix remplace un changement déjà programmé ; reprendre l'offre
+   * actuelle l'annule.
+   */
+  private async changePlan(ctx: TenantContext, sub: SubscriptionWithPlan, plan: SubscriptionPlan) {
+    const appUrl = loadConfig().APP_URL;
+    if (plan.id === sub.plan.id) {
+      if (!sub.scheduledPlanId) throw badRequest("same_plan", "Vous êtes déjà sur cette offre");
+      await this.cancelScheduledChange(ctx);
+      return { url: `${appUrl}/app/billing?checkout=updated`, mode: this.mode, effective: "now" as const };
     }
-    await this.audit.forTenant(ctx, "billing.plan_changed", undefined, { plan: plan.code, interval });
-    return { url: `${loadConfig().APP_URL}/app/billing?checkout=updated`, mode: this.mode };
+    const upgrade = plan.priceYearlyCents > sub.plan.priceYearlyCents;
+    if (this.stripe && sub.stripeSubscriptionId) {
+      const price = plan.stripePriceYearlyId;
+      if (!price) throw badRequest("price_missing", "Tarif Stripe non configuré pour cette offre");
+      const remote = await this.releaseSchedule(sub.stripeSubscriptionId);
+      if (upgrade) {
+        await this.stripe.subscriptions.update(sub.stripeSubscriptionId, {
+          items: [{ id: remote.items.data[0]!.id, price }],
+          proration_behavior: "always_invoice",
+          payment_behavior: "pending_if_incomplete",
+          cancel_at_period_end: false,
+        });
+        // L'offre locale change à réception du webhook customer.subscription.updated.
+      } else {
+        // Stripe refuse de programmer un changement sur un abonnement en cours de résiliation.
+        if (remote.cancel_at_period_end) await this.stripe.subscriptions.update(sub.stripeSubscriptionId, { cancel_at_period_end: false });
+        const schedule = await this.stripe.subscriptionSchedules.create({ from_subscription: sub.stripeSubscriptionId });
+        const phase = schedule.phases[0]!;
+        await this.stripe.subscriptionSchedules.update(schedule.id, {
+          end_behavior: "release",
+          proration_behavior: "none",
+          phases: [
+            {
+              start_date: phase.start_date,
+              end_date: phase.end_date,
+              items: phase.items.map((i) => ({ price: idOf(i.price), quantity: i.quantity ?? 1 })),
+              ...(phase.trial_end ? { trial_end: phase.trial_end } : {}),
+              ...(phase.discounts?.length ? { discounts: phase.discounts.map((d) => (d.discount ? { discount: idOf(d.discount) } : { coupon: d.coupon ? idOf(d.coupon) : undefined })) } : {}),
+            },
+            { items: [{ price, quantity: 1 }], duration: { interval: "year", interval_count: 1 }, proration_behavior: "none" },
+          ],
+        });
+      }
+    }
+    const data = upgrade
+      ? { scheduledPlanId: null, cancelAtPeriodEnd: false, ...(sub.provider === "MOCK" ? { planId: plan.id } : {}) }
+      : { scheduledPlanId: plan.id, cancelAtPeriodEnd: false };
+    await this.prisma.client.subscription.update({ where: { id: sub.id }, data });
+    const effective = upgrade ? ("now" as const) : ("renewal" as const);
+    await this.audit.forTenant(ctx, "billing.plan_changed", undefined, { plan: plan.code, from: sub.plan.code, effective });
+    return { url: `${appUrl}/app/billing?checkout=${upgrade ? "updated" : "scheduled"}`, mode: this.mode, effective };
+  }
+
+  /** Annule le passage à une offre inférieure programmé au renouvellement. */
+  async cancelScheduledChange(ctx: TenantContext) {
+    const sub = await this.prisma.client.subscription.findUnique({ where: { tenantId: ctx.tenantId } });
+    if (!sub?.scheduledPlanId) throw badRequest("nothing_scheduled", "Aucun changement d’offre programmé");
+    if (this.stripe && sub.stripeSubscriptionId) await this.releaseSchedule(sub.stripeSubscriptionId);
+    await this.prisma.client.subscription.update({ where: { id: sub.id }, data: { scheduledPlanId: null } });
+    await this.audit.forTenant(ctx, "billing.plan_change_cancelled");
+  }
+
+  /** Détache l'abonnement de son calendrier Stripe : le changement programmé est abandonné, l'offre actuelle continue. */
+  private async releaseSchedule(stripeSubscriptionId: string) {
+    const remote = await this.stripe!.subscriptions.retrieve(stripeSubscriptionId);
+    if (remote.schedule) await this.stripe!.subscriptionSchedules.release(idOf(remote.schedule));
+    return remote;
+  }
+
+  /**
+   * Passage à un contrat attribué par l'admin : l'abonnement Stripe est arrêté tout de
+   * suite, sinon Stripe continuerait de prélever et son prochain événement remplacerait
+   * le contrat. Aucun remboursement automatique (à faire depuis Stripe si besoin).
+   */
+  async endStripeSubscription(sub: Subscription) {
+    if (sub.provider !== "STRIPE" || !sub.stripeSubscriptionId || sub.status === "CANCELED") return false;
+    if (this.stripe) {
+      await this.releaseSchedule(sub.stripeSubscriptionId);
+      await this.stripe.subscriptions.cancel(sub.stripeSubscriptionId);
+    }
+    return true;
   }
 
   async portal(ctx: TenantContext) {
@@ -165,9 +235,11 @@ export class BillingService {
     assertCancellable(sub);
     if (sub.cancelAtPeriodEnd) return;
     if (this.stripe && sub.stripeSubscriptionId) {
+      // La résiliation l'emporte sur un changement d'offre programmé.
+      await this.releaseSchedule(sub.stripeSubscriptionId);
       await this.stripe.subscriptions.update(sub.stripeSubscriptionId, { cancel_at_period_end: true });
     }
-    await this.prisma.client.subscription.update({ where: { id: sub.id }, data: { cancelAtPeriodEnd: true } });
+    await this.prisma.client.subscription.update({ where: { id: sub.id }, data: { cancelAtPeriodEnd: true, scheduledPlanId: null } });
     await this.audit.forTenant(ctx, "billing.cancel_requested");
   }
 
@@ -189,7 +261,8 @@ export class BillingService {
    * Tâche planifiée : fin de période des abonnements gérés par FOVE (Stripe
    * prévient lui-même par webhook). Un contrat attribué par l'admin ou une
    * résiliation arrivés à échéance passent à « résilié » (droits du Gratuit) ;
-   * un abonnement simulé non résilié est renouvelé, comme le ferait Stripe.
+   * un abonnement simulé non résilié est renouvelé, comme le ferait Stripe, sur
+   * l'offre programmée s'il y en a une.
    */
   async closeExpired(now = new Date()) {
     const db = this.prisma.client;
@@ -200,11 +273,12 @@ export class BillingService {
     let renewed = 0;
     for (const sub of due) {
       if (sub.provider === "MOCK" && !sub.cancelAtPeriodEnd) {
-        await db.subscription.update({ where: { id: sub.id }, data: { currentPeriodEnd: periodEnd(sub.interval) } });
+        const next = sub.scheduledPlanId ? { planId: sub.scheduledPlanId, scheduledPlanId: null } : {};
+        await db.subscription.update({ where: { id: sub.id }, data: { currentPeriodEnd: periodEnd(sub.interval), ...next } });
         renewed += 1;
         continue;
       }
-      await db.subscription.update({ where: { id: sub.id }, data: { status: "CANCELED", cancelAtPeriodEnd: false } });
+      await db.subscription.update({ where: { id: sub.id }, data: { status: "CANCELED", cancelAtPeriodEnd: false, scheduledPlanId: null } });
       await this.audit.log({ tenantId: sub.tenantId, action: "billing.subscription_ended", metadata: { provider: sub.provider } });
       ended += 1;
     }
@@ -242,8 +316,9 @@ export class BillingService {
       case "invoice.payment_failed": {
         const invoice = event.data.object as Stripe.Invoice & { customer: string | null };
         if (typeof invoice.customer === "string") {
+          // provider STRIPE : une facture d'un ancien abonnement ne touche pas un contrat attribué par l'admin.
           await this.prisma.client.subscription.updateMany({
-            where: { stripeCustomerId: invoice.customer, status: { in: ["ACTIVE", "TRIALING"] } },
+            where: { stripeCustomerId: invoice.customer, provider: "STRIPE", status: { in: ["ACTIVE", "TRIALING"] } },
             data: { status: "PAST_DUE", pastDueSince: new Date() },
           });
           this.logger.warn(`Paiement échoué pour ${invoice.customer}`);
@@ -254,7 +329,7 @@ export class BillingService {
         const invoice = event.data.object as Stripe.Invoice & { customer: string | null };
         if (typeof invoice.customer === "string") {
           await this.prisma.client.subscription.updateMany({
-            where: { stripeCustomerId: invoice.customer, status: "PAST_DUE" },
+            where: { stripeCustomerId: invoice.customer, provider: "STRIPE", status: "PAST_DUE" },
             data: { status: "ACTIVE", pastDueSince: null },
           });
         }
@@ -284,12 +359,13 @@ export class BillingService {
       return;
     }
     const local = await this.prisma.client.subscription.findUnique({ where: { tenantId } });
-    if (local?.stripeSubscriptionId && local.stripeSubscriptionId !== remote.id && local.status !== "CANCELED") {
-      // Événement d'un ancien abonnement : il ne doit pas écraser l'abonnement en cours.
-      this.logger.warn(`Abonnement ${remote.id} ignoré : ${tenantId} est lié à ${local.stripeSubscriptionId}`);
+    const status = mapStatus(remote.status);
+    // Événement d'un autre abonnement que celui en cours (ancien abonnement, ou abonnement
+    // arrêté lors du passage à un contrat) : il ne doit pas écraser l'abonnement en cours.
+    if (local && local.stripeSubscriptionId !== remote.id && (status === "CANCELED" || (local.stripeSubscriptionId && local.status !== "CANCELED"))) {
+      this.logger.warn(`Abonnement ${remote.id} ignoré : ${tenantId} est lié à ${local.stripeSubscriptionId ?? "un contrat FOVE"}`);
       return;
     }
-    const status = mapStatus(remote.status);
     // Le délai de grâce court depuis le premier impayé, pas depuis le dernier événement reçu.
     const pastDueSince = status === "PAST_DUE" ? (local?.status === "PAST_DUE" && local.pastDueSince ? local.pastDueSince : new Date()) : null;
     const periodEndUnix = (item as unknown as { current_period_end?: number })?.current_period_end;
@@ -301,6 +377,8 @@ export class BillingService {
       stripeSubscriptionId: remote.id,
       stripeCustomerId: customerId,
       cancelAtPeriodEnd: remote.cancel_at_period_end,
+      // Le changement programmé disparaît une fois appliqué ou si le calendrier Stripe est abandonné.
+      scheduledPlanId: remote.schedule && local?.scheduledPlanId !== plan.id ? (local?.scheduledPlanId ?? null) : null,
       pastDueSince,
       trialEndsAt: remote.trial_end ? new Date(remote.trial_end * 1000) : null,
       currentPeriodEnd: periodEndUnix ? new Date(periodEndUnix * 1000) : null,
@@ -337,7 +415,12 @@ function assertCancellable(sub: Subscription & { plan: SubscriptionPlan }) {
   }
 }
 
+function idOf(ref: string | { id: string }): string {
+  return typeof ref === "string" ? ref : ref.id;
+}
+
 function periodEnd(interval: BillingInterval): Date {
+
   const d = new Date();
   if (interval === "YEAR") d.setFullYear(d.getFullYear() + 1);
   else d.setMonth(d.getMonth() + 1);
