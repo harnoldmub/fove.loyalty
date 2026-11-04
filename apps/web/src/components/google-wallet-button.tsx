@@ -1,23 +1,16 @@
 "use client";
 
 import { LoaderCircle } from "lucide-react";
-import { useState, useSyncExternalStore } from "react";
+import { useState } from "react";
 import { api, errorMessage } from "@/lib/api";
-
-const noop = () => () => undefined;
-// Google Wallet n'existe pas sur iPhone ni iPad : le bouton y est masqué.
-const isApple = () => /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
 
 /**
  * Badge officiel « Ajouter à Google Wallet » conforme aux directives de marque Google :
  * https://developers.google.com/wallet/generic/resources/brand-guidelines
  */
 export function GoogleWalletButton({ token, className = "" }: { token: string; className?: string }) {
-  const apple = useSyncExternalStore(noop, isApple, () => true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  if (apple) return null;
 
   return (
     <div className={className}>

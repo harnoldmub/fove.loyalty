@@ -116,6 +116,16 @@ export function CardView({ token, initial }: { token: string; initial: CardData 
           </div>
         </section>
 
+        {card.status === "ACTIVE" && (
+          <section aria-label="Ajouter la carte à un portefeuille mobile" className="grid justify-items-center gap-3 rounded-[var(--radius-lg)] bg-surface p-4 shadow-1">
+            <p className="text-center text-sm font-medium text-ink-2">Gardez votre carte toujours à portée de main</p>
+            <div className="flex flex-wrap items-center justify-center gap-3">
+              <GoogleWalletButton token={token} />
+              {data.appleWallet && <AppleWalletButton token={token} />}
+            </div>
+          </section>
+        )}
+
         {card.status === "PENDING_VERIFICATION" ? (
           data.verification === "EMAIL_OTP" ? (
             <form
@@ -169,10 +179,6 @@ export function CardView({ token, initial }: { token: string; initial: CardData 
 
         {card.status === "ACTIVE" && (
           <div className="grid justify-items-center gap-3">
-            <div className="flex flex-wrap items-center justify-center gap-3">
-              {data.appleWallet && <AppleWalletButton token={token} />}
-              {data.googleWallet && <GoogleWalletButton token={token} />}
-            </div>
             {/* Téléchargements : à garder dans la galerie ou à imprimer. */}
             <div className="flex gap-2">
               <Button asChild variant="secondary" size="sm" className="rounded-full">
