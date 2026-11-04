@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import { CardsService } from "../cards/cards.service";
+import { PartnersService } from "../partners/partners.service";
 import { Injectable } from "@nestjs/common";
 import {
   createTenantSchema,
@@ -54,6 +55,7 @@ export class TenantsService {
     private readonly audit: AuditService,
     private readonly plans: PlanService,
     private readonly cards: CardsService,
+    private readonly partners: PartnersService,
   ) {}
 
   /** Crée l'entreprise, l'adhésion propriétaire, les réglages et l'abonnement à l'offre Gratuite. */
@@ -81,6 +83,15 @@ export class TenantsService {
         return tenant;
       });
       await this.audit.log({ tenantId: tenant.id, actorUserId: auth.user.id, action: "tenant.created", targetType: "tenant", targetId: tenant.id });
+
+      if (input.partnerCode) {
+        try {
+          await this.partners.attributeTenant(tenant.id, input.partnerCode, "MANUAL_CODE");
+        } catch {
+          // attribution non-bloquante
+        }
+      }
+
       return tenant;
     } catch (error) {
       if (isUniqueViolation(error)) throw conflict("slug_taken", "Cette adresse est déjà prise, choisissez-en une autre");

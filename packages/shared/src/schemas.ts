@@ -68,6 +68,7 @@ export const createTenantSchema = z.object({
   country: z.string().length(2).default("CD"),
   currency: z.string().length(3).default("CDF"),
   timezone: z.string().max(64).default("Africa/Kinshasa"),
+  partnerCode: z.string().trim().max(30).optional(),
 });
 export const updateTenantSchema = createTenantSchema.partial().extend({
   logoUrl: z.url().max(500).nullable().optional(),

@@ -6,6 +6,7 @@ import { useState, type ReactNode } from "react";
 import {
   Activity,
   ArrowDownRight,
+  Award,
   BarChart3,
   Building2,
   CreditCard,
@@ -77,9 +78,9 @@ const NAV_GROUPS = [
         exact: false,
       },
       {
-        href: "/admin/finance/commissions",
-        label: "Partenaires FOVE",
-        icon: WalletCards,
+        href: "/admin/partners",
+        label: "Programme Partenaires",
+        icon: Award,
         exact: false,
       },
       {

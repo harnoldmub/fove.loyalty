@@ -6,7 +6,7 @@ import { sha256 } from "../common/crypto";
 import { forbidden, unauthorized, paymentRequired } from "../common/errors";
 import { PrismaService } from "../common/prisma.service";
 import { PERMISSION_KEY, REQUIRE_VERIFIED_KEY, SCOPE_KEY } from "../common/decorators";
-import type { AppRequest } from "../common/context";
+import type { AppRequest, AuthState } from "../common/context";
 import { SessionService, sessionCookieName } from "./session.service";
 import { PlanService } from "../billing/plan.service";
 
@@ -224,8 +224,50 @@ export class PublishableKeyGuard implements CanActivate {
   }
 }
 
+@Injectable()
+export class PartnerGuard implements CanActivate {
+  constructor(private readonly prisma: PrismaService) {}
+
+  async canActivate(context: ExecutionContext): Promise<boolean> {
+    const req = context.switchToHttp().getRequest<{ auth?: AuthState }>();
+    const auth = req.auth;
+    if (!auth?.user) throw unauthorized();
+    if (auth.user.isSuperAdmin) return true;
+    if (auth.user.isPartner) return true;
+
+    const partner = await this.prisma.client.partner.findFirst({
+      where: {
+        OR: [
+          { userId: auth.user.id },
+          { email: auth.user.email },
+        ],
+        status: { in: ["APPROVED", "ACTIVE"] },
+      },
+      select: { id: true, userId: true },
+    });
+
+    if (!partner) {
+      throw forbidden("Espace réservé aux partenaires FOVE validés");
+    }
+
+    if (!partner.userId) {
+      await this.prisma.client.partner.update({
+        where: { id: partner.id },
+        data: { userId: auth.user.id },
+      });
+      await this.prisma.client.user.update({
+        where: { id: auth.user.id },
+        data: { isPartner: true },
+      });
+    }
+
+    return true;
+  }
+}
+
 export const UserRoute = () => UseGuards(SessionGuard);
 export const TenantRoute = () => applyDecorators(UseGuards(SessionGuard, TenantGuard));
 export const SuperAdminRoute = () => applyDecorators(UseGuards(SessionGuard, SuperAdminGuard));
 export const FinanceRoute = () => applyDecorators(UseGuards(SessionGuard, FinanceAccessGuard));
+export const PartnerRoute = () => applyDecorators(UseGuards(SessionGuard, PartnerGuard));
 export const ApiKeyRoute = () => UseGuards(ApiKeyGuard);

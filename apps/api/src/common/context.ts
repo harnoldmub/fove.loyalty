@@ -39,6 +39,7 @@ export interface SessionUser {
   name: string;
   emailVerifiedAt: Date | null;
   isSuperAdmin: boolean;
+  isPartner?: boolean;
   adminRole?: "SUPER_ADMIN" | "ASSOCIATE" | "FINANCE_MANAGER" | "SUPPORT" | null;
 }
 

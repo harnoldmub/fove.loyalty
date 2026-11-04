@@ -26,6 +26,7 @@ model User {
   passwordHash     String
   emailVerifiedAt  DateTime?
   isSuperAdmin     Boolean   @default(false)
+  isPartner        Boolean   @default(false)
   adminRole        AdminRole?
   failedLoginCount Int       @default(0)
   lockedUntil      DateTime?
@@ -36,6 +37,7 @@ model User {
   memberships  TenantMembership[]
   authTokens   AuthToken[]
   supportGrants SupportAccessGrant[]
+  partner      Partner?
 }
 
 /// Le cookie porte un jeton opaque ; seule son empreinte SHA-256 est stockée.
@@ -141,6 +143,8 @@ model Tenant {
   invoices       Invoice[]
   payments       Payment[]
   partnerCommissions PartnerCommission[]
+  attribution    AcquisitionAttribution?
+  partnerLeads   PartnerLead[]
   referralRewardsGiven ReferralReward[] @relation("ReferrerTenant")
   referralRewardsReceived ReferralReward[] @relation("ReferredTenant")
 }
@@ -1066,27 +1070,119 @@ model Refund {
 }
 
 enum PartnerStatus {
+  PENDING
+  UNDER_REVIEW
+  APPROVED
   ACTIVE
   PAUSED
+  SUSPENDED
+  REJECTED
   INACTIVE
 }
 
 model Partner {
-  id                    String              @id @default(uuid()) @db.Uuid
-  name                  String
-  email                 String              @unique
-  code                  String              @unique /// Code d'apporteur d'affaires (ex: PART-KIKWIT)
-  phone                 String?
-  company               String?
-  commissionRatePercent Decimal             @default(20.00) @db.Decimal(5, 2)
-  status                PartnerStatus       @default(ACTIVE)
-  payoutInfo            Json?               /// Coordonnées bancaires ou Mobile Money masquées
-  createdAt             DateTime            @default(now())
-  updatedAt             DateTime            @updatedAt
+  id                          String              @id @default(uuid()) @db.Uuid
+  userId                      String?             @unique @db.Uuid
+  user                        User?               @relation(fields: [userId], references: [id], onDelete: SetNull)
 
-  payments              Payment[]
-  commissions           PartnerCommission[]
-  payouts               PartnerPayout[]
+  name                        String
+  email                       String              @unique
+  code                        String              @unique /// Code d'apporteur d'affaires (ex: AGENCE243)
+  phone                       String?
+  company                     String?
+  partnerType                 String?             /// AGENCY, FREELANCE, CONSULTANT, DEVELOPER, ENTREPRENEUR, MERCHANT_NETWORK, OTHER
+  websiteUrl                  String?
+  country                     String?
+  city                        String?
+  promotionStrategy           String?             /// Stratégie de promotion renseignée
+  networkSizeEstimate         String?             /// Nombre estimé de commerçants
+  commissionRatePercent       Decimal             @default(20.00) @db.Decimal(5, 2)
+  status                      PartnerStatus       @default(PENDING)
+  rejectionReason             String?
+  payoutInfo                  Json?               /// Coordonnées bancaires ou Mobile Money
+  minimumPayoutThresholdCents Int                 @default(5000) /// 50.00 USD / EUR par défaut
+  totalClicksCount            Int                 @default(0)
+  totalConversionsCount       Int                 @default(0)
+
+  createdAt                   DateTime            @default(now())
+  updatedAt                   DateTime            @updatedAt
+
+  payments                    Payment[]
+  commissions                 PartnerCommission[]
+  payouts                     PartnerPayout[]
+  clicks                      PartnerClick[]
+  leads                       PartnerLead[]
+  attributions                AcquisitionAttribution[]
+}
+
+model PartnerClick {
+  id          String   @id @default(uuid()) @db.Uuid
+  partnerId   String   @db.Uuid
+  partner     Partner  @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+  code        String
+  ipHash      String?
+  userAgent   String?
+  referrer    String?
+  utmSource   String?
+  utmMedium   String?
+  utmCampaign String?
+  createdAt   DateTime @default(now())
+
+  @@index([partnerId])
+  @@index([code])
+}
+
+model PartnerLead {
+  id                  String   @id @default(uuid()) @db.Uuid
+  partnerId           String   @db.Uuid
+  partner             Partner  @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+  businessName        String
+  contactName         String?
+  email               String?
+  phone               String?
+  city                String?
+  country             String?
+  sector              String?
+  notes               String?
+  status              String   @default("NEW") /// NEW, CONTACTED, INTERESTED, REGISTERED, CONVERTED, LOST
+  registeredTenantId  String?  @db.Uuid
+  registeredTenant    Tenant?  @relation(fields: [registeredTenantId], references: [id], onDelete: SetNull)
+
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@index([partnerId])
+}
+
+model AcquisitionAttribution {
+  id                String   @id @default(uuid()) @db.Uuid
+  tenantId          String   @unique @db.Uuid
+  tenant            Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  partnerId         String   @db.Uuid
+  partner           Partner  @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+  code              String
+  utmSource         String?
+  utmCampaign       String?
+  attributionSource String   @default("COOKIE") /// COOKIE, MANUAL_CODE, ADMIN_OVERRIDE
+  firstPaymentAt    DateTime?
+  conversionStatus  String   @default("REGISTERED") /// REGISTERED, CONVERTED, CHURNED
+
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([partnerId])
+}
+
+model PartnerSettings {
+  id                          String   @id @default("default")
+  defaultCommissionRatePercent Decimal  @default(20.00) @db.Decimal(5, 2)
+  cookieAttributionDays       Int      @default(30)
+  conversionWindowDays        Int      @default(90)
+  validationDelayDays         Int      @default(30)
+  minimumPayoutThresholdCents Int      @default(5000)
+  firstPaymentOnly            Boolean  @default(true)
+  autoApproveApplications     Boolean  @default(false)
+  updatedAt                   DateTime @updatedAt
 }
 
 enum CommissionStatus {

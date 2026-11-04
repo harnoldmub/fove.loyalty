@@ -7,6 +7,7 @@ import { AuditService } from "../common/audit.service";
 import { badRequest, notFound } from "../common/errors";
 import type { TenantContext } from "../common/context";
 import { PlanService } from "./plan.service";
+import { PartnersService } from "../partners/partners.service";
 
 /** Un abonnement payé remplace un éventuel contrat sur-mesure et ses dérogations. */
 const NO_CONTRACT = { limitsOverride: Prisma.DbNull, featuresOverride: Prisma.DbNull, contractPriceYearlyCents: null };
@@ -27,6 +28,7 @@ export class BillingService {
     private readonly prisma: PrismaService,
     private readonly plans: PlanService,
     private readonly audit: AuditService,
+    private readonly partners: PartnersService,
   ) {
     const key = loadConfig().STRIPE_SECRET_KEY;
     this.stripe = key ? new Stripe(key) : null;
@@ -460,7 +462,7 @@ export class BillingService {
         : null;
 
       if (!existingPayment) {
-        await this.prisma.client.payment.create({
+        const payment = await this.prisma.client.payment.create({
           data: {
             reference: ref,
             tenantId: sub.tenantId,
@@ -476,6 +478,11 @@ export class BillingService {
             confirmedAt: new Date(),
           },
         });
+        try {
+          await this.partners.handlePaymentConfirmed(payment);
+        } catch (e) {
+          this.logger.error("Erreur calcul commission partenaire", e);
+        }
       }
     }
   }

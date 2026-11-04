@@ -111,12 +111,20 @@ export function OnboardingWizard({ userName, tenant }: { userName: string; tenan
     if (step === 0)
       return run(async () => {
         const timezone = getCountryOption(estCountry)?.timezone ?? (currency === "EUR" ? "Europe/Paris" : "Africa/Kinshasa");
+        const partnerCodeCookie = typeof document !== "undefined"
+          ? document.cookie
+              .split("; ")
+              .find((row) => row.startsWith("fove_partner_code="))
+              ?.split("=")[1]
+          : undefined;
+
         await api.post("/app/tenants", {
           name,
           slug: slug || slugify(name),
           currency,
           country: estCountry,
           timezone,
+          partnerCode: partnerCodeCookie ? decodeURIComponent(partnerCodeCookie) : undefined,
         });
         setEstName(name);
         setStep(1);

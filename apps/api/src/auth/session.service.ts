@@ -46,7 +46,7 @@ export class SessionService {
     if (!token || token.length > 100) return null;
     const session = await this.prisma.client.session.findUnique({
       where: { tokenHash: sha256(token) },
-      include: { user: { select: { id: true, email: true, name: true, emailVerifiedAt: true, isSuperAdmin: true, adminRole: true } } },
+      include: { user: { select: { id: true, email: true, name: true, emailVerifiedAt: true, isSuperAdmin: true, isPartner: true, adminRole: true } } },
     });
     if (!session || session.expiresAt < new Date()) return null;
     if (Date.now() - session.lastSeenAt.getTime() > TOUCH_INTERVAL_MS) {

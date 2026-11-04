@@ -9,6 +9,7 @@ export interface Me {
     name: string;
     emailVerifiedAt: string | null;
     isSuperAdmin: boolean;
+    isPartner?: boolean;
     adminRole?: "SUPER_ADMIN" | "ASSOCIATE" | "FINANCE_MANAGER" | "SUPPORT" | null;
   };
   activeTenantId: string | null;

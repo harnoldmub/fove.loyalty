@@ -9,7 +9,7 @@ import { WebhooksService } from "./notifications/webhooks.service";
 import { SessionService } from "./auth/session.service";
 import { AuthService } from "./auth/auth.service";
 import { AuthController } from "./auth/auth.controller";
-import { ApiKeyGuard, PublishableKeyGuard, SessionGuard, SuperAdminGuard, TenantGuard } from "./auth/guards";
+import { ApiKeyGuard, FinanceAccessGuard, PartnerGuard, PublishableKeyGuard, SessionGuard, SuperAdminGuard, TenantGuard } from "./auth/guards";
 import { PlanService } from "./billing/plan.service";
 import { QuotaAlertService } from "./billing/quota-alert.service";
 import { BillingService } from "./billing/billing.service";
@@ -36,6 +36,8 @@ import { AdminService } from "./admin/admin.service";
 import { AdminController } from "./admin/admin.controller";
 import { FinanceService } from "./admin/finance/finance.service";
 import { FinanceController } from "./admin/finance/finance.controller";
+import { PartnersService } from "./partners/partners.service";
+import { PartnersController } from "./partners/partners.controller";
 import { JobsController } from "./jobs/jobs.controller";
 import { MediaController } from "./media/media.controller";
 import { CardsService } from "./cards/cards.service";
@@ -68,6 +70,7 @@ import { AppleWalletServiceController } from "./cards/apple-wallet-service.contr
     WidgetController,
     AdminController,
     FinanceController,
+    PartnersController,
     JobsController,
     MediaController,
     AppleWalletServiceController,
@@ -84,6 +87,8 @@ import { AppleWalletServiceController } from "./cards/apple-wallet-service.contr
     SessionGuard,
     TenantGuard,
     SuperAdminGuard,
+    FinanceAccessGuard,
+    PartnerGuard,
     ApiKeyGuard,
     PublishableKeyGuard,
     PlanService,
@@ -101,6 +106,7 @@ import { AppleWalletServiceController } from "./cards/apple-wallet-service.contr
     CommerceService,
     AdminService,
     FinanceService,
+    PartnersService,
     CardsService,
     GoogleWalletProvider,
     AppleWalletProvider,

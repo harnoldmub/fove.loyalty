@@ -616,6 +616,10 @@ export class FinanceService {
           status: newStatus,
         },
       }),
+      this.prisma.client.partnerCommission.updateMany({
+        where: { paymentId: payment.id, status: { in: ["PENDING", "CONFIRMED", "AVAILABLE"] } },
+        data: { status: "CANCELLED" },
+      }),
       this.prisma.client.financialAuditLog.create({
         data: {
           actorUserId: auth.user.id,
