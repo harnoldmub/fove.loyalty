@@ -69,6 +69,15 @@ export function PhoneInput({
     }
     return value;
   }, [value, callingCode]);
+  // La saisie locale reste indépendante de la valeur E.164 envoyée au formulaire.
+  // Ainsi, le premier « 0 » ne disparaît plus pendant que l'utilisateur tape.
+  const [displayNumber, setDisplayNumber] = useState(localNumber);
+  const lastEmittedValue = useRef(value);
+
+  useEffect(() => {
+    if (value !== lastEmittedValue.current) setDisplayNumber(localNumber);
+    lastEmittedValue.current = value;
+  }, [localNumber, value]);
 
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -135,24 +144,31 @@ export function PhoneInput({
     setQuery("");
 
     const newCallingCode = getCallingCode(code);
-    if (localNumber) {
-      const clean = localNumber.replace(/^0+/, "");
-      onChange(`${newCallingCode}${clean}`);
+    if (displayNumber) {
+      const clean = displayNumber.replace(/\D/g, "").replace(/^0+/, "");
+      const nextValue = `${newCallingCode}${clean}`;
+      lastEmittedValue.current = nextValue;
+      onChange(nextValue);
     }
     numberInputRef.current?.focus();
   }
 
   function handleNumberChange(e: React.ChangeEvent<HTMLInputElement>) {
     const raw = e.target.value;
+    setDisplayNumber(raw);
 
     // Si l'utilisateur colle un numéro international complet commençant par "+"
     if (raw.startsWith("+")) {
       const match = countriesWithCode.find((c) => raw.startsWith(c.callingCode));
       if (match) {
         setSelectedCountry(match.code);
-        onChange(raw.replace(/\s+/g, ""));
+        const nextValue = raw.replace(/[^+\d]/g, "");
+        setDisplayNumber(nextValue.slice(match.callingCode.length));
+        lastEmittedValue.current = nextValue;
+        onChange(nextValue);
         return;
       }
+      lastEmittedValue.current = raw;
       onChange(raw);
       return;
     }
@@ -160,12 +176,15 @@ export function PhoneInput({
     // Retirer le 0 initial pour le format international canonique E.164
     const cleanLocal = raw.trim();
     if (!cleanLocal) {
+      lastEmittedValue.current = "";
       onChange("");
       return;
     }
-    const normalizedDigits = cleanLocal.replace(/\s+/g, "");
-    const withoutLeadingZero = normalizedDigits.startsWith("0") ? normalizedDigits.slice(1) : normalizedDigits;
-    onChange(`${callingCode}${withoutLeadingZero}`);
+    const normalizedDigits = cleanLocal.replace(/\D/g, "");
+    const withoutLeadingZero = normalizedDigits.replace(/^0+/, "");
+    const nextValue = `${callingCode}${withoutLeadingZero}`;
+    lastEmittedValue.current = nextValue;
+    onChange(nextValue);
   }
 
   return (
@@ -196,7 +215,7 @@ export function PhoneInput({
         autoComplete="tel"
         required={required}
         disabled={disabled}
-        value={localNumber}
+        value={displayNumber}
         onChange={handleNumberChange}
         placeholder={placeholder ?? (selectedCountry === "CD" ? "081 234 5678" : "6 12 34 56 78")}
         className="min-w-0 flex-1 rounded-r-md border border-line bg-surface px-3 py-2 text-[0.95rem] text-ink placeholder:text-ink-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cobalt disabled:opacity-60"
@@ -205,7 +224,7 @@ export function PhoneInput({
 
       {/* Dropdown de recherche de pays */}
       {open && (
-        <div className="absolute inset-x-0 top-full z-50 mt-1.5 max-h-72 overflow-hidden rounded-md border border-line bg-surface shadow-2">
+        <div className="absolute inset-x-0 top-full z-50 mt-1.5 max-h-[min(18rem,45dvh)] overflow-hidden rounded-md border border-line bg-surface shadow-2">
           <div className="flex items-center gap-2 border-b border-line px-3 py-2">
             <Search className="size-4 shrink-0 text-ink-3" aria-hidden="true" />
             <input
@@ -227,7 +246,7 @@ export function PhoneInput({
             id={listId}
             role="listbox"
             aria-label="Sélectionnez un pays pour l’indicatif"
-            className="max-h-56 overflow-y-auto py-1"
+            className="max-h-[min(14rem,36dvh)] overflow-y-auto overscroll-contain py-1 [scrollbar-gutter:stable]"
           >
             {filtered.length === 0 ? (
               <li className="px-3.5 py-3 text-center text-xs text-ink-3">Aucun pays trouvé.</li>
