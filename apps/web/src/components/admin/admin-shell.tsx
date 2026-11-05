@@ -118,12 +118,6 @@ const NAV_GROUPS = [
         icon: Building2,
         exact: true,
       },
-      {
-        href: "/admin/customers",
-        label: "Clients et cartes",
-        icon: Users,
-        exact: false,
-      },
     ],
   },
   {

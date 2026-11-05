@@ -44,12 +44,6 @@ export class AdminController {
     return this.admin.updateMessage(id, body);
   }
 
-  @Get("customers")
-  @SuperAdminRoute()
-  customers(@Query("q") q?: string) {
-    return this.admin.listAllCustomers(q);
-  }
-
   @Post("tenants/:id/status")
   @HttpCode(204)
   @SuperAdminRoute()

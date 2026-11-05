@@ -1,12 +1,11 @@
 import { Injectable } from "@nestjs/common";
 import { Prisma } from "@fove/database";
 import { z } from "zod";
-import { computeCustomerSegment, PLAN_FEATURE_KEYS, QUOTA_KEYS } from "@fove/shared";
+import { PLAN_FEATURE_KEYS, QUOTA_KEYS } from "@fove/shared";
 import { PrismaService } from "../common/prisma.service";
 import { AuditService } from "../common/audit.service";
 import { badRequest, notFound } from "../common/errors";
 import type { AuthState } from "../common/context";
-import { readAccessToken } from "../loyalty/cards";
 import { BillingService } from "../billing/billing.service";
 
 export const updatePlanSchema = z.object({
@@ -114,48 +113,21 @@ export class AdminService {
         settings: true,
         subscription: { include: { plan: true } },
         memberships: { include: { user: { select: { email: true, name: true } }, role: { select: { key: true } } } },
+        establishments: { select: { id: true, name: true, city: true, address: true } },
+        programs: { select: { id: true, name: true, mode: true, stampsTarget: true } },
         integrations: true,
         _count: { select: { customers: true, accounts: true, transactions: true, programs: true, establishments: true } },
       },
     });
     if (!tenant) throw notFound("Entreprise");
 
-    const [audit, rawCustomers] = await Promise.all([
-      this.prisma.client.auditLog.findMany({ where: { tenantId: id }, orderBy: { createdAt: "desc" }, take: 50 }),
-      this.prisma.client.customer.findMany({
-        where: { tenantId: id },
-        orderBy: { createdAt: "desc" },
-        take: 50,
-        include: {
-          accounts: {
-            select: {
-              id: true,
-              cardNumber: true,
-              balance: true,
-              status: true,
-              accessTokenEncrypted: true,
-              program: { select: { name: true, mode: true, stampsTarget: true } },
-            },
-          },
-        },
-      }),
-    ]);
+    const audit = await this.prisma.client.auditLog.findMany({
+      where: { tenantId: id },
+      orderBy: { createdAt: "desc" },
+      take: 50,
+    });
 
-    const customers = rawCustomers.map((c) => ({
-      ...c,
-      segment: computeCustomerSegment({
-        totalVisits: c.totalVisits,
-        totalSpend: c.totalSpend ? Number(c.totalSpend) : 0,
-        lastVisitAt: c.lastVisitAt,
-        createdAt: c.createdAt,
-      }),
-      accounts: c.accounts.map((a) => ({
-        ...a,
-        accessToken: readAccessToken(a.accessTokenEncrypted),
-      })),
-    }));
-
-    return { ...tenant, audit, customers };
+    return { ...tenant, audit };
   }
 
   listMessages(status?: string) {
@@ -172,57 +144,6 @@ export class AdminService {
       where: { id },
       data,
     });
-  }
-
-  async listAllCustomers(q?: string) {
-    const where: Prisma.CustomerWhereInput = {};
-    if (q) {
-      where.OR = [
-        { firstName: { contains: q, mode: "insensitive" } },
-        { lastName: { contains: q, mode: "insensitive" } },
-        { phone: { contains: q } },
-        { email: { contains: q.toLowerCase() } },
-        { tenant: { name: { contains: q, mode: "insensitive" } } },
-      ];
-    }
-    const rows = await this.prisma.client.customer.findMany({
-      where,
-      orderBy: { createdAt: "desc" },
-      take: 100,
-      include: {
-        tenant: {
-          select: {
-            id: true,
-            name: true,
-            slug: true,
-            settings: { select: { logoUrl: true, primaryColor: true } },
-          },
-        },
-        accounts: {
-          select: {
-            id: true,
-            cardNumber: true,
-            balance: true,
-            status: true,
-            accessTokenEncrypted: true,
-            program: { select: { name: true, mode: true, stampsTarget: true } },
-          },
-        },
-      },
-    });
-    return rows.map((c) => ({
-      ...c,
-      segment: computeCustomerSegment({
-        totalVisits: c.totalVisits,
-        totalSpend: c.totalSpend ? Number(c.totalSpend) : 0,
-        lastVisitAt: c.lastVisitAt,
-        createdAt: c.createdAt,
-      }),
-      accounts: c.accounts.map((a) => ({
-        ...a,
-        accessToken: readAccessToken(a.accessTokenEncrypted),
-      })),
-    }));
   }
 
   async setStatus(auth: AuthState, id: string, status: "ACTIVE" | "SUSPENDED", reason: string) {

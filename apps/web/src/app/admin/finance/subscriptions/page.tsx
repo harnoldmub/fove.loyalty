@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { RefreshCw, TrendingUp, Users, Calendar } from "lucide-react";
 import { Badge, PageHeader, Panel } from "@/components/ui/misc";
@@ -137,7 +138,12 @@ export default function SubscriptionsFinancePage() {
                 return (
                   <tr key={sub.id} className="hover:bg-surface-2 transition-colors">
                     <td className="py-3.5 px-4 font-medium text-ink">
-                      <div>{sub.tenant.name}</div>
+                      <Link
+                        href={`/admin/tenants/${sub.tenant.id}`}
+                        className="block truncate font-semibold text-ink hover:text-cobalt hover:underline"
+                      >
+                        {sub.tenant.name}
+                      </Link>
                       <div className="text-[11px] text-ink-3">{sub.tenant.slug}</div>
                     </td>
                     <td className="py-3.5 px-4">

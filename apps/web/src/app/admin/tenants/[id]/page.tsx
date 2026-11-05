@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog, DialogContent, DialogRoot } from "@/components/ui/dialog";
 import { Field, Input, Select } from "@/components/ui/field";
-import { ArrowLeft, ExternalLink, Globe, Palette, Smartphone, Users } from "lucide-react";
+import { ArrowLeft, ExternalLink, Globe, Palette, ShieldCheck, Layers, Store, Users } from "lucide-react";
 import Link from "next/link";
 import { Badge, ErrorNote, Panel, Skeleton } from "@/components/ui/misc";
 import { api, errorMessage } from "@/lib/api";
@@ -48,28 +48,8 @@ interface Detail {
   integrations: { id: string; name: string; provider: string; lastSyncAt: string | null; lastError: string | null }[];
   _count: { customers: number; accounts: number; transactions: number; programs: number; establishments: number };
   audit: { id: string; action: string; createdAt: string; metadata: unknown }[];
-  customers?: {
-    id: string;
-    firstName: string;
-    lastName: string;
-    email: string | null;
-    phone: string | null;
-    tags: string[];
-    notes: string | null;
-    totalVisits: number;
-    totalSpend: string | number;
-    lastVisitAt: string | null;
-    createdAt: string;
-    segment?: { segment: string; label: string; color: string };
-    accounts: {
-      id: string;
-      cardNumber: string;
-      balance: number;
-      status: string;
-      accessToken: string | null;
-      program: { name: string; mode: "POINTS" | "STAMPS"; stampsTarget: number };
-    }[];
-  }[];
+  programs?: { id: string; name: string; mode: "POINTS" | "STAMPS"; stampsTarget: number }[];
+  establishments?: { id: string; name: string; city: string | null; address: string | null }[];
 }
 
 const SUB_STATUS: Record<string, string> = { TRIALING: "essai", ACTIVE: "actif", PAST_DUE: "paiement en échec", CANCELED: "résilié", INCOMPLETE: "en attente" };
@@ -245,83 +225,89 @@ export default function AdminTenant() {
             )}
           </div>
         </Panel>
-        <Panel className="p-5 lg:col-span-2">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="font-display text-lg font-semibold flex items-center gap-2">
-              <Users className="size-4 text-cobalt" />
-              Clients et cartes ({data.customers?.length ?? 0})
-            </h2>
+        <Panel className="p-5 lg:col-span-2 space-y-6">
+          <div>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="font-display text-lg font-semibold flex items-center gap-2">
+                <Store className="size-4 text-cobalt" />
+                Structure & Points de vente
+              </h2>
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="rounded-lg border border-line bg-surface-2 p-3.5">
+                <div className="text-xs text-ink-3">Boutiques & Établissements</div>
+                <div className="mt-1 font-display text-2xl font-bold tabular text-ink">
+                  {formatNumber(data._count.establishments)}
+                </div>
+                {data.establishments && data.establishments.length > 0 && (
+                  <ul className="mt-2.5 divide-y divide-line/60 text-xs text-ink-2">
+                    {data.establishments.map((est) => (
+                      <li key={est.id} className="py-1 flex items-center justify-between">
+                        <span className="font-medium truncate">{est.name}</span>
+                        <span className="text-ink-3 shrink-0 ml-2">{est.city ?? "—"}</span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+
+              <div className="rounded-lg border border-line bg-surface-2 p-3.5">
+                <div className="text-xs text-ink-3">Programmes de fidélité</div>
+                <div className="mt-1 font-display text-2xl font-bold tabular text-ink">
+                  {formatNumber(data._count.programs)}
+                </div>
+                {data.programs && data.programs.length > 0 && (
+                  <ul className="mt-2.5 divide-y divide-line/60 text-xs text-ink-2">
+                    {data.programs.map((prog) => (
+                      <li key={prog.id} className="py-1 flex items-center justify-between">
+                        <span className="font-medium truncate">{prog.name}</span>
+                        <Badge tone="cobalt" className="shrink-0 text-[10px]">
+                          {prog.mode === "POINTS" ? "Points" : `${prog.stampsTarget} tampons`}
+                        </Badge>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </div>
           </div>
 
-          {!data.customers || data.customers.length === 0 ? (
-            <p className="text-sm text-ink-3 py-4 text-center">Aucun client inscrit pour le moment.</p>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm">
-                <thead className="border-b border-line text-ink-3">
-                  <tr>
-                    <th scope="col" className="pb-2 font-medium">Client</th>
-                    <th scope="col" className="pb-2 font-medium">Segment</th>
-                    <th scope="col" className="pb-2 font-medium">Carte et solde</th>
-                    <th scope="col" className="pb-2 font-medium">Passages</th>
-                    <th scope="col" className="pb-2 font-medium">Dernière visite</th>
-                    <th scope="col" className="pb-2 font-medium text-right"><span className="sr-only">Carte du client</span></th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-line">
-                  {data.customers.map((c) => {
-                    const acc = c.accounts[0];
-                    const cardUrl = acc?.accessToken ? `/card/${acc.accessToken}` : null;
-                    return (
-                      <tr key={c.id} className="hover:bg-surface-2 transition-colors">
-                        <td className="py-3">
-                          <span className="font-semibold text-ink block">{c.firstName} {c.lastName}</span>
-                          <span className="text-xs text-ink-3">{c.phone ?? c.email ?? "—"}</span>
-                          {c.tags.length > 0 && (
-                            <div className="mt-1 flex flex-wrap gap-1">
-                              {c.tags.map((t) => (
-                                <span key={t} className="rounded bg-surface-3 px-1.5 py-0.5 text-[0.68rem] text-ink-2">#{t}</span>
-                              ))}
-                            </div>
-                          )}
-                        </td>
-                        <td className="py-3">
-                          {c.segment ? <Badge tone={c.segment.segment === "VIP" ? "mint" : c.segment.segment === "AT_RISK" ? "stamp" : "cobalt"}>{c.segment.label}</Badge> : <Badge tone="neutral">Standard</Badge>}
-                        </td>
-                        <td className="py-3">
-                          {acc ? (
-                            <div>
-                              <span className="whitespace-nowrap text-sm font-medium tabular tracking-wide text-ink">{acc.cardNumber}</span>
-                              <span className="block text-xs font-semibold text-cobalt">{acc.balance} {acc.program.mode === "POINTS" ? "points" : "tampons"}</span>
-                            </div>
-                          ) : (
-                            <span className="text-xs text-ink-3">—</span>
-                          )}
-                        </td>
-                        <td className="py-3 text-xs text-ink">{c.totalVisits} passage{c.totalVisits > 1 ? "s" : ""}</td>
-                        <td className="py-3 text-xs text-ink-3">{c.lastVisitAt ? formatDate(c.lastVisitAt) : "N/A"}</td>
-                        <td className="py-3 text-right">
-                          {cardUrl ? (
-                            <a
-                              href={cardUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center gap-1.5 rounded-lg border border-line bg-surface px-2.5 py-1 text-xs font-medium text-ink shadow-xs transition-colors hover:border-cobalt hover:text-cobalt"
-                            >
-                              <Smartphone className="size-3.5 text-cobalt" aria-hidden />
-                              <span>Voir la carte</span>
-                            </a>
-                          ) : (
-                            <span className="text-xs text-ink-3">—</span>
-                          )}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+          {/* Volumétrie agrégée & Notice de confidentialité RGPD */}
+          <div className="rounded-xl border border-line bg-surface p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold uppercase tracking-wider text-ink-3">Volumétrie active</span>
+              <span className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-600 dark:text-emerald-400">
+                <ShieldCheck className="size-3.5" />
+                Confidentialité stricte B2B
+              </span>
             </div>
-          )}
+
+            <dl className="grid grid-cols-3 gap-3 text-center">
+              <div className="rounded-lg bg-surface-2 p-2.5">
+                <dt className="text-[11px] text-ink-3">Clients inscrits</dt>
+                <dd className="mt-0.5 font-display text-xl font-bold tabular text-ink">
+                  {formatNumber(data._count.customers)}
+                </dd>
+              </div>
+              <div className="rounded-lg bg-surface-2 p-2.5">
+                <dt className="text-[11px] text-ink-3">Cartes actives</dt>
+                <dd className="mt-0.5 font-display text-xl font-bold tabular text-ink">
+                  {formatNumber(data._count.accounts)}
+                </dd>
+              </div>
+              <div className="rounded-lg bg-surface-2 p-2.5">
+                <dt className="text-[11px] text-ink-3">Passages caisse</dt>
+                <dd className="mt-0.5 font-display text-xl font-bold tabular text-ink">
+                  {formatNumber(data._count.transactions)}
+                </dd>
+              </div>
+            </dl>
+
+            <p className="text-[11px] leading-relaxed text-ink-3 border-t border-line/60 pt-2.5">
+              Conformément au RGPD et au secret d&apos;affaires, les identités, coordonnées et soldes des clients finaux appartiennent exclusivement à <strong>{data.name}</strong> et ne sont pas consultables par l&apos;administration de FOVE.
+            </p>
+          </div>
         </Panel>
 
         <Panel className="p-5">
