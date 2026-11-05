@@ -20,10 +20,12 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
   if (res.status === 204) return undefined as T;
   const text = await res.text();
   const json = text ? JSON.parse(text) : null;
-  // Session expirée dans l'espace connecté : retour à la connexion, puis à la page en cours.
-  if (res.status === 401 && !path.startsWith("/auth/") && typeof window !== "undefined" && /^\/(app|admin|onboarding)(\/|$)/.test(window.location.pathname)) {
-    window.location.assign(`/login?next=${encodeURIComponent(window.location.pathname + window.location.search)}`);
-    throw new ApiError(401, "session_expired", "Session expirée, reconnexion…");
+  // Session expirée ou révoquée dans l'espace connecté : déconnexion et redirection immédiate vers le login.
+  const isAuthArea = typeof window !== "undefined" && /^\/(app|admin|onboarding|partner)(\/|$)/.test(window.location.pathname);
+  if ((res.status === 401 || res.status === 403) && !path.startsWith("/auth/") && isAuthArea) {
+    const next = encodeURIComponent(window.location.pathname + window.location.search);
+    window.location.replace(`/login?next=${next}`);
+    return new Promise(() => {}) as unknown as T;
   }
   if (!res.ok) {
     const err = json?.error ?? {};

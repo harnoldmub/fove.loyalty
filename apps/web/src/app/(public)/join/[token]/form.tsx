@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState, useSyncExternalStore } from "react";
+import { ArrowRight, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox, Field, Input } from "@/components/ui/field";
 import { PhoneInput } from "@/components/ui/phone-input";
@@ -33,6 +34,7 @@ export function JoinForm({ token, data }: { token: string; data: JoinPage }) {
     () => readRememberedCards().find((c) => c.tenant === data.tenant.name && c.program === data.program.name)?.path ?? null,
     () => null,
   );
+  const [showFormAnyway, setShowFormAnyway] = useState(false);
   const { tenant, program } = data;
   const [f, setF] = useState({ firstName: "", lastName: "", phone: "", email: "", acceptTerms: false, marketingConsent: false, website: "" });
   const [error, setError] = useState<string | null>(null);
@@ -85,15 +87,54 @@ export function JoinForm({ token, data }: { token: string; data: JoinPage }) {
       </header>
       <main id="contenu" className="mx-auto -mt-10 max-w-md px-4 pb-16">
         <div className="rounded-[var(--radius-lg)] bg-surface p-5 shadow-2 sm:p-6">
-          {remembered && (
-            <div className="mb-5 grid gap-2 rounded-md bg-mint-soft p-4">
-              <p className="text-sm font-medium text-mint">Vous avez déjà une carte sur ce téléphone.</p>
-              <Button asChild style={{ background: "var(--brand)", color: "#fff" }}>
-                <a href={remembered}>Ouvrir ma carte</a>
+          {remembered && !showFormAnyway ? (
+            <div className="grid justify-items-center gap-4 py-3 text-center">
+              <div className="grid size-16 place-items-center rounded-full bg-mint-soft text-mint">
+                <Sparkles className="size-8" aria-hidden />
+              </div>
+              <div>
+                <h2 className="font-display text-2xl font-bold text-ink">Votre carte est prête !</h2>
+                <p className="mt-1.5 text-sm text-ink-2 max-w-xs mx-auto">
+                  Votre carte de fidélité chez <strong>{tenant.name}</strong> est déjà enregistrée sur ce téléphone.
+                </p>
+              </div>
+
+              <Button
+                asChild
+                size="lg"
+                className="mt-2 w-full font-semibold shadow-md text-base rounded-xl py-6"
+                style={{ background: "var(--brand)", color: "#fff" }}
+              >
+                <a href={remembered}>
+                  Ouvrir ma carte
+                  <ArrowRight className="size-4 ml-2" />
+                </a>
               </Button>
+
+              <div className="mt-3 border-t border-line pt-4 w-full">
+                <button
+                  type="button"
+                  onClick={() => setShowFormAnyway(true)}
+                  className="text-xs text-ink-3 hover:text-ink underline underline-offset-4 transition-colors"
+                >
+                  Créer une autre carte ou utiliser un autre numéro
+                </button>
+              </div>
             </div>
-          )}
-          <Tabs value={tab ?? (wantsRecover ? "recover" : "join")} onValueChange={setTab}>
+          ) : (
+            <>
+              {remembered && (
+                <div className="mb-4 text-left">
+                  <button
+                    type="button"
+                    onClick={() => setShowFormAnyway(false)}
+                    className="inline-flex items-center gap-1.5 text-xs font-semibold text-mint hover:underline"
+                  >
+                    ← Revenir à ma carte enregistrée
+                  </button>
+                </div>
+              )}
+              <Tabs value={tab ?? (wantsRecover ? "recover" : "join")} onValueChange={setTab}>
             <TabsList className="mb-5 grid w-full grid-cols-2">
               <TabsTrigger value="join">Créer ma carte</TabsTrigger>
               <TabsTrigger value="recover">Retrouver ma carte</TabsTrigger>
@@ -175,7 +216,9 @@ export function JoinForm({ token, data }: { token: string; data: JoinPage }) {
               )}
             </TabsContent>
           </Tabs>
-        </div>
+        </>
+      )}
+    </div>
         <p className="mt-6 text-center text-xs text-ink-3">Carte de fidélité propulsée par FOVE</p>
       </main>
     </div>
