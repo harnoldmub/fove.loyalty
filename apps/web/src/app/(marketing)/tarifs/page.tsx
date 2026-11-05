@@ -14,7 +14,7 @@ const faq = [
   { q: "Et si je résilie ?", a: "Votre offre reste active jusqu’à la fin de la période payée, et vous pouvez revenir sur votre décision jusque-là. Ensuite, votre compte passe sur l’offre Gratuite : rien n’est supprimé." },
   { q: "Mon besoin dépasse l’offre Réseau ?", a: "L’offre Sur-mesure s’adapte à vos volumes : nombre de clients, d’établissements et de collaborateurs, accompagnement et contrat sur devis. Contactez-nous." },
   { q: "Mes clients paient-ils quelque chose ?", a: "Non. La carte est gratuite pour eux et s’ouvre dans le navigateur du téléphone." },
-  { q: "Comment payer ?", a: "En dollars US, une fois par an et à l’avance. Les factures sont disponibles dans votre espace." },
+  { q: "Comment payer ?", a: "En dollars US ($) ou en euros (€) selon votre région, réglé une fois par an à l’avance. Les factures sont disponibles dans votre espace." },
 ];
 
 const faqJsonLd = {

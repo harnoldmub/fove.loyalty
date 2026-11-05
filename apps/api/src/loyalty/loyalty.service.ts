@@ -5,6 +5,7 @@ import {
   adjustSchema,
   computeCustomerSegment,
   computeEarn,
+  defaultCurrencyForCountry,
   earnSchema,
   programSchema,
   proportionalReversal,
@@ -65,9 +66,9 @@ export class LoyaltyService {
     await this.plans.assertQuota(ctx.tenantId, "programs");
     const settings = await this.prisma.client.tenantSettings.findUnique({
       where: { tenantId: ctx.tenantId },
-      select: { currency: true },
+      select: { currency: true, country: true },
     });
-    const currency = input.currency || settings?.currency || "CDF";
+    const currency = input.currency || settings?.currency || defaultCurrencyForCountry(settings?.country);
     const program = await this.prisma.client.$transaction(async (tx) => {
       const program = await tx.loyaltyProgram.create({ data: { ...input, currency, tenantId: ctx.tenantId } });
       // Carte à tampons : la récompense de la carte pleine existe dès le départ.
