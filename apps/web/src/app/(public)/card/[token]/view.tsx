@@ -79,10 +79,11 @@ function useDeviceOS(): "ios" | "android" | "other" {
   );
 }
 
-function BookmarkButton({ tenantName }: { tenantName: string }) {
+function ShortcutButton({ tenantName }: { tenantName: string }) {
   const [copied, setCopied] = useState(false);
+  const device = useDeviceOS();
 
-  const handleBookmark = async () => {
+  const handleShortcut = async () => {
     const url = typeof window !== "undefined" ? window.location.href : "";
     const title = `Carte fidélité · ${tenantName}`;
 
@@ -93,6 +94,7 @@ function BookmarkButton({ tenantName }: { tenantName: string }) {
           text: `Ma carte de fidélité chez ${tenantName}`,
           url,
         });
+        toast.success("Raccourci : appuyez sur « Sur l’écran d’accueil » pour garder votre carte sous la main !");
         return;
       } catch (err) {
         if ((err as Error)?.name === "AbortError") return;
@@ -104,19 +106,20 @@ function BookmarkButton({ tenantName }: { tenantName: string }) {
         await navigator.clipboard.writeText(url);
         setCopied(true);
         setTimeout(() => setCopied(false), 2500);
-        const isMac = /Macintosh|Mac OS X/i.test(navigator.userAgent);
-        toast.success(
-          isMac
-            ? "Lien copié ! Appuyez sur Cmd+D pour ajouter cette carte à vos signets."
-            : "Lien copié ! Appuyez sur Ctrl+D pour ajouter cette carte à vos favoris.",
-        );
+        if (device === "ios") {
+          toast.success("Lien copié ! Appuyez sur Partager ⎋ puis « Sur l’écran d’accueil ».");
+        } else if (device === "android") {
+          toast.success("Lien copié ! Appuyez sur le menu ⋮ puis « Ajouter à l’écran d’accueil ».");
+        } else {
+          toast.success("Lien copié ! Ajoutez cette page à vos favoris (Cmd+D ou Ctrl+D) pour y accéder en 1 clic.");
+        }
         return;
       } catch {
         // fallback
       }
     }
 
-    toast.message("Astuce : ajoutez cette page aux favoris de votre navigateur pour y accéder rapidement.");
+    toast.message("Astuce : ajoutez cette page en raccourci sur votre écran d’accueil pour y accéder rapidement.");
   };
 
   return (
@@ -125,11 +128,11 @@ function BookmarkButton({ tenantName }: { tenantName: string }) {
       variant="secondary"
       size="sm"
       className="rounded-full shadow-xs hover:bg-surface-2 transition-all"
-      onClick={handleBookmark}
-      aria-label="Ajouter la carte aux signets ou favoris"
+      onClick={handleShortcut}
+      aria-label="Ajouter un raccourci vers la carte sur l'écran d'accueil"
     >
-      {copied ? <Check className="size-3.5 text-mint" /> : <Bookmark className="size-3.5" />}
-      <span>{copied ? "Lien copié !" : "Ajouter aux signets"}</span>
+      {copied ? <Check className="size-3.5 text-mint" /> : <Smartphone className="size-3.5" />}
+      <span>{copied ? "Lien copié !" : "Ajouter un raccourci"}</span>
     </Button>
   );
 }
@@ -333,7 +336,7 @@ export function CardView({ token, initial }: { token: string; initial: CardData 
                   <Download className="size-3.5" /> Enregistrer l'image
                 </a>
               </Button>
-              <BookmarkButton tenantName={tenant.name} />
+              <ShortcutButton tenantName={tenant.name} />
             </div>
           </section>
         )}
