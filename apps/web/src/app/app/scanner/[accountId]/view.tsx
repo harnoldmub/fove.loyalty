@@ -74,6 +74,9 @@ export function CheckoutView({ accountId }: { accountId: string }) {
   const isPoints = account?.program.mode === "POINTS";
   const amountValid = /^\d+(\.\d{1,2})?$/.test(amount);
   const preview = previewState && previewState.amount === amount ? previewState.delta : null;
+  const isFullStamps = !!account && !isPoints && account.balance >= account.program.stampsTarget;
+  const stampsAddable = account && !isPoints ? Math.max(0, account.program.stampsTarget - account.balance) : 0;
+  const nextStampsCount = account && !isPoints ? Math.min(account.program.stampsPerPurchase, stampsAddable) : 0;
 
   useEffect(() => {
     if (!account || !isPoints || !amountValid) return;
@@ -277,7 +280,7 @@ export function CheckoutView({ accountId }: { accountId: string }) {
         {/* Carte tampons ou solde de points */}
         {account.program.mode === "STAMPS" ? (
           <div className="mt-4 grid gap-2">
-            <Stamps count={account.balance} target={account.program.stampsTarget} reward={stampReward} size="sm" />
+            <Stamps count={Math.min(account.balance, account.program.stampsTarget)} target={account.program.stampsTarget} reward={stampReward} size="sm" />
             <p className="text-sm text-ink-2">{stampsStatus(account.balance, account.program.stampsTarget, stampReward)}</p>
           </div>
         ) : (
@@ -397,14 +400,16 @@ export function CheckoutView({ accountId }: { accountId: string }) {
             size="lg"
             variant="stamp"
             loading={busy}
-            disabled={account.status !== "ACTIVE" || (isPoints && preview === null)}
+            disabled={account.status !== "ACTIVE" || (isPoints && preview === null) || isFullStamps}
             onClick={earn}
           >
             {isPoints
               ? preview !== null
                 ? `Ajouter ${formatNumber(preview)} ${unitLabel("POINTS", preview)}`
                 : "Saisissez le montant"
-              : `Compter le passage (+${account.program.stampsPerPurchase})`}
+              : isFullStamps
+                ? `Carte complète (${account.program.stampsTarget}/${account.program.stampsTarget})`
+                : `Compter le passage (+${nextStampsCount})`}
           </Button>
         </TabsContent>
         <TabsContent value="reward" className="mt-4 grid gap-3">

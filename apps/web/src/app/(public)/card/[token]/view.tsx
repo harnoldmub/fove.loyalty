@@ -292,7 +292,7 @@ export function CardView({ token, initial }: { token: string; initial: CardData 
 
           {stamps ? (
             <div className="mt-6">
-              <Stamps count={card.balance} target={program.stampsTarget} reward={stampReward} tone="brand" newlyEarned={newlyEarned} />
+              <Stamps count={Math.min(card.balance, program.stampsTarget)} target={program.stampsTarget} reward={stampReward} tone="brand" newlyEarned={newlyEarned} />
             </div>
           ) : (
             <p className="mt-6 font-display text-5xl font-semibold tabular">

@@ -251,7 +251,11 @@ export class LoyaltyService {
       include: { program: true },
     });
     if (!account) throw notFound("Carte");
-    const delta = computeEarn(earnRules(account.program), amount);
+    let delta = computeEarn(earnRules(account.program), amount);
+    if (account.program.mode === "STAMPS") {
+      const maxAddable = Math.max(0, account.program.stampsTarget - account.balance);
+      delta = Math.min(delta, maxAddable);
+    }
     return { delta, balanceAfter: account.balance + delta };
   }
 
@@ -264,7 +268,15 @@ export class LoyaltyService {
     if (!account) throw notFound("Carte");
     if (!account.program.active) throw unprocessable("program_inactive", "Programme désactivé");
     if (input.establishmentId) await this.assertEstablishment(ctx.tenantId, input.establishmentId);
-    const delta = computeEarn(earnRules(account.program), input.amount);
+    let delta = computeEarn(earnRules(account.program), input.amount);
+
+    if (account.program.mode === "STAMPS") {
+      const maxAddable = Math.max(0, account.program.stampsTarget - account.balance);
+      if (maxAddable <= 0) {
+        throw unprocessable("card_already_full", `La carte a déjà atteint ${account.program.stampsTarget} tampons. La récompense est prête à être utilisée.`);
+      }
+      delta = Math.min(delta, maxAddable);
+    }
 
     const result = await this.ledger.run(
       ctx,
@@ -315,19 +327,40 @@ export class LoyaltyService {
   }
 
   async adjust(ctx: TenantContext, input: z.infer<typeof adjustSchema>): Promise<PostResult> {
+    const account = await this.prisma.client.loyaltyAccount.findFirst({
+      where: { id: input.accountId, tenantId: ctx.tenantId },
+      include: { program: true },
+    });
+    if (!account) throw notFound("Carte");
+
+    let effectiveDelta = input.delta;
+    if (account.program.mode === "STAMPS") {
+      if (effectiveDelta > 0) {
+        const maxAddable = Math.max(0, account.program.stampsTarget - account.balance);
+        if (maxAddable <= 0) {
+          throw unprocessable("card_already_full", `La carte a déjà atteint le plafond de ${account.program.stampsTarget} tampons.`);
+        }
+        effectiveDelta = Math.min(effectiveDelta, maxAddable);
+      } else if (effectiveDelta < 0) {
+        if (account.balance + effectiveDelta < 0) {
+          effectiveDelta = -account.balance;
+        }
+      }
+    }
+
     const result = await this.ledger.run(
       ctx,
       input.idempotencyKey,
       (tx) =>
         this.ledger.post(
           ctx,
-          { accountId: input.accountId, kind: "ADJUSTMENT", delta: input.delta, idempotencyKey: input.idempotencyKey, source: "DASHBOARD", reason: input.reason },
+          { accountId: input.accountId, kind: "ADJUSTMENT", delta: effectiveDelta, idempotencyKey: input.idempotencyKey, source: "DASHBOARD", reason: input.reason },
           tx,
         ),
       async () => ({ transaction: (await this.ledger.findByKey(ctx, input.idempotencyKey))!, replayed: true }),
     );
     if (!result.replayed) {
-      await this.audit.forTenant(ctx, "transaction.adjusted", { type: "transaction", id: result.transaction.id }, { delta: input.delta, reason: input.reason });
+      await this.audit.forTenant(ctx, "transaction.adjusted", { type: "transaction", id: result.transaction.id }, { delta: effectiveDelta, reason: input.reason });
       await this.emitTransaction(ctx, result);
     }
     return result;

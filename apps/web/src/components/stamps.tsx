@@ -51,7 +51,8 @@ export function Stamps({
 }
 
 export function stampsStatus(count: number, target: number, reward?: string | null) {
-  if (count >= target) return `${reward ?? "Récompense"} disponible au prochain passage.`;
-  const left = target - count;
-  return `${count}/${target} · encore ${left} passage${left > 1 ? "s" : ""} avant ${reward ?? "la récompense"}`;
+  const capped = Math.min(Math.max(0, count), target);
+  if (capped >= target) return `${reward ?? "Récompense"} disponible au prochain passage.`;
+  const left = target - capped;
+  return `${capped}/${target} · encore ${left} passage${left > 1 ? "s" : ""} avant ${reward ?? "la récompense"}`;
 }

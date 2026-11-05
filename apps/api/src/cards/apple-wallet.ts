@@ -175,7 +175,7 @@ export class AppleWalletProvider {
           {
             key: "balance",
             label: isStamps ? "PASSAGES" : "POINTS",
-            value: isStamps ? `${Math.max(0, account.balance)}/${target}` : `${Math.max(0, account.balance)}`,
+            value: isStamps ? `${Math.min(target, Math.max(0, account.balance))}/${target}` : `${Math.max(0, account.balance)}`,
             changeMessage: `${account.tenant.name} : %@`,
             textAlignment: "PKTextAlignmentRight",
           },

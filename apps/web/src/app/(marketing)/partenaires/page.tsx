@@ -273,7 +273,7 @@ export default function PartenairesPage() {
                   </div>
                 </div>
 
-                <ul className="space-y-2 text-xs text-ink-2 mb-6">
+                <ul className="space-y-2 text-xs text-ink-2">
                   {c.features.map((f) => (
                     <li key={f} className="flex items-center gap-2">
                       <Check className="size-3.5 text-emerald-500 shrink-0" />
@@ -282,12 +282,20 @@ export default function PartenairesPage() {
                   ))}
                 </ul>
               </div>
-
-              <Button asChild variant={c.badge ? "primary" : "secondary"} className="w-full">
-                <Link href="/partenaires/rejoindre">Rejoindre le réseau</Link>
-              </Button>
             </div>
           ))}
+        </div>
+
+        <div className="mt-10 text-center">
+          <Button asChild size="lg" className="px-8 font-semibold shadow-md">
+            <Link href="/partenaires/rejoindre">
+              Rejoindre le réseau partenaire
+              <ArrowRight className="size-4 ml-2" />
+            </Link>
+          </Button>
+          <p className="mt-2.5 text-xs text-ink-3">
+            Inscription gratuite en 2 minutes · Commissions valables sur toutes les formules souscrites
+          </p>
         </div>
       </section>
 

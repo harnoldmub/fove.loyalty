@@ -71,6 +71,18 @@ export class LedgerService {
       return { transaction: existing, replayed: true };
     }
 
+    const currentAccount = await tx.loyaltyAccount.findFirst({
+      where: { id: input.accountId, tenantId: ctx.tenantId },
+      include: { program: true },
+    });
+    if (!currentAccount) throw notFound("Carte de fidélité");
+
+    // Invariant STAMPS : le solde ne peut jamais excéder le nombre de tampons cible (stampsTarget)
+    if (currentAccount.program.mode === "STAMPS" && input.delta > 0) {
+      const maxAddable = Math.max(0, currentAccount.program.stampsTarget - currentAccount.balance);
+      input.delta = Math.min(input.delta, maxAddable);
+    }
+
     const earned = input.delta > 0 && (input.kind === "EARN" || input.kind === "ADJUSTMENT") ? input.delta : 0;
     const spent = input.kind === "REDEMPTION" ? -input.delta : input.kind === "REDEMPTION_REVERSAL" ? -input.delta : 0;
 

@@ -77,19 +77,42 @@ const STATUS: Record<Account["status"], { label: string; tone: "mint" | "danger"
   CLOSED: { label: "Fermée", tone: "neutral" },
 };
 
-function AdjustDialog({ accountId, mode }: { accountId: string; mode: Program["mode"] }) {
+function AdjustDialog({
+  accountId,
+  mode,
+  currentBalance,
+  target,
+}: {
+  accountId: string;
+  mode: Program["mode"];
+  currentBalance: number;
+  target?: number;
+}) {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
   const [delta, setDelta] = useState("");
   const [reason, setReason] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+
+  const isStamps = mode === "STAMPS";
+  const stampsLimit = target ?? 10;
+  const maxAddable = isStamps ? Math.max(0, stampsLimit - currentBalance) : Infinity;
+  const isFull = isStamps && currentBalance >= stampsLimit;
+
   return (
     <DialogRoot open={open} onOpenChange={setOpen}>
       <Button variant="secondary" size="sm" onClick={() => setOpen(true)}>
         <SlidersHorizontal /> Ajuster
       </Button>
-      <DialogContent title="Ajuster le solde" description="Un nombre positif ajoute, un nombre négatif retire. Le motif est conservé dans l’historique.">
+      <DialogContent
+        title="Ajuster le solde"
+        description={
+          isStamps
+            ? `Carte à tampons : actuellement ${Math.min(currentBalance, stampsLimit)}/${stampsLimit} tampons. Le solde ne peut pas dépasser ${stampsLimit}.`
+            : "Un nombre positif ajoute, un nombre négatif retire. Le motif est conservé dans l’historique."
+        }
+      >
         <form
           className="grid gap-4"
           onSubmit={async (e) => {
@@ -97,8 +120,21 @@ function AdjustDialog({ accountId, mode }: { accountId: string; mode: Program["m
             setBusy(true);
             setError(null);
             try {
-              await api.post("/app/transactions/adjust", { accountId, delta: Number(delta), reason, idempotencyKey: newIdempotencyKey("adj") });
-              toast.success("Solde ajusté");
+              let numDelta = Number(delta);
+              if (isStamps && numDelta > 0) {
+                numDelta = Math.min(numDelta, maxAddable);
+              }
+              await api.post("/app/transactions/adjust", {
+                accountId,
+                delta: numDelta,
+                reason,
+                idempotencyKey: newIdempotencyKey("adj"),
+              });
+              toast.success(
+                isStamps && Number(delta) > maxAddable
+                  ? `Solde ajusté et plafonné à ${stampsLimit} tampons`
+                  : "Solde ajusté",
+              );
               qc.invalidateQueries();
               setOpen(false);
               setDelta("");
@@ -111,13 +147,44 @@ function AdjustDialog({ accountId, mode }: { accountId: string; mode: Program["m
           }}
         >
           {error && <ErrorNote>{error}</ErrorNote>}
-          <Field label={`Nombre de ${unitLabel(mode)}`}>
-            {(p) => <Input {...p} inputMode="numeric" value={delta} onChange={(e) => setDelta(e.target.value.replace(/[^\d-]/g, ""))} />}
+          {isStamps && isFull && (
+            <div className="rounded-md bg-amber-500/10 p-3 text-xs text-amber-700 dark:text-amber-400">
+              La carte est déjà au maximum ({stampsLimit}/{stampsLimit}). Vous pouvez uniquement retirer des passages en cas d’erreur (ex: -1).
+            </div>
+          )}
+          <Field
+            label={`Nombre de ${unitLabel(mode)}`}
+            hint={
+              isStamps
+                ? !isFull
+                  ? `Vous pouvez ajouter jusqu’à +${maxAddable} tampon${maxAddable > 1 ? "s" : ""} pour compléter la carte.`
+                  : "Seul un retrait est possible (chiffre négatif)."
+                : undefined
+            }
+          >
+            {(p) => (
+              <Input
+                {...p}
+                inputMode="numeric"
+                value={delta}
+                onChange={(e) => setDelta(e.target.value.replace(/[^\d-]/g, ""))}
+              />
+            )}
           </Field>
           <Field label="Motif">
             {(p) => <Input {...p} value={reason} onChange={(e) => setReason(e.target.value)} />}
           </Field>
-          <Button type="submit" loading={busy} disabled={!delta || delta === "-" || Number(delta) === 0 || reason.trim().length < 3}>
+          <Button
+            type="submit"
+            loading={busy}
+            disabled={
+              !delta ||
+              delta === "-" ||
+              Number(delta) === 0 ||
+              (isStamps && isFull && Number(delta) > 0) ||
+              reason.trim().length < 3
+            }
+          >
             Enregistrer l’ajustement
           </Button>
         </form>
@@ -205,11 +272,11 @@ function AccountPanel({ accountId }: { accountId: string }) {
           <p className="mt-1 text-sm text-ink-3 tabular">Carte {account.cardNumber} · créée le {formatDate(account.createdAt)}</p>
         </div>
         <p className="font-display text-4xl font-semibold tabular sm:text-right">
-          {formatNumber(account.balance)} <span className="text-lg font-normal text-ink-3">{unit}</span>
+          {formatNumber(account.program.mode === "STAMPS" ? Math.min(account.balance, account.program.stampsTarget) : account.balance)} <span className="text-lg font-normal text-ink-3">{unit}</span>
         </p>
         {account.program.mode === "STAMPS" && (
           <div className="max-w-sm sm:col-span-2">
-            <Stamps count={account.balance} target={account.program.stampsTarget} reward={account.rewards[0]?.name} size="sm" />
+            <Stamps count={Math.min(account.balance, account.program.stampsTarget)} target={account.program.stampsTarget} reward={account.rewards[0]?.name} size="sm" />
           </div>
         )}
       </div>
@@ -217,7 +284,14 @@ function AccountPanel({ accountId }: { accountId: string }) {
         <div className="flex flex-wrap gap-2 border-t border-line px-5 py-3 sm:px-6">
           <CardShareDialog accountId={account.id} />
           {wallet && canMessage && account.status === "ACTIVE" && <WalletMessageDialog accountId={account.id} />}
-          {canAdjust && <AdjustDialog accountId={account.id} mode={account.program.mode} />}
+          {canAdjust && (
+            <AdjustDialog
+              accountId={account.id}
+              mode={account.program.mode}
+              currentBalance={account.balance}
+              target={account.program.stampsTarget}
+            />
+          )}
           {account.status === "BLOCKED" || account.status === "PENDING_VERIFICATION" ? (
             <Button
               variant="secondary"

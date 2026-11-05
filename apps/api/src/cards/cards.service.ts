@@ -104,6 +104,7 @@ export class CardsService {
     if (!account) throw notFound("Carte");
     const rewards = await this.prisma.client.reward.findMany({ where: { tenantId, programId: account.programId, active: true, archivedAt: null }, orderBy: { cost: "asc" }, take: 6 });
     const s = account.tenant.settings;
+    const isStamps = account.program.mode === "STAMPS";
     return {
       accountId: account.id,
       programId: account.programId,
@@ -113,11 +114,11 @@ export class CardsService {
       cardNumber: account.cardNumber,
       qrPayload: account.qrToken,
       cardUrl: await this.linkFor(account.id, tenantId),
-      balance: account.balance,
-      unit: account.program.mode === "STAMPS" ? "tampons" : "points",
+      balance: isStamps ? Math.min(account.program.stampsTarget, Math.max(0, account.balance)) : account.balance,
+      unit: isStamps ? "tampons" : "points",
       primaryColor: /^#[0-9a-fA-F]{6}$/.test(s?.primaryColor ?? "") ? s!.primaryColor : "#2C55F5",
       logoUrl: s?.logoUrl ?? null,
-      rewardSummary: rewards.map((r) => `${r.name}${r.kind === "GIFT" ? "" : ` : ${rewardValueLabel({ kind: r.kind, value: r.value?.toString() ?? null }, account.program.currency)}`} — ${r.cost} ${account.program.mode === "STAMPS" ? "tampons" : "points"}`).join("\n"),
+      rewardSummary: rewards.map((r) => `${r.name}${r.kind === "GIFT" ? "" : ` : ${rewardValueLabel({ kind: r.kind, value: r.value?.toString() ?? null }, account.program.currency)}`} — ${r.cost} ${isStamps ? "tampons" : "points"}`).join("\n"),
     };
   }
 

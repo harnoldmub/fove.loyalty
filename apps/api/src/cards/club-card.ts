@@ -81,13 +81,14 @@ export function getClubMemberSummary(params: {
 }): CardSection {
   const clubName = params.tenantName.toLowerCase().includes("club") ? params.tenantName : `Club ${params.tenantName}`;
   const left = visitsLeft(params.balance, params.target);
+  const displayBalance = params.isStamps ? Math.min(params.target, Math.max(0, params.balance)) : Math.max(0, params.balance);
 
   return {
     key: "member",
     title: `MA CARTE ${clubName.toUpperCase()}`,
     body: [
       `• Titulaire : ${params.holder}`,
-      `• Solde : ${Math.max(0, params.balance)}${params.isStamps ? `/${params.target} passages` : " points"}`,
+      `• Solde : ${displayBalance}${params.isStamps ? `/${params.target} passages` : " points"}`,
       `• Membre depuis ${params.since}`,
       params.isStamps
         ? left > 0
