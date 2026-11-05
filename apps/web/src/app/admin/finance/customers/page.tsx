@@ -25,6 +25,8 @@ interface CustomerFinanceRow {
   plan?: string;
   planCode?: string;
   planKind?: string;
+  provider?: string;
+  contractPriceYearlyCents?: number | null;
   subscriptionStatus?: string;
   subStatus?: string;
   totalInvoicedCents?: number;
@@ -110,14 +112,25 @@ export default function CustomersFinancePage() {
                       <div className="text-[11px] text-ink-3">{slug}</div>
                     </td>
                     <td className="py-3.5 px-4">
-                      <span className="rounded bg-surface-2 px-2 py-0.5 text-xs font-semibold text-ink">
-                        {plan}
-                      </span>
+                      <div className="inline-flex items-center gap-1.5 flex-wrap">
+                        <span className="rounded bg-surface-2 px-2 py-0.5 text-xs font-semibold text-ink">
+                          {plan}
+                        </span>
+                        {c.provider === "MANUAL" && (c.contractPriceYearlyCents === 0 || (!invoiced && !collected)) && (
+                          <span className="rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[10px] font-medium px-1.5 py-0.5">
+                            Offert
+                          </span>
+                        )}
+                      </div>
                     </td>
-                    <td className="py-3.5 px-4 text-right font-mono text-xs text-ink-2">
+                    <td className={`py-3.5 px-4 text-right font-mono text-xs ${
+                      invoiced > 0 ? "text-ink-2" : "text-ink-3"
+                    }`}>
                       {formatFinance(invoiced, "USD")}
                     </td>
-                    <td className="py-3.5 px-4 text-right font-mono text-xs font-bold text-emerald-600 dark:text-emerald-400">
+                    <td className={`py-3.5 px-4 text-right font-mono text-xs font-bold ${
+                      collected > 0 ? "text-emerald-600 dark:text-emerald-400" : "text-ink-3 font-normal"
+                    }`}>
                       {formatFinance(collected, "USD")}
                     </td>
                     <td className="py-3.5 px-4 text-center font-mono text-xs text-ink-2">
