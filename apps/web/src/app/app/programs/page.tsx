@@ -5,6 +5,7 @@ import { Plus, Printer, QrCode, Settings2 } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { useState } from "react";
 import { toast } from "sonner";
+import { SUPPORTED_CURRENCIES } from "@fove/shared";
 import { useCan } from "@/components/app/me-context";
 import { WalletBroadcast } from "@/components/app/card-share";
 import type { Establishment, Program } from "@/components/app/types";
@@ -108,9 +109,11 @@ function ProgramForm({ program, onDone }: { program?: Program; onDone: () => voi
         <Field label="Devise">
           {(p) => (
             <Select {...p} value={f.currency} onChange={set("currency")}>
-              <option value="CDF">CDF</option>
-              <option value="USD">USD</option>
-              <option value="EUR">EUR</option>
+              {SUPPORTED_CURRENCIES.map((c) => (
+                <option key={c.code} value={c.code}>
+                  {c.label}
+                </option>
+              ))}
             </Select>
           )}
         </Field>

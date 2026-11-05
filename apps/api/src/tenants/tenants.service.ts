@@ -5,6 +5,7 @@ import { Injectable } from "@nestjs/common";
 import {
   createTenantSchema,
   DEFAULT_PLANS,
+  defaultCurrencyForCountry,
   establishmentSchema,
   PERMISSIONS,
   ROLE_PERMISSIONS,
@@ -70,7 +71,7 @@ export class TenantsService {
             tenantId: tenant.id,
             primaryColor: input.primaryColor,
             country: input.country,
-            currency: input.currency,
+            currency: input.currency || defaultCurrencyForCountry(input.country),
             timezone: input.timezone,
             contactEmail: auth.user.email,
           },

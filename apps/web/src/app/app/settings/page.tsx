@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Copy, Gift, MessageCircle } from "lucide-react";
 import { toast } from "sonner";
+import { defaultCurrencyForCountry, SUPPORTED_CURRENCIES } from "@fove/shared";
 import { useCan } from "@/components/app/me-context";
 import { Button } from "@/components/ui/button";
 import { CountrySelect, getCountryOption } from "@/components/ui/country-select";
@@ -330,6 +331,7 @@ function SettingsForm({ data }: { data: Tenant }) {
                       setF({
                         ...f,
                         country: code,
+                        currency: defaultCurrencyForCountry(code),
                         timezone: getCountryOption(code)?.timezone ?? f.timezone ?? "Africa/Kinshasa",
                       })
                     }
@@ -339,9 +341,11 @@ function SettingsForm({ data }: { data: Tenant }) {
               <Field label="Devise" hint="Utilisée pour les nouveaux programmes. Les programmes existants conservent leur devise.">
                 {(p) => (
                   <Select {...p} value={f.currency ?? "CDF"} onChange={set("currency")}>
-                    <option value="CDF">CDF</option>
-                    <option value="USD">USD</option>
-                    <option value="EUR">EUR</option>
+                    {SUPPORTED_CURRENCIES.map((c) => (
+                      <option key={c.code} value={c.code}>
+                        {c.label}
+                      </option>
+                    ))}
                   </Select>
                 )}
               </Field>

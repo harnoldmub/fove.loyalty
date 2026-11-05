@@ -6,6 +6,7 @@ import { Check, Coffee, ImageUp, Printer, Smartphone, Sparkles } from "lucide-re
 import { QRCodeSVG } from "qrcode.react";
 import { Logo } from "@/components/brand";
 import { Button } from "@/components/ui/button";
+import { defaultCurrencyForCountry, SUPPORTED_CURRENCIES } from "@fove/shared";
 import { CitySelect, CountrySelect, getCountryOption, SUGGESTED_CITIES } from "@/components/ui/country-select";
 import { Field, Input, Select } from "@/components/ui/field";
 import { ErrorNote } from "@/components/ui/misc";
@@ -15,16 +16,6 @@ import { cn } from "@/lib/utils";
 
 const STEPS = ["Votre commerce", "Logo et couleur", "Établissement", "Programme", "Récompense", "QR code"] as const;
 const COLORS = ["#2C55F5", "#0E7C66", "#C2410C", "#7C3AED", "#BE123C", "#14204A", "#B45309", "#0369A1"];
-
-const EUR_COUNTRIES = new Set([
-  "FR", "BE", "DE", "ES", "IT", "PT", "NL", "IE", "AT", "FI", "GR", "LU", "MC", "AD", "SM", "VA", "ME", "XK", "EE", "LV", "LT", "SK", "SI", "CY", "MT", "HR"
-]);
-
-function defaultCurrencyForCountry(code: string): string {
-  if (EUR_COUNTRIES.has(code.toUpperCase())) return "EUR";
-  if (code.toUpperCase() === "CD") return "CDF";
-  return "USD";
-}
 
 function slugify(v: string) {
   return v
@@ -255,9 +246,11 @@ export function OnboardingWizard({ userName, tenant }: { userName: string; tenan
                   <Field label="Devise de vos ventes">
                     {(p) => (
                       <Select {...p} value={currency} onChange={(e) => setCurrency(e.target.value)}>
-                        <option value="EUR">Euro (EUR)</option>
-                        <option value="CDF">Franc congolais (CDF)</option>
-                        <option value="USD">Dollar américain (USD)</option>
+                        {SUPPORTED_CURRENCIES.map((c) => (
+                          <option key={c.code} value={c.code}>
+                            {c.label}
+                          </option>
+                        ))}
                       </Select>
                     )}
                   </Field>
