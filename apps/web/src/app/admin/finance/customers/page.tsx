@@ -12,21 +12,28 @@ import { FinanceNav } from "@/components/admin/finance/finance-nav";
 import { formatFinance } from "@/components/admin/finance/finance-utils";
 
 interface CustomerFinanceRow {
-  tenantId: string;
-  tenantName: string;
-  tenantSlug: string;
-  city: string | null;
-  country: string | null;
-  createdAt: string;
-  planName: string;
-  planCode: string;
-  subscriptionStatus: string;
-  totalInvoicedCents: number;
-  totalCollectedCents: number;
-  paymentsCount: number;
-  firstPaymentAt: string | null;
-  lastPaymentAt: string | null;
-  partnerName: string | null;
+  tenantId?: string;
+  id?: string;
+  tenantName?: string;
+  name?: string;
+  tenantSlug?: string;
+  slug?: string;
+  city?: string | null;
+  country?: string | null;
+  createdAt?: string;
+  planName?: string;
+  plan?: string;
+  planCode?: string;
+  planKind?: string;
+  subscriptionStatus?: string;
+  subStatus?: string;
+  totalInvoicedCents?: number;
+  totalCollectedCents?: number;
+  totalPaidCents?: number;
+  paymentsCount?: number;
+  firstPaymentAt?: string | null;
+  lastPaymentAt?: string | null;
+  partnerName?: string | null;
 }
 
 export default function CustomersFinancePage() {
@@ -40,11 +47,10 @@ export default function CustomersFinancePage() {
   const filtered = data.filter((c) => {
     if (!q) return true;
     const term = q.toLowerCase();
-    return (
-      c.tenantName.toLowerCase().includes(term) ||
-      c.tenantSlug.toLowerCase().includes(term) ||
-      (c.partnerName && c.partnerName.toLowerCase().includes(term))
-    );
+    const name = (c.tenantName || c.name || "").toLowerCase();
+    const slug = (c.tenantSlug || c.slug || "").toLowerCase();
+    const partner = (c.partnerName || "").toLowerCase();
+    return name.includes(term) || slug.includes(term) || partner.includes(term);
   });
 
   return (
@@ -88,50 +94,60 @@ export default function CustomersFinancePage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-line">
-              {filtered.map((c) => (
-                <tr key={c.tenantId} className="hover:bg-surface-2 transition-colors">
-                  <td className="py-3.5 px-4 font-medium text-ink">
-                    <div>{c.tenantName}</div>
-                    <div className="text-[11px] text-ink-3">{c.tenantSlug}</div>
-                  </td>
-                  <td className="py-3.5 px-4">
-                    <span className="rounded bg-surface-2 px-2 py-0.5 text-xs font-semibold text-ink">
-                      {c.planName}
-                    </span>
-                  </td>
-                  <td className="py-3.5 px-4 text-right font-mono text-xs text-ink-2">
-                    {formatFinance(c.totalInvoicedCents, "USD")}
-                  </td>
-                  <td className="py-3.5 px-4 text-right font-mono text-xs font-bold text-emerald-600 dark:text-emerald-400">
-                    {formatFinance(c.totalCollectedCents, "USD")}
-                  </td>
-                  <td className="py-3.5 px-4 text-center font-mono text-xs text-ink-2">
-                    {c.paymentsCount}
-                  </td>
-                  <td className="py-3.5 px-4 text-xs text-ink-3">
-                    {c.firstPaymentAt ? formatDate(c.firstPaymentAt) : "—"}
-                  </td>
-                  <td className="py-3.5 px-4 text-xs text-ink-2">
-                    {c.lastPaymentAt ? formatDate(c.lastPaymentAt) : "—"}
-                  </td>
-                  <td className="py-3.5 px-4 text-xs">
-                    {c.partnerName ? (
-                      <span className="text-cobalt font-medium">{c.partnerName}</span>
-                    ) : (
-                      <span className="text-ink-3">Direct</span>
-                    )}
-                  </td>
-                  <td className="py-3.5 px-4 text-right">
-                    <Link
-                      href={`/admin/tenants/${c.tenantId}`}
-                      className="inline-flex size-8 items-center justify-center rounded-lg border border-line text-ink-3 hover:text-ink hover:bg-surface"
-                      title="Voir le commerce"
-                    >
-                      <ExternalLink className="size-3.5" />
-                    </Link>
-                  </td>
-                </tr>
-              ))}
+              {filtered.map((c) => {
+                const id = c.tenantId || c.id || "";
+                const name = c.tenantName || c.name || "Commerce";
+                const slug = c.tenantSlug || c.slug || "—";
+                const plan = c.planName || c.plan || "Gratuit";
+                const invoiced = c.totalInvoicedCents ?? 0;
+                const collected = c.totalCollectedCents ?? c.totalPaidCents ?? 0;
+                const count = c.paymentsCount ?? 0;
+
+                return (
+                  <tr key={id} className="hover:bg-surface-2 transition-colors">
+                    <td className="py-3.5 px-4 font-medium text-ink">
+                      <div>{name}</div>
+                      <div className="text-[11px] text-ink-3">{slug}</div>
+                    </td>
+                    <td className="py-3.5 px-4">
+                      <span className="rounded bg-surface-2 px-2 py-0.5 text-xs font-semibold text-ink">
+                        {plan}
+                      </span>
+                    </td>
+                    <td className="py-3.5 px-4 text-right font-mono text-xs text-ink-2">
+                      {formatFinance(invoiced, "USD")}
+                    </td>
+                    <td className="py-3.5 px-4 text-right font-mono text-xs font-bold text-emerald-600 dark:text-emerald-400">
+                      {formatFinance(collected, "USD")}
+                    </td>
+                    <td className="py-3.5 px-4 text-center font-mono text-xs text-ink-2">
+                      {count}
+                    </td>
+                    <td className="py-3.5 px-4 text-xs text-ink-3">
+                      {c.firstPaymentAt ? formatDate(c.firstPaymentAt) : "—"}
+                    </td>
+                    <td className="py-3.5 px-4 text-xs text-ink-2">
+                      {c.lastPaymentAt ? formatDate(c.lastPaymentAt) : "—"}
+                    </td>
+                    <td className="py-3.5 px-4 text-xs">
+                      {c.partnerName ? (
+                        <span className="text-cobalt font-medium">{c.partnerName}</span>
+                      ) : (
+                        <span className="text-ink-3">Direct</span>
+                      )}
+                    </td>
+                    <td className="py-3.5 px-4 text-right">
+                      <Link
+                        href={`/admin/tenants/${id}`}
+                        className="inline-flex size-8 items-center justify-center rounded-lg border border-line text-ink-3 hover:text-ink hover:bg-surface"
+                        title="Voir le commerce"
+                      >
+                        <ExternalLink className="size-3.5" />
+                      </Link>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </Panel>
