@@ -108,88 +108,9 @@ export class FinanceService {
   }
 
   /**
-   * Assure que les abonnements actifs existants (ex: Le café Mehdi) ont bien une facture
-   * et un paiement correspondants dans la base s'ils n'existaient pas encore.
-   */
-  async ensureHistoricalIntegrity() {
-    const activeSubs = await this.prisma.client.subscription.findMany({
-      where: {
-        status: { in: ["ACTIVE", "TRIALING"] },
-        plan: { kind: { in: ["PAID", "CUSTOM"] } },
-      },
-      include: {
-        tenant: true,
-        plan: true,
-        invoices: true,
-      },
-    });
-
-    for (const sub of activeSubs) {
-      if (sub.invoices.length === 0 && sub.status === "ACTIVE") {
-        const amountCents = sub.contractPriceYearlyCents ?? sub.plan.priceYearlyCents;
-        if (amountCents > 0) {
-          const invNumber = `INV-${new Date(sub.createdAt).getFullYear()}-${sub.tenant.slug.slice(0, 4).toUpperCase()}-001`;
-          const payRef = `PAY-${new Date(sub.createdAt).getFullYear()}-${sub.tenant.slug.slice(0, 4).toUpperCase()}-001`;
-
-          const invoice = await this.prisma.client.invoice.create({
-            data: {
-              number: invNumber,
-              tenantId: sub.tenantId,
-              subscriptionId: sub.id,
-              status: "PAID",
-              currency: sub.plan.currency || "USD",
-              amountSubtotalCents: amountCents,
-              amountTaxCents: 0,
-              amountDiscountCents: 0,
-              amountTotalCents: amountCents,
-              amountPaidCents: amountCents,
-              amountDueCents: 0,
-              periodStart: sub.createdAt,
-              periodEnd: sub.currentPeriodEnd ?? new Date(new Date(sub.createdAt).setFullYear(sub.createdAt.getFullYear() + 1)),
-              paidAt: sub.createdAt,
-              billingReason: "subscription_initial",
-              lines: {
-                create: {
-                  description: `Abonnement annuel FOVE ${sub.plan.name}`,
-                  quantity: 1,
-                  unitAmountCents: amountCents,
-                  amountSubtotalCents: amountCents,
-                  amountTotalCents: amountCents,
-                  currency: sub.plan.currency || "USD",
-                  planId: sub.planId,
-                },
-              },
-            },
-          });
-
-          await this.prisma.client.payment.create({
-            data: {
-              reference: payRef,
-              tenantId: sub.tenantId,
-              invoiceId: invoice.id,
-              provider: sub.provider === "STRIPE" ? "STRIPE" : sub.provider === "MANUAL" ? "MANUAL" : "MOCK",
-              amountCents,
-              amountRefundedCents: 0,
-              feeCents: 0,
-              netCents: amountCents,
-              currency: sub.plan.currency || "USD",
-              status: "SUCCEEDED",
-              method: sub.provider === "MANUAL" ? "Virement / Contrat direct" : "Carte",
-              confirmedAt: sub.createdAt,
-              createdAt: sub.createdAt,
-            },
-          });
-          this.logger.log(`Facture historique générée pour ${sub.tenant.name} (${invNumber})`);
-        }
-      }
-    }
-  }
-
-  /**
    * Vue d'ensemble financière : calcul exact du CA, encaissements, charges, abonnements et résultat.
    */
   async overview(filter: FinanceFilterDto) {
-    await this.ensureHistoricalIntegrity();
     const range = this.parseRange(filter);
 
     // 1. Ventes et Factures sur la période
@@ -268,8 +189,11 @@ export class FinanceService {
     // Calcul du MRR normalisé (mensuel + annuel/12)
     let mrrCents = 0;
     for (const sub of activePaidSubs) {
-      if (sub.contractPriceYearlyCents) {
+      if (sub.contractPriceYearlyCents !== null && sub.contractPriceYearlyCents !== undefined) {
         mrrCents += Math.round(sub.contractPriceYearlyCents / 12);
+      } else if (sub.provider === "MANUAL" && (sub.contractPriceYearlyCents === 0 || sub.contractPriceYearlyCents === null)) {
+        // Offre accordée gratuitement / geste commercial / contrat direct à 0 €
+        mrrCents += 0;
       } else if (sub.interval === "YEAR") {
         mrrCents += Math.round(sub.plan.priceYearlyCents / 12);
       } else {
@@ -653,9 +577,15 @@ export class FinanceService {
     return subs.map((s) => {
       let mrrCents = 0;
       if (s.status === "ACTIVE" && s.plan.kind !== "FREE") {
-        if (s.contractPriceYearlyCents) mrrCents = Math.round(s.contractPriceYearlyCents / 12);
-        else if (s.interval === "YEAR") mrrCents = Math.round(s.plan.priceYearlyCents / 12);
-        else mrrCents = s.plan.priceMonthlyCents;
+        if (s.contractPriceYearlyCents !== null && s.contractPriceYearlyCents !== undefined) {
+          mrrCents = Math.round(s.contractPriceYearlyCents / 12);
+        } else if (s.provider === "MANUAL" && (s.contractPriceYearlyCents === 0 || s.contractPriceYearlyCents === null)) {
+          mrrCents = 0;
+        } else if (s.interval === "YEAR") {
+          mrrCents = Math.round(s.plan.priceYearlyCents / 12);
+        } else {
+          mrrCents = s.plan.priceMonthlyCents;
+        }
       }
       return {
         id: s.id,
@@ -723,6 +653,8 @@ export class FinanceService {
         subStatus,
         subscriptionStatus: subStatus,
         interval: t.subscription?.interval ?? "YEAR",
+        provider: t.subscription?.provider ?? "MOCK",
+        contractPriceYearlyCents: t.subscription?.contractPriceYearlyCents ?? null,
 
         totalInvoicedCents,
         totalPaidCents,
