@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Logo } from "@/components/brand";
+import { CookieSettingsButton } from "@/components/cookie-consent";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 
@@ -73,6 +74,7 @@ export function SiteFooter() {
           <Link className="text-ink-2 hover:text-ink transition-colors" href="/partenaires">Programme Partenaires</Link>
           <Link className="text-ink-2 hover:text-ink transition-colors" href="/cgu">Conditions d’utilisation (CGU)</Link>
           <Link className="text-ink-2 hover:text-ink transition-colors" href="/confidentialite">Données personnelles</Link>
+          <CookieSettingsButton />
           <Link className="text-ink-2 hover:text-ink transition-colors" href="/login">Espace commerçant</Link>
           <Link className="text-ink-2 hover:text-ink transition-colors" href="/sitemap.xml">Plan du site</Link>
         </nav>

@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import Script from "next/script";
 import { Bricolage_Grotesque, Figtree } from "next/font/google";
+import { CookieConsent } from "@/components/cookie-consent";
 import { Providers } from "@/components/providers";
 import { defaultKeywords, siteUrl } from "@/lib/og";
 import "./globals.css";
@@ -85,7 +86,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="fr" suppressHydrationWarning className={`${bricolage.variable} ${figtree.variable}`}>
       <body>
-        {/* Google Tag Manager */}
+        {/* Google Tag Manager & Consent Mode v2 */}
         <Script
           id="gtm-init"
           strategy="afterInteractive"
@@ -93,6 +94,21 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             __html: `
               window.dataLayer = window.dataLayer || [];
               function gtag(){dataLayer.push(arguments);}
+
+              var consentStatus = 'denied';
+              try {
+                if (localStorage.getItem('fove:cookie_consent') === 'granted') {
+                  consentStatus = 'granted';
+                }
+              } catch (e) {}
+
+              gtag('consent', 'default', {
+                'analytics_storage': consentStatus,
+                'ad_storage': consentStatus,
+                'ad_user_data': consentStatus,
+                'ad_personalization': consentStatus
+              });
+
               gtag('js', new Date());
               ${GA_ID ? `gtag('config', '${GA_ID}');` : ""}
             `,
@@ -137,6 +153,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           Aller au contenu
         </a>
         <Providers>{children}</Providers>
+        <CookieConsent />
       </body>
     </html>
   );
