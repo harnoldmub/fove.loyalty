@@ -379,7 +379,13 @@ export default function AdminPartnersPage() {
                   {filteredApproved.map((p) => (
                     <tr key={p.id} className="hover:bg-surface-2 transition-colors">
                       <td className="py-3.5 px-4">
-                        <div className="font-semibold text-ink">{p.name}</div>
+                        <button
+                          type="button"
+                          onClick={() => handleEditRate(p)}
+                          className="font-semibold text-ink hover:text-cobalt hover:underline text-left block truncate"
+                        >
+                          {p.name}
+                        </button>
                         <div className="text-ink-3">{p.email} · {p.phone ?? ""}</div>
                         {p.company && <div className="text-[11px] text-cobalt">{p.company}</div>}
                       </td>

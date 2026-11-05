@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { CheckCircle2, Plus, WalletCards } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -149,7 +150,12 @@ export default function CommissionsPage() {
                 {partners.map((p) => (
                   <tr key={p.id} className="hover:bg-surface-2 transition-colors">
                     <td className="py-3.5 px-4">
-                      <div className="font-semibold text-ink">{p.name}</div>
+                      <Link
+                        href={`/admin/partners?q=${encodeURIComponent(p.code)}`}
+                        className="block truncate font-semibold text-ink hover:text-cobalt hover:underline"
+                      >
+                        {p.name}
+                      </Link>
                       <div className="text-xs text-ink-3">{p.email}</div>
                     </td>
                     <td className="py-3.5 px-4 font-mono text-xs font-bold text-cobalt">

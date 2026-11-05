@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { Download, ExternalLink, FileText, Search, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -160,7 +161,13 @@ export default function SalesPage() {
                       {formatDate(sale.createdAt, true)}
                     </td>
                     <td className="py-3.5 px-4">
-                      <span className="font-medium text-ink">{sale.tenant.name}</span>
+                      <Link
+                        href={`/admin/tenants/${sale.tenant.id}`}
+                        onClick={(e) => e.stopPropagation()}
+                        className="font-medium text-ink hover:text-cobalt hover:underline block truncate"
+                      >
+                        {sale.tenant.name}
+                      </Link>
                     </td>
                     <td className="py-3.5 px-4">
                       <span className="rounded bg-surface-2 px-2 py-0.5 text-xs font-medium text-ink-2">

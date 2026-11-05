@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { ExternalLink, FileText, Search } from "lucide-react";
 import { Input } from "@/components/ui/field";
@@ -114,7 +115,12 @@ export default function InvoicesPage() {
                     {formatDate(inv.createdAt)}
                   </td>
                   <td className="py-3.5 px-4 font-medium text-ink">
-                    {inv.tenant.name}
+                    <Link
+                      href={`/admin/tenants/${inv.tenant.id}`}
+                      className="block truncate font-semibold text-ink hover:text-cobalt hover:underline"
+                    >
+                      {inv.tenant.name}
+                    </Link>
                   </td>
                   <td className="py-3.5 px-4 text-right font-mono text-xs text-ink-2">
                     {formatFinance(inv.amountSubtotalCents, inv.currency)}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { CreditCard, RotateCcw, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -148,7 +149,12 @@ export default function PaymentsPage() {
                       {formatDate(p.confirmedAt || p.createdAt, true)}
                     </td>
                     <td className="py-3.5 px-4">
-                      <span className="font-medium text-ink">{p.tenant.name}</span>
+                      <Link
+                        href={`/admin/tenants/${p.tenant.id}`}
+                        className="block truncate font-semibold text-ink hover:text-cobalt hover:underline"
+                      >
+                        {p.tenant.name}
+                      </Link>
                       {p.invoice && (
                         <div className="text-[11px] text-ink-3 font-mono">{p.invoice.number}</div>
                       )}

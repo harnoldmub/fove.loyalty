@@ -108,7 +108,12 @@ export default function CustomersFinancePage() {
                 return (
                   <tr key={id} className="hover:bg-surface-2 transition-colors">
                     <td className="py-3.5 px-4 font-medium text-ink">
-                      <div>{name}</div>
+                      <Link
+                        href={`/admin/tenants/${id}`}
+                        className="block truncate font-semibold text-ink hover:text-cobalt hover:underline"
+                      >
+                        {name}
+                      </Link>
                       <div className="text-[11px] text-ink-3">{slug}</div>
                     </td>
                     <td className="py-3.5 px-4">
