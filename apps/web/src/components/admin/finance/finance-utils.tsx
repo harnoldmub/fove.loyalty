@@ -2,15 +2,16 @@ import React from "react";
 import { ArrowDownRight, ArrowUpRight, Minus } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-export function formatFinance(cents: number, currency = "USD"): string {
-  const amount = cents / 100;
-  const curr = currency.toUpperCase();
+export function formatFinance(cents: number | null | undefined, currency = "USD"): string {
+  const safeCents = typeof cents === "number" && !Number.isNaN(cents) ? cents : 0;
+  const amount = safeCents / 100;
+  const curr = (currency || "USD").toUpperCase();
 
   try {
     return new Intl.NumberFormat("fr-FR", {
       style: "currency",
       currency: curr,
-      minimumFractionDigits: cents % 100 === 0 ? 0 : 2,
+      minimumFractionDigits: safeCents % 100 === 0 ? 0 : 2,
       maximumFractionDigits: 2,
     }).format(amount);
   } catch {

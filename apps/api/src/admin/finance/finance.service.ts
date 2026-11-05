@@ -680,32 +680,59 @@ export class FinanceService {
   async customers() {
     const tenants = await this.prisma.client.tenant.findMany({
       include: {
+        settings: { select: { country: true } },
+        establishments: { select: { city: true }, take: 1 },
         subscription: { include: { plan: true } },
         invoices: { select: { amountTotalCents: true, status: true, createdAt: true } },
-        payments: { where: { status: "SUCCEEDED" }, select: { amountCents: true, confirmedAt: true } },
+        payments: {
+          where: { status: "SUCCEEDED" },
+          orderBy: { confirmedAt: "asc" },
+          select: { amountCents: true, confirmedAt: true },
+        },
+        attribution: { include: { partner: { select: { name: true } } } },
       },
       orderBy: { createdAt: "desc" },
     });
 
     return tenants.map((t) => {
-      const totalInvoicedCents = t.invoices.reduce((s, i) => s + i.amountTotalCents, 0);
-      const totalPaidCents = t.payments.reduce((s, p) => s + p.amountCents, 0);
-      const lastPayment = t.payments.sort((a, b) => (b.confirmedAt?.getTime() ?? 0) - (a.confirmedAt?.getTime() ?? 0))[0];
+      const totalInvoicedCents = t.invoices.reduce((s, i) => s + (i.amountTotalCents || 0), 0);
+      const totalPaidCents = t.payments.reduce((s, p) => s + (p.amountCents || 0), 0);
+      const firstPayment = t.payments[0];
+      const lastPayment = t.payments[t.payments.length - 1];
+
+      const planName = t.subscription?.plan?.name ?? "Gratuit";
+      const planCode = t.subscription?.plan?.code ?? "free";
+      const subStatus = t.subscription?.status ?? "NONE";
 
       return {
         id: t.id,
+        tenantId: t.id,
         name: t.name,
+        tenantName: t.name,
         slug: t.slug,
+        tenantSlug: t.slug,
         status: t.status,
-        plan: t.subscription?.plan?.name ?? "Aucun",
+        city: t.establishments[0]?.city ?? null,
+        country: t.settings?.country ?? null,
+        createdAt: t.createdAt.toISOString(),
+
+        plan: planName,
+        planName,
         planKind: t.subscription?.plan?.kind ?? "FREE",
-        subStatus: t.subscription?.status ?? "NONE",
+        planCode,
+        subStatus,
+        subscriptionStatus: subStatus,
         interval: t.subscription?.interval ?? "YEAR",
+
         totalInvoicedCents,
         totalPaidCents,
+        totalCollectedCents: totalPaidCents,
         paymentsCount: t.payments.length,
+        firstPaymentAt: firstPayment?.confirmedAt?.toISOString() ?? null,
         lastPaymentAt: lastPayment?.confirmedAt?.toISOString() ?? null,
         nextBillingAt: t.subscription?.currentPeriodEnd?.toISOString() ?? null,
+
+        partnerName: t.attribution?.partner?.name ?? null,
       };
     });
   }
