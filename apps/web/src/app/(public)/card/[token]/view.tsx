@@ -3,10 +3,11 @@
 import { rewardValueLabel, type RewardKind } from "@fove/shared";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState, useSyncExternalStore } from "react";
-import { Bookmark, Check, CheckCircle2, Download, Gift, PartyPopper, Share, Smartphone, Sparkles } from "lucide-react";
+import { Check, CheckCircle2, Copy, Download, Gift, MoreVertical, PartyPopper, PlusSquare, Share, Smartphone, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { QRCodeSVG } from "qrcode.react";
 import { Button } from "@/components/ui/button";
+import { DialogContent, DialogRoot } from "@/components/ui/dialog";
 import { GoogleWalletButton } from "@/components/google-wallet-button";
 import { AppleWalletButton } from "@/components/apple-wallet-button";
 import { Stamps, stampsStatus } from "@/components/stamps";
@@ -32,38 +33,6 @@ export interface CardData {
   poweredBy?: boolean;
 }
 
-function InstallHint() {
-  const [prompt, setPrompt] = useState<(Event & { prompt: () => Promise<void> }) | null>(null);
-  const ios = useSyncExternalStore(
-    () => () => undefined,
-    () => /iphone|ipad/i.test(navigator.userAgent) && !window.matchMedia("(display-mode: standalone)").matches,
-    () => false,
-  );
-  useEffect(() => {
-    const onPrompt = (e: Event) => {
-      e.preventDefault();
-      setPrompt(e as Event & { prompt: () => Promise<void> });
-    };
-    window.addEventListener("beforeinstallprompt", onPrompt);
-    return () => window.removeEventListener("beforeinstallprompt", onPrompt);
-  }, []);
-  if (prompt) {
-    return (
-      <Button variant="secondary" className="w-full" onClick={() => prompt.prompt()}>
-        <Smartphone /> Ajouter à l’écran d’accueil
-      </Button>
-    );
-  }
-  if (ios) {
-    return (
-      <p className="flex items-center justify-center gap-2 text-center text-sm text-ink-2">
-        <Share className="size-4 shrink-0" aria-hidden /> Pour la garder sous la main : Partager, puis « Sur l’écran d’accueil ».
-      </p>
-    );
-  }
-  return null;
-}
-
 function useDeviceOS(): "ios" | "android" | "other" {
   return useSyncExternalStore(
     () => () => undefined,
@@ -79,61 +48,242 @@ function useDeviceOS(): "ios" | "android" | "other" {
   );
 }
 
-function ShortcutButton({ tenantName }: { tenantName: string }) {
+function AddToHomeScreenButton({ tenantName }: { tenantName: string }) {
+  const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);
-  const device = useDeviceOS();
+  const [prompt, setPrompt] = useState<(Event & { prompt: () => Promise<void>; userChoice?: Promise<{ outcome: string }> }) | null>(null);
 
-  const handleShortcut = async () => {
-    const url = typeof window !== "undefined" ? window.location.href : "";
-    const title = `Carte fidélité · ${tenantName}`;
+  const os = useDeviceOS();
+  const isStandalone = useSyncExternalStore(
+    () => () => undefined,
+    () => {
+      if (typeof window === "undefined") return false;
+      return (
+        window.matchMedia("(display-mode: standalone)").matches ||
+        (navigator as unknown as { standalone?: boolean }).standalone === true
+      );
+    },
+    () => false,
+  );
 
-    if (typeof navigator !== "undefined" && typeof navigator.share === "function") {
+  const isInApp = useSyncExternalStore(
+    () => () => undefined,
+    () => {
+      if (typeof navigator === "undefined") return false;
+      const ua = navigator.userAgent || "";
+      return /FBAN|FBAV|Instagram|Line|Twitter|Snapchat|MicroMessenger|musical_ly|ByteDance/i.test(ua);
+    },
+    () => false,
+  );
+
+  useEffect(() => {
+    const onPrompt = (e: Event) => {
+      e.preventDefault();
+      setPrompt(e as Event & { prompt: () => Promise<void>; userChoice?: Promise<{ outcome: string }> });
+    };
+    window.addEventListener("beforeinstallprompt", onPrompt);
+    return () => window.removeEventListener("beforeinstallprompt", onPrompt);
+  }, []);
+
+  const handleClick = async () => {
+    if (prompt) {
       try {
-        await navigator.share({
-          title,
-          text: `Ma carte de fidélité chez ${tenantName}`,
-          url,
-        });
-        toast.success("Raccourci : appuyez sur « Sur l’écran d’accueil » pour garder votre carte sous la main !");
-        return;
-      } catch (err) {
-        if ((err as Error)?.name === "AbortError") return;
+        await prompt.prompt();
+        const choice = await prompt.userChoice;
+        if (choice?.outcome === "accepted") {
+          toast.success("Carte ajoutée à votre écran d'accueil !");
+          return;
+        }
+      } catch {
+        // Fallback vers l'explication si le prompt est ignoré ou échoue
       }
     }
+    setOpen(true);
+  };
 
+  const handleCopyLink = async () => {
+    const url = typeof window !== "undefined" ? window.location.href : "";
     if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
       try {
         await navigator.clipboard.writeText(url);
         setCopied(true);
+        toast.success("Lien de votre carte copié !");
         setTimeout(() => setCopied(false), 2500);
-        if (device === "ios") {
-          toast.success("Lien copié ! Appuyez sur Partager ⎋ puis « Sur l’écran d’accueil ».");
-        } else if (device === "android") {
-          toast.success("Lien copié ! Appuyez sur le menu ⋮ puis « Ajouter à l’écran d’accueil ».");
-        } else {
-          toast.success("Lien copié ! Ajoutez cette page à vos favoris (Cmd+D ou Ctrl+D) pour y accéder en 1 clic.");
-        }
         return;
       } catch {
         // fallback
       }
     }
-
-    toast.message("Astuce : ajoutez cette page en raccourci sur votre écran d’accueil pour y accéder rapidement.");
+    toast.info("Lien : " + url);
   };
 
+  if (isStandalone) {
+    return (
+      <span className="inline-flex items-center gap-1.5 text-xs text-mint font-medium px-3 py-1.5 rounded-full bg-mint-soft border border-mint/20">
+        <CheckCircle2 className="size-3.5" /> Sur l’écran d’accueil
+      </span>
+    );
+  }
+
   return (
-    <Button
-      type="button"
-      variant="secondary"
-      size="sm"
-      className="rounded-full shadow-xs hover:bg-surface-2 transition-all"
-      onClick={handleShortcut}
-      aria-label="Ajouter un raccourci vers la carte sur l'écran d'accueil"
-    >
-      {copied ? <Check className="size-3.5 text-mint" /> : <Smartphone className="size-3.5" />}
-      <span>{copied ? "Lien copié !" : "Ajouter un raccourci"}</span>
-    </Button>
+    <>
+      <Button
+        type="button"
+        variant="secondary"
+        size="sm"
+        className="rounded-full shadow-xs hover:bg-surface-2 transition-all font-medium"
+        onClick={handleClick}
+        aria-label="Ajouter la carte sur l'écran d'accueil"
+      >
+        <Smartphone className="size-3.5 text-ink-2" />
+        <span>Ajouter à l’écran d’accueil</span>
+      </Button>
+
+      <DialogRoot open={open} onOpenChange={setOpen}>
+        <DialogContent
+          title="Ajouter à l’écran d’accueil"
+          description={`Gardez votre carte ${tenantName} accessible en 1 clic sur votre téléphone.`}
+          className="sm:max-w-md"
+        >
+          {os === "ios" ? (
+            <div className="grid gap-3 py-1">
+              <div className="flex items-start gap-3 rounded-xl border border-line bg-surface-2/60 p-3">
+                <div className="grid size-7 shrink-0 place-items-center rounded-lg bg-cobalt/10 text-cobalt font-bold text-xs">
+                  1
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-semibold text-ink">
+                    Appuyez sur <Share className="inline size-4 text-cobalt align-text-bottom mx-0.5" aria-hidden /> Partager
+                  </p>
+                  <p className="text-xs text-ink-2 mt-0.5">
+                    Dans la barre de navigation Safari en bas de votre écran iPhone (ou en haut sur iPad).
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3 rounded-xl border border-line bg-surface-2/60 p-3">
+                <div className="grid size-7 shrink-0 place-items-center rounded-lg bg-cobalt/10 text-cobalt font-bold text-xs">
+                  2
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-semibold text-ink">
+                    Touchez <PlusSquare className="inline size-4 text-ink align-text-bottom mx-0.5" aria-hidden /> « Sur l’écran d’accueil »
+                  </p>
+                  <p className="text-xs text-ink-2 mt-0.5">
+                    Faites défiler le menu des options vers le bas pour sélectionner cette action.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3 rounded-xl border border-line bg-surface-2/60 p-3">
+                <div className="grid size-7 shrink-0 place-items-center rounded-lg bg-mint/10 text-mint font-bold text-xs">
+                  3
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-semibold text-ink">
+                    Appuyez sur « Ajouter »
+                  </p>
+                  <p className="text-xs text-ink-2 mt-0.5">
+                    Votre carte apparaît comme une vraie application sur votre écran d'accueil !
+                  </p>
+                </div>
+              </div>
+
+              {isInApp && (
+                <div className="rounded-lg bg-stamp-soft/30 p-2.5 text-xs text-ink-2">
+                  <p className="font-medium text-stamp-ink dark:text-stamp">
+                    💡 Vous êtes dans une application (Instagram, WhatsApp...) ?
+                  </p>
+                  <p className="text-ink-3 mt-0.5">
+                    Appuyez sur les options en haut à droite pour ouvrir d'abord la page dans <strong>Safari</strong>.
+                  </p>
+                </div>
+              )}
+            </div>
+          ) : os === "android" ? (
+            <div className="grid gap-3 py-1">
+              <div className="flex items-start gap-3 rounded-xl border border-line bg-surface-2/60 p-3">
+                <div className="grid size-7 shrink-0 place-items-center rounded-lg bg-cobalt/10 text-cobalt font-bold text-xs">
+                  1
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-semibold text-ink">
+                    Appuyez sur le menu <MoreVertical className="inline size-4 text-ink align-text-bottom mx-0.5" aria-hidden />
+                  </p>
+                  <p className="text-xs text-ink-2 mt-0.5">
+                    Les 3 points verticaux en haut à droite de Google Chrome.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3 rounded-xl border border-line bg-surface-2/60 p-3">
+                <div className="grid size-7 shrink-0 place-items-center rounded-lg bg-cobalt/10 text-cobalt font-bold text-xs">
+                  2
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-semibold text-ink">
+                    Sélectionnez <Smartphone className="inline size-4 text-ink align-text-bottom mx-0.5" aria-hidden /> « Ajouter à l’écran d’accueil »
+                  </p>
+                  <p className="text-xs text-ink-2 mt-0.5">
+                    (Ou « Installer l'application » selon votre navigateur).
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3 rounded-xl border border-line bg-surface-2/60 p-3">
+                <div className="grid size-7 shrink-0 place-items-center rounded-lg bg-mint/10 text-mint font-bold text-xs">
+                  3
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-semibold text-ink">
+                    Confirmez avec « Ajouter »
+                  </p>
+                  <p className="text-xs text-ink-2 mt-0.5">
+                    Votre carte {tenantName} sera accessible immédiatement en 1 clic.
+                  </p>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="grid gap-3 py-1">
+              <p className="text-sm text-ink-2">
+                Pour retrouver votre carte en boutique, le plus pratique est de l’ouvrir sur votre smartphone :
+              </p>
+              <div className="rounded-xl border border-line bg-surface-2/60 p-3.5 space-y-2 text-xs text-ink-2">
+                <p className="font-semibold text-ink">Astuces :</p>
+                <ul className="space-y-1.5 list-disc list-inside">
+                  <li>Scannez le QR code de cette page avec votre smartphone.</li>
+                  <li>Copiez le lien ci-dessous pour vous l'envoyer par message ou email.</li>
+                  <li>Sur Mac ou PC, ajoutez la page aux favoris (<kbd className="rounded bg-surface px-1 py-0.5 font-mono text-[11px] border">Cmd+D</kbd> ou <kbd className="rounded bg-surface px-1 py-0.5 font-mono text-[11px] border">Ctrl+D</kbd>).</li>
+                </ul>
+              </div>
+            </div>
+          )}
+
+          <div className="flex flex-col-reverse sm:flex-row sm:justify-between items-center gap-2 pt-2 border-t border-line">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={handleCopyLink}
+              className="w-full sm:w-auto text-xs text-ink-2 hover:text-ink"
+            >
+              {copied ? <Check className="size-3.5 text-mint" /> : <Copy className="size-3.5" />}
+              <span>{copied ? "Lien copié !" : "Copier le lien direct"}</span>
+            </Button>
+            <Button
+              type="button"
+              variant="primary"
+              size="sm"
+              onClick={() => setOpen(false)}
+              className="w-full sm:w-auto"
+            >
+              J’ai compris
+            </Button>
+          </div>
+        </DialogContent>
+      </DialogRoot>
+    </>
   );
 }
 
@@ -331,12 +481,12 @@ export function CardView({ token, initial }: { token: string; initial: CardData 
               </div>
             )}
             <div className="flex flex-wrap items-center justify-center gap-2 pt-0.5">
+              <AddToHomeScreenButton tenantName={tenant.name} />
               <Button asChild variant="secondary" size="sm" className="rounded-full shadow-xs hover:bg-surface-2 transition-all">
                 <a href={`/api/public/cards/${token}/carte.png?download=1`} download aria-label="Télécharger la carte en image (PNG)">
                   <Download className="size-3.5" /> Enregistrer l'image
                 </a>
               </Button>
-              <ShortcutButton tenantName={tenant.name} />
             </div>
           </section>
         )}
@@ -438,7 +588,6 @@ export function CardView({ token, initial }: { token: string; initial: CardData 
           </section>
         )}
 
-        <InstallHint />
         <p className="text-center text-xs text-ink-3">Membre depuis le {formatDate(card.memberSince)}. Ce lien est personnel : ne le partagez pas.</p>
         {data.poweredBy && (
           <p className="text-center text-xs text-ink-3">
