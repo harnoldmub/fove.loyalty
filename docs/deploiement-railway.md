@@ -34,7 +34,7 @@ Les deux domaines `fove.digital` et `app.fove.digital` pointent sur le même ser
 | `STRIPE_ALLOW_LIVE` | `false` (passer à `true` seulement après validation) |
 | `GOOGLE_WALLET_ISSUER_ID` / `GOOGLE_WALLET_SERVICE_ACCOUNT_JSON` | facultatifs : compte émetteur Google Wallet (Google Pay & Wallet Console) et compte de service autorisé ; absents = bouton masqué |
 | `GOOGLE_OAUTH_CLIENT_ID` / `GOOGLE_OAUTH_CLIENT_SECRET` | identifiants OAuth 2.0 « Application Web » du compte client FOVE ; distincts de Google Wallet |
-| `GOOGLE_OAUTH_REDIRECT_URI` | `https://app.fove.digital/api/client-auth/google/callback` — doit correspondre exactement à Google Cloud |
+| `GOOGLE_OAUTH_REDIRECT_URI` | `https://app.fove.digital/api/auth/google/callback` — doit correspondre exactement à Google Cloud |
 
 **fove-web**
 
@@ -49,10 +49,10 @@ Les deux domaines `fove.digital` et `app.fove.digital` pointent sur le même ser
 Créer un client OAuth 2.0 de type **Application Web**, nommé `FOVE — Compte client` :
 
 - origines JavaScript autorisées : `http://localhost:5290`, `https://fove.digital` et `https://app.fove.digital` ;
-- URI de redirection autorisées : `http://localhost:5290/api/client-auth/google/callback` et `https://app.fove.digital/api/client-auth/google/callback` ;
+- URI de redirection autorisées : `http://localhost:5290/api/auth/google/callback` et `https://app.fove.digital/api/auth/google/callback` ;
 - scopes du parcours de connexion : `openid`, `email`, `profile` uniquement.
 
-L'identifiant client peut être communiqué à l'équipe. Le secret client reste exclusivement dans les variables du service API et ne doit jamais être exposé au navigateur ni commité. Cette connexion cible `ClientAccount` et sa session dédiée ; elle ne doit pas réutiliser `User` ou le cookie commerçant.
+L'identifiant client peut être communiqué à l'équipe. Le secret client reste exclusivement dans les variables du service API et ne doit jamais être exposé au navigateur ni commité. Cette connexion utilise le compte commerçant `User` et la session habituelle de l'espace FOVE.
 
 ## Migrations
 

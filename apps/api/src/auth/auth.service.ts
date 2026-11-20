@@ -70,6 +70,39 @@ export class AuthService {
     return { id: user.id };
   }
 
+  async loginWithGoogle(profile: { email: string; name: string }, req: Request, res: Response) {
+    const email = normalizeEmail(profile.email);
+    let user = await this.prisma.client.user.findUnique({ where: { email } });
+    let created = false;
+
+    if (!user) {
+      user = await this.prisma.client.user.create({
+        data: {
+          email,
+          name: profile.name.trim() || email.split("@")[0] || "Utilisateur FOVE",
+          // Secret aléatoire inconnu : Google reste le moyen de connexion, sauf
+          // si l'utilisateur définit ensuite un mot de passe via « mot de passe oublié ».
+          passwordHash: await hashPassword(randomToken("google_", 32)),
+          emailVerifiedAt: new Date(),
+        },
+      });
+      created = true;
+    } else if (!user.emailVerifiedAt) {
+      user = await this.prisma.client.user.update({
+        where: { id: user.id },
+        data: { emailVerifiedAt: new Date() },
+      });
+    }
+
+    const membership = await this.prisma.client.tenantMembership.findFirst({
+      where: { userId: user.id, status: "ACTIVE" },
+      orderBy: { createdAt: "asc" },
+    });
+    await this.sessions.create(user.id, req, res, membership?.tenantId ?? null);
+    await this.audit.log({ actorUserId: user.id, action: created ? "auth.signup_google" : "auth.login_google", ip: req.ip });
+    return { id: user.id, created };
+  }
+
   async me(auth: AuthState) {
     const memberships = await this.prisma.client.tenantMembership.findMany({
       where: { userId: auth.user.id, status: "ACTIVE" },

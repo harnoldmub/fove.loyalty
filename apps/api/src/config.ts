@@ -41,6 +41,7 @@ const schema = z.object({
 export type AppConfig = z.infer<typeof schema> & {
   corsOrigins: string[];
   isProd: boolean;
+  googleOAuthEnabled: boolean;
   googleWalletEnabled: boolean;
   appleWalletEnabled: boolean;
   whatsappEnabled: boolean;
@@ -66,6 +67,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     ...value,
     corsOrigins: value.CORS_ORIGINS.split(",").map((o) => o.trim()).filter(Boolean),
     isProd: value.NODE_ENV === "production",
+    googleOAuthEnabled: Boolean(value.GOOGLE_OAUTH_CLIENT_ID && value.GOOGLE_OAUTH_CLIENT_SECRET),
     googleWalletEnabled: Boolean(value.GOOGLE_WALLET_ISSUER_ID && value.GOOGLE_WALLET_SERVICE_ACCOUNT_JSON),
     appleWalletEnabled: Boolean(
       value.APPLE_WALLET_PASS_TYPE_ID &&

@@ -57,11 +57,48 @@ function Heading({ title, children }: { title: string; children?: React.ReactNod
   );
 }
 
+function GoogleIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 18 18" className="size-[18px] shrink-0">
+      <path fill="#4285F4" d="M17.64 9.205c0-.638-.057-1.252-.164-1.841H9v3.481h4.844a4.14 4.14 0 0 1-1.797 2.716v2.258h2.909c1.702-1.567 2.684-3.875 2.684-6.614Z" />
+      <path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.91-2.259c-.805.54-1.835.86-3.046.86-2.344 0-4.328-1.585-5.037-3.714H.956v2.332A9 9 0 0 0 9 18Z" />
+      <path fill="#FBBC05" d="M3.963 10.707A5.41 5.41 0 0 1 3.682 9c0-.592.102-1.168.281-1.707V4.961H.956A9 9 0 0 0 0 9c0 1.452.347 2.827.956 4.039l3.007-2.332Z" />
+      <path fill="#EA4335" d="M9 3.58c1.321 0 2.507.454 3.441 1.346l2.581-2.58C13.463.892 11.426 0 9 0A9 9 0 0 0 .956 4.961l3.007 2.332C4.672 5.164 6.656 3.58 9 3.58Z" />
+    </svg>
+  );
+}
+
+function GoogleLogin({ next }: { next: string }) {
+  const [enabled, setEnabled] = useState(false);
+  useEffect(() => {
+    api.get<{ google: boolean }>("/auth/providers").then((providers) => setEnabled(providers.google)).catch(() => undefined);
+  }, []);
+  if (!enabled) return null;
+
+  return (
+    <div className="mb-5 grid gap-5">
+      <a
+        href={`/api/auth/google?next=${encodeURIComponent(next)}`}
+        className="flex min-h-11 items-center justify-center gap-3 rounded-md border border-line bg-surface px-4 py-2.5 text-sm font-semibold text-ink shadow-1 transition-colors hover:bg-surface-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cobalt focus-visible:ring-offset-2"
+      >
+        <GoogleIcon />
+        Continuer avec Google
+      </a>
+      <div className="flex items-center gap-3 text-xs text-ink-3" aria-hidden="true">
+        <span className="h-px flex-1 bg-line" />
+        ou avec votre email
+        <span className="h-px flex-1 bg-line" />
+      </div>
+    </div>
+  );
+}
+
 export function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const next = searchParams.get("next");
   const isResetSuccess = searchParams.get("reset") === "1";
+  const oauthError = searchParams.get("oauth_error");
   const [error, setError] = useState<string | null>(null);
   const [leaving, setLeaving] = useState(false);
   const native = useIsNativeApp();
@@ -85,11 +122,13 @@ export function LoginForm() {
       <Heading title="Connexion">
         {planName ? `Connectez-vous pour activer l’offre ${planName} : le paiement suit.` : "Accédez à l’espace de votre commerce."}
       </Heading>
+      <GoogleLogin next={next?.startsWith("/") && !next.startsWith("//") ? next : afterAuthPath()} />
       <form onSubmit={onSubmit} className="grid gap-5" noValidate>
         {isResetSuccess && (
           <SuccessNote>Votre mot de passe a bien été mis à jour. Vous pouvez vous connecter.</SuccessNote>
         )}
         {error && <ErrorNote>{error}</ErrorNote>}
+        {oauthError && <ErrorNote>La connexion avec Google n’a pas abouti. Réessayez ou utilisez votre email.</ErrorNote>}
         <Field label="Email" error={form.formState.errors.email?.message}>
           {(p) => <Input {...p} type="email" autoComplete="email" inputMode="email" {...form.register("email")} />}
         </Field>
@@ -148,6 +187,7 @@ export function SignupForm() {
           ? `Vous avez choisi l’offre ${planName}. Créez votre compte et votre commerce, puis réglez votre abonnement.`
           : "Gratuit jusqu’à 100 clients, sans carte bancaire. Votre programme est prêt en quelques minutes."}
       </Heading>
+      <GoogleLogin next={afterAuthPath()} />
       <form onSubmit={onSubmit} className="grid gap-5" noValidate>
         {error && <ErrorNote>{error}</ErrorNote>}
         <Field label="Votre nom" error={e.name?.message}>
@@ -172,6 +212,7 @@ export function SignupForm() {
         </div>
         <Button type="submit" loading={form.formState.isSubmitting || leaving}>{leaving ? "Préparation de votre espace…" : "Créer mon compte"}</Button>
       </form>
+      <p className="mt-4 text-xs leading-5 text-ink-3">En continuant avec Google, vous acceptez les <TermsDialog /> et la <PrivacyDialog />.</p>
       <p className="mt-6 text-sm text-ink-2">
         Déjà inscrit ? <Link href={withPlanChoice("/login", offre)} className="text-cobalt hover:underline">Se connecter</Link>
       </p>
