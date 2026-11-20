@@ -273,6 +273,9 @@ model Customer {
   marketingSmsConsent   Boolean        @default(false)
   consentUpdatedAt      DateTime?
   anonymizedAt          DateTime?
+  /// Compte client FOVE rattaché (au plus une fiche par commerce et par compte).
+  clientAccountId       String?        @db.Uuid
+  clientAccount         ClientAccount? @relation(fields: [clientAccountId], references: [id], onDelete: SetNull)
   tags                  String[]       @default([])
   notes                 String?
   lastVisitAt           DateTime?
@@ -286,6 +289,8 @@ model Customer {
   customerNotes CustomerNote[]
 
   @@unique([tenantId, id])
+  @@unique([tenantId, clientAccountId])
+  @@index([clientAccountId])
   @@index([tenantId, createdAt])
   @@index([tenantId, lastName, firstName])
   @@index([tenantId, lastVisitAt])
@@ -1343,3 +1348,58 @@ model FinancialAuditLog {
   @@index([createdAt])
 }
 
+// ---------------------------------------------------------------------------
+// Compte client FOVE (identité du client final, commune à tous les commerces)
+// ---------------------------------------------------------------------------
+
+/// Identité d'un client final. Connexion par code email ou Google, jamais par téléphone.
+/// Le commerçant ne voit pas ce compte : il ne voit que sa propre fiche client.
+model ClientAccount {
+  id              String    @id @default(uuid()) @db.Uuid
+  email           String    @unique
+  /// Renseignée quand le client a prouvé posséder l'email (code saisi ou Google).
+  emailVerifiedAt DateTime?
+  firstName       String    @default("")
+  lastName        String    @default("")
+  /// Contact uniquement, pré-rempli à l'inscription chez un commerce. Jamais un identifiant.
+  phone           String?
+  /// Identifiant Google (« sub »), renseigné à la première connexion Google.
+  googleSub       String?   @unique
+  locale          String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  sessions  ClientSession[]
+  customers Customer[]
+}
+
+/// Session d'un client sur un appareil (cookie distinct de celui des commerçants).
+model ClientSession {
+  id              String        @id @default(uuid()) @db.Uuid
+  tokenHash       String        @unique
+  clientAccountId String        @db.Uuid
+  clientAccount   ClientAccount @relation(fields: [clientAccountId], references: [id], onDelete: Cascade)
+  userAgent       String?
+  ip              String?
+  expiresAt       DateTime
+  lastSeenAt      DateTime      @default(now())
+  createdAt       DateTime      @default(now())
+
+  @@index([clientAccountId])
+}
+
+/// Code à 6 chiffres envoyé par email. Lié à l'email et non au compte :
+/// la demande ne révèle pas si un compte existe.
+model ClientLoginCode {
+  id         String    @id @default(uuid()) @db.Uuid
+  email      String
+  codeHash   String
+  attempts   Int       @default(0)
+  ip         String?
+  expiresAt  DateTime
+  consumedAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@index([email, createdAt])
+  @@index([ip, createdAt])
+}

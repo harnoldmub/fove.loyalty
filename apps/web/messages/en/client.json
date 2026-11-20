@@ -1,0 +1,57 @@
+{
+  "layout": {
+    "homeLabel": "FOVE, home"
+  },
+  "meta": {
+    "login": "Sign in to my FOVE account",
+    "home": "My cards"
+  },
+  "login": {
+    "title": "My FOVE account",
+    "subtitle": "Find all your FOVE loyalty cards, on any phone.",
+    "email": "Your email address",
+    "emailInvalid": "Invalid email address",
+    "sendCode": "Get a code",
+    "noPassword": "No password: we send you a 6-digit code.",
+    "codeTitle": "Enter your code",
+    "codeSent": "If {email} is correct, a 6-digit code has just been sent to it. It is valid for 10 minutes.",
+    "code": "6-digit code",
+    "codeInvalid": "The code has 6 digits",
+    "verify": "Sign in",
+    "resend": "Resend the code",
+    "resendIn": "Resend the code in {seconds} s",
+    "resent": "New code sent.",
+    "changeEmail": "Use another address",
+    "checkSpam": "Nothing received? Check your spam folder.",
+    "deleted": "Your FOVE account has been deleted."
+  },
+  "home": {
+    "title": "My cards",
+    "hello": "Hello {name}",
+    "signedInAs": "Signed in as {email}",
+    "loadError": "Your account couldn't be loaded.",
+    "retry": "Try again",
+    "welcomeTitle": "Welcome to FOVE",
+    "welcomeBody": "Enter your name so businesses recognise you. Your phone number will be suggested when you join a programme.",
+    "cardsTitle": "My loyalty cards",
+    "cardsEmpty": "Cards created with your FOVE account will appear here, each in its business's colours.",
+    "profileTitle": "My profile",
+    "firstName": "First name",
+    "lastName": "Last name",
+    "lastNameOptional": "Last name (optional)",
+    "phone": "Phone (optional)",
+    "phoneHint": "Pre-filled when you join a programme. It is never used to sign in.",
+    "email": "Email",
+    "emailHint": "This is the address you sign in with. It can't be changed yet.",
+    "firstNameRequired": "Enter your first name",
+    "save": "Save",
+    "saved": "Profile saved.",
+    "logout": "Sign out of this device",
+    "dangerTitle": "Delete my FOVE account",
+    "dangerBody": "Your cards stay with each business, with your points, and their links keep working. They are simply no longer grouped in your account.",
+    "delete": "Delete my account",
+    "deleteConfirmTitle": "Delete your FOVE account?",
+    "deleteConsequence": "Your account is permanently deleted and you are signed out. Your cards and points stay with each business. To erase your data at a business, contact that business.",
+    "deleteConfirm": "Delete permanently"
+  }
+}

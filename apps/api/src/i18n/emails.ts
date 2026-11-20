@@ -259,6 +259,36 @@ export function otpMessage(locale: Locale, tenantName: string, code: string): Co
   return { subject: t.otpSubject(tenantName), text: t.otp(code) };
 }
 
+// --- Compte client FOVE -------------------------------------------------------
+
+const CLIENT_ACCOUNT = {
+  fr: {
+    subject: "Votre code de connexion FOVE",
+    text: (code: string) =>
+      `Votre code de connexion à votre compte FOVE : ${code}\nIl expire dans 10 minutes.\n\nSi vous n'avez pas demandé ce code, ignorez cet email : personne ne peut se connecter sans lui.`,
+  },
+  en: {
+    subject: "Your FOVE sign-in code",
+    text: (code: string) =>
+      `Your FOVE account sign-in code: ${code}\nIt expires in 10 minutes.\n\nIf you didn't request this code, ignore this email: nobody can sign in without it.`,
+  },
+  ar: {
+    subject: "رمز تسجيل الدخول إلى FOVE",
+    text: (code: string) =>
+      `رمز تسجيل الدخول إلى حسابك في FOVE: ${code}\nتنتهي صلاحيته خلال 10 دقائق.\n\nإذا لم تطلب هذا الرمز، فتجاهل هذه الرسالة: لا يمكن لأحد تسجيل الدخول بدونه.`,
+  },
+  es: {
+    subject: "Tu código de acceso a FOVE",
+    text: (code: string) =>
+      `Tu código de acceso a tu cuenta FOVE: ${code}\nCaduca en 10 minutos.\n\nSi no has pedido este código, ignora este correo: nadie puede iniciar sesión sin él.`,
+  },
+} satisfies Record<Locale, unknown>;
+
+export function clientLoginCodeMessage(locale: Locale, code: string): Content {
+  const t = CLIENT_ACCOUNT[locale];
+  return { subject: t.subject, text: t.text(code) };
+}
+
 // --- Offre et quotas (propriétaire du commerce) -------------------------------
 
 const QUOTA = {

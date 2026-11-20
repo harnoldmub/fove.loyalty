@@ -1,0 +1,57 @@
+{
+  "layout": {
+    "homeLabel": "FOVE, accueil"
+  },
+  "meta": {
+    "login": "Connexion à mon compte FOVE",
+    "home": "Mes cartes"
+  },
+  "login": {
+    "title": "Mon compte FOVE",
+    "subtitle": "Retrouvez toutes vos cartes de fidélité FOVE, sur n'importe quel téléphone.",
+    "email": "Votre adresse email",
+    "emailInvalid": "Adresse email invalide",
+    "sendCode": "Recevoir un code",
+    "noPassword": "Pas de mot de passe : nous vous envoyons un code à 6 chiffres.",
+    "codeTitle": "Saisissez votre code",
+    "codeSent": "Si l'adresse {email} est correcte, un code à 6 chiffres vient d'y être envoyé. Il est valable 10 minutes.",
+    "code": "Code à 6 chiffres",
+    "codeInvalid": "Le code contient 6 chiffres",
+    "verify": "Me connecter",
+    "resend": "Renvoyer le code",
+    "resendIn": "Renvoyer le code dans {seconds} s",
+    "resent": "Nouveau code envoyé.",
+    "changeEmail": "Utiliser une autre adresse",
+    "checkSpam": "Rien reçu ? Vérifiez vos courriers indésirables.",
+    "deleted": "Votre compte FOVE a été supprimé."
+  },
+  "home": {
+    "title": "Mes cartes",
+    "hello": "Bonjour {name}",
+    "signedInAs": "Connecté avec {email}",
+    "loadError": "Impossible de charger votre compte.",
+    "retry": "Réessayer",
+    "welcomeTitle": "Bienvenue sur FOVE",
+    "welcomeBody": "Indiquez votre nom pour que les commerces vous reconnaissent. Votre téléphone sera proposé quand vous rejoindrez un programme.",
+    "cardsTitle": "Mes cartes de fidélité",
+    "cardsEmpty": "Les cartes créées avec votre compte FOVE apparaîtront ici, chacune aux couleurs de son commerce.",
+    "profileTitle": "Mon profil",
+    "firstName": "Prénom",
+    "lastName": "Nom",
+    "lastNameOptional": "Nom (facultatif)",
+    "phone": "Téléphone (facultatif)",
+    "phoneHint": "Pré-rempli quand vous rejoignez un programme. Il ne sert jamais à vous connecter.",
+    "email": "Email",
+    "emailHint": "C'est l'adresse qui vous permet de vous connecter. Elle ne peut pas encore être modifiée.",
+    "firstNameRequired": "Indiquez votre prénom",
+    "save": "Enregistrer",
+    "saved": "Profil enregistré.",
+    "logout": "Me déconnecter de cet appareil",
+    "dangerTitle": "Supprimer mon compte FOVE",
+    "dangerBody": "Vos cartes restent chez chaque commerce, avec vos points, et leurs liens continuent de fonctionner. Elles ne sont simplement plus regroupées dans votre compte.",
+    "delete": "Supprimer mon compte",
+    "deleteConfirmTitle": "Supprimer votre compte FOVE ?",
+    "deleteConsequence": "Votre compte est supprimé définitivement et vous êtes déconnecté. Vos cartes et vos points restent chez chaque commerce. Pour effacer vos données chez un commerce, adressez-vous à lui.",
+    "deleteConfirm": "Supprimer définitivement"
+  }
+}

@@ -49,6 +49,9 @@ export class JobsController {
       db.authToken.deleteMany({ where: { expiresAt: { lt: new Date(now.getTime() - 7 * 86_400_000) } } }),
       db.idempotencyRecord.deleteMany({ where: { createdAt: { lt: new Date(now.getTime() - 86_400_000) } } }),
       db.otpChallenge.deleteMany({ where: { expiresAt: { lt: new Date(now.getTime() - 86_400_000) } } }),
+      db.clientSession.deleteMany({ where: { expiresAt: { lt: now } } }),
+      // Gardés 24 h : ils servent à limiter le nombre de demandes par email et par adresse IP.
+      db.clientLoginCode.deleteMany({ where: { createdAt: { lt: new Date(now.getTime() - 86_400_000) } } }),
     ]);
     return { webhooksRetried: webhooks, accountsExpired: expired, subscriptions, verificationReminders, cleaned: cleanup.map((c) => c.count) };
   }

@@ -51,6 +51,18 @@ Base PostgreSQL partagée, isolation logique stricte :
 - **Affiche A4** à imprimer pour chaque QR d'inscription (`/affiche/<id>`).
 - **Scanner** : viseur plein cadre, caméra démarrée seule et arrêtée après lecture, chargements, fiche caisse sur sa propre page (`/app/scanner/<carte>`).
 
+## Compte client FOVE
+
+Identité unique du client final, commune à tous les commerces (spécification : `docs/chantier-compte-fove.md`). Module `apps/api/src/client-account/`, routes `/api/client/*`, pages `/mes-cartes` et `/mes-cartes/connexion`.
+
+- **Données** : `ClientAccount` (email unique, confirmation, nom, téléphone de contact, identifiant Google), `ClientSession`, `ClientLoginCode` ; `Customer.clientAccountId` rattache une fiche à un compte (au plus une fiche par commerce et par compte, détachée si le compte est supprimé).
+- **Connexion sans mot de passe** : code à 6 chiffres par email, valable 10 min, 5 essais, consommé une seule fois. Renvoi après 1 min, au plus 5 codes par heure et par email, 60 par heure et par adresse IP. La réponse est identique que l'email ait un compte ou non ; un code juste pour un email inconnu crée le compte, déjà confirmé.
+- **Session** distincte de celle des commerçants : cookie `fove_client` (`__Host-fove_client` en production), table dédiée, 180 jours glissants. Même protection anti-CSRF (en-tête `X-Fove-Csrf`).
+- Quand le titulaire d'un email prouve sa propriété sur un compte non confirmé, toutes les sessions existantes de ce compte sont fermées.
+- **Suppression** (RGPD) : le compte, ses sessions et ses codes sont effacés ; les fiches et cartes restent chez chaque commerçant, détachées. Le journal d'audit ne garde que l'identifiant du compte.
+- Le téléphone n'est **jamais** un identifiant : un numéro inactif peut être réattribué.
+- Purge par la tâche planifiée : sessions expirées, codes de plus de 24 h.
+
 ## Wallet
 
 - **Google Wallet** (`apps/api/src/cards/google-wallet.ts`), actif seulement si `GOOGLE_WALLET_ISSUER_ID` et `GOOGLE_WALLET_SERVICE_ACCOUNT_JSON` sont définis. Une classe par programme (déclarée dans le JWT, créée par Google au premier ajout), un objet par carte portant le QR personnel. Lien d'ajout signé côté serveur, valable 10 min ; solde mis à jour après chaque opération ; notification à un client ou à tous les clients d'un programme (confirmation avant l'envoi groupé ; limite Google : 3 par carte et par 24 h). Bouton masqué sur iPhone/iPad.

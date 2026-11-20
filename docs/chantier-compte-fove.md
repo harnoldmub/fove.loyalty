@@ -1,6 +1,10 @@
 # Chantier — Compte client FOVE (lot A)
 
 > Statut : **spécification validée**, développement en cours. Décisions prises le 20 novembre 2026.
+>
+> | A1 | A2 | A3 | A4 | A5 |
+> |---|---|---|---|---|
+> | Fait (20 nov.) | À faire | À faire | À faire | À faire |
 
 ## 1. Pourquoi
 

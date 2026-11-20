@@ -15,7 +15,7 @@ export const isRtl = (locale: Locale) => locale === "ar";
  * Fichiers de messages, un par zone (`messages/<langue>/<zone>.json`) pour
  * pouvoir traduire chaque partie du produit indépendamment.
  */
-export const NAMESPACES = ["common", "marketing", "auth", "public", "onboarding", "app", "admin", "partner", "errors"] as const;
+export const NAMESPACES = ["common", "marketing", "auth", "public", "onboarding", "app", "admin", "partner", "client", "errors"] as const;
 
 const BY_COUNTRY: Record<string, Locale> = {};
 const assign = (locale: Locale, codes: string) => codes.split(" ").forEach((c) => (BY_COUNTRY[c] = locale));

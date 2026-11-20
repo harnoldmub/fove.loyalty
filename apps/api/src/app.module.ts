@@ -45,6 +45,10 @@ import { GoogleWalletProvider } from "./cards/google-wallet";
 import { AppleWalletProvider } from "./cards/apple-wallet";
 import { WalletBannerService } from "./cards/wallet-banner.service";
 import { AppleWalletServiceController } from "./cards/apple-wallet-service.controller";
+import { ClientSessionService } from "./client-account/client-session.service";
+import { ClientAccountService } from "./client-account/client-account.service";
+import { ClientAccountController } from "./client-account/client-account.controller";
+import { ClientSessionGuard } from "./client-account/client-guard";
 
 /**
  * Monolithe modulaire : un seul déploiement, des modules métier séparés par
@@ -74,6 +78,7 @@ import { AppleWalletServiceController } from "./cards/apple-wallet-service.contr
     JobsController,
     MediaController,
     AppleWalletServiceController,
+    ClientAccountController,
   ],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },
@@ -84,6 +89,9 @@ import { AppleWalletServiceController } from "./cards/apple-wallet-service.contr
     WebhooksService,
     SessionService,
     AuthService,
+    ClientSessionService,
+    ClientAccountService,
+    ClientSessionGuard,
     SessionGuard,
     TenantGuard,
     SuperAdminGuard,
