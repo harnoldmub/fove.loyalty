@@ -3,16 +3,19 @@
 import { useRouter } from "next/navigation";
 import { Search, ScanLine } from "lucide-react";
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import type { CustomerRow, Page } from "@/components/app/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/field";
 import { ErrorNote } from "@/components/ui/misc";
-import { api, errorMessage } from "@/lib/api";
+import { api, useErrorMessage } from "@/lib/api";
 import { formatNumber } from "@/lib/utils";
 import { QrCamera, useRestartKey } from "./camera";
 
 /** Écran de scan de la caisse : le viseur seul ; une carte lue ouvre sa fiche sur une page dédiée. */
 export default function ScannerPage() {
+  const toErrorMessage = useErrorMessage();
+  const t = useTranslations("app.scanner");
   const router = useRouter();
   const [mode, setMode] = useState<"camera" | "search">("camera");
   const [busy, setBusy] = useState(false);
@@ -30,7 +33,7 @@ export default function ScannerPage() {
       const account = await api.post<{ id: string }>("/app/scanner/lookup", { code });
       open(account.id);
     } catch (e) {
-      setError(errorMessage(e));
+      setError(toErrorMessage(e));
       setBusy(false);
       restartCamera();
     }
@@ -43,40 +46,40 @@ export default function ScannerPage() {
     try {
       setResults((await api.get<Page<CustomerRow>>(`/app/customers?limit=10&q=${encodeURIComponent(q.trim())}`)).data);
     } catch (err) {
-      setError(errorMessage(err));
+      setError(toErrorMessage(err));
     }
   };
 
   return (
     <section aria-labelledby="scan-title" className="mx-auto grid w-full max-w-md gap-5 text-center">
       <div>
-        <h1 id="scan-title" className="font-display text-[clamp(1.75rem,6vw,2.4rem)] font-semibold">{mode === "camera" ? "Scanner une carte" : "Rechercher un client"}</h1>
-        <p className="mt-1 text-ink-2">{mode === "camera" ? "Placez le QR code de la carte du client dans le cadre." : "Nom, téléphone ou numéro de carte (ex: CM-XXXX-XXXX)."}</p>
+        <h1 id="scan-title" className="font-display text-[clamp(1.75rem,6vw,2.4rem)] font-semibold">{mode === "camera" ? t("title") : t("searchTitle")}</h1>
+        <p className="mt-1 text-ink-2">{mode === "camera" ? t("description") : t("searchDescription")}</p>
       </div>
       {error && <ErrorNote>{error}</ErrorNote>}
       {mode === "camera" ? (
         <>
           <QrCamera key={cameraKey} onCode={lookup} busy={busy} />
           <button type="button" onClick={() => setMode("search")} className="inline-flex min-h-11 items-center justify-center gap-2 text-sm font-medium underline underline-offset-4">
-            <Search className="size-4" aria-hidden /> Client sans carte ? Le rechercher
+            <Search className="size-4" aria-hidden /> {t("noCard")}
           </button>
         </>
       ) : (
-        <div className="grid gap-4 text-left">
+        <div className="grid gap-4 text-start">
           <form onSubmit={search} className="flex gap-2">
-            <Input autoFocus aria-label="Nom, téléphone ou numéro de carte" value={q} onChange={(e) => setQ(e.target.value)} />
-            <Button type="submit" variant="secondary">Chercher</Button>
+            <Input autoFocus aria-label={t("searchLabel")} value={q} onChange={(e) => setQ(e.target.value)} />
+            <Button type="submit" variant="secondary">{t("search")}</Button>
           </form>
-          {results?.length === 0 && <p className="text-sm text-ink-2">Aucun client trouvé.</p>}
+          {results?.length === 0 && <p className="text-sm text-ink-2">{t("noResults")}</p>}
           {results && results.length > 0 && (
             <ul className="grid gap-2">
               {results.flatMap((c) =>
                 c.accounts.map((a) => (
                   <li key={a.id}>
-                    <button onClick={() => open(a.id)} className="flex w-full items-center justify-between gap-3 rounded-md bg-surface p-3.5 text-left shadow-1 hover:bg-surface-2">
+                    <button onClick={() => open(a.id)} className="flex w-full items-center justify-between gap-3 rounded-md bg-surface p-3.5 text-start shadow-1 hover:bg-surface-2">
                       <span>
                         <span className="block font-medium">{c.firstName} {c.lastName}</span>
-                        <span className="block text-sm text-ink-3 tabular">{c.phone ?? c.email} · {a.cardNumber}</span>
+                        <span className="block text-sm text-ink-3 tabular">{c.phone ?? c.email} · <span dir="ltr">{a.cardNumber}</span></span>
                       </span>
                       <span className="font-display text-lg font-semibold tabular">{formatNumber(a.balance)}</span>
                     </button>
@@ -86,7 +89,7 @@ export default function ScannerPage() {
             </ul>
           )}
           <Button variant="ghost" onClick={() => setMode("camera")}>
-            <ScanLine /> Revenir au scan
+            <ScanLine /> {t("back")}
           </Button>
         </div>
       )}

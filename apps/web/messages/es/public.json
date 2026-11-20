@@ -1,0 +1,154 @@
+{
+  "meta": {
+    "joinTitle": "Únete a {tenant}",
+    "notFound": "Programa no encontrado",
+    "joinDescriptionTenant": "Crea tu tarjeta de fidelización {program} en {tenant} en 30 segundos.",
+    "joinDescription": "Crea tu tarjeta de fidelización {program} en 30 segundos.",
+    "cardTitle": "Mi tarjeta de fidelización",
+    "cardShortTitle": "Mi tarjeta",
+    "manifestName": "Tarjeta {tenant}",
+    "posterTitle": "Cartel de registro"
+  },
+  "rules": {
+    "stamps": "Una compra = un sello. {target, plural, one {# sello} other {# sellos}} = {reward}.",
+    "points": "{amount} {currency} gastados = {points, plural, one {# punto} other {# puntos}}.",
+    "defaultReward": "una recompensa"
+  },
+  "join": {
+    "programLabel": "Programa de fidelización",
+    "rememberedTitle": "¡Tu tarjeta está lista!",
+    "rememberedText": "Tu tarjeta de fidelización de <b>{tenant}</b> ya está guardada en este teléfono.",
+    "openCard": "Abrir mi tarjeta",
+    "createAnother": "Crear otra tarjeta o usar otro número",
+    "backToSaved": "Volver a mi tarjeta guardada",
+    "tabJoin": "Crear mi tarjeta",
+    "tabRecover": "Recuperar mi tarjeta",
+    "firstName": "Nombre",
+    "lastName": "Apellido",
+    "phone": "Teléfono",
+    "email": "Email",
+    "emailOptional": "Email (opcional)",
+    "emailCodeHint": "Te enviaremos un código de validación.",
+    "emailRecoverHint": "Para recuperar tu tarjeta si cambias de teléfono.",
+    "honeypot": "Sitio web",
+    "acceptTerms": "Acepto las condiciones del programa.",
+    "acceptTermsWithPrivacy": "Acepto las condiciones del programa y la <link>política de privacidad</link>.",
+    "marketingConsent": "Quiero recibir las ofertas de {tenant} (opcional).",
+    "submit": "Crear mi tarjeta",
+    "alreadyEnrolled": "Usa la pestaña «Recuperar mi tarjeta» o pide al personal que te la vuelva a enviar.",
+    "programTerms": "Condiciones del programa",
+    "recoverSent": "Si alguna tarjeta coincide, acabamos de enviar su enlace al email de la ficha. Revisa también el correo no deseado.",
+    "recoverIntro": "El enlace de tu tarjeta se envía al email registrado en tu ficha. Si no tienes email, pídelo al personal en caja.",
+    "recoverIdentifier": "Email o teléfono usado en el registro",
+    "recoverSubmit": "Recibir el enlace",
+    "poweredBy": "Tarjeta de fidelización impulsada por FOVE"
+  },
+  "homeScreen": {
+    "added": "¡Tarjeta añadida a tu pantalla de inicio!",
+    "linkCopied": "¡Enlace de tu tarjeta copiado!",
+    "linkFallback": "Enlace: {url}",
+    "installed": "En la pantalla de inicio",
+    "buttonLabel": "Añadir la tarjeta a la pantalla de inicio",
+    "button": "Añadir a la pantalla de inicio",
+    "dialogTitle": "Añadir a la pantalla de inicio",
+    "dialogDescription": "Ten tu tarjeta {tenant} a 1 clic en tu teléfono.",
+    "ios": {
+      "step1": "Pulsa <icon></icon> Compartir",
+      "step1Hint": "En la barra de navegación de Safari, en la parte inferior de la pantalla del iPhone (o arriba en el iPad).",
+      "step2": "Toca <icon></icon> «Añadir a pantalla de inicio»",
+      "step2Hint": "Desplázate hacia abajo en el menú de opciones para seleccionar esta acción.",
+      "step3": "Pulsa «Añadir»",
+      "step3Hint": "¡Tu tarjeta aparece como una aplicación real en tu pantalla de inicio!",
+      "inAppTitle": "¿Estás dentro de una aplicación (Instagram, WhatsApp...)?",
+      "inAppText": "Pulsa las opciones arriba a la derecha para abrir primero la página en <b>Safari</b>."
+    },
+    "android": {
+      "step1": "Pulsa el menú <icon></icon>",
+      "step1Hint": "Los 3 puntos verticales arriba a la derecha de Google Chrome.",
+      "step2": "Selecciona <icon></icon> «Añadir a pantalla de inicio»",
+      "step2Hint": "(O «Instalar aplicación», según tu navegador).",
+      "step3": "Confirma con «Añadir»",
+      "step3Hint": "Tu tarjeta {tenant} estará disponible al instante con 1 clic."
+    },
+    "desktop": {
+      "intro": "Para encontrar tu tarjeta en la tienda, lo más práctico es abrirla en tu smartphone:",
+      "tipsTitle": "Consejos:",
+      "tip1": "Escanea el código QR de esta página con tu smartphone.",
+      "tip2": "Copia el enlace de abajo para enviártelo por mensaje o email.",
+      "tip3": "En Mac o PC, añade la página a favoritos (<kbd>Cmd+D</kbd> o <kbd>Ctrl+D</kbd>)."
+    },
+    "copied": "¡Enlace copiado!",
+    "copy": "Copiar el enlace directo",
+    "gotIt": "Entendido"
+  },
+  "card": {
+    "live": {
+      "completeTitle": "¡Enhorabuena! ¡Tu tarjeta está completa!",
+      "completeText": "Tu recompensa «{reward}» está desbloqueada.",
+      "rewardFallback": "Recompensa",
+      "stampsEarned": "{count, plural, one {¡+# sello validado en caja!} other {¡+# sellos validados en caja!}}",
+      "pointsEarned": "{count, plural, one {¡+# punto acreditado en caja!} other {¡+# puntos acreditados en caja!}}",
+      "balanceUpdated": "Tu saldo se acaba de actualizar.",
+      "redeemTitle": "¡Recompensa validada en caja!",
+      "redeemText": "Gracias por tu fidelidad."
+    },
+    "ready": "Tu tarjeta está lista, {name}. Muestra este código QR en caja en cada compra.",
+    "cardLabel": "Tarjeta de fidelización",
+    "pointsUnit": "{count, plural, one {punto} other {puntos}}",
+    "liveSync": "Paso por caja sincronizado en tiempo real",
+    "keepHandy": "Ten tu tarjeta siempre a mano",
+    "downloadLabel": "Descargar la tarjeta como imagen (PNG)",
+    "download": "Guardar la imagen",
+    "verify": {
+      "title": "Valida tu tarjeta",
+      "text": "Introduce el código de 6 cifras recibido por email.",
+      "code": "Código de validación",
+      "submit": "Validar mi tarjeta",
+      "resend": "Reenviar el código",
+      "resent": "Nuevo código enviado."
+    },
+    "inStore": "El personal activará tu tarjeta en tu próximo paso por caja.",
+    "blocked": "Esta tarjeta está suspendida. Ponte en contacto con {tenant}.",
+    "qrLabel": "Código QR para mostrar en caja",
+    "qrHint": "Para mostrar en caja",
+    "nextReward": "Próxima recompensa",
+    "progress": "Progreso",
+    "remainingPoints": "{count, plural, one {Falta # punto} other {Faltan # puntos}}",
+    "rewards": "Recompensas",
+    "available": "Disponible",
+    "rewardValue": {
+      "percent": "{value} % de descuento",
+      "fixed": "{value} {currency} de descuento"
+    },
+    "history": "Historial",
+    "kinds": {
+      "EARN": "Compra",
+      "ADJUSTMENT": "Ajuste",
+      "REDEMPTION": "Recompensa",
+      "REDEMPTION_REVERSAL": "Recompensa anulada",
+      "REVERSAL": "Anulación",
+      "REFUND": "Reembolso",
+      "EXPIRATION": "Caducidad"
+    },
+    "memberSince": "Miembro desde el {date}. Este enlace es personal: no lo compartas.",
+    "poweredBy": "Impulsado por <link>FOVE</link>"
+  },
+  "wallet": {
+    "apple": "Añadir a Apple Wallet",
+    "google": "Añadir a Google Wallet"
+  },
+  "stamps": {
+    "ariaLabel": "{filled, plural, one {# sello} other {# sellos}} de {target}",
+    "ariaLabelReward": "{filled, plural, one {# sello} other {# sellos}} de {target}, {reward} al final",
+    "complete": "{reward} disponible en tu próxima visita.",
+    "completeDefault": "Recompensa disponible en tu próxima visita.",
+    "progress": "{capped}/{target} · {left, plural, one {falta # visita} other {faltan # visitas}} para {reward}",
+    "progressDefault": "{capped}/{target} · {left, plural, one {falta # visita} other {faltan # visitas}} para la recompensa"
+  },
+  "poster": {
+    "title": "Tu tarjeta de fidelización, gratis",
+    "scan": "Escanea con la cámara de tu teléfono",
+    "stampsOffer": "{count, plural, one {# visita} other {# visitas}} = {reward}",
+    "print": "Imprimir el cartel"
+  }
+}

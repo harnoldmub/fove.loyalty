@@ -1,10 +1,15 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { getLocale, getTranslations } from "next-intl/server";
+import { formatNumber } from "@/lib/utils";
 import { requireMe } from "@/lib/session";
 import { serverGet } from "@/lib/server-api";
 import { PosterQr, PrintButton } from "./qr";
 
-export const metadata: Metadata = { title: "Affiche d’inscription", robots: { index: false } };
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("public.meta");
+  return { title: t("posterTitle"), robots: { index: false } };
+}
 
 interface Link { id: string; url: string; programId: string; establishment: { name: string } | null }
 interface Program { id: string; name: string; mode: "POINTS" | "STAMPS"; currency: string; spendStep: string; pointsPerStep: number; stampsTarget: number }
@@ -27,11 +32,12 @@ export default async function PosterPage({ params }: { params: Promise<{ linkId:
   const link = links.data?.find((l) => l.id === linkId);
   const program = programs.data?.find((p) => p.id === link?.programId);
   if (!link || !program || !tenant.data) notFound();
+  const [t, locale] = await Promise.all([getTranslations("public"), getLocale()]);
   const reward = rewards.data?.filter((r) => r.programId === program.id).sort((a, b) => a.cost - b.cost)[0];
   const offer =
     program.mode === "STAMPS"
-      ? `${program.stampsTarget} passages = ${reward?.name ?? "une récompense"}`
-      : `${new Intl.NumberFormat("fr-FR").format(Number(program.spendStep))} ${program.currency} = ${program.pointsPerStep} point${program.pointsPerStep > 1 ? "s" : ""}`;
+      ? t("poster.stampsOffer", { count: program.stampsTarget, reward: reward?.name ?? t("rules.defaultReward") })
+      : t("rules.points", { amount: formatNumber(Number(program.spendStep), locale), currency: program.currency, points: program.pointsPerStep });
   const color = /^#[0-9a-fA-F]{6}$/.test(tenant.data.settings.primaryColor) ? tenant.data.settings.primaryColor : "#2C55F5";
 
   return (
@@ -47,15 +53,15 @@ export default async function PosterPage({ params }: { params: Promise<{ linkId:
         {tenant.data.name}
         {link.establishment ? ` · ${link.establishment.name}` : ""}
       </p>
-      <h1 className="mt-[4mm] font-display text-[46pt] font-bold leading-[0.95]">Votre carte de fidélité, gratuite</h1>
-      <p className="mt-[4mm] text-[15pt] text-[#4a5579]">Scannez avec l’appareil photo de votre téléphone</p>
+      <h1 className="mt-[4mm] font-display text-[46pt] font-bold leading-[0.95]">{t("poster.title")}</h1>
+      <p className="mt-[4mm] text-[15pt] text-[#4a5579]">{t("poster.scan")}</p>
       <div className="mt-[10mm] w-[95mm] max-w-[80vw]">
         <PosterQr value={link.url} />
       </div>
       <p className="mt-[10mm] rounded-full px-[8mm] py-[3mm] text-[20pt] font-semibold text-white" style={{ background: "#14204a" }}>
         {offer}
       </p>
-      <p className="mt-[4mm] text-[11pt] text-[#4a5579]">{link.url.replace(/^https?:\/\//, "")}</p>
+      <p dir="ltr" className="mt-[4mm] text-[11pt] text-[#4a5579]">{link.url.replace(/^https?:\/\//, "")}</p>
       <PrintButton />
       <style>{`
         @media print {

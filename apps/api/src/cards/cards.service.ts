@@ -1,4 +1,3 @@
-import { rewardValueLabel } from "@fove/shared";
 import { Injectable, Logger } from "@nestjs/common";
 import { loadConfig } from "../config";
 import { PrismaService } from "../common/prisma.service";
@@ -11,6 +10,9 @@ import { renderCardPdf, renderCardPng, type CardDesign } from "./card-render";
 import { GoogleWalletProvider } from "./google-wallet";
 import { AppleWalletProvider, memberSince } from "./apple-wallet";
 import { WalletBannerService } from "./wallet-banner.service";
+import { cardLabels, cardTexts } from "./club-card";
+import { DEFAULT_LOCALE, tenantLocale, type Locale } from "../i18n/locale";
+import { programRule, rewardSummaryLine, shareCardMessage } from "../i18n/notifications";
 import { WhatsAppService } from "../notifications/whatsapp.service";
 import { PlanService } from "../billing/plan.service";
 
@@ -67,8 +69,13 @@ export class CardsService {
     const url = await this.linkFor(accountId, ctx.tenantId, renew);
     if (renew) await this.audit.forTenant(ctx, "account.link_renewed", { type: "account", id: accountId });
     const reward = await this.firstReward(account.tenantId, account.programId);
-    const greeting = account.customer.firstName ? `Bonjour ${account.customer.firstName}, voici` : "Voici";
-    const message = `${greeting} votre carte de fidélité ${account.tenant.name} : ${url}\nPrésentez son QR code à chaque passage. ${this.rule(account.program, reward?.name)}.`;
+    const locale = tenantLocale(account.tenant.settings);
+    const message = shareCardMessage(locale, {
+      firstName: account.customer.firstName,
+      tenantName: account.tenant.name,
+      url,
+      rule: this.rule(account.program, reward?.name, locale),
+    });
     const rawPhone = account.customer.phone ?? "";
     const phone = rawPhone.replace(/\D/g, "");
     const hasPhone = phone.length >= 8;
@@ -85,10 +92,12 @@ export class CardsService {
     return this.prisma.client.reward.findFirst({ where: { tenantId, programId, active: true, archivedAt: null }, orderBy: { cost: "asc" } });
   }
 
-  rule(program: { mode: string; stampsTarget: number; spendStep: { toString(): string }; pointsPerStep: number; currency: string; name: string }, rewardName?: string) {
-    if (program.mode === "STAMPS") return `${program.stampsTarget} tampons = ${rewardName ?? "une récompense"}`;
-    const step = new Intl.NumberFormat("fr-FR").format(Number(program.spendStep.toString()));
-    return `${step} ${program.currency} = ${program.pointsPerStep} point${program.pointsPerStep > 1 ? "s" : ""}`;
+  rule(
+    program: { mode: string; stampsTarget: number; spendStep: { toString(): string }; pointsPerStep: number; currency: string; name: string },
+    rewardName?: string,
+    locale: Locale = DEFAULT_LOCALE,
+  ) {
+    return programRule(locale, program, rewardName);
   }
 
   private async logo(tenantId: string, logoUrl: string | null): Promise<Buffer | null> {
@@ -104,13 +113,14 @@ export class CardsService {
     if (!account) throw notFound("Carte");
     const rewards = await this.prisma.client.reward.findMany({ where: { tenantId, programId: account.programId, active: true, archivedAt: null }, orderBy: { cost: "asc" }, take: 6 });
     const s = account.tenant.settings;
+    const locale = tenantLocale(s);
     const isStamps = account.program.mode === "STAMPS";
     return {
       accountId: account.id,
       programId: account.programId,
       tenantName: account.tenant.name,
       programName: account.program.name,
-      holder: [account.customer.firstName, account.customer.lastName].filter(Boolean).join(" ") || "Membre",
+      holder: [account.customer.firstName, account.customer.lastName].filter(Boolean).join(" ") || cardTexts(locale).member,
       cardNumber: account.cardNumber,
       qrPayload: account.qrToken,
       cardUrl: await this.linkFor(account.id, tenantId),
@@ -118,7 +128,10 @@ export class CardsService {
       unit: isStamps ? "tampons" : "points",
       primaryColor: /^#[0-9a-fA-F]{6}$/.test(s?.primaryColor ?? "") ? s!.primaryColor : "#2C55F5",
       logoUrl: s?.logoUrl ?? null,
-      rewardSummary: rewards.map((r) => `${r.name}${r.kind === "GIFT" ? "" : ` : ${rewardValueLabel({ kind: r.kind, value: r.value?.toString() ?? null }, account.program.currency)}`} — ${r.cost} ${isStamps ? "tampons" : "points"}`).join("\n"),
+      rewardSummary: rewards
+        .map((r) => rewardSummaryLine(locale, { name: r.name, kind: r.kind, value: r.value?.toString() ?? null, cost: r.cost }, account.program.currency, isStamps))
+        .join("\n"),
+      locale,
     };
   }
 
@@ -144,18 +157,22 @@ export class CardsService {
       this.banners.cardBannerImage(account.tenantId).catch(() => null),
     ]);
 
+    // Les polices de la carte image n'ont pas de glyphes arabes : l'image reste en anglais pour l'arabe.
+    const tenantLang = tenantLocale(account.tenant.settings);
+    const locale: Locale = tenantLang === "ar" ? "en" : tenantLang;
     const design: CardDesign = {
       tenantName: account.tenant.name,
       logo,
       banner,
       primaryColor: account.tenant.settings?.primaryColor ?? "#2C55F5",
-      holder: [account.customer.firstName, account.customer.lastName].filter(Boolean).join(" ") || "Membre",
+      holder: [account.customer.firstName, account.customer.lastName].filter(Boolean).join(" ") || cardTexts(locale).member,
       cardNumber: account.cardNumber,
-      memberSince: memberSince(account.createdAt),
+      memberSince: memberSince(account.createdAt, locale),
       instagram: account.tenant.settings?.instagramHandle ?? null,
       qrPayload: account.qrToken,
       url: await this.linkFor(account.id, account.tenantId),
-      rule: this.rule(account.program, reward?.name),
+      rule: this.rule(account.program, reward?.name, locale),
+      labels: cardLabels(locale),
     };
     const body = format === "png" ? await renderCardPng(design) : await renderCardPdf(design);
     const slug = account.tenant.slug.replace(/[^a-z0-9-]/g, "");

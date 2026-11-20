@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { RotateCcw, AlertTriangle } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { Badge, PageHeader, Panel } from "@/components/ui/misc";
 import { api } from "@/lib/api";
 import { formatDate } from "@/lib/utils";
@@ -22,6 +22,7 @@ interface PaymentRow {
 }
 
 export default function RefundsPage() {
+  const t = useTranslations("admin.finance.refunds");
   const { data, isLoading } = useQuery({
     queryKey: ["admin-finance-refunds"],
     queryFn: () =>
@@ -35,29 +36,29 @@ export default function RefundsPage() {
   return (
     <>
       <PageHeader
-        title="Remboursements & Contestations"
-        description="Historique des remboursements accordés, contestations de paiement et rétrofacturations."
+        title={t("title")}
+        description={t("description")}
       />
 
       <FinanceNav />
 
       {isLoading ? (
-        <div className="py-20 text-center text-sm text-ink-3">Chargement des remboursements...</div>
+        <div className="py-20 text-center text-sm text-ink-3">{t("loading")}</div>
       ) : refunds.length === 0 ? (
         <Panel className="p-12 text-center text-sm text-ink-3">
-          Aucun remboursement ou litige enregistré.
+          {t("empty")}
         </Panel>
       ) : (
         <Panel className="overflow-x-auto">
-          <table className="w-full min-w-[750px] text-left text-sm">
+          <table className="w-full min-w-[750px] text-start text-sm">
             <thead className="border-b border-line bg-surface-2 text-xs text-ink-3">
               <tr>
-                <th className="py-3 px-4 font-medium">Date</th>
-                <th className="py-3 px-4 font-medium">Référence paiement</th>
-                <th className="py-3 px-4 font-medium">Commerce</th>
-                <th className="py-3 px-4 font-medium text-right">Montant initial</th>
-                <th className="py-3 px-4 font-medium text-right">Montant remboursé</th>
-                <th className="py-3 px-4 font-medium">Statut</th>
+                <th className="py-3 px-4 font-medium">{t("table.date")}</th>
+                <th className="py-3 px-4 font-medium">{t("table.reference")}</th>
+                <th className="py-3 px-4 font-medium">{t("table.tenant")}</th>
+                <th className="py-3 px-4 font-medium text-end">{t("table.initial")}</th>
+                <th className="py-3 px-4 font-medium text-end">{t("table.refunded")}</th>
+                <th className="py-3 px-4 font-medium">{t("table.status")}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-line">
@@ -68,14 +69,14 @@ export default function RefundsPage() {
                     {r.reference}
                   </td>
                   <td className="py-3.5 px-4 font-medium text-ink">{r.tenant.name}</td>
-                  <td className="py-3.5 px-4 text-right font-mono text-xs text-ink-3">
+                  <td className="py-3.5 px-4 text-end font-mono text-xs text-ink-3">
                     {formatFinance(r.amountCents, r.currency)}
                   </td>
-                  <td className="py-3.5 px-4 text-right font-mono text-xs font-bold text-rose-500">
+                  <td className="py-3.5 px-4 text-end font-mono text-xs font-bold text-rose-500" dir="ltr">
                     -{formatFinance(r.amountRefundedCents || r.amountCents, r.currency)}
                   </td>
                   <td className="py-3.5 px-4">
-                    <Badge tone="danger">Remboursé</Badge>
+                    <Badge tone="danger">{t("status")}</Badge>
                   </td>
                 </tr>
               ))}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
+import { useTranslations } from "next-intl";
 import { Landmark, ArrowUpRight, ArrowDownRight, CheckCircle2, ShieldCheck } from "lucide-react";
 import { Badge, PageHeader, Panel } from "@/components/ui/misc";
 import { api } from "@/lib/api";
@@ -29,6 +30,7 @@ interface TreasuryResponse {
 }
 
 export default function TreasuryPage() {
+  const t = useTranslations("admin.finance.treasury");
   const { data, isLoading } = useQuery({
     queryKey: ["admin-finance-treasury"],
     queryFn: () => api.get<TreasuryResponse>("/admin/finance/treasury"),
@@ -39,8 +41,8 @@ export default function TreasuryPage() {
   return (
     <>
       <PageHeader
-        title="Trésorerie & Rapprochement bancaire"
-        description="Position de trésorerie nette disponible, soldes Stripe et contrôle des écritures."
+        title={t("title")}
+        description={t("description")}
       />
 
       <FinanceNav />
@@ -49,7 +51,7 @@ export default function TreasuryPage() {
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-6">
         <Panel className="p-4 border-cobalt/40">
           <div className="flex items-center justify-between text-xs text-ink-3">
-            <span>Trésorerie Nette Disponible</span>
+            <span>{t("cash")}</span>
             <Landmark className="size-4 text-cobalt" />
           </div>
           <div
@@ -61,40 +63,40 @@ export default function TreasuryPage() {
           >
             {formatFinance(data?.cashBalanceCents ?? 0, currency)}
           </div>
-          <p className="mt-1 text-xs text-ink-3">Encaissements nets - charges payées</p>
+          <p className="mt-1 text-xs text-ink-3">{t("cashHelp")}</p>
         </Panel>
 
         <Panel className="p-4">
           <div className="flex items-center justify-between text-xs text-ink-3">
-            <span>Solde Stripe estimé</span>
+            <span>{t("stripe")}</span>
             <CheckCircle2 className="size-4 text-mint" />
           </div>
           <div className="mt-2 font-display text-2xl font-bold tabular text-ink">
             {formatFinance(data?.stripeAvailableCents ?? 0, currency)}
           </div>
-          <p className="mt-1 text-xs text-ink-3">Disponible pour virement bancaire</p>
+          <p className="mt-1 text-xs text-ink-3">{t("stripeHelp")}</p>
         </Panel>
 
         <Panel className="p-4">
           <div className="flex items-center justify-between text-xs text-ink-3">
-            <span>Cumul Encaissements Nets</span>
+            <span>{t("collected")}</span>
             <ArrowUpRight className="size-4 text-emerald-500" />
           </div>
           <div className="mt-2 font-display text-2xl font-bold tabular text-ink">
             {formatFinance(data?.totalCollectedNetCents ?? 0, currency)}
           </div>
-          <p className="mt-1 text-xs text-ink-3">Toutes sources confondues</p>
+          <p className="mt-1 text-xs text-ink-3">{t("collectedHelp")}</p>
         </Panel>
 
         <Panel className="p-4">
           <div className="flex items-center justify-between text-xs text-ink-3">
-            <span>Cumul Décaissements</span>
+            <span>{t("spent")}</span>
             <ArrowDownRight className="size-4 text-rose-500" />
           </div>
-          <div className="mt-2 font-display text-2xl font-bold tabular text-rose-500">
+          <div className="mt-2 font-display text-2xl font-bold tabular text-rose-500" dir="ltr">
             -{formatFinance((data?.totalExpensesCents ?? 0) + (data?.totalCommissionsPaidCents ?? 0), currency)}
           </div>
-          <p className="mt-1 text-xs text-ink-3">Dépenses + commissions versées</p>
+          <p className="mt-1 text-xs text-ink-3">{t("spentHelp")}</p>
         </Panel>
       </div>
 
@@ -102,30 +104,27 @@ export default function TreasuryPage() {
       <div className="mb-6 flex items-start gap-3 rounded-lg border border-line bg-surface-2 p-4 text-xs text-ink-2">
         <ShieldCheck className="size-4 shrink-0 text-cobalt mt-0.5" />
         <div>
-          <strong className="text-ink">Rapprochement bancaire strict :</strong>
-          <p className="mt-0.5 text-ink-3">
-            Les soldes de trésorerie sont confrontés aux relevés bancaires réels de FOVE. Chaque transaction Stripe ou
-            contrat direct est reliée à un compte de résultat pour éviter toute divergence d&apos;encaisse.
-          </p>
+          <strong className="text-ink">{t("noteTitle")}</strong>
+          <p className="mt-0.5 text-ink-3">{t("noteBody")}</p>
         </div>
       </div>
 
       {isLoading ? (
-        <div className="py-20 text-center text-sm text-ink-3">Chargement des positions de trésorerie...</div>
+        <div className="py-20 text-center text-sm text-ink-3">{t("loading")}</div>
       ) : (data?.entries.length ?? 0) === 0 ? (
         <Panel className="p-12 text-center text-sm text-ink-3">
-          Aucune écriture bancaire manuelle enregistrée. Le solde correspond aux flux automatisés Stripe et contrats.
+          {t("empty")}
         </Panel>
       ) : (
         <Panel className="overflow-x-auto">
-          <table className="w-full min-w-[800px] text-left text-sm">
+          <table className="w-full min-w-[800px] text-start text-sm">
             <thead className="border-b border-line bg-surface-2 text-xs text-ink-3">
               <tr>
-                <th className="py-3 px-4 font-medium">Date</th>
-                <th className="py-3 px-4 font-medium">Référence</th>
-                <th className="py-3 px-4 font-medium">Libellé bancaire</th>
-                <th className="py-3 px-4 font-medium text-right">Montant</th>
-                <th className="py-3 px-4 font-medium">État du rapprochement</th>
+                <th className="py-3 px-4 font-medium">{t("table.date")}</th>
+                <th className="py-3 px-4 font-medium">{t("table.reference")}</th>
+                <th className="py-3 px-4 font-medium">{t("table.label")}</th>
+                <th className="py-3 px-4 font-medium text-end">{t("table.amount")}</th>
+                <th className="py-3 px-4 font-medium">{t("table.status")}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-line">
@@ -141,7 +140,7 @@ export default function TreasuryPage() {
                     {entry.description}
                   </td>
                   <td
-                    className={`py-3.5 px-4 text-right font-mono text-xs font-bold ${
+                    className={`py-3.5 px-4 text-end font-mono text-xs font-bold ${
                       entry.amountCents >= 0 ? "text-emerald-500" : "text-rose-500"
                     }`}
                   >
@@ -149,9 +148,9 @@ export default function TreasuryPage() {
                   </td>
                   <td className="py-3.5 px-4">
                     {entry.isReconciled ? (
-                      <Badge tone="mint">Rapproché ({entry.reconciledType})</Badge>
+                      <Badge tone="mint">{t("reconciled", { type: entry.reconciledType ?? "—" })}</Badge>
                     ) : (
-                      <Badge tone="stamp">À pointer</Badge>
+                      <Badge tone="stamp">{t("unreconciled")}</Badge>
                     )}
                   </td>
                 </tr>

@@ -1,34 +1,38 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { CheckCircle2, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Field, Input, Select, Textarea } from "@/components/ui/field";
 import { ErrorNote, Panel } from "@/components/ui/misc";
 import { api, errorMessage } from "@/lib/api";
 
-const CUSTOM_PLAN_SUBJECT = "Offre Sur-mesure (quotas, accompagnement, contrat)";
-
-const SUBJECTS = [
-  "Demande de démonstration & essai accompagné",
-  CUSTOM_PLAN_SUBJECT,
-  "Déploiement multi-boutiques / Offre Réseau",
-  "Question sur les tarifs & moyens de paiement (RDC / International)",
-  "Intégration caisse (POS) ou boutique e-commerce",
-  "Partenariat ou autre demande",
-];
+/** Objets de demande ; le libellé envoyé est celui de la langue de la page. */
+const SUBJECTS = ["demo", "custom", "network", "pricing", "integration", "other"] as const;
+type Subject = (typeof SUBJECTS)[number];
+const CUSTOM_PLAN_SUBJECT: Subject = "custom";
 
 /** `customPlan` : demande venue du bandeau Sur-mesure de la page tarifs. */
 export function ContactForm({ customPlan = false }: { customPlan?: boolean }) {
+  const t = useTranslations("marketing.contactForm");
   const [sent, setSent] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [form, setForm] = useState({
+  const [form, setForm] = useState<{
+    name: string;
+    email: string;
+    phone: string;
+    company: string;
+    subject: Subject;
+    message: string;
+    website: string;
+  }>({
     name: "",
     email: "",
     phone: "",
     company: "",
-    subject: customPlan ? CUSTOM_PLAN_SUBJECT : SUBJECTS[0]!,
+    subject: customPlan ? CUSTOM_PLAN_SUBJECT : SUBJECTS[0],
     message: "",
     website: "",
   });
@@ -43,7 +47,7 @@ export function ContactForm({ customPlan = false }: { customPlan?: boolean }) {
         email: form.email.trim(),
         phone: form.phone.trim() || null,
         companyName: form.company.trim() || null,
-        subject: form.subject,
+        subject: t(`subjects.${form.subject}`),
         message: form.message.trim(),
         source: form.subject === CUSTOM_PLAN_SUBJECT ? "CUSTOM_PLAN" : "WEBSITE",
         website: form.website || undefined,
@@ -60,19 +64,19 @@ export function ContactForm({ customPlan = false }: { customPlan?: boolean }) {
     return (
       <Panel className="p-8 text-center">
         <CheckCircle2 className="mx-auto size-12 text-mint" aria-hidden />
-        <h2 className="mt-4 font-display text-2xl font-semibold">Votre demande est bien enregistrée</h2>
+        <h2 className="mt-4 font-display text-2xl font-semibold">{t("sentTitle")}</h2>
         <p className="mx-auto mt-2 max-w-md text-ink-2">
-          Notre équipe commerciale a reçu votre message et vous répondra sous 24 heures ouvrées (par email ou WhatsApp selon vos coordonnées).
+          {t("sentText")}
         </p>
         <Button
           variant="secondary"
           className="mt-6"
           onClick={() => {
             setSent(false);
-            setForm({ name: "", email: "", phone: "", company: "", subject: SUBJECTS[0]!, message: "", website: "" });
+            setForm({ name: "", email: "", phone: "", company: "", subject: SUBJECTS[0], message: "", website: "" });
           }}
         >
-          Envoyer un autre message
+          {t("sendAnother")}
         </Button>
       </Panel>
     );
@@ -80,16 +84,16 @@ export function ContactForm({ customPlan = false }: { customPlan?: boolean }) {
 
   return (
     <Panel className="p-6 sm:p-8">
-      <h2 className="font-display text-2xl font-semibold">Écrivez-nous</h2>
+      <h2 className="font-display text-2xl font-semibold">{t("title")}</h2>
       <p className="mt-1 text-sm text-ink-2">
-        Installation offerte, configuration de votre programme et création de votre affiche QR prête à imprimer.
+        {t("intro")}
       </p>
 
       <form onSubmit={handleSubmit} className="mt-6 grid gap-4" noValidate>
         {error && <ErrorNote>{error}</ErrorNote>}
 
         <div className="hidden" aria-hidden="true">
-          <label htmlFor="contact-website">Site web</label>
+          <label htmlFor="contact-website">{t("honeypot")}</label>
           <input
             id="contact-website"
             type="text"
@@ -101,7 +105,7 @@ export function ContactForm({ customPlan = false }: { customPlan?: boolean }) {
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="Votre nom complet">
+          <Field label={t("name")}>
             {(p) => (
               <Input
                 {...p}
@@ -112,7 +116,7 @@ export function ContactForm({ customPlan = false }: { customPlan?: boolean }) {
               />
             )}
           </Field>
-          <Field label="Nom de votre commerce / enseigne">
+          <Field label={t("company")}>
             {(p) => (
               <Input
                 {...p}
@@ -125,7 +129,7 @@ export function ContactForm({ customPlan = false }: { customPlan?: boolean }) {
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="Email professionnel">
+          <Field label={t("email")}>
             {(p) => (
               <Input
                 {...p}
@@ -138,7 +142,7 @@ export function ContactForm({ customPlan = false }: { customPlan?: boolean }) {
               />
             )}
           </Field>
-          <Field label="Téléphone / WhatsApp (recommandé)">
+          <Field label={t("phone")}>
             {(p) => (
               <Input
                 {...p}
@@ -152,23 +156,23 @@ export function ContactForm({ customPlan = false }: { customPlan?: boolean }) {
           </Field>
         </div>
 
-        <Field label="Objet de votre demande">
+        <Field label={t("subject")}>
           {(p) => (
             <Select
               {...p}
               value={form.subject}
-              onChange={(e) => setForm({ ...form, subject: e.target.value })}
+              onChange={(e) => setForm({ ...form, subject: e.target.value as Subject })}
             >
               {SUBJECTS.map((s) => (
                 <option key={s} value={s}>
-                  {s}
+                  {t(`subjects.${s}`)}
                 </option>
               ))}
             </Select>
           )}
         </Field>
 
-        <Field label="Votre message" hint="Précisez votre secteur d'activité, le nombre de points de vente et vos besoins.">
+        <Field label={t("message")} hint={t("messageHint")}>
           {(p) => (
             <Textarea
               {...p}
@@ -186,7 +190,7 @@ export function ContactForm({ customPlan = false }: { customPlan?: boolean }) {
           loading={busy}
           disabled={form.name.trim().length < 2 || !form.email.includes("@") || form.message.trim().length < 10}
         >
-          <Send className="size-4" /> Envoyer ma demande
+          <Send className="size-4" /> {t("submit")}
         </Button>
       </form>
     </Panel>

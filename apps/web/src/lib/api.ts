@@ -1,3 +1,7 @@
+import { useTranslations } from "next-intl";
+import { useCallback } from "react";
+import frErrors from "../../messages/fr/errors.json";
+
 /** Client HTTP du navigateur : même origine (proxy Next), cookie de session, en-tête anti-CSRF. */
 export class ApiError extends Error {
   constructor(
@@ -29,7 +33,7 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
   }
   if (!res.ok) {
     const err = json?.error ?? {};
-    throw new ApiError(res.status, err.code ?? "error", err.message ?? "Une erreur est survenue", err.details);
+    throw new ApiError(res.status, err.code ?? "error", err.message ?? frErrors.generic, err.details);
   }
   return json as T;
 }
@@ -41,10 +45,31 @@ export const api = {
   delete: <T>(path: string) => request<T>("DELETE", path),
 };
 
-export function errorMessage(error: unknown): string {
+/** Traducteur du fichier `errors.json` (retour de `useTranslations("errors")` ou `getTranslations("errors")`). */
+export interface ErrorTranslator {
+  (key: string): string;
+  has(key: string): boolean;
+}
+
+/**
+ * Message lisible d’une erreur d’appel API.
+ * Avec un traducteur, un code connu (`errors.codes.<code>`) est traduit dans la
+ * langue de l’interface ; sinon on garde le message renvoyé par l’API (que l’API
+ * localise elle-même). Les erreurs de validation champ par champ restent celles de l’API.
+ * Sans traducteur, repli en français (langue source).
+ */
+export function errorMessage(error: unknown, t?: ErrorTranslator): string {
   if (error instanceof ApiError) {
     if (error.details?.length) return error.details.map((d) => d.message).join(" · ");
+    if (t && t.has(`codes.${error.code}`)) return t(`codes.${error.code}`);
+    if (t && error.message === frErrors.generic) return t("generic");
     return error.message;
   }
-  return "Connexion impossible. Vérifiez votre réseau et réessayez.";
+  return t ? t("network") : frErrors.network;
+}
+
+/** Version traduite de `errorMessage`, à utiliser dans les composants client. */
+export function useErrorMessage(): (error: unknown) => string {
+  const t = useTranslations("errors");
+  return useCallback((error: unknown) => errorMessage(error, t), [t]);
 }

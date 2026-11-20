@@ -1,14 +1,16 @@
+import { getTranslations } from "next-intl/server";
 import { serverGet } from "@/lib/server-api";
 
 /** Manifeste PWA propre à chaque carte : l’icône d’écran d’accueil rouvre directement cette carte. */
 export async function GET(_req: Request, { params }: { params: Promise<{ token: string }> }) {
   const { token } = await params;
   const { data } = await serverGet<{ tenant: { name: string; primaryColor: string } }>(`/public/cards/${token}`);
-  const name = data ? `Carte ${data.tenant.name}` : "Ma carte de fidélité";
+  const t = await getTranslations("public.meta");
+  const name = data ? t("manifestName", { tenant: data.tenant.name }) : t("cardTitle");
   return Response.json(
     {
       name,
-      short_name: data?.tenant.name.slice(0, 12) ?? "Ma carte",
+      short_name: data?.tenant.name.slice(0, 12) ?? t("cardShortTitle"),
       start_url: `/card/${token}`,
       scope: `/card/${token}`,
       display: "standalone",

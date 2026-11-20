@@ -1,4 +1,5 @@
 import { Gift } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 
 /**
@@ -20,10 +21,11 @@ export function Stamps({
   size?: "sm" | "md";
   newlyEarned?: number[];
 }) {
+  const t = useTranslations("public.stamps");
   const filled = Math.max(0, Math.min(count, target));
   const brand = tone === "brand";
   return (
-    <ol className={cn("grid grid-cols-5", size === "sm" ? "gap-1.5" : "gap-2.5")} aria-label={`${filled} tampon${filled > 1 ? "s" : ""} sur ${target}${reward ? `, ${reward} au bout` : ""}`}>
+    <ol className={cn("grid grid-cols-5", size === "sm" ? "gap-1.5" : "gap-2.5")} aria-label={reward ? t("ariaLabelReward", { filled, target, reward }) : t("ariaLabel", { filled, target })}>
       {Array.from({ length: target }, (_, index) => {
         const done = index < filled;
         const last = index === target - 1;
@@ -50,9 +52,15 @@ export function Stamps({
   );
 }
 
-export function stampsStatus(count: number, target: number, reward?: string | null) {
+function StampsStatusText({ count, target, reward }: { count: number; target: number; reward?: string | null }) {
+  const t = useTranslations("public.stamps");
   const capped = Math.min(Math.max(0, count), target);
-  if (capped >= target) return `${reward ?? "Récompense"} disponible au prochain passage.`;
+  if (capped >= target) return reward ? t("complete", { reward }) : t("completeDefault");
   const left = target - capped;
-  return `${capped}/${target} · encore ${left} passage${left > 1 ? "s" : ""} avant ${reward ?? "la récompense"}`;
+  return reward ? t("progress", { capped, target, left, reward }) : t("progressDefault", { capped, target, left });
+}
+
+/** Avancement de la carte, traduit : à rendre tel quel dans le JSX. */
+export function stampsStatus(count: number, target: number, reward?: string | null) {
+  return <StampsStatusText count={count} target={target} reward={reward} />;
 }

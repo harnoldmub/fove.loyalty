@@ -1,14 +1,21 @@
-import React from "react";
 import { ArrowDownRight, ArrowUpRight, Minus } from "lucide-react";
+import { useTranslations } from "next-intl";
+import { INTL_LOCALE, isLocale } from "@/i18n/config";
 import { cn } from "@/lib/utils";
 
-export function formatFinance(cents: number | null | undefined, currency = "USD"): string {
+/** Langue des formats : celle de la page, ou celle passée explicitement (serveur). */
+function intlLocale(locale?: string) {
+  const lang = locale ?? (typeof document !== "undefined" ? document.documentElement.lang : "fr");
+  return INTL_LOCALE[isLocale(lang) ? lang : "fr"];
+}
+
+export function formatFinance(cents: number | null | undefined, currency = "USD", locale?: string): string {
   const safeCents = typeof cents === "number" && !Number.isNaN(cents) ? cents : 0;
   const amount = safeCents / 100;
   const curr = (currency || "USD").toUpperCase();
 
   try {
-    return new Intl.NumberFormat("fr-FR", {
+    return new Intl.NumberFormat(intlLocale(locale), {
       style: "currency",
       currency: curr,
       minimumFractionDigits: safeCents % 100 === 0 ? 0 : 2,
@@ -19,10 +26,14 @@ export function formatFinance(cents: number | null | undefined, currency = "USD"
   }
 }
 
-export function formatPct(val: number | null): string {
+export function formatPct(val: number | null, locale?: string): string {
   if (val === null || Number.isNaN(val)) return "—";
-  const sign = val > 0 ? "+" : "";
-  return `${sign}${val.toFixed(1)}%`;
+  return new Intl.NumberFormat(intlLocale(locale), {
+    style: "percent",
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1,
+    signDisplay: "exceptZero",
+  }).format(val / 100);
 }
 
 interface DeltaBadgeProps {
@@ -32,10 +43,11 @@ interface DeltaBadgeProps {
 }
 
 export function DeltaBadge({ value, invert = false, className }: DeltaBadgeProps) {
+  const t = useTranslations("admin.finance.common");
   if (value === null || Number.isNaN(value)) {
     return (
       <span className={cn("inline-flex items-center gap-0.5 text-xs text-ink-3", className)}>
-        <Minus className="size-3" /> N/A
+        <Minus className="size-3" /> {t("notAvailable")}
       </span>
     );
   }
@@ -49,7 +61,7 @@ export function DeltaBadge({ value, invert = false, className }: DeltaBadgeProps
   if (isZero) {
     return (
       <span className={cn("inline-flex items-center gap-0.5 text-xs text-ink-3", className)}>
-        <Minus className="size-3" /> 0.0%
+        <Minus className="size-3" /> {formatPct(0)}
       </span>
     );
   }

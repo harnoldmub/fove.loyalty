@@ -4,16 +4,17 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus, Printer, QrCode, Settings2 } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
-import { SUPPORTED_CURRENCIES } from "@fove/shared";
 import { useCan } from "@/components/app/me-context";
 import { WalletBroadcast } from "@/components/app/card-share";
 import type { Establishment, Program } from "@/components/app/types";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog, DialogContent, DialogRoot } from "@/components/ui/dialog";
+import { CurrencySelect } from "@/components/ui/currency-select";
 import { Checkbox, Field, Input, Select, Textarea } from "@/components/ui/field";
 import { Badge, ErrorNote, PageHeader, Panel, Skeleton } from "@/components/ui/misc";
-import { api, errorMessage } from "@/lib/api";
+import { api, useErrorMessage } from "@/lib/api";
 import { formatNumber } from "@/lib/utils";
 
 interface Link {
@@ -27,9 +28,9 @@ interface Link {
   establishment: { name: string } | null;
 }
 
-const VERIFICATION = { NONE: "Immédiate", EMAIL_OTP: "Code envoyé par email", IN_STORE: "Activée en magasin" } as const;
-
 function ProgramForm({ program, onDone }: { program?: Program; onDone: () => void }) {
+  const toErrorMessage = useErrorMessage();
+  const t = useTranslations("app.programs.form");
   const qc = useQueryClient();
   const { data: tenant } = useQuery({ queryKey: ["tenant"], queryFn: () => api.get<{ settings: { currency: string } }>("/app/tenant") });
   const [f, setF] = useState({
@@ -82,12 +83,12 @@ function ProgramForm({ program, onDone }: { program?: Program; onDone: () => voi
     try {
       if (program) await api.patch(`/app/programs/${program.id}`, body);
       else await api.post("/app/programs", body);
-      toast.success(program ? "Programme mis à jour" : "Programme créé");
+      toast.success(program ? t("updated") : t("created"));
       qc.invalidateQueries({ queryKey: ["programs"] });
       qc.invalidateQueries({ queryKey: ["links"] });
       onDone();
     } catch (err) {
-      setError(errorMessage(err));
+      setError(toErrorMessage(err));
     } finally {
       setBusy(false);
     }
@@ -96,67 +97,62 @@ function ProgramForm({ program, onDone }: { program?: Program; onDone: () => voi
   return (
     <form onSubmit={submit} className="grid gap-4" noValidate>
       {error && <ErrorNote>{error}</ErrorNote>}
-      <Field label="Nom du programme">{(p) => <Input {...p} value={f.name} onChange={set("name")} />}</Field>
+      <Field label={t("name")}>{(p) => <Input {...p} value={f.name} onChange={set("name")} />}</Field>
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="Type" hint={program?._count?.accounts ? "Ne peut plus changer : des cartes existent." : undefined}>
+        <Field label={t("type")} hint={program?._count?.accounts ? t("typeLocked") : undefined}>
           {(p) => (
             <Select {...p} value={f.mode} onChange={set("mode")} disabled={Boolean(program?._count?.accounts)}>
-              <option value="POINTS">Points selon le montant</option>
-              <option value="STAMPS">Tampons par achat</option>
+              <option value="POINTS">{t("modes.POINTS")}</option>
+              <option value="STAMPS">{t("modes.STAMPS")}</option>
             </Select>
           )}
         </Field>
-        <Field label="Devise">
+        <Field label={t("currency")}>
           {(p) => (
-            <Select {...p} value={f.currency} onChange={set("currency")}>
-              {SUPPORTED_CURRENCIES.map((c) => (
-                <option key={c.code} value={c.code}>
-                  {c.label}
-                </option>
-              ))}
-            </Select>
+            <CurrencySelect {...p} value={f.currency} onChange={(code) => setF({ ...f, currency: code })} />
           )}
         </Field>
       </div>
       {f.mode === "POINTS" ? (
         <div className="grid gap-4 sm:grid-cols-2">
-          <Field label={`Dépense (${f.currency})`}>{(p) => <Input {...p} inputMode="decimal" value={f.spendStep} onChange={set("spendStep")} />}</Field>
-          <Field label="Points gagnés">{(p) => <Input {...p} type="number" min={1} value={f.pointsPerStep} onChange={set("pointsPerStep")} />}</Field>
+          <Field label={t("spend", { currency: f.currency })}>{(p) => <Input {...p} inputMode="decimal" value={f.spendStep} onChange={set("spendStep")} />}</Field>
+          <Field label={t("pointsEarned")}>{(p) => <Input {...p} type="number" min={1} value={f.pointsPerStep} onChange={set("pointsPerStep")} />}</Field>
         </div>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="Tampons par achat">{(p) => <Input {...p} type="number" min={1} max={10} value={f.stampsPerPurchase} onChange={set("stampsPerPurchase")} />}</Field>
-          <Field label="Tampons pour la récompense">{(p) => <Input {...p} type="number" min={2} max={50} value={f.stampsTarget} onChange={set("stampsTarget")} />}</Field>
+          <Field label={t("stampsPerPurchase")}>{(p) => <Input {...p} type="number" min={1} max={10} value={f.stampsPerPurchase} onChange={set("stampsPerPurchase")} />}</Field>
+          <Field label={t("stampsTarget")}>{(p) => <Input {...p} type="number" min={2} max={50} value={f.stampsTarget} onChange={set("stampsTarget")} />}</Field>
         </div>
       )}
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="Achat minimum (facultatif)">{(p) => <Input {...p} inputMode="decimal" value={f.minPurchaseAmount} onChange={set("minPurchaseAmount")} />}</Field>
-        <Field label="Plafond par achat (facultatif)">{(p) => <Input {...p} type="number" min={1} value={f.maxPerTransaction} onChange={set("maxPerTransaction")} />}</Field>
+        <Field label={t("minPurchase")}>{(p) => <Input {...p} inputMode="decimal" value={f.minPurchaseAmount} onChange={set("minPurchaseAmount")} />}</Field>
+        <Field label={t("maxPerTransaction")}>{(p) => <Input {...p} type="number" min={1} value={f.maxPerTransaction} onChange={set("maxPerTransaction")} />}</Field>
       </div>
-      <Field label="Expiration après inactivité (jours, facultatif)" hint="Le solde expire si le client ne revient pas pendant cette durée. Minimum 30 jours.">
+      <Field label={t("expiry")} hint={t("expiryHint")}>
         {(p) => <Input {...p} type="number" min={30} value={f.inactivityExpiryDays} onChange={set("inactivityExpiryDays")} />}
       </Field>
       <Checkbox
         checked={f.oneVisitPerDay}
         onChange={(e) => setF({ ...f, oneVisitPerDay: e.target.checked })}
-        label="Un seul passage compté par client et par jour (les commandes en ligne ne sont pas concernées)"
+        label={t("oneVisitPerDay")}
       />
-      <Field label="Validation des inscriptions par QR">
+      <Field label={t("verification")}>
         {(p) => (
           <Select {...p} value={f.enrollmentVerification} onChange={set("enrollmentVerification")}>
-            <option value="NONE">Immédiate</option>
-            <option value="EMAIL_OTP">Code envoyé par email</option>
-            <option value="IN_STORE">Activée par un employé en magasin</option>
+            <option value="NONE">{t("verifications.NONE")}</option>
+            <option value="EMAIL_OTP">{t("verifications.EMAIL_OTP")}</option>
+            <option value="IN_STORE">{t("verifications.IN_STORE")}</option>
           </Select>
         )}
       </Field>
-      <Field label="Conditions du programme (affichées au client)">{(p) => <Textarea {...p} value={f.terms} onChange={set("terms")} />}</Field>
-      <Button type="submit" loading={busy} disabled={f.name.trim().length < 2}>{program ? "Enregistrer" : "Créer le programme"}</Button>
+      <Field label={t("terms")}>{(p) => <Textarea {...p} value={f.terms} onChange={set("terms")} />}</Field>
+      <Button type="submit" loading={busy} disabled={f.name.trim().length < 2}>{program ? t("save") : t("submit")}</Button>
     </form>
   );
 }
 
 function LinkCard({ link }: { link: Link }) {
+  const t = useTranslations("app.programs.link");
   const qc = useQueryClient();
   const canWrite = useCan("programs.write");
   return (
@@ -166,22 +162,22 @@ function LinkCard({ link }: { link: Link }) {
       </div>
       <div className="grid content-start gap-2">
         <div className="flex flex-wrap items-center gap-2">
-          <p className="font-medium">{link.establishment?.name ?? "Tous les établissements"}</p>
-          {!link.active && <Badge tone="danger">Désactivé</Badge>}
+          <p className="font-medium">{link.establishment?.name ?? t("allEstablishments")}</p>
+          {!link.active && <Badge tone="danger">{t("disabled")}</Badge>}
         </div>
-        <p className="text-sm text-ink-3">{link.program.name} · {formatNumber(link.enrollCount)} inscriptions</p>
-        <p className="break-all text-sm text-ink-2">{link.url}</p>
+        <p className="text-sm text-ink-3">{link.program.name} · {t("enrollments", { count: link.enrollCount, formatted: formatNumber(link.enrollCount) })}</p>
+        <p className="break-all text-sm text-ink-2" dir="ltr">{link.url}</p>
         <div className="mt-1 flex flex-wrap gap-2">
           <Button asChild size="sm" variant="secondary">
-            <a href={`/affiche/${link.id}`} target="_blank" rel="noreferrer"><Printer /> Affiche à imprimer</a>
+            <a href={`/affiche/${link.id}`} target="_blank" rel="noreferrer"><Printer /> {t("poster")}</a>
           </Button>
-          <Button size="sm" variant="ghost" onClick={() => navigator.clipboard.writeText(link.url).then(() => toast.success("Lien copié"))}>Copier le lien</Button>
+          <Button size="sm" variant="ghost" onClick={() => navigator.clipboard.writeText(link.url).then(() => toast.success(t("copied")))}>{t("copy")}</Button>
           {canWrite && (
             <ConfirmDialog
-              trigger={<Button size="sm" variant="ghost">{link.active ? "Désactiver" : "Réactiver"}</Button>}
-              title={link.active ? "Désactiver ce QR code ?" : "Réactiver ce QR code ?"}
-              consequence={link.active ? "Les clients qui le scannent ne pourront plus s’inscrire. Les cartes existantes ne sont pas touchées." : "Les clients pourront de nouveau s’inscrire avec ce QR code."}
-              confirmLabel={link.active ? "Désactiver" : "Réactiver"}
+              trigger={<Button size="sm" variant="ghost">{link.active ? t("deactivate") : t("reactivate")}</Button>}
+              title={link.active ? t("deactivateTitle") : t("reactivateTitle")}
+              consequence={link.active ? t("deactivateConsequence") : t("reactivateConsequence")}
+              confirmLabel={link.active ? t("deactivate") : t("reactivate")}
               destructive={link.active}
               onConfirm={async () => {
                 await api.post(`/app/enrollment-links/${link.id}/toggle`);
@@ -196,6 +192,8 @@ function LinkCard({ link }: { link: Link }) {
 }
 
 export default function ProgramsPage() {
+  const toErrorMessage = useErrorMessage();
+  const t = useTranslations("app.programs");
   const canWrite = useCan("programs.write");
   const qc = useQueryClient();
   const [editing, setEditing] = useState<Program | "new" | null>(null);
@@ -208,9 +206,9 @@ export default function ProgramsPage() {
   return (
     <>
       <PageHeader
-        title="Programmes"
-        description="Les règles de gain et les QR codes d’inscription."
-        actions={canWrite && <Button onClick={() => setEditing("new")}><Plus /> Nouveau programme</Button>}
+        title={t("title")}
+        description={t("description")}
+        actions={canWrite && <Button onClick={() => setEditing("new")}><Plus /> {t("new")}</Button>}
       />
       {isLoading ? (
         <Skeleton className="h-40" />
@@ -221,31 +219,32 @@ export default function ProgramsPage() {
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <h2 className="font-display text-xl font-semibold">{p.name}</h2>
-                  <p className="text-sm text-ink-3">{formatNumber(p._count?.accounts ?? 0)} cartes · {formatNumber(p._count?.rewards ?? 0)} récompenses</p>
+                  <p className="text-sm text-ink-3">{t("counts", { cards: p._count?.accounts ?? 0, cardsFormatted: formatNumber(p._count?.accounts ?? 0), rewards: p._count?.rewards ?? 0, rewardsFormatted: formatNumber(p._count?.rewards ?? 0) })}</p>
                 </div>
-                <Badge tone={p.active ? "mint" : "neutral"}>{p.active ? "Actif" : "Inactif"}</Badge>
+                <Badge tone={p.active ? "mint" : "neutral"}>{p.active ? t("active") : t("inactive")}</Badge>
               </div>
               <p className="text-ink-2">
                 {p.mode === "POINTS"
-                  ? `${formatNumber(Number(p.spendStep))} ${p.currency} dépensés = ${p.pointsPerStep} point${p.pointsPerStep > 1 ? "s" : ""}`
-                  : `${p.stampsPerPurchase} tampon${p.stampsPerPurchase > 1 ? "s" : ""} par achat, récompense à ${p.stampsTarget}`}
-                {p.maxPerTransaction && `, plafond ${formatNumber(p.maxPerTransaction)} par achat`}
-                {p.inactivityExpiryDays && `, expiration après ${p.inactivityExpiryDays} jours sans visite`}
-                {p.oneVisitPerDay && ", un passage par jour au plus"}.
+                  ? t("rules.points", { spend: formatNumber(Number(p.spendStep)), currency: p.currency, count: p.pointsPerStep })
+                  : t("rules.stamps", { count: p.stampsPerPurchase, target: p.stampsTarget })}
+                {p.maxPerTransaction && t("rules.cap", { max: formatNumber(p.maxPerTransaction) })}
+                {p.inactivityExpiryDays && t("rules.expiry", { count: p.inactivityExpiryDays })}
+                {p.oneVisitPerDay && t("rules.oneVisit")}
+                {t("rules.end")}
               </p>
-              <p className="text-sm text-ink-3">Inscription : {VERIFICATION[p.enrollmentVerification]}</p>
+              <p className="text-sm text-ink-3">{t("enrollment", { mode: t(`verification.${p.enrollmentVerification}`) })}</p>
               {canWrite && (
                 <div className="flex flex-wrap gap-2">
-                  <Button size="sm" variant="secondary" onClick={() => setEditing(p)}><Settings2 /> Modifier</Button>
+                  <Button size="sm" variant="secondary" onClick={() => setEditing(p)}><Settings2 /> {t("edit")}</Button>
                   <Button
                     size="sm"
                     variant="ghost"
                     onClick={async () => {
-                      await api.patch(`/app/programs/${p.id}`, { active: !p.active }).catch((e) => toast.error(errorMessage(e)));
+                      await api.patch(`/app/programs/${p.id}`, { active: !p.active }).catch((e) => toast.error(toErrorMessage(e)));
                       qc.invalidateQueries({ queryKey: ["programs"] });
                     }}
                   >
-                    {p.active ? "Mettre en pause" : "Activer"}
+                    {p.active ? t("pause") : t("activate")}
                   </Button>
                   {p.active && <WalletBroadcast programId={p.id} programName={p.name} />}
                 </div>
@@ -258,17 +257,17 @@ export default function ProgramsPage() {
       <section aria-labelledby="qr" className="mt-12">
         <div className="mb-4 grid gap-4">
           <div>
-            <h2 id="qr" className="font-display text-2xl font-semibold">QR codes d’inscription</h2>
-            <p className="text-ink-2">Différents du QR personnel de chaque carte : ils servent seulement à créer une carte.</p>
+            <h2 id="qr" className="font-display text-2xl font-semibold">{t("qrTitle")}</h2>
+            <p className="text-ink-2">{t("qrDescription")}</p>
           </div>
           {canWrite && programs && programs.length > 0 && establishments.length > 0 && (
             <div className="grid gap-2 rounded-[var(--radius-lg)] bg-surface p-3 shadow-1 sm:grid-cols-[1fr_1fr_auto]">
-              <Select aria-label="Programme" value={linkProgram} onChange={(e) => setLinkProgram(e.target.value)}>
-                <option value="">Choisir un programme</option>
+              <Select aria-label={t("program")} value={linkProgram} onChange={(e) => setLinkProgram(e.target.value)}>
+                <option value="">{t("chooseProgram")}</option>
                 {programs.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
               </Select>
-              <Select aria-label="Établissement" value={linkEst} onChange={(e) => setLinkEst(e.target.value)}>
-                <option value="">Choisir un établissement</option>
+              <Select aria-label={t("establishment")} value={linkEst} onChange={(e) => setLinkEst(e.target.value)}>
+                <option value="">{t("chooseEstablishment")}</option>
                 {establishments.map((e) => <option key={e.id} value={e.id}>{e.name}</option>)}
               </Select>
               <Button
@@ -278,13 +277,13 @@ export default function ProgramsPage() {
                   try {
                     await api.post("/app/enrollment-links", { programId: linkProgram, establishmentId: linkEst });
                     qc.invalidateQueries({ queryKey: ["links"] });
-                    toast.success("QR code créé");
+                    toast.success(t("qrCreated"));
                   } catch (e) {
-                    toast.error(errorMessage(e));
+                    toast.error(toErrorMessage(e));
                   }
                 }}
               >
-                <QrCode /> Créer le QR code
+                <QrCode /> {t("createQr")}
               </Button>
             </div>
           )}
@@ -296,7 +295,7 @@ export default function ProgramsPage() {
 
       <DialogRoot open={editing !== null} onOpenChange={(o) => !o && setEditing(null)}>
         {editing !== null && (
-          <DialogContent title={editing === "new" ? "Nouveau programme" : "Modifier le programme"}>
+          <DialogContent title={editing === "new" ? t("new") : t("editTitle")}>
             <ProgramForm program={editing === "new" ? undefined : editing} onDone={() => setEditing(null)} />
           </DialogContent>
         )}

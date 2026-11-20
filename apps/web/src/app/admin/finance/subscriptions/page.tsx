@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { useQuery } from "@tanstack/react-query";
 import { RefreshCw, TrendingUp, Users, Calendar } from "lucide-react";
 import { Badge, PageHeader, Panel } from "@/components/ui/misc";
@@ -37,6 +38,7 @@ interface SubscriptionRow {
 }
 
 export default function SubscriptionsFinancePage() {
+  const t = useTranslations("admin.finance.subscriptions");
   const { data, isLoading } = useQuery({
     queryKey: ["admin-finance-subscriptions"],
     queryFn: () =>
@@ -55,8 +57,8 @@ export default function SubscriptionsFinancePage() {
   return (
     <>
       <PageHeader
-        title="Parc d'abonnements & Revenus récurrents (MRR/ARR)"
-        description="Gestion des contrats, renouvellements annuels, échéances et revenus lissés."
+        title={t("title")}
+        description={t("description")}
       />
 
       <FinanceNav />
@@ -65,68 +67,68 @@ export default function SubscriptionsFinancePage() {
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-6">
         <Panel className="p-4">
           <div className="flex items-center justify-between text-xs text-ink-3">
-            <span>MRR Consolidé</span>
+            <span>{t("mrr")}</span>
             <RefreshCw className="size-3.5 text-cobalt" />
           </div>
           <div className="mt-2 font-display text-2xl font-bold tabular text-ink">
             {formatFinance(data?.mrrTotalCents ?? 0, "USD")}
-            <span className="text-xs font-normal text-ink-3"> /mois</span>
+            <span className="text-xs font-normal text-ink-3"> {t("perMonth")}</span>
           </div>
-          <p className="mt-1 text-xs text-ink-3">Plans annuels divisés par 12</p>
+          <p className="mt-1 text-xs text-ink-3">{t("mrrHelp")}</p>
         </Panel>
 
         <Panel className="p-4">
           <div className="flex items-center justify-between text-xs text-ink-3">
-            <span>ARR Consolidé</span>
+            <span>{t("arr")}</span>
             <TrendingUp className="size-3.5 text-mint" />
           </div>
           <div className="mt-2 font-display text-2xl font-bold tabular text-ink">
             {formatFinance(data?.arrTotalCents ?? 0, "USD")}
-            <span className="text-xs font-normal text-ink-3"> /an</span>
+            <span className="text-xs font-normal text-ink-3"> {t("perYear")}</span>
           </div>
-          <p className="mt-1 text-xs text-ink-3">Revenus contractuels annualisés</p>
+          <p className="mt-1 text-xs text-ink-3">{t("arrHelp")}</p>
         </Panel>
 
         <Panel className="p-4">
           <div className="flex items-center justify-between text-xs text-ink-3">
-            <span>Abonnements payants</span>
+            <span>{t("paying")}</span>
             <Users className="size-3.5 text-emerald-500" />
           </div>
           <div className="mt-2 font-display text-2xl font-bold tabular text-ink">
             {data?.payingCount ?? 0}
           </div>
-          <p className="mt-1 text-xs text-ink-3">Sur {data?.activeCount ?? 0} contrats actifs</p>
+          <p className="mt-1 text-xs text-ink-3">{t("payingHelp", { count: data?.activeCount ?? 0 })}</p>
         </Panel>
 
         <Panel className="p-4">
           <div className="flex items-center justify-between text-xs text-ink-3">
-            <span>Périodes d&apos;essai en cours</span>
+            <span>{t("trialing")}</span>
             <Calendar className="size-3.5 text-amber-500" />
           </div>
           <div className="mt-2 font-display text-2xl font-bold tabular text-ink">
             {data?.trialingCount ?? 0}
           </div>
-          <p className="mt-1 text-xs text-ink-3">Potentiel de conversion payante</p>
+          <p className="mt-1 text-xs text-ink-3">{t("trialingHelp")}</p>
         </Panel>
       </div>
 
       {isLoading ? (
-        <div className="py-20 text-center text-sm text-ink-3">Chargement des abonnements...</div>
+        <div className="py-20 text-center text-sm text-ink-3">{t("loading")}</div>
       ) : subs.length === 0 ? (
-        <Panel className="p-12 text-center text-sm text-ink-3">Aucun abonnement trouvé.</Panel>
+        <Panel className="p-12 text-center text-sm text-ink-3">{t("empty")}</Panel>
       ) : (
         <Panel className="overflow-x-auto">
-          <table className="w-full min-w-[900px] text-left text-sm">
+          <table className="w-full min-w-[900px] text-start text-sm">
             <thead className="border-b border-line bg-surface-2 text-xs text-ink-3">
               <tr>
-                <th className="py-3 px-4 font-medium">Commerce</th>
-                <th className="py-3 px-4 font-medium">Offre</th>
-                <th className="py-3 px-4 font-medium">Facturation</th>
-                <th className="py-3 px-4 font-medium text-right">Prix contractuel</th>
-                <th className="py-3 px-4 font-medium text-right">MRR lissé</th>
-                <th className="py-3 px-4 font-medium">Prochaine échéance</th>
-                <th className="py-3 px-4 font-medium">Prestataire</th>
-                <th className="py-3 px-4 font-medium">Statut</th>
+                <th className="py-3 px-4 font-medium">{t("table.tenant")}</th>
+                <th className="py-3 px-4 font-medium">{t("table.plan")}</th>
+                <th className="py-3 px-4 font-medium">{t("table.billing")}</th>
+                <th className="py-3 px-4 font-medium text-end">{t("table.price")}</th>
+                <th className="py-3 px-4 font-medium text-end">{t("table.mrr")}</th>
+                <th className="py-3 px-4 font-medium">{t("table.nextDue")}</th>
+                <th className="py-3 px-4 font-medium">{t("table.provider")}</th>
+                <th className="py-3 px-4 font-medium">{t("table.status")}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-line">
@@ -152,21 +154,21 @@ export default function SubscriptionsFinancePage() {
                       </span>
                     </td>
                     <td className="py-3.5 px-4 text-xs text-ink-2">
-                      {isAnnual ? "Annuelle (1 an)" : "Mensuelle"}
+                      {isAnnual ? t("yearly") : t("monthly")}
                     </td>
-                    <td className="py-3.5 px-4 text-right font-mono text-xs font-semibold text-ink">
+                    <td className="py-3.5 px-4 text-end font-mono text-xs font-semibold text-ink">
                       {isPaidPlan ? (
                         <>
                           {formatFinance(priceCents, sub.plan.currency)}
                           <span className="text-[11px] font-normal text-ink-3">
-                            {isAnnual ? "/an" : "/mois"}
+                            {isAnnual ? t("perYear") : t("perMonth")}
                           </span>
                         </>
                       ) : (
-                        <span className="text-ink-3">Gratuit</span>
+                        <span className="text-ink-3">{t("free")}</span>
                       )}
                     </td>
-                    <td className="py-3.5 px-4 text-right font-mono text-xs font-bold text-cobalt">
+                    <td className="py-3.5 px-4 text-end font-mono text-xs font-bold text-cobalt">
                       {formatFinance(sub.mrrCents, "USD")}
                     </td>
                     <td className="py-3.5 px-4 text-xs text-ink-2">
@@ -174,29 +176,29 @@ export default function SubscriptionsFinancePage() {
                         <div>
                           <div>{formatDate(sub.currentPeriodEnd)}</div>
                           {sub.cancelAtPeriodEnd && (
-                            <div className="text-[11px] text-rose-500">Arrêt programmé</div>
+                            <div className="text-[11px] text-rose-500">{t("cancelScheduled")}</div>
                           )}
                         </div>
                       ) : sub.trialEndsAt ? (
                         <div className="text-amber-500 font-medium">
-                          Essai jusqu&apos;au {formatDate(sub.trialEndsAt)}
+                          {t("trialUntil", { date: formatDate(sub.trialEndsAt) })}
                         </div>
                       ) : (
                         <span className="text-ink-3">—</span>
                       )}
                     </td>
                     <td className="py-3.5 px-4 text-xs text-ink-3">
-                      {sub.provider === "STRIPE" ? "Stripe" : sub.provider === "MANUAL" ? "Contrat direct" : sub.provider}
+                      {sub.provider === "STRIPE" ? "Stripe" : sub.provider === "MANUAL" ? t("manual") : sub.provider}
                     </td>
                     <td className="py-3.5 px-4">
                       {sub.status === "ACTIVE" ? (
-                        <Badge tone="mint">Actif</Badge>
+                        <Badge tone="mint">{t("status.ACTIVE")}</Badge>
                       ) : sub.status === "TRIALING" ? (
-                        <Badge tone="cobalt">Essai</Badge>
+                        <Badge tone="cobalt">{t("status.TRIALING")}</Badge>
                       ) : sub.status === "PAST_DUE" ? (
-                        <Badge tone="stamp">Impayé</Badge>
+                        <Badge tone="stamp">{t("status.PAST_DUE")}</Badge>
                       ) : sub.status === "CANCELED" ? (
-                        <Badge tone="danger">Résilié</Badge>
+                        <Badge tone="danger">{t("status.CANCELED")}</Badge>
                       ) : (
                         <Badge tone="neutral">{sub.status}</Badge>
                       )}

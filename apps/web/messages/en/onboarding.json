@@ -1,0 +1,82 @@
+{
+  "meta": {
+    "title": "Setup"
+  },
+  "steps": {
+    "business": "Your business",
+    "branding": "Logo and color",
+    "establishment": "Location",
+    "program": "Program",
+    "reward": "Reward",
+    "qr": "QR code"
+  },
+  "progress": "Step {current} of {total}",
+  "continue": "Continue",
+  "later": "Finish later",
+  "defaults": {
+    "establishment": "Main store",
+    "stampsProgram": "Stamp card",
+    "pointsProgram": "Points card",
+    "stampsReward": "Free item",
+    "pointsReward": "Discount voucher",
+    "slug": "your-business",
+    "business": "Your business"
+  },
+  "errors": {
+    "logoTooLarge": "Image too large (512 KB maximum)"
+  },
+  "business": {
+    "title": "Hello {name}, tell us about your business",
+    "name": "Business name",
+    "country": "Country",
+    "city": "City",
+    "currency": "Sales currency",
+    "slug": "Your page address",
+    "submit": "Create my business"
+  },
+  "branding": {
+    "title": "Your logo and color",
+    "subtitle": "They style your customers’ card and your sign-up page.",
+    "logo": "Logo (optional)",
+    "logoAlt": "Logo",
+    "change": "Change the image",
+    "choose": "Choose a PNG, JPEG or WebP image (512 KB max.)",
+    "color": "Main color"
+  },
+  "establishment": {
+    "title": "Your point of sale",
+    "subtitle": "You can add more later.",
+    "name": "Location name",
+    "country": "Country",
+    "city": "City"
+  },
+  "program": {
+    "title": "How do your customers earn?",
+    "stampsLabel": "Stamps",
+    "stampsText": "One purchase = one stamp. Simple, ideal for a café, a salon or a snack bar.",
+    "pointsLabel": "Points",
+    "pointsText": "Points follow the amount spent. Ideal for a shop or a supermarket.",
+    "spendStep": "Amount to earn 1 point ({currency})",
+    "spendStepHint": "Example: {amount} {currency} spent = 1 point.",
+    "stampsTarget": "Stamps for a reward",
+    "submit": "Create the program"
+  },
+  "reward": {
+    "title": "The reward",
+    "stampsText": "Given when the card reaches {count, plural, one {# stamp} other {# stamps}}.",
+    "pointsText": "What your customers get with their points. You can add more later.",
+    "name": "Reward name",
+    "cost": "Cost in points"
+  },
+  "qr": {
+    "title": "Your sign-up QR code",
+    "subtitle": "Display it at the counter. Your customers scan it to create their card.",
+    "print": "Print",
+    "customerPage": "View the customer page",
+    "submit": "Open my dashboard"
+  },
+  "preview": {
+    "label": "Loyalty card",
+    "caption": "Preview of the card your customers will see on their phone."
+  }
+}

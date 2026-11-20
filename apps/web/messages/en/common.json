@@ -1,0 +1,88 @@
+{
+  "skipToContent": "Skip to content",
+  "language": "Language",
+  "chooseLanguage": "Choose language",
+  "select": {
+    "search": "Search…",
+    "noResult": "No results.",
+    "frequent": "Frequent",
+    "all": "All"
+  },
+  "country": {
+    "label": "Country",
+    "search": "Search for a country…",
+    "noResult": "No country found.",
+    "frequent": "Frequent countries",
+    "all": "All countries"
+  },
+  "city": {
+    "label": "City",
+    "search": "Search for a city…",
+    "placeholder": "Select a city",
+    "typeToSearch": "Type a city name to search.",
+    "useTyped": "Use “{value}”"
+  },
+  "currency": {
+    "label": "Currency",
+    "search": "Search for a currency…",
+    "noResult": "No currency found.",
+    "frequent": "Frequent currencies",
+    "all": "All currencies"
+  },
+  "phone": {
+    "callingCode": "Calling code: {code} ({country})",
+    "search": "Search for a country or calling code…"
+  },
+  "dialog": {
+    "close": "Close",
+    "cancel": "Cancel"
+  },
+  "cookies": {
+    "settings": "Cookie settings",
+    "region": "Cookie consent",
+    "title": "Your privacy matters",
+    "closeWithoutAccepting": "Close without accepting",
+    "body": "We measure audience (Google Analytics, Clarity) to improve your experience on FOVE. Your data stays secure and is never sold.",
+    "learnMore": "Learn more",
+    "decline": "Decline",
+    "accept": "Accept"
+  },
+  "theme": {
+    "toggle": "Switch theme (light or dark)",
+    "toggleTitle": "Switch theme"
+  },
+  "toast": {
+    "region": "Notifications",
+    "close": "Close notification"
+  },
+  "kind": {
+    "EARN": "Purchase",
+    "ADJUSTMENT": "Adjustment",
+    "REDEMPTION": "Reward",
+    "REDEMPTION_REVERSAL": "Reward cancelled",
+    "REVERSAL": "Cancellation",
+    "REFUND": "Refund",
+    "EXPIRATION": "Expiry"
+  },
+  "unit": {
+    "POINTS": "{count, plural, one {point} other {points}}",
+    "STAMPS": "{count, plural, one {stamp} other {stamps}}"
+  },
+  "unitCount": {
+    "POINTS": "{count, plural, one {# point} other {# points}}",
+    "STAMPS": "{count, plural, one {# stamp} other {# stamps}}"
+  },
+  "errorPage": {
+    "sessionTitle": "Session expired",
+    "sessionBody": "Your sign-in session has expired. Redirecting you to the sign-in page…",
+    "reconnect": "Sign in again",
+    "title": "Service temporarily unavailable",
+    "body": "Your data is not lost. Try again in a moment; if the problem persists, contact FOVE support.",
+    "retry": "Try again"
+  },
+  "notFound": {
+    "title": "Page not found",
+    "body": "The link may be incomplete or may have been replaced. If it is a loyalty card, ask the merchant for a new link.",
+    "home": "Back to home"
+  }
+}

@@ -1,0 +1,493 @@
+{
+  "meta": {
+    "ogLocale": "en_GB",
+    "inLanguage": "en-GB",
+    "imageAlt": "FOVE — Loyalty and retail sales platform",
+    "keywords": [
+      "digital loyalty card",
+      "merchant loyalty program",
+      "retail customer loyalty",
+      "loyalty QR code at checkout",
+      "digital stamp card",
+      "Apple Wallet loyalty",
+      "Google Wallet loyalty",
+      "merchant CRM",
+      "WhatsApp customer follow-up",
+      "retail RFM segmentation",
+      "store loyalty software",
+      "loyalty Kinshasa DRC",
+      "FOVE",
+      "Dizayna"
+    ],
+    "root": {
+      "title": "FOVE — Turn your customers into regulars | Digital loyalty card & CRM",
+      "description": "Loyalty and retail sales platform: digital loyalty cards (Apple & Google Wallet), QR codes at checkout, points or stamps, RFM CRM and WhatsApp follow-ups. No app to install."
+    },
+    "home": {
+      "title": "FOVE — Turn your customers into regulars | Digital loyalty card & CRM",
+      "description": "Digital loyalty cards (Apple Wallet & Google Wallet), QR codes at checkout, points or stamps, RFM CRM and WhatsApp follow-ups for merchants. No app to install."
+    },
+    "pricing": {
+      "title": "Pricing — Loyalty program plans for merchants",
+      "description": "Start free with up to 100 customers, then move to Essential, Business or Network, or a custom plan. Zero commission on your sales.",
+      "keywords": ["digital loyalty card pricing", "merchant loyalty software price", "store loyalty subscription"]
+    },
+    "features": {
+      "title": "Features — Loyalty cards, Wallet, checkout scanner & RFM CRM",
+      "description": "Points or stamp programs, Apple & Google Wallet digital cards, lock screen push notifications, mobile checkout scanner, RFM segmentation and WhatsApp follow-ups.",
+      "keywords": ["loyalty card features", "Apple Wallet for merchants", "Google Wallet loyalty", "checkout QR scanner"]
+    },
+    "contact": {
+      "title": "Contact & Demo",
+      "description": "Request a personalised FOVE demo, help rolling it out in store or a quote for multiple locations.",
+      "keywords": ["contact FOVE", "loyalty program demo", "retail loyalty support", "multi-store loyalty quote"]
+    },
+    "developers": {
+      "title": "Developer documentation — Loyalty REST API, TypeScript SDK & Webhooks",
+      "description": "Connect FOVE to your online store or point-of-sale software: idempotent REST API v1, @fove/sdk TypeScript SDK, HMAC-SHA256 signed webhooks and web widget.",
+      "keywords": ["e-commerce loyalty API", "TypeScript loyalty SDK", "point-of-sale loyalty webhook", "website loyalty widget"]
+    },
+    "terms": {
+      "title": "Terms of Use (Terms & DPA)",
+      "description": "Contractual terms of use of the FOVE SaaS platform and data processing agreement for personal data (GDPR).",
+      "keywords": ["FOVE terms", "loyalty terms of use", "merchant GDPR DPA", "Dizayna SaaS contract"]
+    },
+    "privacy": {
+      "title": "Personal data",
+      "description": "How FOVE processes the data of merchants and their customers."
+    }
+  },
+  "jsonLd": {
+    "organization": "SaaS platform for customer loyalty and retail sales: digital loyalty cards, QR codes at checkout, Apple/Google Wallet and merchant CRM.",
+    "application": "Loyalty solution for merchants: points or stamp programs, QR code sign-up at the counter, mobile checkout scanner, RFM segmentation and WhatsApp follow-ups."
+  },
+  "header": {
+    "homeLabel": "FOVE, home",
+    "mainNav": "Main navigation",
+    "mobileNav": "Mobile navigation",
+    "links": {
+      "features": "Features",
+      "pricing": "Pricing",
+      "partners": "Partners",
+      "developers": "Developers",
+      "contact": "Contact"
+    },
+    "login": "Log in",
+    "signup": "Start for free"
+  },
+  "footer": {
+    "tagline": "<strong>FOVE</strong>, short for <strong>FOrce de VEnte</strong>, French for sales force.",
+    "description": "The loyalty and retail sales platform. A Dizayna product.",
+    "product": "Product",
+    "info": "Information",
+    "links": {
+      "features": "Features",
+      "pricing": "Pricing",
+      "api": "API documentation",
+      "contact": "Contact & Demo",
+      "partners": "Partner Program",
+      "terms": "Terms of use",
+      "privacy": "Personal data",
+      "merchantArea": "Merchant area",
+      "sitemap": "Sitemap"
+    },
+    "rights": "© {year} Dizayna. All rights reserved."
+  },
+  "home": {
+    "hero": {
+      "title": "Turn your customers into regulars.",
+      "text": "A loyalty card on your customers’ phones, a QR code on your counter. They scan, they buy, they come back. No app to install.",
+      "cta": "Create my program",
+      "pricing": "See pricing",
+      "note": "Free up to 100 customers, no credit card. Set it up yourself in minutes.",
+      "wallet": "Your customers add their card to their phone in one tap:",
+      "walletLabel": "Works with Apple Wallet and Google Wallet"
+    },
+    "steps": {
+      "title": "Three steps, from counter to reward",
+      "step": "Step {number}",
+      "qr": {
+        "title": "Display your QR code at the counter",
+        "text": "FOVE generates it in your colours. Print it and stick it next to the till or on your shop window."
+      },
+      "signup": {
+        "title": "The customer creates their card in thirty seconds",
+        "text": "They scan and enter their first name and phone number. Their card opens in the browser, nothing to install."
+      },
+      "scan": {
+        "title": "You scan their card at every purchase",
+        "text": "From the checkout phone. Points or stamps are added and the reward unlocks automatically."
+      }
+    },
+    "counter": {
+      "title": "Built for the till, not the back office",
+      "text": "The scanner fits in a phone. Enter the amount, FOVE calculates the points, confirm in one tap. Every transaction records the cashier’s name, the location and the time.",
+      "link": "All features",
+      "rewards": {
+        "title": "Points or stamps",
+        "text": "1,000 CDF spent = 1 point, or a free coffee on the tenth visit. You set the rules, the caps and the rewards."
+      },
+      "stores": {
+        "title": "Multiple locations",
+        "text": "Each location has its own QR code and team. A cashier only sees their own store."
+      },
+      "stats": {
+        "title": "Figures that come from your sales",
+        "text": "Members, returning customers, points issued and rewards redeemed, calculated from your actual history."
+      }
+    },
+    "online": {
+      "title": "Your online store counts too",
+      "text": "An order paid on your website credits the same card as an in-store purchase. A refund removes the matching points. A widget adds the loyalty button to your website, whatever it runs on.",
+      "docs": "Read the documentation",
+      "codeLabel": "Code example",
+      "codeComment": "Sending the same order again never credits it twice."
+    },
+    "pricing": {
+      "title": "A fixed price, no commission on your sales",
+      "text": "Switch plans whenever you like: your cards, your customers and their history stay intact."
+    }
+  },
+  "stampDemo": {
+    "cardLabel": "Loyalty card",
+    "progress": "{count, plural, one {# stamp} other {# stamps}} out of {total}",
+    "complete": "Card complete: a free coffee for Awa.",
+    "restart": "Restart the demo",
+    "validate": "Confirm a purchase",
+    "hint": "Try it, that’s what the cashier does."
+  },
+  "walletDemo": {
+    "title": "Reach your customers right on their screen.",
+    "text": "Your cards install in one tap in <strong>Apple Wallet</strong> and <strong>Google Wallet</strong>. Send messages, offers and alerts that show up instantly on the iPhone or Android lock screen, with open rates close to 100%.",
+    "osPreview": "OS preview:",
+    "benefits": {
+      "delivery": "100% deliverability (lock screen)",
+      "sms": "$0 in SMS fees",
+      "live": "Live balance updates"
+    },
+    "lockDate": "Thursday 30 October",
+    "appleSource": "Wallet · Apple Wallet",
+    "tapToOpen": "Tap to open ›",
+    "passLabel": "Loyalty pass",
+    "balance": "Balance",
+    "holder": "Holder · Nadia K.",
+    "unlock": "Swipe up to unlock",
+    "replay": "Play the push notification with sound",
+    "scenarios": {
+      "promo": {
+        "label": "Flash offer",
+        "tag": "Sales campaign",
+        "time": "Now",
+        "title": "Café Matonge · Flash offer",
+        "body": "Enjoy 20% off all specialty drinks this afternoon until 5 pm when you show your pass!",
+        "badge": "20% off until 5 pm",
+        "balance": "7 / 10",
+        "detail": "Flash perk active"
+      },
+      "earn": {
+        "label": "Checkout purchase",
+        "tag": "Real-time update",
+        "time": "1 min ago",
+        "title": "Café Matonge · Balance updated",
+        "body": "+1 stamp added! You now have 8 stamps out of 10. Just 2 more visits until your free coffee.",
+        "badge": "+1 stamp confirmed",
+        "balance": "8 / 10",
+        "detail": "Next reward at 10"
+      },
+      "reward": {
+        "label": "Reward unlocked",
+        "tag": "VIP loyalty",
+        "time": "2 min ago",
+        "title": "Café Matonge · Reward ready!",
+        "body": "Congratulations Nadia! Your card is complete. Come and enjoy your free signature coffee on your next visit.",
+        "badge": "1 free coffee unlocked",
+        "balance": "10 / 10",
+        "detail": "Reward ready at the counter"
+      },
+      "location": {
+        "label": "GPS proximity",
+        "tag": "Location-based reminder",
+        "time": "Now",
+        "title": "Café Matonge · You’re close by",
+        "body": "Time for a break? Your barista is waiting. Show your card to double your points today!",
+        "badge": "Store 50 m away",
+        "balance": "Points ×2",
+        "detail": "Proximity bonus active"
+      }
+    }
+  },
+  "currencyToggle": {
+    "label": "Currency:",
+    "groupLabel": "Select the pricing currency"
+  },
+  "pricing": {
+    "unavailable": "Pricing is temporarily unavailable. Please try again in a moment.",
+    "quotas": {
+      "customers": "Customers",
+      "establishments": "Locations",
+      "staff": "Team members",
+      "programs": "Loyalty programs"
+    },
+    "features": {
+      "cards": "Cards, sign-up QR codes and scanner",
+      "wallet": "Apple Wallet and Google Wallet",
+      "exports": "Customer data export (GDPR)",
+      "widget": "Widget for your website",
+      "removeBranding": "No “Powered by FOVE” mention",
+      "walletCampaigns": "Wallet campaigns to all your customers",
+      "whatsappAuto": "Automatic WhatsApp messages",
+      "api": "API and webhooks",
+      "integrations": "Online store connection (via API)"
+    },
+    "custom": "Custom",
+    "unlimited": "Unlimited",
+    "staffSelf": "1 (you)",
+    "contactUs": "Contact us",
+    "start": "Get started",
+    "choose": "Choose {name}",
+    "onQuote": "On quote",
+    "perYear": " /year",
+    "noteFree": "No credit card, no time limit",
+    "noteCustom": "Contract tailored to your network",
+    "noteEur": "Paid in advance, in euros (€)",
+    "noteUsd": "Paid in advance, in US dollars ($)",
+    "recommended": "Recommended",
+    "notIncludedSuffix": ": not included",
+    "caption": "FOVE plan comparison: capacity and included features",
+    "compare": "Compare plans",
+    "groupCapacity": "Capacity",
+    "groupFeatures": "Features",
+    "included": "Included",
+    "notIncluded": "Not included"
+  },
+  "pricingPage": {
+    "title": "Pricing",
+    "intro": "One yearly price based on your locations and the number of customers included. No commission on your sales, no fees for your customers.",
+    "setup": "Setup and training included: loyalty configuration, card customisation and a print-ready QR poster.",
+    "whatsapp": "Automatic WhatsApp messages cover sharing the card and “Find my card”. SMS and WhatsApp campaigns are not included in the subscription; prepaid credits will be offered separately.",
+    "faqTitle": "Frequently asked questions",
+    "faq": [
+      { "q": "Is the Free plan time-limited?", "a": "No. It stays free as long as you remain within its limits: 100 customers, 1 location, 1 program, no team members. Beyond that, your existing customers keep their cards; only new sign-ups wait until you move to a higher plan." },
+      { "q": "Can I change plans?", "a": "Yes, at any time from the Subscription area. A higher plan applies immediately: the prorated difference is billed right away. Moving to a lower plan never deletes any card: only new items beyond the limits are blocked." },
+      { "q": "What if I cancel?", "a": "Your plan stays active until the end of the paid period, and you can change your mind until then. After that, your account moves to the Free plan: nothing is deleted." },
+      { "q": "Do I need more than the Network plan?", "a": "The Custom plan adapts to your volumes: number of customers, locations and team members, with support and a contract on quote. Get in touch." },
+      { "q": "Do my customers pay anything?", "a": "No. The card is free for them and opens in their phone’s browser." },
+      { "q": "How do I pay?", "a": "In US dollars ($) or euros (€) depending on your region, paid once a year in advance. Invoices are available in your account." }
+    ]
+  },
+  "features": {
+    "title": "Features",
+    "intro": "Everything you need to bring customers back, and nothing you need a technician to set up.",
+    "cta": "Your QR code can be on the counter today.",
+    "start": "Start for free",
+    "groups": {
+      "program": {
+        "title": "Your program",
+        "items": {
+          "points": { "title": "Points or stamps", "text": "Choose the ratio (e.g. 1,000 CDF = 1 point) or the number of stamps needed for a reward." },
+          "rules": { "title": "Rules", "text": "Minimum amount, cap per purchase, expiry after a period without visits." },
+          "rewards": { "title": "Rewards", "text": "Catalogue, cost, stock, availability dates. Enable or retire a reward without losing its history." }
+        }
+      },
+      "customers": {
+        "title": "Your customers",
+        "items": {
+          "qr": { "title": "QR code sign-up", "text": "A public QR code in your colours, for each location. Customers create their card from their phone." },
+          "wallet": { "title": "Apple Wallet & Google Wallet", "text": "A native pass added in one tap to Apple Wallet and Google Wallet. Zero apps to download." },
+          "push": { "title": "Lock screen push notifications", "text": "Speak to your customers directly on their lock screen: flash offers, points updates and unlocked rewards." },
+          "geo": { "title": "GPS proximity reminders", "text": "The loyalty card appears on the smartphone screen as soon as your customer gets close to your location." },
+          "crm": { "title": "Customer database & RFM", "text": "Automatic customer segmentation (VIP, regulars, dormant, at risk), tags and sales notes for your sales team." }
+        }
+      },
+      "team": {
+        "title": "Your team",
+        "items": {
+          "roles": { "title": "Roles", "text": "Owner, manager, cashier, viewer. Every permission is checked by the server." },
+          "stores": { "title": "Locations", "text": "A cashier can be restricted to a single store." },
+          "audit": { "title": "Traceability", "text": "Every transaction records the employee, the location, the time and the sale reference. Mistakes are fixed with a reversal, never by deleting." }
+        }
+      },
+      "tools": {
+        "title": "Your tools",
+        "items": {
+          "stats": { "title": "Analytics", "text": "Members, new members, returning customers, points issued and redeemed, daily activity." },
+          "shop": { "title": "Online store", "text": "API, SDK and e-commerce connector: a paid order credits the card, a refund debits it." },
+          "widget": { "title": "Widget", "text": "A loyalty button on your website, compatible with WordPress, Astro, React, Next.js, Symfony or HTML." }
+        }
+      }
+    }
+  },
+  "contact": {
+    "badge": "Let’s talk about your business",
+    "title": "Let’s launch your loyalty program.",
+    "intro": "Would you like a live demo, a rollout across several locations or yearly payment by invoice? Our team supports you from start to finish.",
+    "highlights": {
+      "setup": { "title": "Up and running in 15 minutes", "text": "We create your points or stamp program, customise it in your brand colours and generate your counter QR poster." },
+      "business": { "title": "Independent shops & networks", "text": "Suited to shops, restaurants, salons, pharmacies, supermarkets and multi-location networks in the DRC and abroad." },
+      "support": { "title": "Support & training included", "text": "We train your cashiers on the mobile scanner and help you get started with WhatsApp customer follow-ups and the RFM dashboard." }
+    },
+    "selfServe": {
+      "title": "Prefer to try it right away?",
+      "text": "Create your account on your own in 2 minutes. Free plan, no credit card.",
+      "start": "Start for free",
+      "plans": "View plans"
+    }
+  },
+  "contactForm": {
+    "subjects": {
+      "demo": "Demo request & guided trial",
+      "custom": "Custom plan (quotas, support, contract)",
+      "network": "Multi-store rollout / Network plan",
+      "pricing": "Question about pricing & payment methods (DRC / International)",
+      "integration": "Point-of-sale (POS) or online store integration",
+      "other": "Partnership or other request"
+    },
+    "sentTitle": "Your request has been received",
+    "sentText": "Our sales team has received your message and will reply within 24 business hours (by email or WhatsApp depending on your details).",
+    "sendAnother": "Send another message",
+    "title": "Write to us",
+    "intro": "Free setup, configuration of your program and a print-ready QR poster.",
+    "honeypot": "Website",
+    "name": "Your full name",
+    "company": "Name of your business / brand",
+    "email": "Work email",
+    "phone": "Phone / WhatsApp (recommended)",
+    "subject": "Subject of your request",
+    "message": "Your message",
+    "messageHint": "Tell us your industry, number of locations and what you need.",
+    "submit": "Send my request"
+  },
+  "developers": {
+    "toc": "Contents",
+    "nav": {
+      "auth": "Authentication",
+      "idempotence": "Idempotency",
+      "endpoints": "Endpoints",
+      "sdk": "TypeScript SDK",
+      "webhooks": "Webhooks",
+      "widget": "Widget",
+      "errors": "Errors and limits"
+    },
+    "title": "Developer documentation",
+    "intro": "The FOVE REST API connects a till, an online store or a back office to your loyalty programs. Full interactive reference: <link>OpenAPI</link>.",
+    "auth": {
+      "text": "Create a secret key in <strong>Integrations</strong>, with only the permissions you need (scopes). It is used server-side, never in a browser. <test></test> and <live></live> keys are kept separate.",
+      "codeLabel": "Authenticated request"
+    },
+    "idempotence": {
+      "text": "Every <post></post> requires a unique <header></header> header (8 to 120 characters). Replaying the same request returns the original response with <replayed></replayed>; the same key with a different body is rejected (422). E-commerce orders are also deduplicated by <orderId></orderId>.",
+      "codeLabel": "Credit a purchase",
+      "sampleKey": "sale-2026-10-28-0042"
+    },
+    "endpoints": {
+      "method": "Method",
+      "path": "Path",
+      "usage": "Usage",
+      "items": {
+        "customersList": "List and search customers (cursor pagination, q filter)",
+        "customersLookup": "Find a customer by externalId, email or phone",
+        "customersCreate": "Create a customer",
+        "programsList": "List programs",
+        "accountsCreate": "Create a customer’s card in a program",
+        "accountsGet": "Balance, recent history, available rewards",
+        "transactionsList": "Transaction history",
+        "transactionsCreate": "Credit a purchase (points calculated by FOVE)",
+        "transactionsReverse": "Reverse a transaction with an offsetting entry",
+        "rewardsList": "Rewards catalogue",
+        "redemptionsCreate": "Redeem a reward",
+        "ordersPaid": "Paid order: customer matched, card created if needed, points credited",
+        "ordersRefunded": "Full or partial refund"
+      }
+    },
+    "sdk": {
+      "text": "The <pkg></pkg> package handles authentication, idempotency keys and retries on network errors.",
+      "codeLabel": "SDK example",
+      "commentPaid": "In your store’s payment webhook",
+      "commentRefund": "Refund"
+    },
+    "webhooks": {
+      "text": "Events: <events></events>. Each delivery is signed (<signature></signature> header, HMAC-SHA256) and retried up to 8 times on failure. Deliveries are visible in Integrations.",
+      "codeLabel": "Verify a signature"
+    },
+    "widget": {
+      "text": "A framework-agnostic script. It uses a public key (<key></key>) restricted to the domains you declare: it reads the public configuration and can never credit points. Paste it before <body></body> (WordPress, Astro, Next.js, Symfony or HTML).",
+      "codeLabel": "Widget integration"
+    },
+    "errors": {
+      "text": "Errors take the form <shape></shape>. Common codes: <codes></codes>. Default limit: 300 requests per minute per key."
+    }
+  },
+  "terms": {
+    "title": "Terms of Use",
+    "intro": "These Terms of Use and Service (the “Terms”) govern access to and use of the <strong>FOVE</strong> platform, published by <strong>Dizayna</strong>, by any merchant, brand or business customer (the “Merchant”).",
+    "purpose": {
+      "title": "1. Purpose of the platform",
+      "text": "FOVE provides merchants with a SaaS software solution for creating and running digital loyalty programs (points or stamp cards, in-store sign-up QR codes, Apple Wallet and Google Wallet passes, mobile checkout scanner, customer CRM, WhatsApp follow-ups and an e-commerce integration API)."
+    },
+    "account": {
+      "title": "2. Account creation and team access",
+      "professionals": "Accounts may only be opened by professionals acting in the course of their business.",
+      "roles": "The Merchant freely sets their team members’ access according to four strict roles: Owner, Manager, Cashier and Viewer.",
+      "audit": "Every operation carried out with the scanner or from the dashboard is linked to the signed-in user and recorded in a time-stamped audit log."
+    },
+    "plans": {
+      "title": "3. Free plan, pricing and data continuity",
+      "free": "Every sign-up gives access to the Free plan, with no time limit and no obligation to enter a credit card, within the limits of its quotas.",
+      "commission": "No commission is charged on the Merchant’s revenue or sales.",
+      "retention": "<strong>No-deletion guarantee:</strong> when a subscription ends or the Merchant moves to a lower plan, no customer card or points history is deleted. Only features or new items exceeding the quotas of the active plan are restricted."
+    },
+    "duties": {
+      "title": "4. Merchant’s commitments and responsibilities",
+      "text": "The Merchant freely sets their rules for awarding points or stamps and their rewards catalogue. They undertake to honour the rewards legitimately unlocked by their end customers and to obtain their customers’ explicit consent before sending any promotional communication (SMS, WhatsApp or email)."
+    },
+    "dpa": {
+      "title": "5. Data Processing Agreement (DPA — Article 28 GDPR)",
+      "text": "In performing the service, the Merchant acts as the <strong>Controller</strong> of their customer database, and Dizayna (FOVE) acts as the <strong>Processor</strong>:",
+      "ownership": "<strong>Exclusive ownership:</strong> the Merchant retains full ownership of their customer data. Dizayna refrains from any resale, rental or commercial use of the hosted customer databases.",
+      "isolation": "<strong>Multi-tenant isolation:</strong> each merchant database is logically isolated. A customer registered with several merchants using FOVE has fully independent records and balances.",
+      "rights": "<strong>Exercise of GDPR rights:</strong> FOVE gives the Merchant built-in one-click tools to export all of a customer’s data (JSON portability) or permanently anonymise their record (right to erasure) while preserving the accounting integrity of the points ledger.",
+      "security": "<strong>Technical security:</strong> cryptographic hashing of passwords and card tokens, AES-256-GCM encryption of integration secrets, TLS connections and automated daily backups."
+    },
+    "availability": {
+      "title": "6. Availability, API and fair use",
+      "text": "Dizayna applies industry best practices to ensure high availability of FOVE, including during in-store checkout peaks. Use of API keys and webhooks is subject to rate limits designed to protect the overall stability of the service."
+    },
+    "termination": {
+      "title": "7. Termination and reversibility",
+      "text": "The Merchant may cancel their subscription at any time from their management area. Before or after cancellation, they may export their entire customer base and transaction history in standard CSV or JSON format."
+    },
+    "contact": {
+      "title": "8. Contact and legal information",
+      "text": "For any contractual question, support request or to exercise your rights, contact our team via the <contact>Contact & Demo</contact> page or read our <privacy>Privacy Policy</privacy>."
+    }
+  },
+  "privacy": {
+    "title": "Personal data",
+    "intro": "This summary explains who does what. It does not replace the contractual terms signed with each merchant.",
+    "controller": {
+      "title": "Who is responsible?",
+      "text": "Each merchant is the controller of their customers’ data (customer database, loyalty program). Dizayna, the publisher of FOVE, acts as a processor: FOVE hosts and processes this data on the merchant’s behalf, according to their instructions."
+    },
+    "data": {
+      "title": "What data?",
+      "customers": "End customers: first name, last name, phone number, optional email, card number, points and rewards history, consents.",
+      "teams": "Merchant teams: name, email, role, activity log."
+    },
+    "consent": {
+      "title": "Consents",
+      "text": "Joining the program and receiving marketing communications are two separate consents. Customers can refuse marketing and still keep their card."
+    },
+    "rights": {
+      "title": "Customer rights",
+      "text": "The merchant can export all of a customer’s data and erase it from their record. Erasure anonymises the person: the points accounting history is kept without any data that could identify them."
+    },
+    "retention": {
+      "title": "Retention",
+      "text": "An inactive customer’s data is kept for 36 months by default, a period the merchant can adjust. Expired sessions and verification codes are deleted automatically."
+    },
+    "security": {
+      "title": "Security",
+      "text": "Strict isolation between merchants, hashed passwords, secret card links never stored in plain text, encryption of integration secrets, audit log of sensitive actions, daily database backups."
+    }
+  }
+}

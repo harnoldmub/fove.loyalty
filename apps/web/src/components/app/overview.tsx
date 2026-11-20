@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { AlertTriangle, Building2, QrCode, ScanLine, Sparkles, UserPlus, Users } from "lucide-react";
 import { useState } from "react";
+import { useFormatter, useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { EmptyState, PageHeader, Panel, Skeleton } from "@/components/ui/misc";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -49,33 +50,36 @@ function Stat({ label, value, help }: { label: string; value: number; help: stri
 }
 
 function ActivityChart({ daily }: { daily: Overview["daily"] }) {
+  const t = useTranslations("app.overview.chart");
+  const format = useFormatter();
+  const shortDay = (day: string) => format.dateTime(new Date(day), { day: "numeric", month: "short" });
   const max = Math.max(1, ...daily.map((d) => d.visits));
   const total = daily.reduce((s, d) => s + d.visits, 0);
   return (
     <figure className="grid gap-3">
       <figcaption className="flex items-baseline justify-between">
-        <span className="font-display text-lg font-semibold">Passages en caisse par jour</span>
-        <span className="text-sm text-ink-3 tabular">{formatNumber(total)} au total</span>
+        <span className="font-display text-lg font-semibold">{t("title")}</span>
+        <span className="text-sm text-ink-3 tabular">{t("total", { total: formatNumber(total) })}</span>
       </figcaption>
-      <div className="flex h-40 items-end gap-[2px]" role="img" aria-label={`Passages par jour, maximum ${max}`}>
+      <div className="flex h-40 items-end gap-[2px]" role="img" aria-label={t("ariaLabel", { max })}>
         {daily.map((d) => (
           <div key={d.day} className="group relative flex-1">
             <div
               className="w-full rounded-t-[3px] bg-cobalt/85 transition-colors group-hover:bg-cobalt"
               style={{ height: `${Math.max(d.visits ? 4 : 1, (d.visits / max) * 160)}px`, opacity: d.visits ? 1 : 0.25 }}
             />
-            <span className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-1 hidden -translate-x-1/2 whitespace-nowrap rounded-sm bg-ink px-2 py-1 text-xs text-paper group-hover:block">
-              {new Date(d.day).toLocaleDateString("fr-FR", { day: "numeric", month: "short" })} : {d.visits} passage{d.visits > 1 ? "s" : ""}
+            <span className="pointer-events-none absolute bottom-full start-1/2 z-10 mb-1 hidden -translate-x-1/2 rtl:translate-x-1/2 whitespace-nowrap rounded-sm bg-ink px-2 py-1 text-xs text-paper group-hover:block">
+              {t("tooltip", { day: shortDay(d.day), count: d.visits })}
             </span>
           </div>
         ))}
       </div>
       <div className="flex justify-between text-xs text-ink-3">
-        <span>{daily[0] && new Date(daily[0].day).toLocaleDateString("fr-FR", { day: "numeric", month: "short" })}</span>
-        <span>Aujourd’hui</span>
+        <span>{daily[0] && shortDay(daily[0].day)}</span>
+        <span>{t("today")}</span>
       </div>
       <table className="sr-only">
-        <caption>Passages par jour</caption>
+        <caption>{t("caption")}</caption>
         <tbody>
           {daily.map((d) => (
             <tr key={d.day}>
@@ -90,6 +94,7 @@ function ActivityChart({ daily }: { daily: Overview["daily"] }) {
 }
 
 export function OverviewView({ mode }: { mode: "home" | "analytics" }) {
+  const t = useTranslations("app.overview");
   const tenant = useActiveTenant();
   const canScan = useCan("transactions.create");
   const canWrite = useCan("customers.write");
@@ -106,14 +111,14 @@ export function OverviewView({ mode }: { mode: "home" | "analytics" }) {
     return (
       <EmptyState
         icon={<ScanLine />}
-        title={`Bonjour, équipe ${tenant?.name ?? ""}`}
+        title={t("staff.title", { name: tenant?.name ?? "" })}
         action={
           <Button asChild size="lg">
-            <Link href="/app/scanner">Scanner une carte</Link>
+            <Link href="/app/scanner">{t("scanCard")}</Link>
           </Button>
         }
       >
-        Scannez la carte d’un client à chaque achat pour lui ajouter ses points ou ses tampons.
+        {t("staff.body")}
       </EmptyState>
     );
   }
@@ -124,22 +129,22 @@ export function OverviewView({ mode }: { mode: "home" | "analytics" }) {
   return (
     <>
       <PageHeader
-        title={mode === "home" ? (tenant?.name ?? "Vue d’ensemble") : "Statistiques"}
-        description={mode === "home" ? "Votre programme sur les 30 derniers jours." : "Calculées sur l’historique réel de vos opérations."}
+        title={mode === "home" ? (tenant?.name ?? t("title")) : t("analyticsTitle")}
+        description={mode === "home" ? t("homeDescription") : t("analyticsDescription")}
         actions={
           mode === "home" ? (
             <>
               {canScan && (
                 <Button asChild>
                   <Link href="/app/scanner">
-                    <ScanLine /> Scanner une carte
+                    <ScanLine /> {t("scanCard")}
                   </Link>
                 </Button>
               )}
               {canWrite && (
                 <Button asChild variant="secondary">
                   <Link href="/app/customers?new=1">
-                    <UserPlus /> Nouveau client
+                    <UserPlus /> {t("newCustomer")}
                   </Link>
                 </Button>
               )}
@@ -147,10 +152,10 @@ export function OverviewView({ mode }: { mode: "home" | "analytics" }) {
             </>
           ) : (
             <Tabs value={days} onValueChange={setDays}>
-              <TabsList aria-label="Période">
-                <TabsTrigger value="7">7 jours</TabsTrigger>
-                <TabsTrigger value="30">30 jours</TabsTrigger>
-                <TabsTrigger value="90">90 jours</TabsTrigger>
+              <TabsList aria-label={t("period")}>
+                <TabsTrigger value="7">{t("days", { count: 7 })}</TabsTrigger>
+                <TabsTrigger value="30">{t("days", { count: 30 })}</TabsTrigger>
+                <TabsTrigger value="90">{t("days", { count: 90 })}</TabsTrigger>
               </TabsList>
             </Tabs>
           )
@@ -166,26 +171,26 @@ export function OverviewView({ mode }: { mode: "home" | "analytics" }) {
       ) : data.members === 0 ? (
         <EmptyState
           icon={<QrCode />}
-          title="Aucun membre pour l’instant"
+          title={t("empty.title")}
           action={
             <Button asChild>
-              <Link href="/app/programs">Afficher mon QR code d’inscription</Link>
+              <Link href="/app/programs">{t("empty.action")}</Link>
             </Button>
           }
         >
-          Imprimez votre QR code et placez-le près de la caisse. Les chiffres apparaîtront ici dès la première inscription.
+          {t("empty.body")}
         </EmptyState>
       ) : (
         <div className="grid gap-6">
           {/* Métriques clés */}
           <Panel className="p-5 sm:p-6">
             <dl className="grid grid-cols-2 gap-6 md:grid-cols-3 lg:grid-cols-6">
-              <Stat label="Membres" value={data.members} help="cartes actives" />
-              <Stat label="Nouveaux membres" value={data.newMembers} help={`sur ${data.periodDays} jours`} />
-              <Stat label="Clients revenus" value={data.returningCustomers} help="2 achats ou plus" />
-              <Stat label="Points distribués" value={data.pointsDistributed} help="points et tampons" />
-              <Stat label="Points utilisés" value={data.pointsUsed} help="en récompenses" />
-              <Stat label="Récompenses" value={data.rewardsRedeemed} help="utilisées" />
+              <Stat label={t("stats.members")} value={data.members} help={t("stats.membersHelp")} />
+              <Stat label={t("stats.newMembers")} value={data.newMembers} help={t("stats.newMembersHelp", { count: data.periodDays })} />
+              <Stat label={t("stats.returning")} value={data.returningCustomers} help={t("stats.returningHelp")} />
+              <Stat label={t("stats.distributed")} value={data.pointsDistributed} help={t("stats.distributedHelp")} />
+              <Stat label={t("stats.used")} value={data.pointsUsed} help={t("stats.usedHelp")} />
+              <Stat label={t("stats.rewards")} value={data.rewardsRedeemed} help={t("stats.rewardsHelp")} />
             </dl>
           </Panel>
 
@@ -201,10 +206,10 @@ export function OverviewView({ mode }: { mode: "home" | "analytics" }) {
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-2">
                     <Users className="size-5 text-cobalt" />
-                    <h2 className="font-display text-lg font-semibold">Santé du fichier clients</h2>
+                    <h2 className="font-display text-lg font-semibold">{t("segments.title")}</h2>
                   </div>
                   <Button asChild variant="ghost" size="sm" className="text-xs">
-                    <Link href="/app/customers">Voir les segments</Link>
+                    <Link href="/app/customers">{t("segments.view")}</Link>
                   </Button>
                 </div>
 
@@ -212,7 +217,7 @@ export function OverviewView({ mode }: { mode: "home" | "analytics" }) {
                   <div className="flex items-center justify-between p-2 rounded-md bg-surface">
                     <span className="flex items-center gap-2">
                       <Sparkles className="size-4 text-cobalt" />
-                      <span>Habitués VIP</span>
+                      <span>{t("segments.vip")}</span>
                     </span>
                     <span className="font-semibold tabular">{segments.VIP}</span>
                   </div>
@@ -220,7 +225,7 @@ export function OverviewView({ mode }: { mode: "home" | "analytics" }) {
                   <div className="flex items-center justify-between p-2 rounded-md bg-surface">
                     <span className="flex items-center gap-2">
                       <span className="size-2 rounded-full bg-mint" />
-                      <span>Actifs réguliers</span>
+                      <span>{t("segments.regular")}</span>
                     </span>
                     <span className="font-semibold tabular">{segments.REGULAR}</span>
                   </div>
@@ -228,7 +233,7 @@ export function OverviewView({ mode }: { mode: "home" | "analytics" }) {
                   <div className="flex items-center justify-between p-2 rounded-md bg-surface">
                     <span className="flex items-center gap-2">
                       <span className="size-2 rounded-full bg-mint/50" />
-                      <span>Nouveaux membres</span>
+                      <span>{t("segments.new")}</span>
                     </span>
                     <span className="font-semibold tabular">{segments.NEW}</span>
                   </div>
@@ -236,7 +241,7 @@ export function OverviewView({ mode }: { mode: "home" | "analytics" }) {
                   <div className="flex items-center justify-between p-2 rounded-md bg-stamp-soft border border-stamp/40">
                     <span className="flex items-center gap-2 text-stamp-ink dark:text-stamp">
                       <AlertTriangle className="size-4" />
-                      <span className="font-medium">En risque d&apos;attrition</span>
+                      <span className="font-medium">{t("segments.atRisk")}</span>
                     </span>
                     <span className="font-semibold tabular text-stamp-ink dark:text-stamp">{segments.AT_RISK}</span>
                   </div>
@@ -244,7 +249,7 @@ export function OverviewView({ mode }: { mode: "home" | "analytics" }) {
                   <div className="flex items-center justify-between p-2 rounded-md bg-surface">
                     <span className="flex items-center gap-2 text-ink-3">
                       <span className="size-2 rounded-full bg-ink-3" />
-                      <span>Dormants</span>
+                      <span>{t("segments.dormant")}</span>
                     </span>
                     <span className="font-semibold tabular text-ink-3">{segments.DORMANT}</span>
                   </div>
@@ -252,11 +257,9 @@ export function OverviewView({ mode }: { mode: "home" | "analytics" }) {
 
                 {segments.AT_RISK > 0 && (
                   <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-md bg-stamp-soft p-3 text-sm text-stamp-ink dark:text-stamp">
-                    <span>
-                      <strong>{segments.AT_RISK} {segments.AT_RISK > 1 ? "clients ne sont pas revenus" : "client n’est pas revenu"}</strong> depuis plus de 35 jours.
-                    </span>
+                    <span>{t.rich("segments.atRiskAlert", { count: segments.AT_RISK, strong: (c) => <strong>{c}</strong> })}</span>
                     <Button asChild size="sm" variant="secondary" className="shrink-0">
-                      <Link href="/app/customers">Relancer</Link>
+                      <Link href="/app/customers">{t("segments.remind")}</Link>
                     </Button>
                   </div>
                 )}
@@ -266,7 +269,7 @@ export function OverviewView({ mode }: { mode: "home" | "analytics" }) {
               <Panel className="p-5 sm:p-6">
                 <div className="flex items-center gap-2 mb-4">
                   <Building2 className="size-5 text-cobalt" />
-                  <h2 className="font-display text-lg font-semibold">Activité par point de vente</h2>
+                  <h2 className="font-display text-lg font-semibold">{t("establishments.title")}</h2>
                 </div>
 
                 {data.establishments && data.establishments.length > 0 ? (
@@ -275,17 +278,17 @@ export function OverviewView({ mode }: { mode: "home" | "analytics" }) {
                       <div key={est.id} className="flex items-center justify-between p-3 rounded-md bg-surface border border-line">
                         <div>
                           <p className="font-medium text-ink">{est.name}</p>
-                          <p className="text-xs text-ink-3">{est.city || "Boutique principale"}</p>
+                          <p className="text-xs text-ink-3">{est.city || t("establishments.mainShop")}</p>
                         </div>
-                        <div className="text-right">
-                          <p className="font-semibold tabular text-ink">{formatNumber(est.scans)} scans</p>
-                          <p className="text-xs text-ink-3 tabular">+{formatNumber(est.points)} distribués</p>
+                        <div className="text-end">
+                          <p className="font-semibold tabular text-ink">{t("establishments.scans", { count: est.scans, formatted: formatNumber(est.scans) })}</p>
+                          <p className="text-xs text-ink-3 tabular">{t("establishments.points", { formatted: formatNumber(est.points) })}</p>
                         </div>
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <p className="text-sm text-ink-3">Un seul établissement configuré.</p>
+                  <p className="text-sm text-ink-3">{t("establishments.single")}</p>
                 )}
               </Panel>
             </div>

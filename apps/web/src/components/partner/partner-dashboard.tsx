@@ -14,7 +14,6 @@ import {
   CreditCard,
   DollarSign,
   Download,
-  ExternalLink,
   FileText,
   Gift,
   HelpCircle,
@@ -39,8 +38,9 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { Badge, PageHeader, Panel } from "@/components/ui/misc";
 import { api } from "@/lib/api";
-import { formatDate } from "@/lib/utils";
-import { formatFinance } from "@/components/admin/finance/finance-utils";
+import { useLocale, useTranslations } from "next-intl";
+import { toast } from "sonner";
+import { formatDate, formatNumber, formatPrice } from "@/lib/utils";
 import { PartnerLeadModal } from "./partner-lead-modal";
 import { PartnerPayoutModal } from "./partner-payout-modal";
 import { PartnerQrModal } from "./partner-qr-modal";
@@ -119,17 +119,30 @@ interface DashboardData {
 }
 
 const TABS = [
-  { id: "overview", label: "Vue d'ensemble", icon: LayoutDashboard },
-  { id: "links", label: "Mon lien commercial", icon: Link2 },
-  { id: "leads", label: "Prospects", icon: Users },
-  { id: "clients", label: "Clients apportés", icon: Store },
-  { id: "commissions", label: "Commissions", icon: Award },
-  { id: "payouts", label: "Paiements & Retraits", icon: Wallet },
-  { id: "resources", label: "Ressources de vente", icon: FileText },
-];
+  { id: "overview", icon: LayoutDashboard },
+  { id: "links", icon: Link2 },
+  { id: "leads", icon: Users },
+  { id: "clients", icon: Store },
+  { id: "commissions", icon: Award },
+  { id: "payouts", icon: Wallet },
+  { id: "resources", icon: FileText },
+] as const;
+
+const LEAD_STATUSES = ["NEW", "CONTACTED", "INTERESTED", "REGISTERED", "CONVERTED", "LOST"] as const;
+const PAYOUT_METHODS = ["BANK_TRANSFER", "MOBILE_MONEY"] as const;
 
 export function PartnerDashboard({ user }: { user: { name: string; email: string; isSuperAdmin?: boolean } }) {
-  const [activeTab, setActiveTab] = useState("overview");
+  const t = useTranslations("partner.dashboard");
+  const locale = useLocale();
+  const money = (cents: number, currency = "USD") => formatPrice(cents, currency, locale);
+  const date = (value: string) => formatDate(value, false, locale);
+  const leadStatus = (status: string) =>
+    (LEAD_STATUSES as readonly string[]).includes(status) ? t(`leadStatus.${status as (typeof LEAD_STATUSES)[number]}`) : status;
+  const payoutMethod = (method: string) =>
+    (PAYOUT_METHODS as readonly string[]).includes(method)
+      ? t(`payouts.methods.${method as (typeof PAYOUT_METHODS)[number]}`)
+      : method;
+  const [activeTab, setActiveTab] = useState<string>("overview");
   const [copiedLink, setCopiedLink] = useState(false);
   const [leadModalOpen, setLeadModalOpen] = useState(false);
   const [payoutModalOpen, setPayoutModalOpen] = useState(false);
@@ -157,16 +170,14 @@ export function PartnerDashboard({ user }: { user: { name: string; email: string
 
   const handleWhatsAppShare = () => {
     if (!partner?.partnerLink) return;
-    const msg = encodeURIComponent(
-      `Bonjour ! Découvre FOVE, la solution moderne pour fidéliser tes clients sur leur smartphone (cartes Apple Wallet & Google Wallet sans application à installer) : ${partner.partnerLink}`
-    );
+    const msg = encodeURIComponent(t("whatsappShare", { link: partner.partnerLink }));
     window.open(`https://wa.me/?text=${msg}`, "_blank");
   };
 
   if (isLoading) {
     return (
       <div className="grid min-h-dvh place-items-center bg-paper text-sm text-ink-3">
-        Chargement de votre espace partenaire...
+        {t("loading")}
       </div>
     );
   }
@@ -175,12 +186,12 @@ export function PartnerDashboard({ user }: { user: { name: string; email: string
     return (
       <div className="mx-auto max-w-lg px-4 py-20 text-center">
         <Panel className="p-8">
-          <h2 className="font-display text-xl font-bold text-ink mb-2">Espace partenaire non activé</h2>
+          <h2 className="font-display text-xl font-bold text-ink mb-2">{t("inactive.title")}</h2>
           <p className="text-xs text-ink-2 mb-6">
-            Votre candidature est soit en attente de validation par l&apos;équipe FOVE, soit vous n&apos;avez pas encore postulé.
+            {t("inactive.body")}
           </p>
           <Button asChild>
-            <Link href="/partenaires/rejoindre">Déposer une candidature</Link>
+            <Link href="/partenaires/rejoindre">{t("inactive.cta")}</Link>
           </Button>
         </Panel>
       </div>
@@ -194,27 +205,30 @@ export function PartnerDashboard({ user }: { user: { name: string; email: string
         <div className="flex items-center gap-3">
           <Link href="/partner" className="flex items-center gap-2">
             <Logo className="text-lg" />
-            <span className="rounded bg-[#C7FF3D] px-2 py-0.5 text-xs font-bold text-black uppercase tracking-wide">
-              Partenaire
+            <span className="rounded bg-[#C7FF3D] px-2 py-0.5 text-xs font-bold text-black">
+              {t("header.badge")}
             </span>
           </Link>
           <span className="hidden sm:inline-block font-mono text-xs text-ink-3">
-            Code: <strong className="text-ink">{partner.code}</strong>
+            {t.rich("header.code", {
+              code: partner.code,
+              strong: (chunks) => <strong className="text-ink">{chunks}</strong>,
+            })}
           </span>
         </div>
 
         <div className="flex items-center gap-3">
           <Link href="/app" className="hidden sm:flex items-center gap-1.5 text-xs text-ink-2 hover:text-ink">
             <Store className="size-3.5 text-ink-3" />
-            Espace commerçant
+            {t("header.merchantSpace")}
           </Link>
           {user.isSuperAdmin && (
             <Link href="/admin" className="hidden sm:flex items-center gap-1.5 text-xs text-cobalt hover:underline">
-              Back-office Admin
+              {t("header.admin")}
             </Link>
           )}
           <ThemeToggle />
-          <div className="text-right hidden md:block">
+          <div className="text-end hidden md:block">
             <div className="text-xs font-semibold text-ink">{partner.name}</div>
             <div className="text-[11px] text-ink-3">{partner.email}</div>
           </div>
@@ -228,12 +242,12 @@ export function PartnerDashboard({ user }: { user: { name: string; email: string
           <div>
             <div className="flex items-center gap-2 mb-1">
               <h1 className="font-display text-xl sm:text-2xl font-bold text-ink">
-                Bonjour {partner.name}
+                {t("banner.greeting", { name: partner.name })}
               </h1>
-              <Badge tone="mint">Partenaire {partner.commissionRatePercent}%</Badge>
+              <Badge tone="mint">{t("banner.rateBadge", { rate: formatNumber(partner.commissionRatePercent, locale) })}</Badge>
             </div>
             <p className="text-xs text-ink-2">
-              Votre lien commercial permanent :{" "}
+              {t("banner.link")}{" "}
               <strong className="font-mono text-cobalt select-all">{partner.partnerLink}</strong>
             </p>
           </div>
@@ -241,7 +255,7 @@ export function PartnerDashboard({ user }: { user: { name: string; email: string
           <div className="flex flex-wrap items-center gap-2">
             <Button onClick={handleCopyLink} variant="secondary" size="sm" className="gap-1.5 text-xs">
               {copiedLink ? <Check className="size-3.5 text-emerald-500" /> : <Copy className="size-3.5" />}
-              {copiedLink ? "Copié !" : "Copier mon lien"}
+              {copiedLink ? t("banner.copied") : t("banner.copyLink")}
             </Button>
             <Button onClick={handleWhatsAppShare} variant="secondary" size="sm" className="gap-1.5 text-xs text-emerald-600 dark:text-emerald-400">
               <Share2 className="size-3.5" />
@@ -249,22 +263,22 @@ export function PartnerDashboard({ user }: { user: { name: string; email: string
             </Button>
             <Button onClick={() => setQrModalOpen(true)} variant="secondary" size="sm" className="gap-1.5 text-xs">
               <QrCode className="size-3.5" />
-              QR Code
+              {t("banner.qr")}
             </Button>
             <Button onClick={() => setUtmModalOpen(true)} variant="secondary" size="sm" className="gap-1.5 text-xs">
               <Link2 className="size-3.5" />
-              Lien UTM
+              {t("banner.utm")}
             </Button>
             <Button onClick={() => setLeadModalOpen(true)} variant="primary" size="sm" className="gap-1.5 text-xs">
               <UserPlus className="size-3.5" />
-              Nouveau prospect
+              {t("banner.newLead")}
             </Button>
           </div>
         </div>
 
         {/* Navigation par onglets */}
         <div className="border-b border-line -mx-4 px-4 sm:-mx-8 sm:px-8 overflow-x-auto">
-          <nav className="flex space-x-1" aria-label="Espace Partenaire">
+          <nav className="flex gap-1" aria-label={t("tabsLabel")}>
             {TABS.map((tab) => {
               const Icon = tab.icon;
               const active = activeTab === tab.id;
@@ -280,7 +294,7 @@ export function PartnerDashboard({ user }: { user: { name: string; email: string
                   }`}
                 >
                   <Icon className={`size-3.5 sm:size-4 ${active ? "text-cobalt" : "text-ink-3"}`} />
-                  {tab.label}
+                  {t(`tabs.${tab.id}`)}
                 </button>
               );
             })}
@@ -294,54 +308,56 @@ export function PartnerDashboard({ user }: { user: { name: string; email: string
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               <Panel className="p-4">
                 <div className="flex items-center justify-between text-xs text-ink-3">
-                  <span>Clics sur votre lien</span>
+                  <span>{t("overview.clicks")}</span>
                   <Link2 className="size-3.5 text-cobalt" />
                 </div>
                 <div className="mt-2 font-display text-2xl font-bold tabular text-ink">
                   {kpi?.totalClicks ?? 0}
                 </div>
-                <p className="mt-1 text-xs text-ink-3">Visiteurs envoyés sur FOVE</p>
+                <p className="mt-1 text-xs text-ink-3">{t("overview.clicksHint")}</p>
               </Panel>
 
               <Panel className="p-4">
                 <div className="flex items-center justify-between text-xs text-ink-3">
-                  <span>Inscriptions & conversions</span>
+                  <span>{t("overview.signups")}</span>
                   <Users className="size-3.5 text-mint" />
                 </div>
                 <div className="mt-2 font-display text-2xl font-bold tabular text-ink">
                   {kpi?.paidClients ?? 0}{" "}
                   <span className="text-xs font-normal text-ink-3">
-                    / {kpi?.totalSignups ?? 0} inscrits
+                    {t("overview.signupsCount", { count: kpi?.totalSignups ?? 0 })}
                   </span>
                 </div>
                 <p className="mt-1 text-xs text-ink-3">
-                  Taux de conversion : {kpi?.conversionRatePercent.toFixed(1)}%
+                  {t("overview.conversionRate", {
+                    rate: formatNumber(Math.round((kpi?.conversionRatePercent ?? 0) * 10) / 10, locale),
+                  })}
                 </p>
               </Panel>
 
               <Panel className="p-4">
                 <div className="flex items-center justify-between text-xs text-ink-3">
-                  <span>Commissions disponibles</span>
+                  <span>{t("overview.available")}</span>
                   <Wallet className="size-3.5 text-emerald-500" />
                 </div>
                 <div className="mt-2 font-display text-2xl font-bold tabular text-emerald-600 dark:text-emerald-400">
-                  {formatFinance(kpi?.availableCommissionsCents ?? 0, "USD")}
+                  {money(kpi?.availableCommissionsCents ?? 0)}
                 </div>
                 <p className="mt-1 text-xs text-ink-3">
-                  En attente : {formatFinance(kpi?.pendingCommissionsCents ?? 0, "USD")}
+                  {t("overview.pending", { amount: money(kpi?.pendingCommissionsCents ?? 0) })}
                 </p>
               </Panel>
 
               <Panel className="p-4 border-cobalt/30">
                 <div className="flex items-center justify-between text-xs text-ink-3">
-                  <span>Total des gains perçus</span>
+                  <span>{t("overview.totalEarned")}</span>
                   <Award className="size-3.5 text-cobalt" />
                 </div>
                 <div className="mt-2 font-display text-2xl font-bold tabular text-ink">
-                  {formatFinance(kpi?.totalEarnedCents ?? 0, "USD")}
+                  {money(kpi?.totalEarnedCents ?? 0)}
                 </div>
                 <p className="mt-1 text-xs text-ink-3">
-                  Déjà viré : {formatFinance(kpi?.paidCommissionsCents ?? 0, "USD")}
+                  {t("overview.alreadyPaid", { amount: money(kpi?.paidCommissionsCents ?? 0) })}
                 </p>
               </Panel>
             </div>
@@ -354,11 +370,10 @@ export function PartnerDashboard({ user }: { user: { name: string; email: string
                 </span>
                 <div>
                   <h3 className="font-display text-sm font-semibold text-ink">
-                    Solde disponible au virement : {formatFinance(kpi?.availableCommissionsCents ?? 0, "USD")}
+                    {t("overview.balance", { amount: money(kpi?.availableCommissionsCents ?? 0) })}
                   </h3>
                   <p className="text-xs text-ink-3">
-                    Seuil de retrait : {formatFinance(partner.minimumPayoutThresholdCents, "USD")} · Règlements par Virement
-                    bancaire ou Mobile Money.
+                    {t("overview.threshold", { amount: money(partner.minimumPayoutThresholdCents) })}
                   </p>
                 </div>
               </div>
@@ -368,7 +383,7 @@ export function PartnerDashboard({ user }: { user: { name: string; email: string
                 variant="primary"
                 className="w-full sm:w-auto text-xs"
               >
-                Demander un virement
+                {t("overview.requestPayout")}
               </Button>
             </div>
 
@@ -376,19 +391,19 @@ export function PartnerDashboard({ user }: { user: { name: string; email: string
             <div className="grid gap-6 lg:grid-cols-2">
               <Panel className="p-5">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="font-display text-sm font-semibold text-ink">Commerces récemment apportés</h3>
+                  <h3 className="font-display text-sm font-semibold text-ink">{t("overview.recentClients")}</h3>
                   <button
                     type="button"
                     onClick={() => setActiveTab("clients")}
                     className="text-xs text-cobalt hover:underline"
                   >
-                    Voir tout
+                    {t("overview.seeAll")}
                   </button>
                 </div>
 
                 {attributions.length === 0 ? (
                   <p className="text-xs text-ink-3 py-6 text-center">
-                    Aucun commerce n&apos;a encore utilisé votre lien. Partagez-le pour démarrer !
+                    {t("overview.noClients")}
                   </p>
                 ) : (
                   <div className="divide-y divide-line text-xs">
@@ -396,17 +411,17 @@ export function PartnerDashboard({ user }: { user: { name: string; email: string
                       <div key={a.id} className="py-2.5 flex items-center justify-between">
                         <div>
                           <div className="font-semibold text-ink">{a.tenantName}</div>
-                          <div className="text-ink-3">Inscrit le {formatDate(a.registeredAt)}</div>
+                          <div className="text-ink-3">{t("overview.registeredOn", { date: date(a.registeredAt) })}</div>
                         </div>
-                        <div className="text-right">
+                        <div className="text-end">
                           <span className="rounded bg-surface-2 px-2 py-0.5 text-xs font-medium text-ink">
                             {a.planName}
                           </span>
                           <div className="mt-0.5">
                             {a.conversionStatus === "CONVERTED" ? (
-                              <Badge tone="mint">Client payant</Badge>
+                              <Badge tone="mint">{t("overview.paidClient")}</Badge>
                             ) : (
-                              <Badge tone="neutral">Essai / Gratuit</Badge>
+                              <Badge tone="neutral">{t("overview.trial")}</Badge>
                             )}
                           </div>
                         </div>
@@ -418,21 +433,21 @@ export function PartnerDashboard({ user }: { user: { name: string; email: string
 
               <Panel className="p-5">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="font-display text-sm font-semibold text-ink">Vos derniers prospects</h3>
+                  <h3 className="font-display text-sm font-semibold text-ink">{t("overview.recentLeads")}</h3>
                   <button
                     type="button"
                     onClick={() => setActiveTab("leads")}
                     className="text-xs text-cobalt hover:underline"
                   >
-                    Voir le pipeline
+                    {t("overview.seePipeline")}
                   </button>
                 </div>
 
                 {leads.length === 0 ? (
                   <div className="text-center py-6">
-                    <p className="text-xs text-ink-3 mb-3">Aucun prospect enregistré dans votre pipeline.</p>
+                    <p className="text-xs text-ink-3 mb-3">{t("overview.noLeads")}</p>
                     <Button onClick={() => setLeadModalOpen(true)} size="sm" variant="secondary" className="text-xs gap-1">
-                      <Plus className="size-3" /> Déclarer un commerce
+                      <Plus className="size-3" /> {t("overview.declareLead")}
                     </Button>
                   </div>
                 ) : (
@@ -442,7 +457,7 @@ export function PartnerDashboard({ user }: { user: { name: string; email: string
                         <div>
                           <div className="font-semibold text-ink">{l.businessName}</div>
                           <div className="text-ink-3">
-                            {l.contactName ?? l.city ?? "En cours"}
+                            {l.contactName ?? l.city ?? t("overview.inProgress")}
                           </div>
                         </div>
                         <Badge
@@ -454,7 +469,7 @@ export function PartnerDashboard({ user }: { user: { name: string; email: string
                               : "neutral"
                           }
                         >
-                          {l.status}
+                          {leadStatus(l.status)}
                         </Badge>
                       </div>
                     ))}
@@ -469,10 +484,9 @@ export function PartnerDashboard({ user }: { user: { name: string; email: string
         {activeTab === "links" && (
           <div className="space-y-6">
             <Panel className="p-6">
-              <h2 className="font-display text-lg font-bold text-ink mb-2">Votre lien de recommandation officiel</h2>
+              <h2 className="font-display text-lg font-bold text-ink mb-2">{t("links.title")}</h2>
               <p className="text-xs text-ink-2 mb-6">
-                Chaque visiteur qui clique sur ce lien reçoit un cookie first-party de 30 jours. S&apos;il s&apos;inscrit et
-                souscrit un abonnement FOVE, vous percevez automatiquement 20% de commission.
+                {t("links.body")}
               </p>
 
               <div className="flex flex-col sm:flex-row items-center gap-3 rounded-xl border border-line bg-surface-2 p-4 mb-6">
@@ -482,7 +496,7 @@ export function PartnerDashboard({ user }: { user: { name: string; email: string
                 <div className="flex items-center gap-2 w-full sm:w-auto">
                   <Button onClick={handleCopyLink} variant="primary" className="flex-1 sm:flex-initial gap-1.5 text-xs">
                     {copiedLink ? <Check className="size-3.5 text-emerald-400" /> : <Copy className="size-3.5" />}
-                    {copiedLink ? "Copié !" : "Copier"}
+                    {copiedLink ? t("links.copied") : t("links.copy")}
                   </Button>
                   <Button onClick={handleWhatsAppShare} variant="secondary" className="flex-1 sm:flex-initial gap-1.5 text-xs text-emerald-600 dark:text-emerald-400">
                     <Share2 className="size-3.5" />
@@ -493,21 +507,21 @@ export function PartnerDashboard({ user }: { user: { name: string; email: string
 
               <div className="grid gap-4 sm:grid-cols-3 text-xs">
                 <div className="rounded-xl border border-line p-4 space-y-1">
-                  <div className="text-ink-3 font-medium">Code Partenaire unique</div>
+                  <div className="text-ink-3 font-medium">{t("links.codeTitle")}</div>
                   <div className="font-mono text-lg font-bold text-ink">{partner.code}</div>
-                  <p className="text-ink-3">Peut être saisi manuellement au paiement.</p>
+                  <p className="text-ink-3">{t("links.codeHint")}</p>
                 </div>
                 <div className="rounded-xl border border-line p-4 space-y-1">
-                  <div className="text-ink-3 font-medium">Durée d&apos;attribution cookie</div>
-                  <div className="font-mono text-lg font-bold text-ink">30 jours</div>
-                  <p className="text-ink-3">Période de conversion après le 1er clic.</p>
+                  <div className="text-ink-3 font-medium">{t("links.cookieTitle")}</div>
+                  <div className="font-mono text-lg font-bold text-ink">{t("links.cookieValue")}</div>
+                  <p className="text-ink-3">{t("links.cookieHint")}</p>
                 </div>
                 <div className="rounded-xl border border-line p-4 space-y-1">
-                  <div className="text-ink-3 font-medium">Commission garantie</div>
+                  <div className="text-ink-3 font-medium">{t("links.rateTitle")}</div>
                   <div className="font-mono text-lg font-bold text-emerald-600 dark:text-emerald-400">
-                    {partner.commissionRatePercent} %
+                    {t("links.rateValue", { rate: formatNumber(partner.commissionRatePercent, locale) })}
                   </div>
-                  <p className="text-ink-3">Sur le montant net du 1er abonnement.</p>
+                  <p className="text-ink-3">{t("links.rateHint")}</p>
                 </div>
               </div>
             </Panel>
@@ -519,29 +533,29 @@ export function PartnerDashboard({ user }: { user: { name: string; email: string
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="font-display text-lg font-bold text-ink">Pipeline de prospection</h2>
-                <p className="text-xs text-ink-3">Suivez vos démarches auprès des commerçants de votre zone.</p>
+                <h2 className="font-display text-lg font-bold text-ink">{t("leads.title")}</h2>
+                <p className="text-xs text-ink-3">{t("leads.subtitle")}</p>
               </div>
               <Button onClick={() => setLeadModalOpen(true)} variant="primary" size="sm" className="gap-1.5 text-xs">
-                <Plus className="size-3.5" /> Nouveau prospect
+                <Plus className="size-3.5" /> {t("leads.newLead")}
               </Button>
             </div>
 
             {leads.length === 0 ? (
               <Panel className="p-12 text-center text-sm text-ink-3">
-                Aucun prospect enregistré. Cliquez sur &quot;Nouveau prospect&quot; pour ajouter vos premiers commerces cibles.
+                {t("leads.empty")}
               </Panel>
             ) : (
               <Panel className="overflow-x-auto">
-                <table className="w-full min-w-[750px] text-left text-sm">
+                <table className="w-full min-w-[750px] text-start text-sm">
                   <thead className="border-b border-line bg-surface-2 text-xs text-ink-3">
                     <tr>
-                      <th className="py-3 px-4 font-medium">Commerce</th>
-                      <th className="py-3 px-4 font-medium">Contact</th>
-                      <th className="py-3 px-4 font-medium">Coordonnées</th>
-                      <th className="py-3 px-4 font-medium">Ville / Secteur</th>
-                      <th className="py-3 px-4 font-medium">Statut</th>
-                      <th className="py-3 px-4 font-medium">Notes</th>
+                      <th className="py-3 px-4 font-medium">{t("leads.colBusiness")}</th>
+                      <th className="py-3 px-4 font-medium">{t("leads.colContact")}</th>
+                      <th className="py-3 px-4 font-medium">{t("leads.colDetails")}</th>
+                      <th className="py-3 px-4 font-medium">{t("leads.colCity")}</th>
+                      <th className="py-3 px-4 font-medium">{t("leads.colStatus")}</th>
+                      <th className="py-3 px-4 font-medium">{t("leads.colNotes")}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-line text-xs">
@@ -554,11 +568,11 @@ export function PartnerDashboard({ user }: { user: { name: string; email: string
                           <div>{l.email ?? ""}</div>
                         </td>
                         <td className="py-3.5 px-4 text-ink-2">
-                          {l.city ? `${l.city} (${l.sector ?? "Commerce"})` : "—"}
+                          {l.city ? `${l.city} (${l.sector ?? t("leads.defaultSector")})` : "—"}
                         </td>
                         <td className="py-3.5 px-4">
                           <span className="rounded bg-surface-2 px-2 py-0.5 text-xs font-semibold text-ink">
-                            {l.status}
+                            {leadStatus(l.status)}
                           </span>
                         </td>
                         <td className="py-3.5 px-4 text-ink-3 max-w-xs truncate">{l.notes ?? "—"}</td>
@@ -574,28 +588,28 @@ export function PartnerDashboard({ user }: { user: { name: string; email: string
         {/* VUE : CLIENTS APPORTÉS */}
         {activeTab === "clients" && (
           <div className="space-y-4">
-            <h2 className="font-display text-lg font-bold text-ink">Commerces inscrits via votre lien</h2>
+            <h2 className="font-display text-lg font-bold text-ink">{t("clients.title")}</h2>
             {attributions.length === 0 ? (
               <Panel className="p-12 text-center text-sm text-ink-3">
-                Aucun commerce rattaché pour l&apos;instant. Partagez votre lien commercial pour obtenir vos premiers inscrits.
+                {t("clients.empty")}
               </Panel>
             ) : (
               <Panel className="overflow-x-auto">
-                <table className="w-full min-w-[700px] text-left text-sm">
+                <table className="w-full min-w-[700px] text-start text-sm">
                   <thead className="border-b border-line bg-surface-2 text-xs text-ink-3">
                     <tr>
-                      <th className="py-3 px-4 font-medium">Commerce</th>
-                      <th className="py-3 px-4 font-medium">Date d&apos;inscription</th>
-                      <th className="py-3 px-4 font-medium">Offre active</th>
-                      <th className="py-3 px-4 font-medium">Statut de conversion</th>
-                      <th className="py-3 px-4 font-medium text-right">Date 1er paiement</th>
+                      <th className="py-3 px-4 font-medium">{t("clients.colBusiness")}</th>
+                      <th className="py-3 px-4 font-medium">{t("clients.colRegistered")}</th>
+                      <th className="py-3 px-4 font-medium">{t("clients.colPlan")}</th>
+                      <th className="py-3 px-4 font-medium">{t("clients.colStatus")}</th>
+                      <th className="py-3 px-4 font-medium text-end">{t("clients.colFirstPayment")}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-line text-xs">
                     {attributions.map((a) => (
                       <tr key={a.id} className="hover:bg-surface-2 transition-colors">
                         <td className="py-3.5 px-4 font-semibold text-ink">{a.tenantName}</td>
-                        <td className="py-3.5 px-4 text-ink-2">{formatDate(a.registeredAt)}</td>
+                        <td className="py-3.5 px-4 text-ink-2">{date(a.registeredAt)}</td>
                         <td className="py-3.5 px-4">
                           <span className="rounded bg-surface-2 px-2 py-0.5 text-xs font-medium text-ink">
                             {a.planName}
@@ -603,13 +617,13 @@ export function PartnerDashboard({ user }: { user: { name: string; email: string
                         </td>
                         <td className="py-3.5 px-4">
                           {a.conversionStatus === "CONVERTED" ? (
-                            <Badge tone="mint">Client Payant</Badge>
+                            <Badge tone="mint">{t("clients.paidClient")}</Badge>
                           ) : (
-                            <Badge tone="neutral">Essai / Gratuit</Badge>
+                            <Badge tone="neutral">{t("clients.trial")}</Badge>
                           )}
                         </td>
-                        <td className="py-3.5 px-4 text-right text-ink-2 font-mono">
-                          {a.firstPaymentAt ? formatDate(a.firstPaymentAt) : "—"}
+                        <td className="py-3.5 px-4 text-end text-ink-2 font-mono">
+                          {a.firstPaymentAt ? date(a.firstPaymentAt) : "—"}
                         </td>
                       </tr>
                     ))}
@@ -623,47 +637,47 @@ export function PartnerDashboard({ user }: { user: { name: string; email: string
         {/* VUE : COMMISSIONS */}
         {activeTab === "commissions" && (
           <div className="space-y-4">
-            <h2 className="font-display text-lg font-bold text-ink">Journal des commissions</h2>
+            <h2 className="font-display text-lg font-bold text-ink">{t("commissions.title")}</h2>
             {commissions.length === 0 ? (
               <Panel className="p-12 text-center text-sm text-ink-3">
-                Aucune commission générée pour l&apos;instant. Dès qu&apos;un client souscrit un abonnement payant, elle apparaîtra ici.
+                {t("commissions.empty")}
               </Panel>
             ) : (
               <Panel className="overflow-x-auto">
-                <table className="w-full min-w-[750px] text-left text-sm">
+                <table className="w-full min-w-[750px] text-start text-sm">
                   <thead className="border-b border-line bg-surface-2 text-xs text-ink-3">
                     <tr>
-                      <th className="py-3 px-4 font-medium">Date</th>
-                      <th className="py-3 px-4 font-medium">Commerce</th>
-                      <th className="py-3 px-4 font-medium text-right">Montant abonnement</th>
-                      <th className="py-3 px-4 font-medium text-right">Votre commission</th>
-                      <th className="py-3 px-4 font-medium">Disponibilité</th>
-                      <th className="py-3 px-4 font-medium">Statut</th>
+                      <th className="py-3 px-4 font-medium">{t("commissions.colDate")}</th>
+                      <th className="py-3 px-4 font-medium">{t("commissions.colBusiness")}</th>
+                      <th className="py-3 px-4 font-medium text-end">{t("commissions.colAmount")}</th>
+                      <th className="py-3 px-4 font-medium text-end">{t("commissions.colCommission")}</th>
+                      <th className="py-3 px-4 font-medium">{t("commissions.colAvailability")}</th>
+                      <th className="py-3 px-4 font-medium">{t("commissions.colStatus")}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-line text-xs">
                     {commissions.map((c) => (
                       <tr key={c.id} className="hover:bg-surface-2 transition-colors">
-                        <td className="py-3.5 px-4 text-ink-2">{formatDate(c.createdAt)}</td>
+                        <td className="py-3.5 px-4 text-ink-2">{date(c.createdAt)}</td>
                         <td className="py-3.5 px-4 font-semibold text-ink">{c.tenantName}</td>
-                        <td className="py-3.5 px-4 text-right font-mono text-ink-2">
-                          {formatFinance(c.amountBaseCents, c.currency)}
+                        <td className="py-3.5 px-4 text-end font-mono text-ink-2">
+                          {money(c.amountBaseCents, c.currency)}
                         </td>
-                        <td className="py-3.5 px-4 text-right font-mono font-bold text-emerald-600 dark:text-emerald-400">
-                          {formatFinance(c.commissionAmountCents, c.currency)} ({c.ratePercent}%)
+                        <td className="py-3.5 px-4 text-end font-mono font-bold text-emerald-600 dark:text-emerald-400">
+                          {money(c.commissionAmountCents, c.currency)} ({formatNumber(c.ratePercent, locale)}%)
                         </td>
                         <td className="py-3.5 px-4 text-ink-3">
-                          {c.availableAt ? formatDate(c.availableAt) : "Immédiate"}
+                          {c.availableAt ? date(c.availableAt) : t("commissions.immediate")}
                         </td>
                         <td className="py-3.5 px-4">
                           {c.status === "PAID" ? (
-                            <Badge tone="mint">Versée</Badge>
+                            <Badge tone="mint">{t("commissions.paid")}</Badge>
                           ) : c.status === "AVAILABLE" ? (
-                            <Badge tone="mint">Disponible</Badge>
+                            <Badge tone="mint">{t("commissions.available")}</Badge>
                           ) : c.status === "CANCELLED" ? (
-                            <Badge tone="danger">Annulée (Remboursement)</Badge>
+                            <Badge tone="danger">{t("commissions.cancelled")}</Badge>
                           ) : (
-                            <Badge tone="stamp">En attente (30j)</Badge>
+                            <Badge tone="stamp">{t("commissions.pending")}</Badge>
                           )}
                         </td>
                       </tr>
@@ -681,10 +695,10 @@ export function PartnerDashboard({ user }: { user: { name: string; email: string
             <div className="flex flex-col sm:flex-row items-center justify-between gap-4 rounded-xl border border-line bg-surface p-6 shadow-xs">
               <div>
                 <h3 className="font-display text-base font-bold text-ink">
-                  Solde disponible : {formatFinance(kpi?.availableCommissionsCents ?? 0, "USD")}
+                  {t("payouts.balance", { amount: money(kpi?.availableCommissionsCents ?? 0) })}
                 </h3>
                 <p className="text-xs text-ink-3">
-                  Montant minimum de retrait : {formatFinance(partner.minimumPayoutThresholdCents, "USD")}
+                  {t("payouts.minimum", { amount: money(partner.minimumPayoutThresholdCents) })}
                 </p>
               </div>
               <Button
@@ -693,40 +707,40 @@ export function PartnerDashboard({ user }: { user: { name: string; email: string
                 variant="primary"
                 className="w-full sm:w-auto"
               >
-                Demander un virement
+                {t("payouts.requestPayout")}
               </Button>
             </div>
 
-            <h3 className="font-display text-sm font-bold text-ink">Historique des versements</h3>
+            <h3 className="font-display text-sm font-bold text-ink">{t("payouts.history")}</h3>
             {payouts.length === 0 ? (
-              <Panel className="p-12 text-center text-sm text-ink-3">Aucun virement demandé pour l&apos;instant.</Panel>
+              <Panel className="p-12 text-center text-sm text-ink-3">{t("payouts.empty")}</Panel>
             ) : (
               <Panel className="overflow-x-auto">
-                <table className="w-full min-w-[650px] text-left text-sm">
+                <table className="w-full min-w-[650px] text-start text-sm">
                   <thead className="border-b border-line bg-surface-2 text-xs text-ink-3">
                     <tr>
-                      <th className="py-3 px-4 font-medium">Date demande</th>
-                      <th className="py-3 px-4 font-medium">Méthode</th>
-                      <th className="py-3 px-4 font-medium text-right">Montant</th>
-                      <th className="py-3 px-4 font-medium">Statut</th>
-                      <th className="py-3 px-4 font-medium">Référence</th>
+                      <th className="py-3 px-4 font-medium">{t("payouts.colDate")}</th>
+                      <th className="py-3 px-4 font-medium">{t("payouts.colMethod")}</th>
+                      <th className="py-3 px-4 font-medium text-end">{t("payouts.colAmount")}</th>
+                      <th className="py-3 px-4 font-medium">{t("payouts.colStatus")}</th>
+                      <th className="py-3 px-4 font-medium">{t("payouts.colReference")}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-line text-xs">
                     {payouts.map((p) => (
                       <tr key={p.id} className="hover:bg-surface-2 transition-colors">
-                        <td className="py-3.5 px-4 text-ink-2">{formatDate(p.createdAt)}</td>
-                        <td className="py-3.5 px-4 text-ink font-medium">{p.method}</td>
-                        <td className="py-3.5 px-4 text-right font-mono font-bold text-ink">
-                          {formatFinance(p.amountCents, p.currency)}
+                        <td className="py-3.5 px-4 text-ink-2">{date(p.createdAt)}</td>
+                        <td className="py-3.5 px-4 text-ink font-medium">{payoutMethod(p.method)}</td>
+                        <td className="py-3.5 px-4 text-end font-mono font-bold text-ink">
+                          {money(p.amountCents, p.currency)}
                         </td>
                         <td className="py-3.5 px-4">
                           {p.status === "PAID" ? (
-                            <Badge tone="mint">Payé</Badge>
+                            <Badge tone="mint">{t("payouts.paid")}</Badge>
                           ) : p.status === "FAILED" ? (
-                            <Badge tone="danger">Rejeté</Badge>
+                            <Badge tone="danger">{t("payouts.failed")}</Badge>
                           ) : (
-                            <Badge tone="stamp">En cours de traitement</Badge>
+                            <Badge tone="stamp">{t("payouts.processing")}</Badge>
                           )}
                         </td>
                         <td className="py-3.5 px-4 font-mono text-ink-3">{p.reference ?? "—"}</td>
@@ -743,9 +757,9 @@ export function PartnerDashboard({ user }: { user: { name: string; email: string
         {activeTab === "resources" && (
           <div className="space-y-6">
             <Panel className="p-6">
-              <h2 className="font-display text-lg font-bold text-ink mb-1">Kit de vente & Arguments commerciaux</h2>
+              <h2 className="font-display text-lg font-bold text-ink mb-1">{t("resources.title")}</h2>
               <p className="text-xs text-ink-3 mb-6">
-                Ressources prêtes à l&apos;emploi pour convaincre les commerçants, restaurants et salons en quelques minutes.
+                {t("resources.subtitle")}
               </p>
 
               <div className="grid gap-6 md:grid-cols-2">
@@ -753,13 +767,10 @@ export function PartnerDashboard({ user }: { user: { name: string; email: string
                 <div className="rounded-xl border border-line bg-surface-2 p-5 space-y-3">
                   <div className="flex items-center gap-2">
                     <span className="size-2 rounded-full bg-[#C7FF3D]" />
-                    <h3 className="font-display text-sm font-bold text-ink">Le pitch FOVE en 30 secondes</h3>
+                    <h3 className="font-display text-sm font-bold text-ink">{t("resources.pitchTitle")}</h3>
                   </div>
-                  <p className="text-xs text-ink-2 leading-relaxed italic border-l-2 border-[#C7FF3D] pl-3">
-                    &quot;80% des cartes de fidélité en carton sont perdues ou oubliées à la maison. Avec FOVE, vos clients
-                    enregistrent votre carte directement dans leur Apple Wallet ou Google Wallet en scannant un QR code sur
-                    votre comptoir. Zéro application à télécharger, notifications push de relance, et vous doublez le retour de vos
-                    meilleurs clients dès le premier mois.&quot;
+                  <p className="text-xs text-ink-2 leading-relaxed italic border-s-2 border-[#C7FF3D] ps-3">
+                    {t("resources.pitch")}
                   </p>
                 </div>
 
@@ -768,53 +779,46 @@ export function PartnerDashboard({ user }: { user: { name: string; email: string
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <Smartphone className="size-4 text-emerald-500" />
-                      <h3 className="font-display text-sm font-bold text-ink">Message WhatsApp type</h3>
+                      <h3 className="font-display text-sm font-bold text-ink">{t("resources.whatsappTitle")}</h3>
                     </div>
                     <Button
                       onClick={() => {
-                        navigator.clipboard.writeText(
-                          `Salut ! J'ai pensé à ton commerce : regarde cette solution qui remplace les cartes de fidélité en papier par des cartes digitales Apple Wallet & Google Wallet. Ça prend 5 minutes à configurer et ça marche sans aucune application : ${partner.partnerLink}`
-                        );
-                        alert("Message WhatsApp copié dans le presse-papier !");
+                        navigator.clipboard.writeText(t("resources.whatsappMessage", { link: partner.partnerLink }));
+                        toast.success(t("resources.whatsappCopied"));
                       }}
                       size="sm"
                       variant="secondary"
                       className="text-xs gap-1"
                     >
-                      <Copy className="size-3" /> Copier
+                      <Copy className="size-3" /> {t("resources.copy")}
                     </Button>
                   </div>
-                  <p className="text-xs text-ink-2 leading-relaxed border-l-2 border-emerald-500 pl-3">
-                    &quot;Salut ! J&apos;ai pensé à ton commerce : regarde cette solution qui remplace les cartes de fidélité en
-                    papier par des cartes digitales Apple Wallet & Google Wallet. Ça prend 5 minutes à configurer et ça marche sans
-                    aucune application : {partner.partnerLink}&quot;
+                  <p className="text-xs text-ink-2 leading-relaxed border-s-2 border-emerald-500 ps-3">
+                    {t("resources.whatsappMessage", { link: partner.partnerLink })}
                   </p>
                 </div>
               </div>
 
               {/* Arguments anti-objections */}
               <div className="mt-8 space-y-4">
-                <h3 className="font-display text-sm font-bold text-ink">Réponses aux 3 objections courantes</h3>
+                <h3 className="font-display text-sm font-bold text-ink">{t("resources.objectionsTitle")}</h3>
                 <div className="grid gap-4 sm:grid-cols-3 text-xs">
                   <div className="rounded-lg border border-line p-4 space-y-1">
-                    <strong className="text-ink">&quot;Mes clients préfèrent le papier&quot;</strong>
+                    <strong className="text-ink">{t("resources.objectionPaper")}</strong>
                     <p className="text-ink-3">
-                      En réalité, 70% des clients oublient leur carte papier. Leur smartphone, en revanche, est toujours dans leur
-                      poche au moment de régler.
+                      {t("resources.answerPaper")}
                     </p>
                   </div>
                   <div className="rounded-lg border border-line p-4 space-y-1">
-                    <strong className="text-ink">&quot;C&apos;est trop cher pour moi&quot;</strong>
+                    <strong className="text-ink">{t("resources.objectionPrice")}</strong>
                     <p className="text-ink-3">
-                      L&apos;offre Starter est à seulement 99 $ par an (moins de 9 $ par mois). Un seul client fidélisé de plus par
-                      semaine rentabilise l&apos;investissement.
+                      {t("resources.answerPrice")}
                     </p>
                   </div>
                   <div className="rounded-lg border border-line p-4 space-y-1">
-                    <strong className="text-ink">&quot;Je n&apos;ai pas le temps de configurer&quot;</strong>
+                    <strong className="text-ink">{t("resources.objectionTime")}</strong>
                     <p className="text-ink-3">
-                      Le compte se configure en 5 minutes chrono sur smartphone ou ordinateur, et l&apos;affiche QR code est
-                      générée immédiatement prête à imprimer.
+                      {t("resources.answerTime")}
                     </p>
                   </div>
                 </div>

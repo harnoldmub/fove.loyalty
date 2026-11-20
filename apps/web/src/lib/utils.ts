@@ -1,37 +1,32 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
+import { INTL_LOCALE, isLocale } from "@/i18n/config";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-export function formatNumber(n: number) {
-  return new Intl.NumberFormat("fr-FR").format(n);
+/**
+ * Langue des formats : celle de la page (attribut lang posé par le layout).
+ * Côté serveur, passer la langue explicitement (getLocale de next-intl).
+ */
+function intlLocale(locale?: string) {
+  const lang = locale ?? (typeof document !== "undefined" ? document.documentElement.lang : "fr");
+  return INTL_LOCALE[isLocale(lang) ? lang : "fr"];
 }
 
-export function formatPrice(cents: number, currency = "EUR") {
-  return new Intl.NumberFormat("fr-FR", { style: "currency", currency, minimumFractionDigits: cents % 100 === 0 ? 0 : 2 }).format(cents / 100);
+export function formatNumber(n: number, locale?: string) {
+  return new Intl.NumberFormat(intlLocale(locale)).format(n);
 }
 
-export function formatDate(value: string | Date, withTime = false) {
-  return new Intl.DateTimeFormat("fr-FR", withTime ? { dateStyle: "medium", timeStyle: "short" } : { dateStyle: "medium" }).format(new Date(value));
+export function formatPrice(cents: number, currency = "EUR", locale?: string) {
+  return new Intl.NumberFormat(intlLocale(locale), { style: "currency", currency, minimumFractionDigits: cents % 100 === 0 ? 0 : 2 }).format(cents / 100);
+}
+
+export function formatDate(value: string | Date, withTime = false, locale?: string) {
+  return new Intl.DateTimeFormat(intlLocale(locale), withTime ? { dateStyle: "medium", timeStyle: "short" } : { dateStyle: "medium" }).format(new Date(value));
 }
 
 export function newIdempotencyKey(prefix = "web") {
   return `${prefix}-${crypto.randomUUID()}`;
-}
-
-export const KIND_LABEL: Record<string, string> = {
-  EARN: "Achat",
-  ADJUSTMENT: "Ajustement",
-  REDEMPTION: "Récompense",
-  REDEMPTION_REVERSAL: "Récompense annulée",
-  REVERSAL: "Annulation",
-  REFUND: "Remboursement",
-  EXPIRATION: "Expiration",
-};
-
-export function unitLabel(mode: "POINTS" | "STAMPS", n = 2) {
-  if (mode === "STAMPS") return n > 1 ? "tampons" : "tampon";
-  return n > 1 ? "points" : "point";
 }

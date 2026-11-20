@@ -2,15 +2,18 @@
 
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowDownRight, ExternalLink, Plus, Trash2 } from "lucide-react";
+import { useTranslations } from "next-intl";
+import { toast } from "sonner";
+import { Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge, PageHeader, Panel } from "@/components/ui/misc";
-import { api } from "@/lib/api";
+import { ConfirmDialog } from "@/components/ui/dialog";
+import { PageHeader, Panel } from "@/components/ui/misc";
+import { api, useErrorMessage } from "@/lib/api";
 import { formatDate } from "@/lib/utils";
 import { FinanceNav } from "@/components/admin/finance/finance-nav";
 import { FinanceFilter, type PeriodKey } from "@/components/admin/finance/finance-filter";
 import { formatFinance } from "@/components/admin/finance/finance-utils";
-import { ExpenseModal } from "@/components/admin/finance/expense-modal";
+import { EXPENSE_CATEGORIES, ExpenseModal } from "@/components/admin/finance/expense-modal";
 
 interface ExpenseRow {
   id: string;
@@ -30,6 +33,9 @@ interface ExpenseRow {
 }
 
 export default function ExpensesPage() {
+  const t = useTranslations("admin.finance.expenses");
+  const tc = useTranslations("admin.finance.expenseCategories");
+  const errMsg = useErrorMessage();
   const [period, setPeriod] = useState<PeriodKey>("month");
   const [category, setCategory] = useState("ALL");
   const [modalOpen, setModalOpen] = useState(false);
@@ -45,16 +51,13 @@ export default function ExpensesPage() {
 
   const expenses = data?.items ?? [];
 
-  const handleDelete = async (id: string, title: string) => {
-    if (!confirm(`Supprimer la dépense "${title}" ? Cette action sera tracée dans le journal d'audit.`)) {
-      return;
-    }
+  const handleDelete = async (id: string) => {
     setDeletingId(id);
     try {
       await api.delete(`/admin/finance/expenses/${id}`);
       refetch();
-    } catch (err: any) {
-      alert(err?.message || "Impossible de supprimer la charge");
+    } catch (err) {
+      toast.error(errMsg(err));
     } finally {
       setDeletingId(null);
     }
@@ -64,12 +67,12 @@ export default function ExpensesPage() {
     <>
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <PageHeader
-          title="Dépenses d'exploitation & Charges"
-          description="Enregistrement des coûts réels de FOVE : serveurs, base de données, domaines, outils SaaS et prestations."
+          title={t("title")}
+          description={t("description")}
         />
         <Button onClick={() => setModalOpen(true)} className="gap-2" variant="primary">
           <Plus className="size-4" />
-          Enregistrer une charge
+          {t("add")}
         </Button>
       </div>
 
@@ -80,31 +83,25 @@ export default function ExpensesPage() {
 
         <div className="flex items-center justify-between gap-4 flex-wrap">
           <div className="flex items-center gap-2">
-            <span className="text-xs text-ink-3">Poste :</span>
+            <label htmlFor="expense-category" className="text-xs text-ink-3">{t("categoryLabel")}</label>
             <select
+              id="expense-category"
               value={category}
               onChange={(e) => setCategory(e.target.value)}
               className="rounded-md border border-line bg-surface px-3 py-1.5 text-xs text-ink"
             >
-              <option value="ALL">Toutes les catégories</option>
-              <option value="HOSTING">Hébergement (Railway / Cloud)</option>
-              <option value="DATABASE">Base de données (Neon)</option>
-              <option value="EMAILS">Emails transactionnels</option>
-              <option value="DOMAINS">Noms de domaine</option>
-              <option value="SAAS">Outils & SaaS</option>
-              <option value="MARKETING">Marketing & Relations</option>
-              <option value="ADS">Publicités</option>
-              <option value="DEV">Développement</option>
-              <option value="FREELANCE">Prestations freelance</option>
-              <option value="BANK_FEES">Frais bancaires</option>
-              <option value="LEGAL">Juridique & Comptabilité</option>
-              <option value="OTHER">Autres</option>
+              <option value="ALL">{t("allCategories")}</option>
+              {EXPENSE_CATEGORIES.map((c) => (
+                <option key={c} value={c}>
+                  {tc(c)}
+                </option>
+              ))}
             </select>
           </div>
 
           <div className="rounded-lg bg-surface-2 px-4 py-2 text-xs">
-            Total des charges engagées sur la période :{" "}
-            <strong className="text-rose-500 font-mono text-sm ml-1">
+            {t("total")}{" "}
+            <strong className="text-rose-500 font-mono text-sm ms-1">
               {formatFinance(data?.totalCents ?? 0, "USD")}
             </strong>
           </div>
@@ -112,24 +109,24 @@ export default function ExpensesPage() {
       </div>
 
       {isLoading ? (
-        <div className="py-20 text-center text-sm text-ink-3">Chargement des dépenses...</div>
+        <div className="py-20 text-center text-sm text-ink-3">{t("loading")}</div>
       ) : expenses.length === 0 ? (
         <Panel className="p-12 text-center text-sm text-ink-3">
-          Aucune charge enregistrée pour cette sélection. Cliquez sur &quot;Enregistrer une charge&quot; pour en ajouter une.
+          {t("empty")}
         </Panel>
       ) : (
         <Panel className="overflow-x-auto">
-          <table className="w-full min-w-[900px] text-left text-sm">
+          <table className="w-full min-w-[900px] text-start text-sm">
             <thead className="border-b border-line bg-surface-2 text-xs text-ink-3">
               <tr>
-                <th className="py-3 px-4 font-medium">Date</th>
-                <th className="py-3 px-4 font-medium">Libellé</th>
-                <th className="py-3 px-4 font-medium">Fournisseur</th>
-                <th className="py-3 px-4 font-medium">Poste</th>
-                <th className="py-3 px-4 font-medium text-right">Montant TTC</th>
-                <th className="py-3 px-4 font-medium">Règlement</th>
-                <th className="py-3 px-4 font-medium">Justificatif</th>
-                <th className="py-3 px-4 font-medium text-right">Actions</th>
+                <th className="py-3 px-4 font-medium">{t("table.date")}</th>
+                <th className="py-3 px-4 font-medium">{t("table.label")}</th>
+                <th className="py-3 px-4 font-medium">{t("table.supplier")}</th>
+                <th className="py-3 px-4 font-medium">{t("table.category")}</th>
+                <th className="py-3 px-4 font-medium text-end">{t("table.amount")}</th>
+                <th className="py-3 px-4 font-medium">{t("table.payment")}</th>
+                <th className="py-3 px-4 font-medium">{t("table.proof")}</th>
+                <th className="py-3 px-4 font-medium text-end">{t("table.actions")}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-line">
@@ -142,23 +139,23 @@ export default function ExpensesPage() {
                     <div className="flex items-center gap-1.5">
                       <span>{exp.title}</span>
                       {exp.isRecurring && (
-                        <span className="rounded bg-cobalt/10 px-1.5 py-0.2 text-[10px] font-semibold text-cobalt">
-                          {exp.recurringInterval === "year" ? "Annuel" : "Mensuel"}
+                        <span className="rounded bg-cobalt/10 px-1.5 py-0.5 text-[10px] font-semibold text-cobalt">
+                          {exp.recurringInterval === "year" ? t("yearly") : t("monthly")}
                         </span>
                       )}
                     </div>
                   </td>
                   <td className="py-3.5 px-4 text-xs text-ink-2">{exp.supplier}</td>
                   <td className="py-3.5 px-4">
-                    <span className="rounded bg-surface-2 px-2 py-0.5 text-xs font-mono text-ink-2">
-                      {exp.category}
+                    <span className="rounded bg-surface-2 px-2 py-0.5 text-xs text-ink-2">
+                      {tc.has(exp.category) ? tc(exp.category) : exp.category}
                     </span>
                   </td>
-                  <td className="py-3.5 px-4 text-right font-mono text-xs font-bold text-rose-500">
+                  <td className="py-3.5 px-4 text-end font-mono text-xs font-bold text-rose-500" dir="ltr">
                     -{formatFinance(exp.amountCents, exp.currency)}
                   </td>
                   <td className="py-3.5 px-4 text-xs text-ink-3">
-                    {exp.paymentMethod ?? "Carte bancaire"}
+                    {exp.paymentMethod || "—"}
                   </td>
                   <td className="py-3.5 px-4 text-xs">
                     {exp.proofUrl ? (
@@ -168,22 +165,31 @@ export default function ExpensesPage() {
                         rel="noreferrer"
                         className="inline-flex items-center gap-1 text-cobalt hover:underline"
                       >
-                        Pièce <ExternalLink className="size-3" />
+                        {t("proofLink")}
                       </a>
                     ) : (
                       <span className="text-ink-3">—</span>
                     )}
                   </td>
-                  <td className="py-3.5 px-4 text-right">
-                    <button
-                      type="button"
-                      onClick={() => handleDelete(exp.id, exp.title)}
-                      disabled={deletingId === exp.id}
-                      className="grid size-8 place-items-center rounded-lg text-ink-3 hover:text-rose-500 hover:bg-surface transition-colors"
-                      title="Supprimer la dépense"
-                    >
-                      <Trash2 className="size-3.5" />
-                    </button>
+                  <td className="py-3.5 px-4 text-end">
+                    <ConfirmDialog
+                      trigger={
+                        <button
+                          type="button"
+                          disabled={deletingId === exp.id}
+                          className="grid size-8 place-items-center rounded-lg text-ink-3 hover:text-rose-500 hover:bg-surface transition-colors"
+                          aria-label={t("delete.button", { title: exp.title })}
+                          title={t("delete.button", { title: exp.title })}
+                        >
+                          <Trash2 className="size-3.5" />
+                        </button>
+                      }
+                      title={t("delete.title", { title: exp.title })}
+                      consequence={t("delete.consequence")}
+                      confirmLabel={t("delete.confirm")}
+                      destructive
+                      onConfirm={() => handleDelete(exp.id)}
+                    />
                   </td>
                 </tr>
               ))}

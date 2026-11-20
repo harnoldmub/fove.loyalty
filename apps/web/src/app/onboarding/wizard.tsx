@@ -2,19 +2,21 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import { Check, Coffee, ImageUp, Printer, Smartphone, Sparkles } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { Logo } from "@/components/brand";
 import { Button } from "@/components/ui/button";
-import { defaultCurrencyForCountry, SUPPORTED_CURRENCIES } from "@fove/shared";
+import { defaultCurrencyForCountry } from "@fove/shared";
 import { CitySelect, CountrySelect, detectClientCountry, getCountryOption } from "@/components/ui/country-select";
-import { Field, Input, Select } from "@/components/ui/field";
+import { Field, Input } from "@/components/ui/field";
 import { ErrorNote } from "@/components/ui/misc";
 import { api, errorMessage } from "@/lib/api";
 import { afterAuthPath } from "@/lib/plan-choice";
-import { cn } from "@/lib/utils";
+import { CurrencySelect } from "@/components/ui/currency-select";
+import { cn, formatNumber } from "@/lib/utils";
 
-const STEPS = ["Votre commerce", "Logo et couleur", "Établissement", "Programme", "Récompense", "QR code"] as const;
+const STEPS = ["business", "branding", "establishment", "program", "reward", "qr"] as const;
 const COLORS = ["#2C55F5", "#0E7C66", "#C2410C", "#7C3AED", "#BE123C", "#14204A", "#B45309", "#0369A1"];
 
 function slugify(v: string) {
@@ -35,6 +37,7 @@ interface Program {
 }
 
 export function OnboardingWizard({ userName, tenant }: { userName: string; tenant: { id: string; name: string } | null }) {
+  const t = useTranslations("onboarding");
   const [step, setStep] = useState(tenant ? 1 : 0);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -143,7 +146,7 @@ export function OnboardingWizard({ userName, tenant }: { userName: string; tenan
     if (step === 1)
       return run(async () => {
         await api.patch("/app/tenant", { primaryColor: color, ...(logoUrl ? { logoUrl } : {}) });
-        if (!estName) setEstName(name || "Boutique principale");
+        if (!estName) setEstName(name || t("defaults.establishment"));
         setStep(2);
       });
     if (step === 2)
@@ -158,7 +161,7 @@ export function OnboardingWizard({ userName, tenant }: { userName: string; tenan
     if (step === 3)
       return run(async () => {
         const created = await api.post<Program>("/app/programs", {
-          name: mode === "STAMPS" ? "Carte à tampons" : "Carte à points",
+          name: mode === "STAMPS" ? t("defaults.stampsProgram") : t("defaults.pointsProgram"),
           mode,
           currency,
           spendStep: mode === "POINTS" ? spendStep : "1000",
@@ -166,7 +169,7 @@ export function OnboardingWizard({ userName, tenant }: { userName: string; tenan
           stampsTarget: Number(stampsTarget),
         });
         setProgram(created);
-        setRewardName(mode === "STAMPS" ? "Produit offert" : "Bon de réduction");
+        setRewardName(mode === "STAMPS" ? t("defaults.stampsReward") : t("defaults.pointsReward"));
         setRewardCost(mode === "STAMPS" ? String(created.stampsTarget) : "100");
         setStep(4);
       });
@@ -191,7 +194,7 @@ export function OnboardingWizard({ userName, tenant }: { userName: string; tenan
   };
 
   const uploadLogo = async (file: File) => {
-    if (file.size > 512 * 1024) return setError("Image trop lourde (512 Ko maximum)");
+    if (file.size > 512 * 1024) return setError(t("errors.logoTooLarge"));
     await run(async () => {
       const dataBase64 = await new Promise<string>((resolve, reject) => {
         const reader = new FileReader();
@@ -210,7 +213,7 @@ export function OnboardingWizard({ userName, tenant }: { userName: string; tenan
         <Logo />
         <div className="mx-auto mt-10 w-full max-w-md flex-1">
           <p className="text-sm text-ink-3">
-            Étape {step + 1} sur {STEPS.length}
+            {t("progress", { current: step + 1, total: STEPS.length })}
           </p>
           <div className="mt-2 flex gap-1.5" aria-hidden>
             {STEPS.map((s, i) => (
@@ -223,8 +226,8 @@ export function OnboardingWizard({ userName, tenant }: { userName: string; tenan
 
             {step === 0 && (
               <>
-                <h1 className="font-display text-3xl font-semibold">Bonjour {userName.split(" ")[0]}, présentez votre commerce</h1>
-                <Field label="Nom du commerce">
+                <h1 className="font-display text-3xl font-semibold">{t("business.title", { name: userName.split(" ")[0] ?? "" })}</h1>
+                <Field label={t("business.name")}>
                   {(p) => (
                     <Input
                       {...p}
@@ -238,7 +241,7 @@ export function OnboardingWizard({ userName, tenant }: { userName: string; tenan
                   )}
                 </Field>
                 <div className="grid gap-4 sm:grid-cols-2">
-                  <Field label="Pays">
+                  <Field label={t("business.country")}>
                     {(p) => (
                       <CountrySelect
                         {...p}
@@ -251,23 +254,17 @@ export function OnboardingWizard({ userName, tenant }: { userName: string; tenan
                       />
                     )}
                   </Field>
-                  <Field label="Ville">
+                  <Field label={t("business.city")}>
                     {(p) => <CitySelect {...p} countryCode={estCountry} value={estCity} onChange={setEstCity} />}
                   </Field>
                 </div>
                 <div className="grid gap-4 sm:grid-cols-2">
-                  <Field label="Devise de vos ventes">
+                  <Field label={t("business.currency")}>
                     {(p) => (
-                      <Select {...p} value={currency} onChange={(e) => setCurrency(e.target.value)}>
-                        {SUPPORTED_CURRENCIES.map((c) => (
-                          <option key={c.code} value={c.code}>
-                            {c.label}
-                          </option>
-                        ))}
-                      </Select>
+                      <CurrencySelect {...p} value={currency} onChange={setCurrency} />
                     )}
                   </Field>
-                  <Field label="Adresse de votre page" hint={`app.fove.digital/${slug || "votre-commerce"}`}>
+                  <Field label={t("business.slug")} hint={<span dir="ltr">{`app.fove.digital/${slug || t("defaults.slug")}`}</span>}>
                     {(p) => (
                       <Input
                         {...p}
@@ -280,26 +277,26 @@ export function OnboardingWizard({ userName, tenant }: { userName: string; tenan
                     )}
                   </Field>
                 </div>
-                <Button type="submit" loading={busy} disabled={name.trim().length < 2}>Créer mon commerce</Button>
+                <Button type="submit" loading={busy} disabled={name.trim().length < 2}>{t("business.submit")}</Button>
               </>
             )}
 
             {step === 1 && (
               <>
-                <h1 className="font-display text-3xl font-semibold">Votre logo et votre couleur</h1>
-                <p className="-mt-2 text-ink-2">Ils habillent la carte de vos clients et votre page d’inscription.</p>
+                <h1 className="font-display text-3xl font-semibold">{t("branding.title")}</h1>
+                <p className="-mt-2 text-ink-2">{t("branding.subtitle")}</p>
                 <div className="grid gap-2">
-                  <span className="text-sm font-medium">Logo (facultatif)</span>
+                  <span className="text-sm font-medium">{t("branding.logo")}</span>
                   <label className="flex cursor-pointer items-center gap-4 rounded-md bg-surface p-3 shadow-1 hover:bg-surface-2">
                     <span className="grid size-14 place-items-center overflow-hidden rounded-md bg-surface-2">
-                      {logoUrl ? <img src={logoUrl} alt="Logo" className="size-full object-cover" /> : <ImageUp className="size-6 text-ink-3" aria-hidden />}
+                      {logoUrl ? <img src={logoUrl} alt={t("branding.logoAlt")} className="size-full object-cover" /> : <ImageUp className="size-6 text-ink-3" aria-hidden />}
                     </span>
-                    <span className="text-sm text-ink-2">{logoUrl ? "Changer l’image" : "Choisir une image PNG, JPEG ou WebP (512 Ko max.)"}</span>
+                    <span className="text-sm text-ink-2">{logoUrl ? t("branding.change") : t("branding.choose")}</span>
                     <input type="file" accept="image/png,image/jpeg,image/webp" className="sr-only" onChange={(e) => e.target.files?.[0] && uploadLogo(e.target.files[0])} />
                   </label>
                 </div>
                 <fieldset className="grid gap-2">
-                  <legend className="mb-2 text-sm font-medium">Couleur principale</legend>
+                  <legend className="mb-2 text-sm font-medium">{t("branding.color")}</legend>
                   <div className="flex flex-wrap gap-2.5">
                     {COLORS.map((c) => (
                       <label key={c} className="relative">
@@ -312,16 +309,16 @@ export function OnboardingWizard({ userName, tenant }: { userName: string; tenan
                     ))}
                   </div>
                 </fieldset>
-                <Button type="submit" loading={busy}>Continuer</Button>
+                <Button type="submit" loading={busy}>{t("continue")}</Button>
               </>
             )}
 
             {step === 2 && (
               <>
-                <h1 className="font-display text-3xl font-semibold">Votre point de vente</h1>
-                <p className="-mt-2 text-ink-2">Vous pourrez en ajouter d’autres ensuite.</p>
-                <Field label="Nom de l’établissement">{(p) => <Input {...p} value={estName} onChange={(e) => setEstName(e.target.value)} />}</Field>
-                <Field label="Pays">
+                <h1 className="font-display text-3xl font-semibold">{t("establishment.title")}</h1>
+                <p className="-mt-2 text-ink-2">{t("establishment.subtitle")}</p>
+                <Field label={t("establishment.name")}>{(p) => <Input {...p} value={estName} onChange={(e) => setEstName(e.target.value)} />}</Field>
+                <Field label={t("establishment.country")}>
                   {(p) => (
                     <CountrySelect
                       {...p}
@@ -333,87 +330,87 @@ export function OnboardingWizard({ userName, tenant }: { userName: string; tenan
                     />
                   )}
                 </Field>
-                <Field label="Ville">
+                <Field label={t("establishment.city")}>
                   {(p) => <CitySelect {...p} countryCode={estCountry} value={estCity} onChange={setEstCity} />}
                 </Field>
-                <Button type="submit" loading={busy} disabled={estName.trim().length < 2}>Continuer</Button>
+                <Button type="submit" loading={busy} disabled={estName.trim().length < 2}>{t("continue")}</Button>
               </>
             )}
 
             {step === 3 && (
               <>
-                <h1 className="font-display text-3xl font-semibold">Comment vos clients gagnent-ils ?</h1>
+                <h1 className="font-display text-3xl font-semibold">{t("program.title")}</h1>
                 <div className="grid gap-3 sm:grid-cols-2">
                   {(
                     [
-                      ["STAMPS", "Tampons", "Un achat = un tampon. Simple, idéal pour un café, un salon, un snack.", Coffee],
-                      ["POINTS", "Points", "Les points suivent le montant dépensé. Idéal pour une boutique ou un supermarché.", Sparkles],
+                      ["STAMPS", "stamps", Coffee],
+                      ["POINTS", "points", Sparkles],
                     ] as const
-                  ).map(([value, label, text, Icon]) => (
+                  ).map(([value, key, Icon]) => (
                     <label key={value} className={cn("grid cursor-pointer gap-2 rounded-[var(--radius-lg)] bg-surface p-4 shadow-1", mode === value && "ring-2 ring-cobalt")}>
                       <input type="radio" name="mode" className="sr-only" checked={mode === value} onChange={() => setMode(value)} />
                       <Icon className="size-5 text-cobalt" aria-hidden />
-                      <span className="font-display text-lg font-semibold">{label}</span>
-                      <span className="text-sm text-ink-2">{text}</span>
+                      <span className="font-display text-lg font-semibold">{t(`program.${key}Label`)}</span>
+                      <span className="text-sm text-ink-2">{t(`program.${key}Text`)}</span>
                     </label>
                   ))}
                 </div>
                 {mode === "POINTS" ? (
-                  <Field label={`Montant pour gagner 1 point (${currency})`} hint={`Exemple : 1 000 ${currency} dépensés = 1 point.`}>
+                  <Field label={t("program.spendStep", { currency })} hint={t("program.spendStepHint", { amount: formatNumber(1000), currency })}>
                     {(p) => <Input {...p} inputMode="decimal" value={spendStep} onChange={(e) => setSpendStep(e.target.value.replace(",", "."))} />}
                   </Field>
                 ) : (
-                  <Field label="Tampons pour une récompense">
+                  <Field label={t("program.stampsTarget")}>
                     {(p) => <Input {...p} type="number" min={2} max={50} value={stampsTarget} onChange={(e) => setStampsTarget(e.target.value)} />}
                   </Field>
                 )}
-                <Button type="submit" loading={busy}>Créer le programme</Button>
+                <Button type="submit" loading={busy}>{t("program.submit")}</Button>
               </>
             )}
 
             {step === 4 && program && (
               <>
-                <h1 className="font-display text-3xl font-semibold">La récompense</h1>
+                <h1 className="font-display text-3xl font-semibold">{t("reward.title")}</h1>
                 <p className="-mt-2 text-ink-2">
-                  {program.mode === "STAMPS" ? `Offerte quand la carte atteint ${program.stampsTarget} tampons.` : "Ce que vos clients obtiennent avec leurs points. Vous en ajouterez d’autres plus tard."}
+                  {program.mode === "STAMPS" ? t("reward.stampsText", { count: program.stampsTarget }) : t("reward.pointsText")}
                 </p>
-                <Field label="Nom de la récompense">{(p) => <Input {...p} value={rewardName} onChange={(e) => setRewardName(e.target.value)} />}</Field>
+                <Field label={t("reward.name")}>{(p) => <Input {...p} value={rewardName} onChange={(e) => setRewardName(e.target.value)} />}</Field>
                 {program.mode === "POINTS" && (
-                  <Field label="Coût en points">{(p) => <Input {...p} type="number" min={1} value={rewardCost} onChange={(e) => setRewardCost(e.target.value)} />}</Field>
+                  <Field label={t("reward.cost")}>{(p) => <Input {...p} type="number" min={1} value={rewardCost} onChange={(e) => setRewardCost(e.target.value)} />}</Field>
                 )}
-                <Button type="submit" loading={busy} disabled={rewardName.trim().length < 2}>Continuer</Button>
+                <Button type="submit" loading={busy} disabled={rewardName.trim().length < 2}>{t("continue")}</Button>
               </>
             )}
 
             {step === 5 && (
               <>
-                <h1 className="font-display text-3xl font-semibold">Votre QR code d’inscription</h1>
-                <p className="-mt-2 text-ink-2">Affichez-le au comptoir. Vos clients le scannent pour créer leur carte.</p>
+                <h1 className="font-display text-3xl font-semibold">{t("qr.title")}</h1>
+                <p className="-mt-2 text-ink-2">{t("qr.subtitle")}</p>
                 {joinUrl && (
                   <div className="grid justify-items-center gap-4 rounded-[var(--radius-lg)] bg-white p-6 shadow-1">
                     <QRCodeSVG id="join-qr" value={joinUrl} size={208} marginSize={2} fgColor="#14204a" />
-                    <p className="break-all text-center text-xs text-[#4a5579]">{joinUrl}</p>
+                    <p dir="ltr" className="break-all text-center text-xs text-[#4a5579]">{joinUrl}</p>
                   </div>
                 )}
                 <div className="grid gap-2 sm:grid-cols-2">
                   <Button type="button" variant="secondary" onClick={() => window.print()}>
-                    <Printer /> Imprimer
+                    <Printer /> {t("qr.print")}
                   </Button>
                   {joinUrl && (
                     <Button type="button" variant="secondary" asChild>
                       <a href={joinUrl} target="_blank" rel="noreferrer">
-                        <Smartphone /> Voir la page client
+                        <Smartphone /> {t("qr.customerPage")}
                       </a>
                     </Button>
                   )}
                 </div>
-                <Button type="submit" loading={busy}>Ouvrir mon tableau de bord</Button>
+                <Button type="submit" loading={busy}>{t("qr.submit")}</Button>
               </>
             )}
           </form>
           {step > 0 && step < 5 && (
             <p className="mt-6 text-center text-sm text-ink-3">
-              <Link href="/login" className="hover:text-ink">Reprendre plus tard</Link>
+              <Link href="/login" className="hover:text-ink">{t("later")}</Link>
             </p>
           )}
         </div>
@@ -424,8 +421,8 @@ export function OnboardingWizard({ userName, tenant }: { userName: string; tenan
           <div className="flex items-center gap-3">
             {logoUrl ? <img src={logoUrl} alt="" className="size-11 rounded-full bg-white object-cover" /> : <span className="grid size-11 place-items-center rounded-full bg-white/20 font-display text-lg font-bold">{(name || "F").slice(0, 1)}</span>}
             <div>
-              <p className="text-sm text-white/75">Carte de fidélité</p>
-              <p className="font-display text-xl font-semibold">{name || "Votre commerce"}</p>
+              <p className="text-sm text-white/75">{t("preview.label")}</p>
+              <p className="font-display text-xl font-semibold">{name || t("defaults.business")}</p>
             </div>
           </div>
           <div className="mt-8 grid grid-cols-5 gap-2.5">
@@ -435,7 +432,7 @@ export function OnboardingWizard({ userName, tenant }: { userName: string; tenan
               </span>
             ))}
           </div>
-          <p className="mt-8 text-sm text-white/80">Aperçu de la carte que vos clients verront sur leur téléphone.</p>
+          <p className="mt-8 text-sm text-white/80">{t("preview.caption")}</p>
         </div>
       </aside>
     </div>

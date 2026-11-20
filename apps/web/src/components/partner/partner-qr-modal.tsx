@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import { X, Download, Copy, Check, QrCode } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 
 interface PartnerQrModalProps {
@@ -13,6 +14,7 @@ interface PartnerQrModalProps {
 }
 
 export function PartnerQrModal({ open, partnerLink, partnerCode, onClose }: PartnerQrModalProps) {
+  const t = useTranslations("partner.qrModal");
   const [copied, setCopied] = useState(false);
 
   if (!open) return null;
@@ -43,18 +45,19 @@ export function PartnerQrModal({ open, partnerLink, partnerCode, onClose }: Part
       <div className="fixed inset-0 bg-black/60 backdrop-blur-xs" onClick={onClose} />
       <div className="relative w-full max-w-sm rounded-2xl border border-line bg-surface p-6 text-center shadow-2xl">
         <div className="flex items-center justify-between border-b border-line pb-3 mb-4">
-          <div className="flex items-center gap-2 text-left">
+          <div className="flex items-center gap-2 text-start">
             <span className="grid size-8 place-items-center rounded-lg bg-cobalt/10 text-cobalt">
               <QrCode className="size-4" />
             </span>
             <div>
-              <h3 className="font-display text-sm font-semibold text-ink">QR Code Partenaire</h3>
+              <h3 className="font-display text-sm font-semibold text-ink">{t("title")}</h3>
               <p className="font-mono text-[11px] text-ink-3">{partnerCode}</p>
             </div>
           </div>
           <button
             type="button"
             onClick={onClose}
+            aria-label={t("close")}
             className="grid size-8 place-items-center rounded-lg text-ink-3 hover:bg-surface-2 hover:text-ink"
           >
             <X className="size-4" />
@@ -73,18 +76,18 @@ export function PartnerQrModal({ open, partnerLink, partnerCode, onClose }: Part
         </div>
 
         <p className="text-xs text-ink-3 mb-4">
-          Faites scanner ce QR code à un commerçant pour ouvrir directement votre page de recommandation.
+          {t("hint")}
         </p>
 
         <div className="space-y-2">
           <Button onClick={handleCopy} variant="secondary" className="w-full gap-2 text-xs">
             {copied ? <Check className="size-3.5 text-emerald-500" /> : <Copy className="size-3.5" />}
-            {copied ? "Lien copié dans le presse-papier !" : "Copier le lien direct"}
+            {copied ? t("copied") : t("copy")}
           </Button>
 
           <Button onClick={handleDownloadSvg} variant="primary" className="w-full gap-2 text-xs">
             <Download className="size-3.5" />
-            Télécharger le QR Code (SVG)
+            {t("download")}
           </Button>
         </div>
       </div>

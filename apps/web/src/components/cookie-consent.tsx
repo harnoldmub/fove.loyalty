@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { Cookie, ShieldCheck, X } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 
@@ -14,18 +15,20 @@ export function openConsentBanner() {
 }
 
 export function CookieSettingsButton({ className }: { className?: string }) {
+  const t = useTranslations("common.cookies");
   return (
     <button
       type="button"
       onClick={openConsentBanner}
-      className={className ?? "text-left text-ink-2 hover:text-ink transition-colors"}
+      className={className ?? "text-start text-ink-2 hover:text-ink transition-colors"}
     >
-      Gestion des cookies
+      {t("settings")}
     </button>
   );
 }
 
 export function CookieConsent() {
+  const t = useTranslations("common.cookies");
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
@@ -81,9 +84,9 @@ export function CookieConsent() {
 
   return (
     <aside
-      aria-label="Consentement aux cookies"
+      aria-label={t("region")}
       role="region"
-      className="fixed bottom-4 left-4 right-4 z-50 sm:left-auto sm:right-6 sm:bottom-6 sm:max-w-md animate-in fade-in slide-in-from-bottom-5 duration-300"
+      className="fixed bottom-4 start-4 end-4 z-50 sm:start-auto sm:end-6 sm:bottom-6 sm:max-w-md animate-in fade-in slide-in-from-bottom-5 duration-300"
     >
       <div className="rounded-2xl border border-line bg-surface/95 dark:bg-[#0c1024]/95 p-4 sm:p-5 shadow-3 backdrop-blur-md">
         <div className="flex items-start justify-between gap-3">
@@ -92,26 +95,26 @@ export function CookieConsent() {
               <Cookie className="size-4" aria-hidden="true" />
             </span>
             <p className="font-display text-sm font-semibold text-ink">
-              Respect de votre vie privée
+              {t("title")}
             </p>
           </div>
           <button
             type="button"
             onClick={() => updateConsent("denied")}
             className="rounded-md p-1 text-ink-3 transition-colors hover:bg-surface-2 hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cobalt"
-            aria-label="Fermer sans accepter"
+            aria-label={t("closeWithoutAccepting")}
           >
             <X className="size-4" aria-hidden="true" />
           </button>
         </div>
 
         <p className="mt-2.5 text-xs text-ink-2 leading-relaxed">
-          Nous mesurons l&apos;audience (Google Analytics, Clarity) pour améliorer votre expérience sur FOVE. Vos données restent sécurisées et ne sont jamais revendues.
+          {t("body")}
           <Link
             href="/confidentialite"
-            className="ml-1 text-ink underline underline-offset-2 hover:text-cobalt transition-colors"
+            className="ms-1 text-ink underline underline-offset-2 hover:text-cobalt transition-colors"
           >
-            En savoir plus
+            {t("learnMore")}
           </Link>
         </p>
 
@@ -123,7 +126,7 @@ export function CookieConsent() {
             onClick={() => updateConsent("denied")}
             className="text-xs text-ink-2 hover:text-ink h-8 px-3"
           >
-            Refuser
+            {t("decline")}
           </Button>
           <Button
             type="button"
@@ -132,8 +135,8 @@ export function CookieConsent() {
             onClick={() => updateConsent("granted")}
             className="text-xs font-semibold h-8 px-4 shadow-sm"
           >
-            <ShieldCheck className="size-3.5 mr-1" aria-hidden="true" />
-            Accepter
+            <ShieldCheck className="size-3.5 me-1" aria-hidden="true" />
+            {t("accept")}
           </Button>
         </div>
       </div>

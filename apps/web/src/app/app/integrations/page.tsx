@@ -1,8 +1,10 @@
 "use client";
 
+import Link from "next/link";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Copy, KeyRound, Plus, Webhook } from "lucide-react";
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { API_SCOPES, WEBHOOK_EVENTS } from "@fove/shared";
 import { useCan } from "@/components/app/me-context";
@@ -11,7 +13,7 @@ import { Button } from "@/components/ui/button";
 import { ConfirmDialog, DialogContent, DialogRoot } from "@/components/ui/dialog";
 import { Checkbox, Field, Input, Select, Textarea } from "@/components/ui/field";
 import { Badge, EmptyState, ErrorNote, PageHeader, Panel } from "@/components/ui/misc";
-import { api, errorMessage } from "@/lib/api";
+import { api, useErrorMessage } from "@/lib/api";
 import { useIsNativeApp } from "@/lib/native-app";
 import { formatDate } from "@/lib/utils";
 
@@ -20,24 +22,26 @@ interface Endpoint { id: string; url: string; events: string[]; active: boolean 
 interface Delivery { id: string; event: string; status: string; attempts: number; lastStatusCode: number | null; lastError: string | null; createdAt: string }
 interface Connection { id: string; provider: string; name: string; status: string; lastSyncAt: string | null; lastError: string | null; syncLogs: { id: string; kind: string; externalId: string; status: string; error: string | null; createdAt: string }[] }
 
-const SCOPE_LABEL: Record<string, string> = {
-  "customers:read": "Lire les clients",
-  "customers:write": "Créer des clients",
-  "programs:read": "Lire les programmes",
-  "loyalty:read": "Lire les cartes et l’historique",
-  "loyalty:write": "Créditer des achats",
-  "rewards:read": "Lire les récompenses",
-  "redemptions:write": "Valider des récompenses",
-  "integrations:write": "Synchroniser une boutique en ligne",
+/** Clés de traduction des droits d’API (`app.integrations.scopes.*`). */
+const SCOPE_KEY: Record<string, string> = {
+  "customers:read": "customersRead",
+  "customers:write": "customersWrite",
+  "programs:read": "programsRead",
+  "loyalty:read": "loyaltyRead",
+  "loyalty:write": "loyaltyWrite",
+  "rewards:read": "rewardsRead",
+  "redemptions:write": "redemptionsWrite",
+  "integrations:write": "integrationsWrite",
 };
 
 function SecretReveal({ value, label }: { value: string; label: string }) {
+  const t = useTranslations("app.integrations");
   return (
     <div className="grid gap-2 rounded-md bg-stamp-soft p-4">
-      <p className="text-sm font-medium text-stamp-ink dark:text-stamp">{label} Copiez-la maintenant : elle ne sera plus affichée.</p>
+      <p className="text-sm font-medium text-stamp-ink dark:text-stamp">{label} {t("copyNow")}</p>
       <div className="flex gap-2">
-        <code className="min-w-0 flex-1 break-all rounded-sm bg-surface px-3 py-2 text-sm">{value}</code>
-        <Button size="icon" variant="secondary" aria-label="Copier" onClick={() => navigator.clipboard.writeText(value).then(() => toast.success("Copié"))}>
+        <code dir="ltr" className="min-w-0 flex-1 break-all rounded-sm bg-surface px-3 py-2 text-sm">{value}</code>
+        <Button size="icon" variant="secondary" aria-label={t("copy")} onClick={() => navigator.clipboard.writeText(value).then(() => toast.success(t("copied")))}>
           <Copy />
         </Button>
       </div>
@@ -46,6 +50,8 @@ function SecretReveal({ value, label }: { value: string; label: string }) {
 }
 
 function KeyDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (o: boolean) => void }) {
+  const toErrorMessage = useErrorMessage();
+  const t = useTranslations("app.integrations");
   const qc = useQueryClient();
   const [kind, setKind] = useState<"SECRET" | "PUBLISHABLE">("SECRET");
   const [name, setName] = useState("");
@@ -64,11 +70,11 @@ function KeyDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (o: bo
   };
   return (
     <DialogRoot open={open} onOpenChange={close}>
-      <DialogContent title="Nouvelle clé API">
+      <DialogContent title={t("key.title")}>
         {created ? (
           <>
-            <SecretReveal value={created} label={kind === "SECRET" ? "Clé secrète créée." : "Clé publique créée."} />
-            <Button onClick={() => close(false)}>J’ai copié la clé</Button>
+            <SecretReveal value={created} label={kind === "SECRET" ? t("key.secretCreated") : t("key.publicCreated")} />
+            <Button onClick={() => close(false)}>{t("key.copied")}</Button>
           </>
         ) : (
           <form
@@ -88,45 +94,45 @@ function KeyDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (o: bo
                 setCreated(res.key);
                 qc.invalidateQueries({ queryKey: ["keys"] });
               } catch (err) {
-                setError(errorMessage(err));
+                setError(toErrorMessage(err));
               } finally {
                 setBusy(false);
               }
             }}
           >
             {error && <ErrorNote>{error}</ErrorNote>}
-            <Field label="Usage" hint={kind === "SECRET" ? "Pour votre serveur ou votre caisse. Ne jamais la mettre dans un site web." : "Pour le widget sur votre site. Elle ne peut que lire votre configuration publique."}>
+            <Field label={t("key.usage")} hint={kind === "SECRET" ? t("key.secretHint") : t("key.publicHint")}>
               {(p) => (
                 <Select {...p} value={kind} onChange={(e) => setKind(e.target.value as "SECRET" | "PUBLISHABLE")}>
-                  <option value="SECRET">Clé secrète (serveur)</option>
-                  <option value="PUBLISHABLE">Clé publique (widget)</option>
+                  <option value="SECRET">{t("key.secretOption")}</option>
+                  <option value="PUBLISHABLE">{t("key.publicOption")}</option>
                 </Select>
               )}
             </Field>
             <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="Nom">{(p) => <Input {...p} value={name} onChange={(e) => setName(e.target.value)} />}</Field>
-              <Field label="Environnement">
+              <Field label={t("key.name")}>{(p) => <Input {...p} value={name} onChange={(e) => setName(e.target.value)} />}</Field>
+              <Field label={t("key.environment")}>
                 {(p) => (
                   <Select {...p} value={env} onChange={(e) => setEnv(e.target.value as "TEST" | "LIVE")}>
-                    <option value="TEST">Test</option>
-                    <option value="LIVE">Production</option>
+                    <option value="TEST">{t("env.TEST")}</option>
+                    <option value="LIVE">{t("env.LIVE")}</option>
                   </Select>
                 )}
               </Field>
             </div>
             {kind === "SECRET" ? (
               <fieldset className="grid gap-2">
-                <legend className="mb-1 text-sm font-medium">Droits</legend>
+                <legend className="mb-1 text-sm font-medium">{t("key.scopes")}</legend>
                 {API_SCOPES.map((s) => (
-                  <Checkbox key={s} label={SCOPE_LABEL[s] ?? s} checked={scopes.includes(s)} onChange={(e) => setScopes(e.target.checked ? [...scopes, s] : scopes.filter((x) => x !== s))} />
+                  <Checkbox key={s} label={SCOPE_KEY[s] ? t(`scopes.${SCOPE_KEY[s]}`) : s} checked={scopes.includes(s)} onChange={(e) => setScopes(e.target.checked ? [...scopes, s] : scopes.filter((x) => x !== s))} />
                 ))}
               </fieldset>
             ) : (
-              <Field label="Domaines autorisés" hint="Un par ligne, ex. https://maboutique.com">
+              <Field label={t("key.origins")} hint={t("key.originsHint")}>
                 {(p) => <Textarea {...p} value={origins} onChange={(e) => setOrigins(e.target.value)} />}
               </Field>
             )}
-            <Button type="submit" loading={busy} disabled={name.trim().length < 2}>Créer la clé</Button>
+            <Button type="submit" loading={busy} disabled={name.trim().length < 2}>{t("key.submit")}</Button>
           </form>
         )}
       </DialogContent>
@@ -135,6 +141,8 @@ function KeyDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (o: bo
 }
 
 function WebhookDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (o: boolean) => void }) {
+  const toErrorMessage = useErrorMessage();
+  const t = useTranslations("app.integrations");
   const qc = useQueryClient();
   const [url, setUrl] = useState("");
   const [events, setEvents] = useState<string[]>(["loyalty_transaction.created"]);
@@ -142,11 +150,11 @@ function WebhookDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (o
   const [error, setError] = useState<string | null>(null);
   return (
     <DialogRoot open={open} onOpenChange={(o) => { onOpenChange(o); if (!o) setSecret(null); }}>
-      <DialogContent title="Nouveau webhook" description="FOVE envoie une requête signée à cette adresse à chaque événement choisi.">
+      <DialogContent title={t("webhook.title")} description={t("webhook.description")}>
         {secret ? (
           <>
-            <SecretReveal value={secret} label="Secret de signature créé." />
-            <Button onClick={() => onOpenChange(false)}>J’ai copié le secret</Button>
+            <SecretReveal value={secret} label={t("webhook.secretCreated")} />
+            <Button onClick={() => onOpenChange(false)}>{t("webhook.copied")}</Button>
           </>
         ) : (
           <form
@@ -159,19 +167,19 @@ function WebhookDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (o
                 setSecret(res.secret);
                 qc.invalidateQueries({ queryKey: ["webhooks"] });
               } catch (err) {
-                setError(errorMessage(err));
+                setError(toErrorMessage(err));
               }
             }}
           >
             {error && <ErrorNote>{error}</ErrorNote>}
-            <Field label="URL (HTTPS)">{(p) => <Input {...p} type="url" value={url} onChange={(e) => setUrl(e.target.value)} />}</Field>
+            <Field label={t("webhook.url")}>{(p) => <Input {...p} type="url" value={url} onChange={(e) => setUrl(e.target.value)} />}</Field>
             <fieldset className="grid gap-2">
-              <legend className="mb-1 text-sm font-medium">Événements</legend>
+              <legend className="mb-1 text-sm font-medium">{t("webhook.events")}</legend>
               {WEBHOOK_EVENTS.map((ev) => (
                 <Checkbox key={ev} label={<code>{ev}</code>} checked={events.includes(ev)} onChange={(e) => setEvents(e.target.checked ? [...events, ev] : events.filter((x) => x !== ev))} />
               ))}
             </fieldset>
-            <Button type="submit" disabled={!url || events.length === 0}>Créer le webhook</Button>
+            <Button type="submit" disabled={!url || events.length === 0}>{t("webhook.submit")}</Button>
           </form>
         )}
       </DialogContent>
@@ -180,6 +188,8 @@ function WebhookDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (o
 }
 
 export default function IntegrationsPage() {
+  const toErrorMessage = useErrorMessage();
+  const t = useTranslations("app.integrations");
   const native = useIsNativeApp();
   const canWrite = useCan("integrations.write");
   const qc = useQueryClient();
@@ -194,17 +204,17 @@ export default function IntegrationsPage() {
 
   return (
     <>
-      <PageHeader title="Intégrations" description={native ? "Reliez votre caisse ou votre boutique en ligne." : <>Reliez votre caisse ou votre boutique en ligne. Guide complet dans la <a className="text-cobalt underline" href="/developpeurs">documentation</a>.</>} />
+      <PageHeader title={t("title")} description={native ? t("description") : t.rich("descriptionDocs", { link: (c) => <Link className="text-cobalt underline" href="/developpeurs">{c}</Link> })} />
 
       <section className="grid gap-3" aria-labelledby="boutique">
-        <h2 id="boutique" className="font-display text-xl font-semibold">Boutique en ligne</h2>
+        <h2 id="boutique" className="font-display text-xl font-semibold">{t("shop.title")}</h2>
         {connections.length === 0 ? (
           <Panel className="grid gap-3 p-5">
-            <p className="text-ink-2">Une commande payée sur votre site crédite la carte du client ; un remboursement retire les points. Votre boutique appelle FOVE avec une clé secrète « Synchroniser une boutique en ligne ».</p>
+            <p className="text-ink-2">{t("shop.description")}</p>
             {canWrite && programs.length > 0 && (
               <div className="flex flex-wrap gap-2">
-                <Select aria-label="Programme crédité" value={connProgram} onChange={(e) => setConnProgram(e.target.value)} className="w-auto">
-                  <option value="">Programme crédité</option>
+                <Select aria-label={t("shop.program")} value={connProgram} onChange={(e) => setConnProgram(e.target.value)} className="w-auto">
+                  <option value="">{t("shop.program")}</option>
                   {programs.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
                 </Select>
                 <Button
@@ -212,14 +222,14 @@ export default function IntegrationsPage() {
                   disabled={!connProgram}
                   onClick={async () => {
                     try {
-                      await api.post("/app/integrations/connections", { provider: "CUSTOM", name: "Boutique en ligne", programId: connProgram });
+                      await api.post("/app/integrations/connections", { provider: "CUSTOM", name: t("shop.defaultName"), programId: connProgram });
                       qc.invalidateQueries({ queryKey: ["connections"] });
                     } catch (e) {
-                      toast.error(errorMessage(e));
+                      toast.error(toErrorMessage(e));
                     }
                   }}
                 >
-                  Connecter une boutique
+                  {t("shop.connect")}
                 </Button>
               </div>
             )}
@@ -229,16 +239,16 @@ export default function IntegrationsPage() {
             <Panel key={c.id} className="overflow-hidden">
               <div className="flex flex-wrap items-center gap-2 p-5">
                 <h3 className="font-display text-lg font-semibold">{c.name}</h3>
-                <Badge tone={c.lastError ? "danger" : c.lastSyncAt ? "mint" : "neutral"}>{c.lastError ? "Erreur" : c.lastSyncAt ? "Synchronisée" : "En attente du premier envoi"}</Badge>
-                <p className="w-full text-sm text-ink-3">{c.lastSyncAt ? `Dernière synchronisation le ${formatDate(c.lastSyncAt, true)}` : "Aucune commande reçue pour l’instant."}</p>
+                <Badge tone={c.lastError ? "danger" : c.lastSyncAt ? "mint" : "neutral"}>{c.lastError ? t("shop.error") : c.lastSyncAt ? t("shop.synced") : t("shop.waiting")}</Badge>
+                <p className="w-full text-sm text-ink-3">{c.lastSyncAt ? t("shop.lastSync", { date: formatDate(c.lastSyncAt, true) }) : t("shop.noOrders")}</p>
                 {c.lastError && <p className="w-full text-sm text-danger">{c.lastError}</p>}
               </div>
               {c.syncLogs.length > 0 && (
                 <ul className="divide-y divide-line border-t border-line text-sm">
                   {c.syncLogs.map((l) => (
                     <li key={l.id} className="flex gap-3 px-5 py-2.5">
-                      <span className="flex-1 truncate">{l.kind === "order.paid" ? "Commande payée" : "Remboursement"} {l.externalId}</span>
-                      <span className={l.status === "ok" ? "text-mint" : "text-danger"}>{l.status === "ok" ? "OK" : l.error ?? "Erreur"}</span>
+                      <span className="flex-1 truncate">{l.kind === "order.paid" ? t("shop.orderPaid") : t("shop.refund")} {l.externalId}</span>
+                      <span className={l.status === "ok" ? "text-mint" : "text-danger"}>{l.status === "ok" ? t("shop.ok") : l.error ?? t("shop.error")}</span>
                     </li>
                   ))}
                 </ul>
@@ -250,11 +260,11 @@ export default function IntegrationsPage() {
 
       <section className="mt-10 grid gap-3" aria-labelledby="cles">
         <div className="flex items-end justify-between gap-3">
-          <h2 id="cles" className="font-display text-xl font-semibold">Clés API</h2>
-          {canWrite && <Button size="sm" onClick={() => setKeyOpen(true)}><Plus /> Nouvelle clé</Button>}
+          <h2 id="cles" className="font-display text-xl font-semibold">{t("keys.title")}</h2>
+          {canWrite && <Button size="sm" onClick={() => setKeyOpen(true)}><Plus /> {t("keys.new")}</Button>}
         </div>
         {keys.length === 0 ? (
-          <EmptyState icon={<KeyRound />} title="Aucune clé">Créez une clé secrète pour votre serveur, ou une clé publique pour le widget.</EmptyState>
+          <EmptyState icon={<KeyRound />} title={t("keys.empty")}>{t("keys.emptyBody")}</EmptyState>
         ) : (
           <Panel className="overflow-hidden">
             <ul className="divide-y divide-line">
@@ -263,20 +273,20 @@ export default function IntegrationsPage() {
                   <div className="min-w-0 flex-1">
                     <p className="flex flex-wrap items-center gap-2 font-medium">
                       {k.name}
-                      <Badge tone={k.kind === "SECRET" ? "cobalt" : "neutral"}>{k.kind === "SECRET" ? "Secrète" : "Publique"}</Badge>
-                      <Badge tone={k.environment === "LIVE" ? "mint" : "stamp"}>{k.environment === "LIVE" ? "Production" : "Test"}</Badge>
-                      {k.revokedAt && <Badge tone="danger">Révoquée</Badge>}
+                      <Badge tone={k.kind === "SECRET" ? "cobalt" : "neutral"}>{k.kind === "SECRET" ? t("keys.secret") : t("keys.public")}</Badge>
+                      <Badge tone={k.environment === "LIVE" ? "mint" : "stamp"}>{t(`env.${k.environment}`)}</Badge>
+                      {k.revokedAt && <Badge tone="danger">{t("keys.revoked")}</Badge>}
                     </p>
                     <p className="truncate text-sm text-ink-3">
-                      <code>{k.prefix}…</code> · {k.lastUsedAt ? `utilisée le ${formatDate(k.lastUsedAt, true)}` : "jamais utilisée"}
+                      <code dir="ltr">{k.prefix}…</code> · {k.lastUsedAt ? t("keys.usedOn", { date: formatDate(k.lastUsedAt, true) }) : t("keys.neverUsed")}
                     </p>
                   </div>
                   {canWrite && !k.revokedAt && (
                     <ConfirmDialog
-                      trigger={<Button size="sm" variant="ghost" className="text-danger">Révoquer</Button>}
-                      title={`Révoquer « ${k.name} » ?`}
-                      consequence="Toute intégration qui l’utilise cessera immédiatement de fonctionner."
-                      confirmLabel="Révoquer la clé"
+                      trigger={<Button size="sm" variant="ghost" className="text-danger">{t("keys.revoke")}</Button>}
+                      title={t("keys.revokeTitle", { name: k.name })}
+                      consequence={t("keys.revokeConsequence")}
+                      confirmLabel={t("keys.revokeConfirm")}
                       destructive
                       onConfirm={async () => {
                         await api.delete(`/app/integrations/keys/${k.id}`);
@@ -293,26 +303,26 @@ export default function IntegrationsPage() {
 
       <section className="mt-10 grid gap-3" aria-labelledby="webhooks">
         <div className="flex items-end justify-between gap-3">
-          <h2 id="webhooks" className="font-display text-xl font-semibold">Webhooks</h2>
-          {canWrite && <Button size="sm" onClick={() => setHookOpen(true)}><Plus /> Nouveau webhook</Button>}
+          <h2 id="webhooks" className="font-display text-xl font-semibold">{t("webhooks.title")}</h2>
+          {canWrite && <Button size="sm" onClick={() => setHookOpen(true)}><Plus /> {t("webhooks.new")}</Button>}
         </div>
         {hooks.filter((h) => h.active).length === 0 ? (
-          <EmptyState icon={<Webhook />} title="Aucun webhook">Recevez les opérations de fidélité en temps réel dans votre système.</EmptyState>
+          <EmptyState icon={<Webhook />} title={t("webhooks.empty")}>{t("webhooks.emptyBody")}</EmptyState>
         ) : (
           <Panel className="overflow-hidden">
             <ul className="divide-y divide-line">
               {hooks.filter((h) => h.active).map((h) => (
                 <li key={h.id} className="flex flex-wrap items-center gap-3 px-5 py-3.5">
                   <div className="min-w-0 flex-1">
-                    <p className="truncate font-medium">{h.url}</p>
+                    <p className="truncate font-medium" dir="ltr">{h.url}</p>
                     <p className="truncate text-sm text-ink-3">{h.events.join(", ")}</p>
                   </div>
                   {canWrite && (
                     <ConfirmDialog
-                      trigger={<Button size="sm" variant="ghost">Désactiver</Button>}
-                      title="Désactiver ce webhook ?"
-                      consequence="Plus aucun événement ne sera envoyé à cette adresse."
-                      confirmLabel="Désactiver"
+                      trigger={<Button size="sm" variant="ghost">{t("webhooks.deactivate")}</Button>}
+                      title={t("webhooks.deactivateTitle")}
+                      consequence={t("webhooks.deactivateConsequence")}
+                      confirmLabel={t("webhooks.deactivate")}
                       destructive
                       onConfirm={async () => {
                         await api.delete(`/app/integrations/webhooks/${h.id}`);
@@ -327,13 +337,13 @@ export default function IntegrationsPage() {
         )}
         {deliveries.length > 0 && (
           <details className="rounded-md bg-surface p-4 shadow-1">
-            <summary className="cursor-pointer text-sm font-medium">Dernières livraisons ({deliveries.length})</summary>
+            <summary className="cursor-pointer text-sm font-medium">{t("webhooks.deliveries", { count: deliveries.length })}</summary>
             <ul className="mt-3 grid gap-1.5 text-sm">
               {deliveries.map((d) => (
                 <li key={d.id} className="flex gap-3">
                   <span className="flex-1 truncate"><code>{d.event}</code> · {formatDate(d.createdAt, true)}</span>
                   <span className={d.status === "SUCCEEDED" ? "text-mint" : d.status === "FAILED" ? "text-danger" : "text-ink-3"}>
-                    {d.status === "SUCCEEDED" ? "Livré" : d.status === "FAILED" ? `Échec (${d.attempts} essais)` : `En attente (${d.attempts})`}
+                    {d.status === "SUCCEEDED" ? t("webhooks.delivered") : d.status === "FAILED" ? t("webhooks.failed", { count: d.attempts }) : t("webhooks.pending", { count: d.attempts })}
                   </span>
                 </li>
               ))}

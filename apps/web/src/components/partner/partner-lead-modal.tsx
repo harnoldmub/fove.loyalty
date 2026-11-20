@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/field";
 import { CitySelect, CountrySelect, detectClientCountry, getCountryOption } from "@/components/ui/country-select";
 import { PhoneInput } from "@/components/ui/phone-input";
+import { useTranslations } from "next-intl";
 import { api } from "@/lib/api";
 
 interface PartnerLeadModalProps {
@@ -15,6 +16,7 @@ interface PartnerLeadModalProps {
 }
 
 export function PartnerLeadModal({ open, onClose, onCreated }: PartnerLeadModalProps) {
+  const t = useTranslations("partner.leadModal");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -28,14 +30,16 @@ export function PartnerLeadModal({ open, onClose, onCreated }: PartnerLeadModalP
   const [notes, setNotes] = useState("");
 
   useEffect(() => {
-    if (open) {
+    if (!open) return;
+    const frame = requestAnimationFrame(() => {
       const detected = detectClientCountry();
       setCountryCode(detected);
       const opt = getCountryOption(detected);
       if (opt?.defaultCity) {
         setCity(opt.defaultCity);
       }
-    }
+    });
+    return () => cancelAnimationFrame(frame);
   }, [open]);
 
   if (!open) return null;
@@ -62,7 +66,7 @@ export function PartnerLeadModal({ open, onClose, onCreated }: PartnerLeadModalP
       onCreated();
       onClose();
     } catch (err: any) {
-      setError(err?.message || "Impossible d'enregistrer le prospect");
+      setError(err?.message || t("error"));
     } finally {
       setLoading(false);
     }
@@ -78,13 +82,14 @@ export function PartnerLeadModal({ open, onClose, onCreated }: PartnerLeadModalP
               <UserPlus className="size-4" />
             </span>
             <div>
-              <h2 className="font-display text-base font-semibold text-ink">Nouveau prospect</h2>
-              <p className="text-xs text-ink-3">Enregistrer un commerce à démarcher</p>
+              <h2 className="font-display text-base font-semibold text-ink">{t("title")}</h2>
+              <p className="text-xs text-ink-3">{t("subtitle")}</p>
             </div>
           </div>
           <button
             type="button"
             onClick={onClose}
+            aria-label={t("close")}
             className="grid size-8 place-items-center rounded-lg text-ink-3 hover:bg-surface-2 hover:text-ink"
           >
             <X className="size-4" />
@@ -100,7 +105,7 @@ export function PartnerLeadModal({ open, onClose, onCreated }: PartnerLeadModalP
         <form onSubmit={handleSubmit} className="mt-4 space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="mb-1 block text-xs font-medium text-ink-2">Nom de l&apos;enseigne / commerce *</label>
+              <label className="mb-1 block text-xs font-medium text-ink-2">{t("businessName")}</label>
               <Input
                 required
                 value={businessName}
@@ -108,7 +113,7 @@ export function PartnerLeadModal({ open, onClose, onCreated }: PartnerLeadModalP
               />
             </div>
             <div>
-              <label className="mb-1 block text-xs font-medium text-ink-2">Contact / Gérant</label>
+              <label className="mb-1 block text-xs font-medium text-ink-2">{t("contact")}</label>
               <Input
                 value={contactName}
                 onChange={(e) => setContactName(e.target.value)}
@@ -118,7 +123,7 @@ export function PartnerLeadModal({ open, onClose, onCreated }: PartnerLeadModalP
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="mb-1 block text-xs font-medium text-ink-2">Email professionnel</label>
+              <label className="mb-1 block text-xs font-medium text-ink-2">{t("email")}</label>
               <Input
                 type="email"
                 value={email}
@@ -126,7 +131,7 @@ export function PartnerLeadModal({ open, onClose, onCreated }: PartnerLeadModalP
               />
             </div>
             <div>
-              <label className="mb-1 block text-xs font-medium text-ink-2">Téléphone / WhatsApp</label>
+              <label className="mb-1 block text-xs font-medium text-ink-2">{t("phone")}</label>
               <PhoneInput
                 value={phone}
                 onChange={setPhone}
@@ -137,7 +142,7 @@ export function PartnerLeadModal({ open, onClose, onCreated }: PartnerLeadModalP
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="mb-1 block text-xs font-medium text-ink-2">Pays</label>
+              <label className="mb-1 block text-xs font-medium text-ink-2">{t("country")}</label>
               <CountrySelect
                 value={countryCode}
                 onChange={(code) => {
@@ -150,7 +155,7 @@ export function PartnerLeadModal({ open, onClose, onCreated }: PartnerLeadModalP
               />
             </div>
             <div>
-              <label className="mb-1 block text-xs font-medium text-ink-2">Ville (API)</label>
+              <label className="mb-1 block text-xs font-medium text-ink-2">{t("city")}</label>
               <CitySelect
                 countryCode={countryCode}
                 value={city}
@@ -160,7 +165,7 @@ export function PartnerLeadModal({ open, onClose, onCreated }: PartnerLeadModalP
           </div>
 
           <div>
-            <label className="mb-1 block text-xs font-medium text-ink-2">Secteur d&apos;activité</label>
+            <label className="mb-1 block text-xs font-medium text-ink-2">{t("sector")}</label>
             <Input
               value={sector}
               onChange={(e) => setSector(e.target.value)}
@@ -168,7 +173,7 @@ export function PartnerLeadModal({ open, onClose, onCreated }: PartnerLeadModalP
           </div>
 
           <div>
-            <label className="mb-1 block text-xs font-medium text-ink-2">Notes & contexte</label>
+            <label className="mb-1 block text-xs font-medium text-ink-2">{t("notes")}</label>
             <textarea
               rows={3}
               className="w-full rounded-md border border-line bg-surface p-2.5 text-xs text-ink focus-visible:outline-none focus-visible:border-cobalt"
@@ -179,10 +184,10 @@ export function PartnerLeadModal({ open, onClose, onCreated }: PartnerLeadModalP
 
           <div className="flex justify-end gap-2 border-t border-line pt-4">
             <Button type="button" variant="ghost" onClick={onClose} disabled={loading}>
-              Annuler
+              {t("cancel")}
             </Button>
             <Button type="submit" variant="primary" disabled={loading}>
-              {loading ? "Enregistrement..." : "Ajouter au pipeline"}
+              {loading ? t("submitting") : t("submit")}
             </Button>
           </div>
         </form>

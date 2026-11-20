@@ -3,15 +3,18 @@
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { ReceiptText } from "lucide-react";
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { TransactionList } from "@/components/app/history";
 import type { Page, Transaction } from "@/components/app/types";
 import { Button } from "@/components/ui/button";
 import { Field, Input, Select } from "@/components/ui/field";
 import { EmptyState, PageHeader, Panel, Skeleton } from "@/components/ui/misc";
 import { api } from "@/lib/api";
-import { KIND_LABEL } from "@/lib/utils";
+import { TRANSACTION_KINDS, useKindLabel } from "@/lib/labels";
 
 export default function TransactionsPage() {
+  const t = useTranslations("app.transactions");
+  const kindLabel = useKindLabel();
   const [kind, setKind] = useState("");
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
@@ -26,29 +29,29 @@ export default function TransactionsPage() {
 
   return (
     <>
-      <PageHeader title="Transactions" description="Toutes les opérations, dans l’ordre. Rien ne s’efface : une erreur se corrige par une annulation." />
+      <PageHeader title={t("title")} description={t("description")} />
       <div className="mb-4 grid gap-3 sm:grid-cols-3">
-        <Field label="Type">
+        <Field label={t("type")}>
           {(p) => (
             <Select {...p} value={kind} onChange={(e) => setKind(e.target.value)}>
-              <option value="">Tous</option>
-              {Object.entries(KIND_LABEL).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+              <option value="">{t("all")}</option>
+              {TRANSACTION_KINDS.map((k) => <option key={k} value={k}>{kindLabel(k)}</option>)}
             </Select>
           )}
         </Field>
-        <Field label="Du">{(p) => <Input {...p} type="date" value={from} onChange={(e) => setFrom(e.target.value)} />}</Field>
-        <Field label="Au">{(p) => <Input {...p} type="date" value={to} onChange={(e) => setTo(e.target.value)} />}</Field>
+        <Field label={t("from")}>{(p) => <Input {...p} type="date" value={from} onChange={(e) => setFrom(e.target.value)} />}</Field>
+        <Field label={t("to")}>{(p) => <Input {...p} type="date" value={to} onChange={(e) => setTo(e.target.value)} />}</Field>
       </div>
       {list.isLoading ? (
         <Skeleton className="h-64" />
       ) : rows.length === 0 ? (
-        <EmptyState icon={<ReceiptText />} title="Aucune opération">Les achats validés au scanner apparaîtront ici.</EmptyState>
+        <EmptyState icon={<ReceiptText />} title={t("empty")}>{t("emptyBody")}</EmptyState>
       ) : (
         <Panel className="overflow-hidden">
           <TransactionList items={rows} showCustomer />
           {list.hasNextPage && (
             <div className="border-t border-line p-3 text-center">
-              <Button variant="ghost" onClick={() => list.fetchNextPage()} loading={list.isFetchingNextPage}>Afficher plus</Button>
+              <Button variant="ghost" onClick={() => list.fetchNextPage()} loading={list.isFetchingNextPage}>{t("more")}</Button>
             </div>
           )}
         </Panel>

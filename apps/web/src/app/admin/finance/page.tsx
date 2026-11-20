@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import {
   ArrowDownRight,
   ArrowUpRight,
@@ -21,7 +22,7 @@ import { api } from "@/lib/api";
 import { FinanceNav } from "@/components/admin/finance/finance-nav";
 import { FinanceFilter, type PeriodKey } from "@/components/admin/finance/finance-filter";
 import { FinanceCharts } from "@/components/admin/finance/finance-charts";
-import { formatFinance, DeltaBadge } from "@/components/admin/finance/finance-utils";
+import { formatFinance, formatPct, DeltaBadge } from "@/components/admin/finance/finance-utils";
 import { ExpenseModal } from "@/components/admin/finance/expense-modal";
 import { PartnerModal } from "@/components/admin/finance/partner-modal";
 
@@ -62,6 +63,7 @@ interface FinanceOverviewResponse {
 }
 
 export default function FinanceOverviewPage() {
+  const t = useTranslations("admin.finance.overview");
   const [period, setPeriod] = useState<PeriodKey>("month");
   const [currency, setCurrency] = useState("USD");
   const [expenseModalOpen, setExpenseModalOpen] = useState(false);
@@ -88,8 +90,8 @@ export default function FinanceOverviewPage() {
     <>
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <PageHeader
-          title="Centre financier & Associés"
-          description="Vision consolidée et transparente de l'activité économique réelle de FOVE."
+          title={t("title")}
+          description={t("description")}
         />
         <div className="flex flex-wrap items-center gap-2">
           <Button
@@ -99,7 +101,7 @@ export default function FinanceOverviewPage() {
             className="gap-1.5"
           >
             <Plus className="size-3.5 text-rose-500" />
-            Ajouter dépense
+            {t("addExpense")}
           </Button>
           <Button
             variant="secondary"
@@ -108,12 +110,12 @@ export default function FinanceOverviewPage() {
             className="gap-1.5"
           >
             <Plus className="size-3.5 text-cobalt" />
-            Nouveau partenaire
+            {t("newPartner")}
           </Button>
           <Link href="/admin/finance/reports">
             <Button size="sm" variant="primary" className="gap-1.5">
               <Download className="size-3.5" />
-              Rapport mensuel
+              {t("monthlyReport")}
             </Button>
           </Link>
         </div>
@@ -131,7 +133,7 @@ export default function FinanceOverviewPage() {
       </div>
 
       {isLoading ? (
-        <div className="py-20 text-center text-sm text-ink-3">Chargement des données financières...</div>
+        <div className="py-20 text-center text-sm text-ink-3">{t("loading")}</div>
       ) : cur ? (
         <div className="space-y-6">
           {/* Section 1 : Chiffre d'affaires & Encaissements bruts vs nets */}
@@ -139,49 +141,52 @@ export default function FinanceOverviewPage() {
             {/* CA Facturé */}
             <Panel className="p-4">
               <div className="flex items-center justify-between text-xs text-ink-3">
-                <span>Chiffre d&apos;affaires TTC</span>
+                <span>{t("revenue")}</span>
                 <DeltaBadge value={deltas?.revenueInvoicedPct ?? null} />
               </div>
               <div className="mt-2 font-display text-2xl font-bold tabular text-ink">
                 {formatFinance(cur.revenueInvoicedCents, currency)}
               </div>
               <p className="mt-1 text-xs text-ink-3">
-                HT : <strong className="text-ink-2">{formatFinance(cur.revenueInvoicedHtCents, currency)}</strong> · Taxes :{" "}
-                {formatFinance(cur.taxesCollectedCents, currency)}
+                {t.rich("revenueDetail", {
+                  net: formatFinance(cur.revenueInvoicedHtCents, currency),
+                  taxes: formatFinance(cur.taxesCollectedCents, currency),
+                  strong: (chunks) => <strong className="text-ink-2">{chunks}</strong>,
+                })}
               </p>
             </Panel>
 
             {/* Brut Encaissé */}
             <Panel className="p-4">
               <div className="flex items-center justify-between text-xs text-ink-3">
-                <span>Brut réellement encaissé</span>
+                <span>{t("grossCollected")}</span>
                 <DeltaBadge value={deltas?.grossCollectedPct ?? null} />
               </div>
               <div className="mt-2 font-display text-2xl font-bold tabular text-emerald-600 dark:text-emerald-400">
                 {formatFinance(cur.grossCollectedCents, currency)}
               </div>
               <p className="mt-1 text-xs text-ink-3">
-                Frais Stripe/Banque :{" "}
-                <span className="text-rose-500 font-medium">-{formatFinance(cur.providerFeesCents, currency)}</span>
+                {t("providerFees")}{" "}
+                <span className="text-rose-500 font-medium" dir="ltr">-{formatFinance(cur.providerFeesCents, currency)}</span>
               </p>
             </Panel>
 
             {/* Net Reçu */}
             <Panel className="p-4">
               <div className="flex items-center justify-between text-xs text-ink-3">
-                <span>Net bancaire reçu</span>
+                <span>{t("netCollected")}</span>
                 <DeltaBadge value={deltas?.netCollectedPct ?? null} />
               </div>
               <div className="mt-2 font-display text-2xl font-bold tabular text-ink">
                 {formatFinance(cur.netCollectedCents, currency)}
               </div>
-              <p className="mt-1 text-xs text-ink-3">Après déduction des frais de traitement</p>
+              <p className="mt-1 text-xs text-ink-3">{t("netCollectedHelp")}</p>
             </Panel>
 
             {/* Résultat Provisoire */}
             <Panel className="p-4 border-cobalt/30 bg-surface">
               <div className="flex items-center justify-between text-xs text-ink-3">
-                <span className="font-semibold text-ink">Résultat Net Réel</span>
+                <span className="font-semibold text-ink">{t("netResult")}</span>
                 <DeltaBadge value={deltas?.provisionalProfitPct ?? null} />
               </div>
               <div
@@ -194,7 +199,7 @@ export default function FinanceOverviewPage() {
                 {formatFinance(cur.provisionalNetProfitCents, currency)}
               </div>
               <p className="mt-1 text-xs text-ink-3">
-                Net encaissé - charges ({formatFinance(cur.operatingExpensesCents, currency)}) - comm.
+                {t("netResultHelp", { expenses: formatFinance(cur.operatingExpensesCents, currency) })}
               </p>
             </Panel>
           </div>
@@ -203,51 +208,51 @@ export default function FinanceOverviewPage() {
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <Panel className="p-4">
               <div className="flex items-center justify-between text-xs text-ink-3">
-                <span>MRR Normalisé</span>
+                <span>{t("mrr")}</span>
                 <RefreshCw className="size-3.5 text-cobalt" />
               </div>
               <div className="mt-2 font-display text-xl font-bold tabular text-ink">
                 {formatFinance(cur.mrrCents, currency)}
-                <span className="text-xs font-normal text-ink-3"> /mois</span>
+                <span className="text-xs font-normal text-ink-3"> {t("perMonth")}</span>
               </div>
-              <p className="mt-1 text-xs text-ink-3">Base annuelle lissée sur 12 mois</p>
+              <p className="mt-1 text-xs text-ink-3">{t("mrrHelp")}</p>
             </Panel>
 
             <Panel className="p-4">
               <div className="flex items-center justify-between text-xs text-ink-3">
-                <span>ARR Normalisé</span>
+                <span>{t("arr")}</span>
                 <TrendingUp className="size-3.5 text-mint" />
               </div>
               <div className="mt-2 font-display text-xl font-bold tabular text-ink">
                 {formatFinance(cur.arrCents, currency)}
-                <span className="text-xs font-normal text-ink-3"> /an</span>
+                <span className="text-xs font-normal text-ink-3"> {t("perYear")}</span>
               </div>
-              <p className="mt-1 text-xs text-ink-3">Valeur annualisée du parc actif</p>
+              <p className="mt-1 text-xs text-ink-3">{t("arrHelp")}</p>
             </Panel>
 
             <Panel className="p-4">
               <div className="flex items-center justify-between text-xs text-ink-3">
-                <span>Commerces payants actifs</span>
+                <span>{t("activePaid")}</span>
                 <Users className="size-3.5 text-ink-3" />
               </div>
               <div className="mt-2 font-display text-xl font-bold tabular text-ink">
                 {cur.activePaidSubscriptionsCount}
               </div>
               <p className="mt-1 text-xs text-ink-3">
-                +{cur.newPaidSubscriptionsCount} nouveaux · Churn : {cur.churnRatePercent.toFixed(1)}%
+                {t("activePaidHelp", { count: cur.newPaidSubscriptionsCount, churn: formatPct(cur.churnRatePercent).replace(/^\+/, "") })}
               </p>
             </Panel>
 
             <Panel className="p-4">
               <div className="flex items-center justify-between text-xs text-ink-3">
-                <span>Charges & Commissions</span>
+                <span>{t("costs")}</span>
                 <ArrowDownRight className="size-3.5 text-rose-500" />
               </div>
               <div className="mt-2 font-display text-xl font-bold tabular text-rose-500">
                 {formatFinance(cur.operatingExpensesCents + cur.partnerCommissionsCents, currency)}
               </div>
               <p className="mt-1 text-xs text-ink-3">
-                Dont {formatFinance(cur.partnerCommissionsCents, currency)} de commissions
+                {t("costsHelp", { amount: formatFinance(cur.partnerCommissionsCents, currency) })}
               </p>
             </Panel>
           </div>
@@ -264,13 +269,8 @@ export default function FinanceOverviewPage() {
           <div className="flex items-start gap-3 rounded-lg border border-line bg-surface-2 p-4 text-xs text-ink-2">
             <ShieldAlert className="size-4 shrink-0 text-amber-500 mt-0.5" />
             <div>
-              <strong className="text-ink">Garantie de transparence financière FOVE :</strong>
-              <p className="mt-0.5 text-ink-3">
-                Toutes les données ci-dessus sont calculées en temps réel à partir des transactions Stripe, contrats
-                commerciaux validés, dépenses opérationnelles pointées et écritures du journal financier. Aucun chiffre
-                n&apos;est simulé ni inventé. Le résultat net est qualifié de provisoire tant que l&apos;ensemble des
-                charges du mois n&apos;est pas intégralement rapproché.
-              </p>
+              <strong className="text-ink">{t("transparencyTitle")}</strong>
+              <p className="mt-0.5 text-ink-3">{t("transparencyBody")}</p>
             </div>
           </div>
         </div>

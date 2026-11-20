@@ -15,6 +15,8 @@ import type {
   AdminPayoutActionDto,
   AdminSettingsUpdateDto,
 } from "./partners.dto";
+import { localeForCountry, normalizeLocale, type Locale } from "../i18n/locale";
+import { partnerApprovedMessage, partnerEmails } from "../i18n/emails";
 
 @Injectable()
 export class PartnersService {
@@ -29,6 +31,12 @@ export class PartnersService {
   /**
    * Récupère ou initialise les réglages du programme partenaire.
    */
+  /** Langue des emails d'un partenaire : celle de son compte, sinon celle de son pays. */
+  private async partnerLocale(partner: { userId: string | null; country: string | null }): Promise<Locale> {
+    const user = partner.userId ? await this.prisma.client.user.findUnique({ where: { id: partner.userId }, select: { locale: true } }) : null;
+    return normalizeLocale(user?.locale) ?? localeForCountry(partner.country);
+  }
+
   async getSettings() {
     let settings = await this.prisma.client.partnerSettings.findUnique({
       where: { id: "default" },
@@ -53,7 +61,7 @@ export class PartnersService {
   /**
    * 1. Soumission d'une candidature partenaire.
    */
-  async apply(dto: PartnerApplyDto, ip?: string) {
+  async apply(dto: PartnerApplyDto, ip?: string, requestLocale?: Locale | null) {
     // Vérification de doublon
     const existing = await this.prisma.client.partner.findFirst({
       where: { email: dto.email.toLowerCase() },
@@ -117,11 +125,14 @@ export class PartnersService {
 
     // Email de confirmation au candidat
     try {
+      const locale = requestLocale ?? localeForCountry(dto.country);
+      const t = partnerEmails(locale);
       await this.email.send({
         to: dto.email,
-        subject: "Candidature reçue · Programme Partenaires FOVE",
-        text: `Bonjour ${dto.name},\n\nNous avons bien reçu votre candidature pour rejoindre le programme de partenaires commerciaux FOVE.\n\nNotre équipe examine votre dossier sous 24 à 48 heures. Dès validation, vous recevrez votre lien commercial personnalisé (${code}) et l'accès à votre espace de suivi.\n\nL'équipe FOVE\nhttps://fove.digital`,
-        html: `
+        subject: t.receivedSubject,
+        text: t.received(dto.name, code),
+        // Version mise en forme disponible en français ; texte seul dans les autres langues.
+        html: locale !== "fr" ? undefined : `
           <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #111; max-width: 580px; margin: 0 auto; padding: 24px;">
             <h2 style="margin-bottom: 12px; color: #000;">Candidature reçue · Programme Partenaires FOVE</h2>
             <p>Bonjour <strong>${dto.name}</strong>,</p>
@@ -372,10 +383,12 @@ export class PartnersService {
 
     // Email de notification de commission au partenaire
     try {
+      const t = partnerEmails(await this.partnerLocale(partner));
+      const amount = `${(commissionAmount / 100).toFixed(2)} ${payment.currency}`;
       await this.email.send({
         to: partner.email,
-        subject: `Commission enregistrée · ${commissionAmount / 100} ${payment.currency} générés`,
-        text: `Félicitations ${partner.name} !\n\nUne entreprise que vous avez recommandée vient de souscrire un abonnement payant sur FOVE.\n\nMontant de la commission : ${(commissionAmount / 100).toFixed(2)} ${payment.currency} (${rate}%).\nStatut : En cours de validation (délai de garantie de ${settings.validationDelayDays} jours).\n\nRetrouvez le détail dans votre espace :\n${loadConfig().APP_URL}/partner`,
+        subject: t.commissionSubject(amount),
+        text: t.commission(partner.name, amount, String(rate), settings.validationDelayDays, `${loadConfig().APP_URL}/partner`),
       });
     } catch (e) {
       this.logger.error("Erreur envoi notification commission au partenaire", e);
@@ -741,11 +754,18 @@ export class PartnersService {
     const loginUrl = `${loadConfig().APP_URL}/login`;
     const partnerUrl = `${loadConfig().APP_URL}/partner`;
     try {
+      const locale = await this.partnerLocale(partner);
+      const translated = partnerApprovedMessage(locale, {
+        name: partner.name,
+        code: partner.code,
+        publicLink: `${loadConfig().APP_URL}/p/${partner.code}`,
+        dashboardUrl: partnerUrl,
+      });
       await this.email.send({
         to: partner.email,
-        subject: "Félicitations · Votre partenariat FOVE est validé !",
-        text: `Bonjour ${partner.name},\n\nNous avons le plaisir de vous confirmer que votre candidature au programme Partenaires FOVE a été validée.\n\nVotre code commercial : ${partner.code}\nVotre lien : ${loadConfig().APP_URL}/p/${partner.code}\n\nAccédez à votre espace partenaire dès maintenant :\n${partnerUrl}\n\nL'équipe FOVE`,
-        html: `
+        subject: translated.subject,
+        text: translated.text,
+        html: locale !== "fr" ? translated.html : `
           <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #111; max-width: 580px; margin: 0 auto; padding: 24px;">
             <h2 style="color: #000;">Félicitations · Votre partenariat FOVE est approuvé !</h2>
             <p>Bonjour <strong>${partner.name}</strong>,</p>
@@ -791,8 +811,8 @@ export class PartnersService {
     try {
       await this.email.send({
         to: partner.email,
-        subject: "Mise à jour concernant votre candidature FOVE",
-        text: `Bonjour ${partner.name},\n\nAprès examen de votre dossier, nous ne sommes pas en mesure de valider votre candidature au programme de partenariat commercial FOVE à ce stade.\n\nMotif : ${reason}\n\nNous vous remercions de l'intérêt porté à FOVE.\nL'équipe FOVE`,
+        subject: partnerEmails(await this.partnerLocale(partner)).rejectedSubject,
+        text: partnerEmails(await this.partnerLocale(partner)).rejected(partner.name, reason),
       });
     } catch (e) {
       this.logger.error("Erreur envoi email rejet partenaire", e);
@@ -878,8 +898,11 @@ export class PartnersService {
       try {
         await this.email.send({
           to: payout.partner.email,
-          subject: `Virement effectué · ${(payout.amountCents / 100).toFixed(2)} USD`,
-          text: `Bonjour ${payout.partner.name},\n\nVotre virement de ${(payout.amountCents / 100).toFixed(2)} USD a été effectué avec succès.\n\nRéférence de transaction : ${dto.reference ?? "Règlement bancaire"}\n\nMerci de votre partenariat avec FOVE !\nhttps://fove.digital/partner`,
+          ...(await (async () => {
+            const t = partnerEmails(await this.partnerLocale(payout.partner));
+            const amount = `${(payout.amountCents / 100).toFixed(2)} USD`;
+            return { subject: t.payoutSubject(amount), text: t.payout(payout.partner.name, amount, dto.reference ?? t.bankTransfer) };
+          })()),
         });
       } catch (e) {
         this.logger.error("Erreur envoi notification virement effectué", e);

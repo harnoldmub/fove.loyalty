@@ -1,0 +1,434 @@
+{
+  "landing": {
+    "meta": {
+      "title": "Hazte socio comercial de FOVE · Programa de Socios",
+      "description": "Recomienda la solución de tarjetas de fidelidad digitales de FOVE a los comercios y gana comisiones atractivas por cada suscripción."
+    },
+    "hero": {
+      "badge": "Programa de Socios oficial de FOVE",
+      "title": "Hazte socio de FOVE.",
+      "subtitle": "Recomienda FOVE a los comercios, amplía tu red y gana comisiones por las suscripciones que aportes.",
+      "cta": "Hacerme socio",
+      "howItWorks": "¿Cómo funciona?",
+      "perkFree": "Registro 100% gratuito",
+      "perkCommission": "20% de comisión neta",
+      "perkPayment": "Pago por transferencia y Mobile Money"
+    },
+    "steps": {
+      "title": "¿Cómo funciona el programa?",
+      "subtitle": "Un recorrido claro y ágil, desde tu solicitud hasta tus primeros pagos.",
+      "apply": {
+        "title": "Envías tu solicitud",
+        "desc": "Completa el formulario en 2 minutos indicando tu perfil, tu ciudad y tus canales de recomendación."
+      },
+      "review": {
+        "title": "Validación de FOVE",
+        "desc": "Nuestro equipo revisa tu solicitud en un plazo de 24 a 48 horas y activa tu estatus de socio."
+      },
+      "link": {
+        "title": "Tu enlace personal",
+        "desc": "Recibes tu código único, tu enlace de recomendación, tus códigos QR y tus recursos de marketing."
+      },
+      "earn": {
+        "title": "Gana comisiones",
+        "desc": "Cada comercio que contrata una suscripción de pago a través de tu enlace te genera un 20% de comisión neta."
+      }
+    },
+    "profiles": {
+      "title": "¿A quién se dirige el programa?",
+      "subtitle": "Profesionales que acompañan a diario al comercio minorista y a los servicios de proximidad.",
+      "agencies": {
+        "title": "Agencias digitales y Medios",
+        "desc": "Amplía tu oferta de acompañamiento digital para marcas locales y comercios de proximidad."
+      },
+      "developers": {
+        "title": "Desarrolladores e Integradores",
+        "desc": "Conecta FOVE a las cajas registradoras y tiendas en línea de tus clientes profesionales."
+      },
+      "freelancers": {
+        "title": "Comerciales independientes",
+        "desc": "Comercializa una solución SaaS moderna, lista para usar y muy fácil de mostrar en un smartphone."
+      },
+      "consultants": {
+        "title": "Consultores y Coaches de retail",
+        "desc": "Ayuda a los comercios a modernizar la relación con sus clientes y mejorar su retención gracias al móvil."
+      },
+      "entrepreneurs": {
+        "title": "Emprendedores y Captadores",
+        "desc": "Monetiza tu red de comercios, restaurantes y tiendas con ingresos previsibles."
+      },
+      "networks": {
+        "title": "Redes de comerciantes",
+        "desc": "Ofrece a tus asociados una herramienta moderna para dinamizar la afluencia comercial de tu ciudad."
+      }
+    },
+    "tools": {
+      "title": "Herramientas pensadas para tu éxito",
+      "subtitle": "Ponemos a tu disposición una plataforma completa para recomendar FOVE sin fricciones.",
+      "qr": {
+        "title": "Código QR y enlace único",
+        "desc": "Un enlace permanente y un código QR oficial listos para imprimir o mostrar en tus presentaciones y folletos."
+      },
+      "whatsapp": {
+        "title": "Compartir por WhatsApp en 1 clic",
+        "desc": "Mensajes ya redactados para contactar directamente a los comercios de tu agenda."
+      },
+      "pipeline": {
+        "title": "Pipeline de prospección",
+        "desc": "Registra tus prospectos para seguir tus gestiones comerciales desde el primer contacto hasta la conversión."
+      },
+      "payouts": {
+        "title": "Pagos flexibles",
+        "desc": "Cobra por transferencia bancaria o Mobile Money a partir de 50 $ de ganancias acumuladas."
+      },
+      "attribution": {
+        "title": "Atribución first-party de 30 días",
+        "desc": "Aunque el comercio se registre varios días después de su visita, la venta se te acredita."
+      },
+      "support": {
+        "title": "Soporte prioritario",
+        "desc": "Acceso directo al equipo de FOVE para responder a las preguntas técnicas o comerciales de tus prospectos."
+      }
+    },
+    "faq": {
+      "title": "Preguntas frecuentes",
+      "subtitle": "Todo lo que necesitas saber antes de postularte.",
+      "who": {
+        "q": "¿Quién puede ser socio comercial de FOVE?",
+        "a": "El programa está abierto a cualquier persona o entidad con una red profesional de comercios: agencias, freelancers, desarrolladores, consultores de retail, asociaciones de comerciantes o captadores de negocio."
+      },
+      "attribution": {
+        "q": "¿Cómo se atribuyen las ventas?",
+        "a": "Cada socio dispone de un enlace personalizado (p. ej.: https://fove.digital/p/TUCODIGO). Cuando un comercio hace clic en tu enlace, se guarda una cookie first-party de 30 días. Si se registra dentro de ese plazo, su empresa queda vinculada a ti de forma definitiva en nuestra base de datos."
+      },
+      "base": {
+        "q": "¿Sobre qué importe se calcula la comisión?",
+        "a": "La comisión es del 20% sobre el importe realmente cobrado por FOVE (sin impuestos y descontando posibles cupones promocionales). Se aplica desde la contratación de la primera suscripción de pago."
+      },
+      "withdraw": {
+        "q": "¿Cuándo y cómo puedo retirar mis ganancias?",
+        "a": "En cuanto tu saldo de comisiones disponibles alcance el umbral mínimo de 50 $ o 50 € (según tu divisa), puedes solicitar una transferencia directamente desde tu espacio de socio. Pagamos por transferencia bancaria o Mobile Money (Airtel Money, Orange Money, M-Pesa según disponibilidad geográfica)."
+      },
+      "fees": {
+        "q": "¿Hay costes o compromisos?",
+        "a": "No, la adhesión al programa de socios de FOVE es 100% gratuita, sin cuota de entrada ni objetivos obligatorios."
+      },
+      "both": {
+        "q": "¿Puedo ser a la vez comercio FOVE y socio?",
+        "a": "Por supuesto. Tu cuenta de usuario única de FOVE te da acceso de forma sencilla a tu espacio de comercio (/app) y a tu espacio de socio (/partner)."
+      }
+    },
+    "finalCta": {
+      "title": "¿Listo para hacer crecer tu actividad con FOVE?",
+      "subtitle": "Únete al programa de socios comerciales. Solicitud gratuita y respuesta garantizada en 48 h.",
+      "cta": "Enviar mi solicitud"
+    }
+  },
+  "commissions": {
+    "badge": "Tarifas 2026",
+    "title": "Gana un 20 % por cada suscripción",
+    "subtitle": "Comisiones calculadas sobre el importe neto realmente pagado por el comercio. Sin cálculos engañosos ni costes ocultos.",
+    "perYear": "{price} / año",
+    "clientPrice": "Precio anual del cliente: {price}",
+    "rate": "({rate} de comisión)",
+    "recommended": "El más recomendado",
+    "plans": {
+      "starter": "Para pequeños comercios y autónomos",
+      "business": "Para restaurantes, salones y tiendas",
+      "premium": "Para marcas con varios puntos de venta"
+    },
+    "features": {
+      "annual": "Suscripción anual de 1 año",
+      "net": "Comisión neta tras el cobro",
+      "tracking": "Seguimiento en directo en tu espacio",
+      "fastPayout": "Pago rápido por transferencia o móvil",
+      "support": "Acompañamiento comercial de FOVE"
+    },
+    "cta": "Unirme a la red de socios",
+    "footnote": "Registro gratuito en 2 minutos · Comisiones válidas en todos los planes contratados"
+  },
+  "join": {
+    "back": "Volver a la presentación del programa",
+    "badge": "Solicitud de socio",
+    "title": "Únete a la red FOVE",
+    "subtitle": "Completa este formulario para enviar tu solicitud. Nuestro equipo valida las solicitudes en un plazo de 24 a 48 horas.",
+    "fields": {
+      "name": "Nombre y apellidos *",
+      "email": "Email profesional *",
+      "phone": "Teléfono / WhatsApp *",
+      "company": "Nombre de la agencia o actividad (opcional)",
+      "profile": "Tu perfil *",
+      "country": "País *",
+      "city": "Ciudad principal *",
+      "website": "Sitio web, LinkedIn o portfolio (opcional)",
+      "strategy": "¿Cómo piensas promocionar FOVE entre los comercios? *",
+      "network": "Número estimado de comercios en tu red"
+    },
+    "types": {
+      "AGENCY": "Agencia digital / de marketing",
+      "DEVELOPER": "Desarrollador / Integrador",
+      "SALES_FREELANCE": "Comercial independiente",
+      "CONSULTANT": "Consultor / Formador de retail",
+      "ENTREPRENEUR": "Emprendedor / Influencer B2B",
+      "MERCHANT_NETWORK": "Red / Federación de comerciantes",
+      "OTHER": "Otro perfil"
+    },
+    "network": {
+      "small": "De 1 a 10 comercios",
+      "medium": "De 11 a 50 comercios",
+      "large": "De 51 a 200 comercios",
+      "xlarge": "Más de 200 comercios"
+    },
+    "terms": "Acepto las <link>Condiciones Generales de Uso</link> y me comprometo a recomendar FOVE de forma leal y profesional, sin prácticas de spam.",
+    "submit": "Enviar mi solicitud",
+    "submitting": "Enviando tu solicitud...",
+    "errors": {
+      "terms": "Acepta las condiciones del programa de socios.",
+      "city": "Indica tu ciudad principal.",
+      "generic": "No se ha podido enviar tu solicitud. Inténtalo de nuevo."
+    },
+    "success": {
+      "title": "¡Solicitud registrada con éxito!",
+      "body": "Gracias, <strong>{name}</strong>. Tu solicitud se ha enviado a nuestro equipo. Te hemos enviado un email de confirmación a <strong>{email}</strong>.",
+      "code": "Código de socio previsto:",
+      "status": "Estado actual:",
+      "statusValue": "En revisión (24-48 h)",
+      "commission": "Comisión propuesta:",
+      "commissionValue": "20% neto",
+      "home": "Volver al inicio",
+      "login": "Ir al inicio de sesión de FOVE"
+    }
+  },
+  "portal": {
+    "meta": {
+      "title": "Espacio de Socio Comercial · FOVE"
+    }
+  },
+  "dashboard": {
+    "loading": "Cargando tu espacio de socio...",
+    "inactive": {
+      "title": "Espacio de socio no activado",
+      "body": "Tu solicitud está pendiente de validación por el equipo de FOVE o todavía no te has postulado.",
+      "cta": "Enviar una solicitud"
+    },
+    "header": {
+      "badge": "Socio",
+      "code": "Código: <strong>{code}</strong>",
+      "merchantSpace": "Espacio de comercio",
+      "admin": "Back-office de administración"
+    },
+    "banner": {
+      "greeting": "Hola, {name}",
+      "rateBadge": "Socio {rate}%",
+      "link": "Tu enlace comercial permanente:",
+      "copied": "¡Copiado!",
+      "copyLink": "Copiar mi enlace",
+      "qr": "Código QR",
+      "utm": "Enlace UTM",
+      "newLead": "Nuevo prospecto"
+    },
+    "whatsappShare": "¡Hola! Descubre FOVE, la solución moderna para fidelizar a tus clientes en su smartphone (tarjetas Apple Wallet y Google Wallet sin instalar ninguna aplicación): {link}",
+    "tabsLabel": "Espacio de socio",
+    "tabs": {
+      "overview": "Resumen",
+      "links": "Mi enlace comercial",
+      "leads": "Prospectos",
+      "clients": "Clientes aportados",
+      "commissions": "Comisiones",
+      "payouts": "Pagos y retiros",
+      "resources": "Recursos de venta"
+    },
+    "overview": {
+      "clicks": "Clics en tu enlace",
+      "clicksHint": "Visitantes enviados a FOVE",
+      "signups": "Registros y conversiones",
+      "signupsCount": "/ {count, plural, one {# registrado} other {# registrados}}",
+      "conversionRate": "Tasa de conversión: {rate}%",
+      "available": "Comisiones disponibles",
+      "pending": "Pendiente: {amount}",
+      "totalEarned": "Total de ganancias",
+      "alreadyPaid": "Ya transferido: {amount}",
+      "balance": "Saldo disponible para transferir: {amount}",
+      "threshold": "Umbral de retiro: {amount} · Pagos por transferencia bancaria o Mobile Money.",
+      "requestPayout": "Solicitar una transferencia",
+      "recentClients": "Comercios aportados recientemente",
+      "seeAll": "Ver todo",
+      "noClients": "Ningún comercio ha usado todavía tu enlace. ¡Compártelo para empezar!",
+      "registeredOn": "Registrado el {date}",
+      "paidClient": "Cliente de pago",
+      "trial": "Prueba / Gratis",
+      "recentLeads": "Tus últimos prospectos",
+      "seePipeline": "Ver el pipeline",
+      "noLeads": "No hay prospectos registrados en tu pipeline.",
+      "declareLead": "Declarar un comercio",
+      "inProgress": "En curso"
+    },
+    "leadStatus": {
+      "NEW": "Nuevo",
+      "CONTACTED": "Contactado",
+      "INTERESTED": "Interesado",
+      "REGISTERED": "Registrado",
+      "CONVERTED": "Convertido",
+      "LOST": "Perdido"
+    },
+    "links": {
+      "title": "Tu enlace de recomendación oficial",
+      "body": "Cada visitante que hace clic en este enlace recibe una cookie first-party de 30 días. Si se registra y contrata una suscripción de FOVE, recibes automáticamente un 20% de comisión.",
+      "copied": "¡Copiado!",
+      "copy": "Copiar",
+      "codeTitle": "Código de socio único",
+      "codeHint": "Se puede introducir manualmente al pagar.",
+      "cookieTitle": "Duración de atribución de la cookie",
+      "cookieValue": "30 días",
+      "cookieHint": "Periodo de conversión tras el primer clic.",
+      "rateTitle": "Comisión garantizada",
+      "rateValue": "{rate} %",
+      "rateHint": "Sobre el importe neto de la primera suscripción."
+    },
+    "leads": {
+      "title": "Pipeline de prospección",
+      "subtitle": "Sigue tus gestiones con los comercios de tu zona.",
+      "newLead": "Nuevo prospecto",
+      "empty": "No hay prospectos registrados. Haz clic en «Nuevo prospecto» para añadir tus primeros comercios objetivo.",
+      "colBusiness": "Comercio",
+      "colContact": "Contacto",
+      "colDetails": "Datos de contacto",
+      "colCity": "Ciudad / Sector",
+      "colStatus": "Estado",
+      "colNotes": "Notas",
+      "defaultSector": "Comercio"
+    },
+    "clients": {
+      "title": "Comercios registrados a través de tu enlace",
+      "empty": "Todavía no hay comercios vinculados. Comparte tu enlace comercial para conseguir tus primeros registros.",
+      "colBusiness": "Comercio",
+      "colRegistered": "Fecha de registro",
+      "colPlan": "Plan activo",
+      "colStatus": "Estado de conversión",
+      "colFirstPayment": "Fecha del primer pago",
+      "paidClient": "Cliente de pago",
+      "trial": "Prueba / Gratis"
+    },
+    "commissions": {
+      "title": "Registro de comisiones",
+      "empty": "Todavía no se ha generado ninguna comisión. En cuanto un cliente contrate una suscripción de pago, aparecerá aquí.",
+      "colDate": "Fecha",
+      "colBusiness": "Comercio",
+      "colAmount": "Importe de la suscripción",
+      "colCommission": "Tu comisión",
+      "colAvailability": "Disponibilidad",
+      "colStatus": "Estado",
+      "immediate": "Inmediata",
+      "paid": "Pagada",
+      "available": "Disponible",
+      "cancelled": "Cancelada (Reembolso)",
+      "pending": "Pendiente (30 días)"
+    },
+    "payouts": {
+      "balance": "Saldo disponible: {amount}",
+      "minimum": "Importe mínimo de retiro: {amount}",
+      "requestPayout": "Solicitar una transferencia",
+      "history": "Historial de pagos",
+      "empty": "Todavía no has solicitado ninguna transferencia.",
+      "colDate": "Fecha de solicitud",
+      "colMethod": "Método",
+      "colAmount": "Importe",
+      "colStatus": "Estado",
+      "colReference": "Referencia",
+      "paid": "Pagado",
+      "failed": "Rechazado",
+      "processing": "En proceso",
+      "methods": {
+        "BANK_TRANSFER": "Transferencia bancaria",
+        "MOBILE_MONEY": "Mobile Money"
+      }
+    },
+    "resources": {
+      "title": "Kit de ventas y argumentos comerciales",
+      "subtitle": "Recursos listos para usar para convencer a comercios, restaurantes y salones en pocos minutos.",
+      "pitchTitle": "El pitch de FOVE en 30 segundos",
+      "pitch": "«El 80% de las tarjetas de fidelidad de cartón se pierden o se olvidan en casa. Con FOVE, tus clientes guardan tu tarjeta directamente en su Apple Wallet o Google Wallet escaneando un código QR en tu mostrador. Ninguna aplicación que descargar, notificaciones push de recordatorio y duplicas el regreso de tus mejores clientes desde el primer mes.»",
+      "whatsappTitle": "Mensaje de WhatsApp tipo",
+      "copy": "Copiar",
+      "whatsappCopied": "¡Mensaje de WhatsApp copiado al portapapeles!",
+      "whatsappMessage": "¡Hola! He pensado en tu negocio: mira esta solución que sustituye las tarjetas de fidelidad de papel por tarjetas digitales Apple Wallet y Google Wallet. Se configura en 5 minutos y funciona sin ninguna aplicación: {link}",
+      "objectionsTitle": "Respuestas a las 3 objeciones más comunes",
+      "objectionPaper": "«Mis clientes prefieren el papel»",
+      "answerPaper": "En realidad, el 70% de los clientes olvida su tarjeta de papel. En cambio, su smartphone siempre está en su bolsillo en el momento de pagar.",
+      "objectionPrice": "«Es demasiado caro para mí»",
+      "answerPrice": "El plan Starter cuesta solo 99 $ al año (menos de 9 $ al mes). Un solo cliente fidelizado más por semana amortiza la inversión.",
+      "objectionTime": "«No tengo tiempo para configurarlo»",
+      "answerTime": "La cuenta se configura en solo 5 minutos desde un smartphone o un ordenador, y el cartel con el código QR se genera al instante, listo para imprimir."
+    }
+  },
+  "leadModal": {
+    "title": "Nuevo prospecto",
+    "subtitle": "Registrar un comercio que contactar",
+    "close": "Cerrar",
+    "businessName": "Nombre de la marca / comercio *",
+    "contact": "Contacto / Gerente",
+    "email": "Email profesional",
+    "phone": "Teléfono / WhatsApp",
+    "country": "País",
+    "city": "Ciudad",
+    "sector": "Sector de actividad",
+    "notes": "Notas y contexto",
+    "cancel": "Cancelar",
+    "submit": "Añadir al pipeline",
+    "submitting": "Guardando...",
+    "error": "No se ha podido guardar el prospecto"
+  },
+  "payoutModal": {
+    "title": "Solicitar una transferencia",
+    "available": "Disponible para retirar: {amount}",
+    "close": "Cerrar",
+    "amount": "Importe del retiro (USD) *",
+    "threshold": "Umbral mínimo: {amount}",
+    "method": "Método de pago *",
+    "bankTransfer": "Transferencia bancaria (IBAN / SWIFT)",
+    "mobileMoney": "Mobile Money (Airtel, Orange, M-Pesa)",
+    "accountHolder": "Nombre y apellidos del titular de la cuenta *",
+    "iban": "IBAN / Número de cuenta *",
+    "bic": "Código BIC / SWIFT (opcional)",
+    "bankName": "Entidad bancaria",
+    "provider": "Operador *",
+    "providers": {
+      "AIRTEL_MONEY": "Airtel Money",
+      "ORANGE_MONEY": "Orange Money",
+      "M_PESA": "M-Pesa (Vodacom)",
+      "MTN_MOMO": "MTN Mobile Money",
+      "OTHER": "Otro operador"
+    },
+    "mobileNumber": "Número de Mobile Money *",
+    "mobileHolder": "Nombre oficial registrado en la línea *",
+    "cancel": "Cancelar",
+    "submit": "Confirmar la solicitud de transferencia",
+    "submitting": "Enviando...",
+    "errors": {
+      "minimum": "El importe mínimo de retiro es de {amount}",
+      "exceeds": "El importe solicitado supera tu saldo disponible ({amount})",
+      "bankRequired": "El IBAN y el nombre del titular de la cuenta son obligatorios",
+      "mobileRequired": "El número de Mobile Money y el nombre del titular son obligatorios",
+      "generic": "No se ha podido enviar la solicitud de retiro"
+    }
+  },
+  "qrModal": {
+    "title": "Código QR de socio",
+    "close": "Cerrar",
+    "hint": "Pide a un comercio que escanee este código QR para abrir directamente tu página de recomendación.",
+    "copied": "¡Enlace copiado al portapapeles!",
+    "copy": "Copiar el enlace directo",
+    "download": "Descargar el código QR (SVG)"
+  },
+  "utmModal": {
+    "title": "Generador de enlaces de campaña",
+    "subtitle": "Parámetros UTM para seguir tus distintos canales",
+    "close": "Cerrar",
+    "source": "Fuente (utm_source)",
+    "medium": "Medio (utm_medium)",
+    "campaign": "Nombre de la campaña (utm_campaign)",
+    "generated": "Enlace generado",
+    "copied": "¡Enlace de campaña copiado!",
+    "copy": "Copiar el enlace con UTM"
+  }
+}

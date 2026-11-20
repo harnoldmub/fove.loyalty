@@ -1,0 +1,88 @@
+{
+  "skipToContent": "Aller au contenu",
+  "language": "Langue",
+  "chooseLanguage": "Choisir la langue",
+  "select": {
+    "search": "Rechercher…",
+    "noResult": "Aucun résultat.",
+    "frequent": "Fréquents",
+    "all": "Tous"
+  },
+  "country": {
+    "label": "Pays",
+    "search": "Rechercher un pays…",
+    "noResult": "Aucun pays trouvé.",
+    "frequent": "Pays fréquents",
+    "all": "Tous les pays"
+  },
+  "city": {
+    "label": "Ville",
+    "search": "Rechercher une ville…",
+    "placeholder": "Sélectionner une ville",
+    "typeToSearch": "Saisissez un nom de ville pour rechercher.",
+    "useTyped": "Utiliser « {value} »"
+  },
+  "currency": {
+    "label": "Devise",
+    "search": "Rechercher une devise…",
+    "noResult": "Aucune devise trouvée.",
+    "frequent": "Devises fréquentes",
+    "all": "Toutes les devises"
+  },
+  "phone": {
+    "callingCode": "Indicatif téléphonique : {code} ({country})",
+    "search": "Rechercher un pays ou un indicatif…"
+  },
+  "dialog": {
+    "close": "Fermer",
+    "cancel": "Annuler"
+  },
+  "cookies": {
+    "settings": "Gestion des cookies",
+    "region": "Consentement aux cookies",
+    "title": "Respect de votre vie privée",
+    "closeWithoutAccepting": "Fermer sans accepter",
+    "body": "Nous mesurons l’audience (Google Analytics, Clarity) pour améliorer votre expérience sur FOVE. Vos données restent sécurisées et ne sont jamais revendues.",
+    "learnMore": "En savoir plus",
+    "decline": "Refuser",
+    "accept": "Accepter"
+  },
+  "theme": {
+    "toggle": "Changer de thème (clair ou sombre)",
+    "toggleTitle": "Changer de thème"
+  },
+  "toast": {
+    "region": "Notifications",
+    "close": "Fermer la notification"
+  },
+  "kind": {
+    "EARN": "Achat",
+    "ADJUSTMENT": "Ajustement",
+    "REDEMPTION": "Récompense",
+    "REDEMPTION_REVERSAL": "Récompense annulée",
+    "REVERSAL": "Annulation",
+    "REFUND": "Remboursement",
+    "EXPIRATION": "Expiration"
+  },
+  "unit": {
+    "POINTS": "{count, plural, one {point} other {points}}",
+    "STAMPS": "{count, plural, one {tampon} other {tampons}}"
+  },
+  "unitCount": {
+    "POINTS": "{count, plural, one {# point} other {# points}}",
+    "STAMPS": "{count, plural, one {# tampon} other {# tampons}}"
+  },
+  "errorPage": {
+    "sessionTitle": "Session expirée",
+    "sessionBody": "Votre session de connexion a expiré. Redirection en cours vers la page de connexion…",
+    "reconnect": "Se reconnecter",
+    "title": "Service momentanément indisponible",
+    "body": "Vos données ne sont pas perdues. Réessayez dans un instant ; si le problème continue, contactez le support FOVE.",
+    "retry": "Réessayer"
+  },
+  "notFound": {
+    "title": "Page introuvable",
+    "body": "Le lien est peut-être incomplet ou a été remplacé. Si c’est une carte de fidélité, demandez un nouveau lien au commerçant.",
+    "home": "Retour à l’accueil"
+  }
+}

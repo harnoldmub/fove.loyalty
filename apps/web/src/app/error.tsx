@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 
@@ -10,6 +11,7 @@ export default function ErrorPage({
   error: Error & { digest?: string; status?: number };
   reset: () => void;
 }) {
+  const t = useTranslations("common.errorPage");
   const isAuthError =
     error?.status === 401 ||
     error?.status === 403 ||
@@ -25,15 +27,15 @@ export default function ErrorPage({
   if (isAuthError) {
     return (
       <main id="contenu" className="mx-auto grid min-h-dvh max-w-md content-center justify-items-start gap-4 px-4">
-        <h1 className="font-display text-3xl font-semibold">Session expirée</h1>
-        <p className="text-ink-2">Votre session de connexion a expiré. Redirection en cours vers la page de connexion…</p>
+        <h1 className="font-display text-3xl font-semibold">{t("sessionTitle")}</h1>
+        <p className="text-ink-2">{t("sessionBody")}</p>
         <Button
           onClick={() => {
             const next = encodeURIComponent(window.location.pathname + window.location.search);
             window.location.replace(`/login?next=${next}`);
           }}
         >
-          Se reconnecter
+          {t("reconnect")}
         </Button>
       </main>
     );
@@ -41,9 +43,9 @@ export default function ErrorPage({
 
   return (
     <main id="contenu" className="mx-auto grid min-h-dvh max-w-md content-center justify-items-start gap-4 px-4">
-      <h1 className="font-display text-3xl font-semibold">Service momentanément indisponible</h1>
-      <p className="text-ink-2">Vos données ne sont pas perdues. Réessayez dans un instant ; si le problème continue, contactez le support FOVE.</p>
-      <Button onClick={reset}>Réessayer</Button>
+      <h1 className="font-display text-3xl font-semibold">{t("title")}</h1>
+      <p className="text-ink-2">{t("body")}</p>
+      <Button onClick={reset}>{t("retry")}</Button>
     </main>
   );
 }

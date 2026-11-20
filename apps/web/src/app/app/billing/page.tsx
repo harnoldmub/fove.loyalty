@@ -4,13 +4,14 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Suspense, useEffect, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { PAST_DUE_GRACE_DAYS } from "@fove/shared";
 import { useCan } from "@/components/app/me-context";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/dialog";
 import { Badge, PageHeader, Panel, Skeleton } from "@/components/ui/misc";
-import { api, errorMessage } from "@/lib/api";
+import { api, useErrorMessage } from "@/lib/api";
 import { clearPlanChoice } from "@/lib/plan-choice";
 import { cn, formatDate, formatNumber, formatPrice } from "@/lib/utils";
 
@@ -46,16 +47,18 @@ interface Billing {
   limits: Record<string, number | null>;
 }
 
-const STATUS: Record<string, { label: string; tone: "mint" | "stamp" | "danger" | "neutral" }> = {
-  TRIALING: { label: "Essai", tone: "stamp" },
-  ACTIVE: { label: "Actif", tone: "mint" },
-  PAST_DUE: { label: "Paiement en échec", tone: "danger" },
-  CANCELED: { label: "Résilié", tone: "neutral" },
-  INCOMPLETE: { label: "En attente de paiement", tone: "neutral" },
+const STATUS_TONE: Record<string, "mint" | "stamp" | "danger" | "neutral"> = {
+  TRIALING: "stamp",
+  ACTIVE: "mint",
+  PAST_DUE: "danger",
+  CANCELED: "neutral",
+  INCOMPLETE: "neutral",
 };
-const USAGE_LABEL: Record<string, string> = { customers: "Clients", establishments: "Établissements", staff: "Collaborateurs", programs: "Programmes" };
+const USAGE_KEYS = ["customers", "establishments", "staff", "programs"] as const;
 
 function BillingView() {
+  const toErrorMessage = useErrorMessage();
+  const t = useTranslations("app.billing");
   const params = useSearchParams();
   const router = useRouter();
   const canWrite = useCan("billing.write");
@@ -95,29 +98,29 @@ function BillingView() {
           return;
         }
         await qc.invalidateQueries({ queryKey: ["billing"] });
-        toast.success(`Offre ${plan.name} activée (mode simulé, aucun paiement)`);
+        toast.success(t("toasts.mockActivated", { name: plan.name }));
       } catch (e) {
-        toast.error(errorMessage(e));
+        toast.error(toErrorMessage(e));
       }
       setLaunching(null);
       router.replace("/app/billing");
     })();
-  }, [wanted, data, canWrite, qc, router]);
+  }, [wanted, data, canWrite, qc, router, t, toErrorMessage]);
 
   useEffect(() => {
     const c = params.get("checkout");
-    if (c === "success") toast.success("Paiement reçu : votre offre s’active dans quelques instants");
-    if (c === "mock" || c === "updated") toast.success("Abonnement mis à jour");
-    if (c === "scheduled") toast.success("Changement d’offre programmé au renouvellement");
-    if (c === "cancelled") toast.message("Paiement annulé, rien n’a été facturé");
-  }, [params]);
+    if (c === "success") toast.success(t("toasts.paid"));
+    if (c === "mock" || c === "updated") toast.success(t("toasts.updated"));
+    if (c === "scheduled") toast.success(t("toasts.scheduled"));
+    if (c === "cancelled") toast.message(t("toasts.cancelled"));
+  }, [params, t]);
 
   if (!data) return <Skeleton className="h-96" />;
   if (launching) {
     return (
       <Panel className="grid place-items-center gap-2 p-10 text-center">
-        <p className="font-display text-xl font-semibold">Offre {launching}</p>
-        <p className="text-ink-2">Ouverture du paiement sécurisé…</p>
+        <p className="font-display text-xl font-semibold">{t("launching", { name: launching })}</p>
+        <p className="text-ink-2">{t("openingCheckout")}</p>
       </Panel>
     );
   }
@@ -125,7 +128,7 @@ function BillingView() {
   const current = data.currentPlan;
   // Abonnement terminé (résilié, impayé prolongé) : on affiche l'offre réellement appliquée.
   const subApplies = sub !== null && sub.plan.code === current.code;
-  const status = subApplies && sub ? STATUS[sub.status] : null;
+  const status = subApplies && sub && STATUS_TONE[sub.status] ? { tone: STATUS_TONE[sub.status]!, label: t(`status.${sub.status}`) } : null;
   const managedByFove = sub !== null && (sub.plan.kind === "CUSTOM" || sub.provider === "MANUAL") && subApplies && current.kind !== "FREE";
   const stripeSubscriber = sub?.provider === "STRIPE" && subApplies && sub.status !== "CANCELED";
   const canCancel = subApplies && sub !== null && sub.plan.kind === "PAID" && !managedByFove && ["ACTIVE", "PAST_DUE"].includes(sub.status) && !sub.cancelAtPeriodEnd;
@@ -134,23 +137,23 @@ function BillingView() {
   // Abonnement payé en cours : choisir une autre offre la modifie (supérieure tout de suite, inférieure au renouvellement).
   const paidRunning = subApplies && sub !== null && sub.plan.kind === "PAID" && !managedByFove && sub.status !== "CANCELED" && sub.status !== "INCOMPLETE";
   const scheduled = paidRunning ? (sub?.scheduledPlan ?? null) : null;
-  const renewal = sub?.currentPeriodEnd ? formatDate(sub.currentPeriodEnd) : "la fin de la période payée";
+  const renewal = sub?.currentPeriodEnd ? formatDate(sub.currentPeriodEnd) : t("periodEnd");
 
   const refresh = () => qc.invalidateQueries({ queryKey: ["billing"] });
 
   /** Ce qui dépasse les quotas de l'offre visée : rien n'est supprimé, mais plus rien ne peut être ajouté. */
   const overQuota = (p: Plan) =>
-    Object.entries(USAGE_LABEL)
-      .filter(([k]) => p.limits[k] != null && (data.usage[k] ?? 0) > p.limits[k]!)
-      .map(([k, label]) => `${label.toLowerCase()} (${formatNumber(data.usage[k] ?? 0)} pour ${formatNumber(p.limits[k]!)} inclus)`);
+    USAGE_KEYS.filter((k) => p.limits[k] != null && (data.usage[k] ?? 0) > p.limits[k]!).map((k) =>
+      t("overQuotaItem", { label: t(`usageInline.${k}`), used: formatNumber(data.usage[k] ?? 0), included: formatNumber(p.limits[k]!) }),
+    );
 
   const cancelScheduled = async () => {
     try {
       await api.post("/app/billing/scheduled-change/cancel");
       await refresh();
-      toast.success(`Changement annulé : vous restez sur l’offre ${current.name}`);
+      toast.success(t("toasts.scheduledCancelled", { name: current.name }));
     } catch (e) {
-      toast.error(errorMessage(e));
+      toast.error(toErrorMessage(e));
     }
   };
 
@@ -160,10 +163,10 @@ function BillingView() {
       const res = await api.post<{ url: string; mode: string; effective?: "now" | "renewal" }>("/app/billing/checkout", { planCode: code, interval });
       const name = data.plans.find((p) => p.code === code)?.name ?? code;
       if (data.mode === "stripe" && !paidRunning) window.location.assign(res.url);
-      else if (res.effective === "renewal") await refresh().then(() => toast.success(`Passage à ${name} programmé le ${renewal}`));
-      else await refresh().then(() => toast.success(data.mode === "stripe" ? "Offre changée" : "Offre changée (mode simulé, aucun paiement)"));
+      else if (res.effective === "renewal") await refresh().then(() => toast.success(t("toasts.downgradeScheduled", { name, date: renewal })));
+      else await refresh().then(() => toast.success(data.mode === "stripe" ? t("toasts.changed") : t("toasts.changedMock")));
     } catch (e) {
-      toast.error(errorMessage(e));
+      toast.error(toErrorMessage(e));
     } finally {
       setPending(null);
     }
@@ -171,34 +174,34 @@ function BillingView() {
 
   return (
     <>
-      <PageHeader title="Abonnement" description="Changer d’offre ne supprime jamais vos cartes ni l’historique de vos clients." />
+      <PageHeader title={t("title")} description={t("description")} />
       {data.mode === "mock" && (
         <p className="mb-6 rounded-md bg-stamp-soft px-4 py-3 text-sm text-stamp-ink dark:text-stamp">
-          Mode de facturation simulé : aucun paiement réel n’est effectué sur cet environnement.
+          {t("mockMode")}
         </p>
       )}
-      {data.mode === "unavailable" && <p className="mb-6 rounded-md bg-surface-2 px-4 py-3 text-sm">Le paiement en ligne sera disponible prochainement. Votre offre actuelle reste accessible.</p>}
+      {data.mode === "unavailable" && <p className="mb-6 rounded-md bg-surface-2 px-4 py-3 text-sm">{t("unavailable")}</p>}
       <div className="grid gap-6 lg:grid-cols-[1fr_20rem]">
         <Panel className="p-5 sm:p-6">
           <div className="grid gap-2">
             <div className="flex flex-wrap items-center gap-2">
               <h2 className="font-display text-2xl font-semibold">{current.name}</h2>
-              {status ? <Badge tone={status.tone}>{status.label}</Badge> : <Badge tone="mint">Actif</Badge>}
+              {status ? <Badge tone={status.tone}>{status.label}</Badge> : <Badge tone="mint">{t("status.ACTIVE")}</Badge>}
             </div>
             <p className="text-ink-2">
-              {sub && !subApplies && `Votre abonnement ${sub.plan.name} est terminé : votre compte utilise l’offre Gratuite. `}
-              {current.kind === "FREE" && subApplies && "Gratuit, sans limite de durée. Passez à une offre supérieure quand vous avez besoin de plus de clients ou de fonctions. "}
-              {subApplies && sub?.status === "TRIALING" && sub.trialEndsAt && `Essai jusqu’au ${formatDate(sub.trialEndsAt)}, puis offre Gratuite. `}
+              {sub && !subApplies && `${t("summary.ended", { name: sub.plan.name })} `}
+              {current.kind === "FREE" && subApplies && `${t("summary.free")} `}
+              {subApplies && sub?.status === "TRIALING" && sub.trialEndsAt && `${t("summary.trial", { date: formatDate(sub.trialEndsAt) })} `}
               {subApplies && sub?.currentPeriodEnd && current.kind !== "FREE" &&
-                (sub.cancelAtPeriodEnd
-                  ? `Résiliation demandée : l’offre se termine le ${formatDate(sub.currentPeriodEnd)}, puis votre compte passe à l’offre Gratuite. `
+                `${sub.cancelAtPeriodEnd
+                  ? t("summary.cancelRequested", { date: formatDate(sub.currentPeriodEnd) })
                   : managedByFove
-                    ? `Contrat jusqu’au ${formatDate(sub.currentPeriodEnd)}. `
+                    ? t("summary.contract", { date: formatDate(sub.currentPeriodEnd) })
                     : scheduled
-                      ? `Passage à l’offre ${scheduled.name} le ${formatDate(sub.currentPeriodEnd)} ; votre offre ${current.name} reste active jusque-là. `
-                      : `Prochain renouvellement le ${formatDate(sub.currentPeriodEnd)}. `)}
-              {graceEnd && subApplies && `Mettez à jour votre moyen de paiement avant le ${formatDate(graceEnd)} pour garder votre offre ; ensuite, votre compte passe à l’offre Gratuite.`}
-              {managedByFove && "Votre abonnement est géré par l’équipe FOVE : contactez-nous pour le modifier."}
+                      ? t("summary.scheduled", { name: scheduled.name, date: formatDate(sub.currentPeriodEnd), current: current.name })
+                      : t("summary.renewal", { date: formatDate(sub.currentPeriodEnd) })} `}
+              {graceEnd && subApplies && t("summary.grace", { date: formatDate(graceEnd) })}
+              {managedByFove && t("summary.managed")}
             </p>
             {canWrite && (
               <div className="mt-3 flex flex-wrap gap-2">
@@ -210,16 +213,16 @@ function BillingView() {
                         const { url } = await api.post<{ url: string }>("/app/billing/portal");
                         window.location.assign(url);
                       } catch (e) {
-                        toast.error(errorMessage(e));
+                        toast.error(toErrorMessage(e));
                       }
                     }}
                   >
-                    Factures et moyen de paiement
+                    {t("portal")}
                   </Button>
                 )}
                 {scheduled && (
                   <Button variant="secondary" onClick={cancelScheduled}>
-                    Rester sur {current.name}
+                    {t("stayOn", { name: current.name })}
                   </Button>
                 )}
                 {canResume && (
@@ -228,26 +231,26 @@ function BillingView() {
                       try {
                         await api.post("/app/billing/resume");
                         await refresh();
-                        toast.success("Résiliation annulée : votre abonnement continue");
+                        toast.success(t("toasts.resumed"));
                       } catch (e) {
-                        toast.error(errorMessage(e));
+                        toast.error(toErrorMessage(e));
                       }
                     }}
                   >
-                    Reprendre l’abonnement
+                    {t("resume")}
                   </Button>
                 )}
                 {canCancel && (
                   <ConfirmDialog
-                    trigger={<Button variant="ghost">Résilier</Button>}
-                    title="Résilier l’abonnement ?"
-                    consequence="Il reste actif jusqu’à la fin de la période payée, et vous pouvez revenir sur votre décision jusque-là. Ensuite, votre compte passe à l’offre Gratuite. Aucune carte n’est supprimée."
-                    confirmLabel="Résilier"
+                    trigger={<Button variant="ghost">{t("cancel")}</Button>}
+                    title={t("cancelTitle")}
+                    consequence={t("cancelConsequence")}
+                    confirmLabel={t("cancel")}
                     destructive
                     onConfirm={async () => {
                       await api.post("/app/billing/cancel");
                       await refresh();
-                      toast.success("Résiliation enregistrée");
+                      toast.success(t("toasts.cancelSaved"));
                     }}
                   />
                 )}
@@ -256,15 +259,15 @@ function BillingView() {
           </div>
         </Panel>
         <Panel className="p-5 sm:p-6">
-          <h2 className="mb-4 font-display text-lg font-semibold">Utilisation</h2>
+          <h2 className="mb-4 font-display text-lg font-semibold">{t("usage")}</h2>
           <dl className="grid gap-3">
-            {Object.entries(USAGE_LABEL).map(([k, label]) => {
+            {USAGE_KEYS.map((k) => {
               const used = data.usage[k] ?? 0;
               const limit = data.limits[k];
               return (
                 <div key={k} className="grid gap-1">
                   <div className="flex justify-between text-sm">
-                    <dt className="text-ink-2">{label}</dt>
+                    <dt className="text-ink-2">{t(`usageLabels.${k}`)}</dt>
                     <dd className="tabular">{formatNumber(used)} {limit === null ? "" : `/ ${formatNumber(limit ?? 0)}`}</dd>
                   </div>
                   {limit !== null && limit !== undefined && (
@@ -282,8 +285,8 @@ function BillingView() {
       {canWrite && !managedByFove && (
         <section className="mt-10" aria-labelledby="offres">
           <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
-            <h2 id="offres" className="font-display text-2xl font-semibold">Changer d’offre</h2>
-            <p className="text-sm text-ink-2">Abonnement annuel, payé à l’avance en dollars US.</p>
+            <h2 id="offres" className="font-display text-2xl font-semibold">{t("changePlan")}</h2>
+            <p className="text-sm text-ink-2">{t("annual")}</p>
           </div>
           <div className="grid gap-4 md:grid-cols-3">
             {data.plans.filter((p) => p.kind === "PAID").map((p) => {
@@ -291,7 +294,7 @@ function BillingView() {
               const isScheduled = scheduled?.code === p.code;
               const disabled = isCurrent || isScheduled || data.mode === "unavailable";
               const downgrade = paidRunning && sub !== null && p.priceYearlyCents < sub.plan.priceYearlyCents;
-              const label = isCurrent ? "Offre actuelle" : isScheduled ? `Prévue le ${renewal}` : downgrade ? `Passer à ${p.name} au renouvellement` : `Passer à ${p.name}`;
+              const label = isCurrent ? t("plan.current") : isScheduled ? t("plan.scheduled", { date: renewal }) : downgrade ? t("plan.downgrade", { name: p.name }) : t("plan.upgrade", { name: p.name });
               const over = downgrade ? overQuota(p) : [];
               return (
                 <Panel key={p.id} className={cn("grid gap-3 p-5", isCurrent && "ring-2 ring-cobalt")}>
@@ -299,28 +302,28 @@ function BillingView() {
                   <p className="text-sm text-ink-2">{p.description}</p>
                   <p className="font-display text-3xl font-semibold tabular">
                     {formatPrice(p.priceYearlyCents, p.currency)}
-                    <span className="text-base font-normal text-ink-3"> /an</span>
+                    <span className="text-base font-normal text-ink-3"> {t("plan.perYear")}</span>
                   </p>
                   {downgrade && !disabled ? (
                     // Offre inférieure : rien ne change avant le renouvellement, et rien n'est remboursé.
                     <ConfirmDialog
                       trigger={<Button variant="secondary" loading={pending === p.code}>{label}</Button>}
-                      title={`Passer à ${p.name} au renouvellement ?`}
+                      title={t("downgrade.title", { name: p.name })}
                       consequence={[
-                        `Vous gardez l’offre ${current.name} jusqu’au ${renewal}. Ensuite, votre abonnement continue sur ${p.name} à ${formatPrice(p.priceYearlyCents, p.currency)} par an. La période en cours n’est ni remboursée ni créditée.`,
-                        over.length ? ` Vous dépassez les quotas de ${p.name} : ${over.join(", ")}. Rien ne sera supprimé, mais vous ne pourrez plus en ajouter.` : "",
-                        " Vous pouvez annuler ce changement jusqu’au renouvellement.",
+                        t("downgrade.keep", { current: current.name, date: renewal, name: p.name, price: formatPrice(p.priceYearlyCents, p.currency) }),
+                        over.length ? ` ${t("downgrade.over", { name: p.name, items: over.join(", ") })}` : "",
+                        ` ${t("downgrade.undo")}`,
                       ].join("")}
-                      confirmLabel={`Programmer le passage à ${p.name}`}
+                      confirmLabel={t("downgrade.confirm", { name: p.name })}
                       onConfirm={() => choose(p.code)}
                     />
                   ) : stripeSubscriber && !disabled ? (
                     // Abonné Stripe, offre supérieure : effet immédiat et facturé au prorata, on confirme avant.
                     <ConfirmDialog
                       trigger={<Button loading={pending === p.code}>{label}</Button>}
-                      title={`Passer à ${p.name} ?`}
-                      consequence={`Votre offre change tout de suite. La différence au prorata jusqu’au ${renewal}, sur la base de ${formatPrice(p.priceYearlyCents, p.currency)} par an, est facturée immédiatement sur votre moyen de paiement. Si le paiement échoue, votre offre actuelle est conservée.`}
-                      confirmLabel={`Passer à ${p.name}`}
+                      title={t("upgrade.title", { name: p.name })}
+                      consequence={t("upgrade.consequence", { date: renewal, price: formatPrice(p.priceYearlyCents, p.currency) })}
+                      confirmLabel={t("plan.upgrade", { name: p.name })}
                       onConfirm={() => choose(p.code)}
                     />
                   ) : (
@@ -335,11 +338,13 @@ function BillingView() {
             })}
           </div>
           <p className="mt-4 text-sm text-ink-2">
-            Besoin de plus d’établissements, de clients ou d’un accompagnement ?{" "}
-            <Link href="/contact?offre=sur-mesure" className="font-medium text-cobalt underline-offset-4 hover:underline">
-              Découvrez l’offre Sur-mesure
-            </Link>
-            .
+            {t.rich("custom", {
+              link: (c) => (
+                <Link href="/contact?offre=sur-mesure" className="font-medium text-cobalt underline-offset-4 hover:underline">
+                  {c}
+                </Link>
+              ),
+            })}
           </p>
         </section>
       )}

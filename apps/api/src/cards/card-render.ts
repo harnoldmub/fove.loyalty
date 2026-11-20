@@ -3,6 +3,9 @@ import { join } from "node:path";
 import { PDFDocument, PDFName, PDFString } from "pdf-lib";
 import QRCode from "qrcode";
 import sharp from "sharp";
+import { cardLabels, type CardTexts } from "./club-card";
+
+type CardLabels = CardTexts["labels"];
 
 /**
  * Carte de fidélité téléchargeable (PNG, PDF) au format téléphone 9:16.
@@ -29,6 +32,8 @@ export interface CardDesign {
   url: string;
   /** Règle courte du programme : « 10 tampons = Café offert ». */
   rule: string;
+  /** Libellés traduits (langue du commerce) ; français par défaut. */
+  labels?: Pick<CardLabels, "loyaltyCard" | "memberSinceUpper" | "recent" | "program" | "onlineCard" | "onlineCardLive">;
 }
 
 const WIDTH = 1080;
@@ -60,6 +65,7 @@ function safeColor(color: string) {
 }
 
 function tree(design: CardDesign, logo: string | null, qr: string, banner: string | null): Node {
+  const L = design.labels ?? cardLabels("fr");
   const color = safeColor(design.primaryColor);
   const center = { display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center" };
   const shortUrl = design.url.replace(/^https?:\/\//, "");
@@ -84,7 +90,7 @@ function tree(design: CardDesign, logo: string | null, qr: string, banner: strin
           h(
             "div",
             { style: { display: "flex", flexDirection: "column", alignItems: "flex-end", textAlign: "right", maxWidth: 520 } },
-            h("div", { style: { ...labelStyle, color } }, "CARTE FIDÉLITÉ"),
+            h("div", { style: { ...labelStyle, color } }, L.loyaltyCard),
             h("div", { style: { ...valueStyle, fontSize: design.holder.length > 18 ? 28 : 34 } }, design.holder),
           ),
         ),
@@ -95,8 +101,8 @@ function tree(design: CardDesign, logo: string | null, qr: string, banner: strin
           h(
             "div",
             { style: { display: "flex", flexDirection: "column" } },
-            h("div", { style: labelStyle }, "MEMBRE DEPUIS"),
-            h("div", { style: valueStyle }, design.memberSince || "RÉCENT"),
+            h("div", { style: labelStyle }, L.memberSinceUpper),
+            h("div", { style: valueStyle }, design.memberSince || L.recent),
           ),
           design.instagram
             ? h(
@@ -108,7 +114,7 @@ function tree(design: CardDesign, logo: string | null, qr: string, banner: strin
             : h(
                 "div",
                 { style: { display: "flex", flexDirection: "column", alignItems: "flex-end", textAlign: "right" } },
-                h("div", { style: labelStyle }, "PROGRAMME"),
+                h("div", { style: labelStyle }, L.program),
                 h("div", { style: { ...valueStyle, fontSize: 30 } }, design.rule.slice(0, 24)),
               ),
         ),
@@ -122,7 +128,7 @@ function tree(design: CardDesign, logo: string | null, qr: string, banner: strin
       h(
         "div",
         { style: { position: "absolute", left: 0, right: 0, top: LINK_BOX.top, height: LINK_BOX.height, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center" } },
-        h("div", { style: { fontSize: 26, color: "#8E99B7" } }, "Ma carte en ligne · solde à jour"),
+        h("div", { style: { fontSize: 26, color: "#8E99B7" } }, L.onlineCardLive),
         h("div", { style: { marginTop: 6, fontSize: 28, fontWeight: 600, color: "#FFFFFF" } }, shortUrl.length > 55 ? `${shortUrl.slice(0, 52)}…` : shortUrl),
       ),
     );
@@ -151,7 +157,7 @@ function tree(design: CardDesign, logo: string | null, qr: string, banner: strin
     h(
       "div",
       { style: { ...center, position: "absolute", left: 0, right: 0, top: LINK_BOX.top, height: LINK_BOX.height, justifyContent: "center" } },
-      h("div", { style: { fontSize: 28, color: MUTED } }, "Ma carte en ligne"),
+      h("div", { style: { fontSize: 28, color: MUTED } }, L.onlineCard),
       h("div", { style: { marginTop: 8, fontSize: 28, fontWeight: 600 } }, shortUrl.length > 60 ? `${shortUrl.slice(0, 57)}…` : shortUrl),
     ),
   );

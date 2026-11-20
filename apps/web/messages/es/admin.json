@@ -1,0 +1,886 @@
+{
+  "finance": {
+    "audit": {
+      "title": "Registro de auditoría financiera (inalterable)",
+      "description": "Trazabilidad completa de cada acción financiera: quién registró un gasto, validó una comisión o emitió un reembolso.",
+      "search": "Filtrar por acción, administrador, entidad…",
+      "loading": "Cargando el registro de auditoría…",
+      "empty": "No se encontró ninguna entrada de auditoría.",
+      "table": {
+        "date": "Fecha y hora",
+        "action": "Operación",
+        "entity": "Entidad afectada",
+        "author": "Autor",
+        "details": "Detalles"
+      },
+      "system": "Sistema automático",
+      "inspect": "Examinar",
+      "detailTitle": "Detalles de la operación"
+    },
+    "commissions": {
+      "title": "Programa de socios FOVE y comisiones",
+      "description": "Remuneración de intermediarios, prescriptores y agencias asociadas.",
+      "newPartner": "Nuevo socio",
+      "kpi": {
+        "partners": "Socios activos",
+        "partnersHelp": "Red de intermediarios",
+        "pending": "Comisiones pendientes de pago",
+        "pendingHelp": "Por pagar a los socios",
+        "paid": "Comisiones ya pagadas",
+        "paidHelp": "Total histórico distribuido"
+      },
+      "partnersTitle": "Socios registrados",
+      "partnersEmpty": "Aún no hay socios. Haz clic en «Nuevo socio» para iniciar el programa.",
+      "logTitle": "Registro de comisiones",
+      "logEmpty": "Todavía no se ha generado ninguna comisión.",
+      "loading": "Cargando…",
+      "table": {
+        "partner": "Socio",
+        "code": "Código promocional / seguimiento",
+        "rate": "Tasa",
+        "sales": "Ventas aportadas",
+        "earned": "Total ganado",
+        "pending": "Pendiente",
+        "paid": "Ya pagado",
+        "date": "Fecha",
+        "invoice": "Factura / comercio",
+        "saleAmount": "Importe de la venta",
+        "due": "Comisión debida",
+        "status": "Estado",
+        "action": "Acción"
+      },
+      "status": {
+        "paid": "Pagada",
+        "pending": "Pendiente"
+      },
+      "paying": "Validando…",
+      "markPaid": "Marcar como pagada",
+      "paidOn": "Pagada el {date}"
+    },
+    "customers": {
+      "title": "Cartera de clientes y valor de vida (LTV)",
+      "description": "Ficha financiera de cada comercio: importes acumulados facturados, cobrados y fidelidad.",
+      "search": "Filtrar por nombre del comercio, slug o socio…",
+      "loading": "Cargando clientes…",
+      "empty": "No se encontró ningún comercio.",
+      "table": {
+        "tenant": "Empresa cliente",
+        "plan": "Plan activo",
+        "invoiced": "Total facturado",
+        "collected": "Total cobrado (LTV)",
+        "payments": "Pagos",
+        "first": "Primer pago",
+        "last": "Última transacción",
+        "partner": "Socio referente",
+        "open": "Ficha"
+      },
+      "fallbackName": "Comercio",
+      "free": "Gratis",
+      "offered": "Regalado",
+      "direct": "Directo",
+      "openTenant": "Abrir la ficha de {name}"
+    },
+    "expenses": {
+      "title": "Gastos operativos y cargas",
+      "description": "Costes reales de FOVE: servidores, base de datos, dominios, herramientas SaaS y servicios.",
+      "add": "Registrar un gasto",
+      "categoryLabel": "Partida:",
+      "allCategories": "Todas las categorías",
+      "total": "Total de gastos del periodo:",
+      "loading": "Cargando gastos…",
+      "empty": "No hay gastos para esta selección. Haz clic en «Registrar un gasto» para añadir uno.",
+      "table": {
+        "date": "Fecha",
+        "label": "Concepto",
+        "supplier": "Proveedor",
+        "category": "Partida",
+        "amount": "Importe con impuestos",
+        "payment": "Pago",
+        "proof": "Justificante",
+        "actions": "Acciones"
+      },
+      "yearly": "Anual",
+      "monthly": "Mensual",
+      "proofLink": "Ver el justificante",
+      "delete": {
+        "button": "Eliminar el gasto «{title}»",
+        "title": "¿Eliminar el gasto «{title}»?",
+        "consequence": "El gasto se retirará de los cálculos y la eliminación quedará registrada en la auditoría.",
+        "confirm": "Eliminar"
+      }
+    },
+    "invoices": {
+      "title": "Facturas y documentos contables",
+      "description": "Facturas oficiales emitidas a los comercios y justificantes descargables.",
+      "search": "Buscar por número de factura, comercio…",
+      "statusFilter": {
+        "ALL": "Todas",
+        "PAID": "Pagadas",
+        "OPEN": "Por pagar",
+        "VOID": "Anuladas"
+      },
+      "loading": "Cargando facturas…",
+      "empty": "No se encontró ninguna factura.",
+      "table": {
+        "number": "Número",
+        "date": "Fecha de emisión",
+        "tenant": "Cliente",
+        "subtotal": "Sin impuestos",
+        "tax": "IVA",
+        "total": "Total con impuestos",
+        "status": "Estado",
+        "document": "Documento"
+      },
+      "status": {
+        "paid": "Pagada",
+        "open": "Pendiente"
+      },
+      "system": "Generada por el sistema"
+    },
+    "overview": {
+      "title": "Centro financiero y socios",
+      "description": "Visión consolidada y transparente de la actividad económica real de FOVE.",
+      "addExpense": "Añadir gasto",
+      "newPartner": "Nuevo socio",
+      "monthlyReport": "Informe mensual",
+      "loading": "Cargando los datos financieros…",
+      "revenue": "Ingresos con impuestos",
+      "revenueDetail": "Sin impuestos: <strong>{net}</strong> · Impuestos: {taxes}",
+      "grossCollected": "Bruto realmente cobrado",
+      "providerFees": "Comisiones de Stripe / banco:",
+      "netCollected": "Neto recibido en banco",
+      "netCollectedHelp": "Tras descontar las comisiones de procesamiento",
+      "netResult": "Resultado neto real",
+      "netResultHelp": "Neto cobrado − gastos ({expenses}) − comisiones",
+      "mrr": "MRR normalizado",
+      "perMonth": "/mes",
+      "mrrHelp": "Planes anuales repartidos en 12 meses",
+      "arr": "ARR normalizado",
+      "perYear": "/año",
+      "arrHelp": "Valor anualizado de las suscripciones activas",
+      "activePaid": "Comercios de pago activos",
+      "activePaidHelp": "{count, plural, one {+# nuevo} other {+# nuevos}} · Bajas: {churn}",
+      "costs": "Gastos y comisiones",
+      "costsHelp": "De los cuales {amount} en comisiones",
+      "transparencyTitle": "Garantía de transparencia financiera de FOVE:",
+      "transparencyBody": "Todos los datos anteriores se calculan en tiempo real a partir de las transacciones de Stripe, los contratos comerciales validados, los gastos operativos conciliados y los asientos del libro financiero. Ninguna cifra es simulada ni inventada. El resultado neto sigue siendo provisional hasta que se concilien todos los gastos del mes."
+    },
+    "payments": {
+      "title": "Flujos de pago y transacciones",
+      "description": "Transacciones directas de los proveedores (Stripe, transferencias bancarias, pagos manuales validados).",
+      "search": "Buscar por referencia, ID de Stripe, comercio…",
+      "providerLabel": "Proveedor",
+      "statusLabel": "Estado",
+      "providers": {
+        "ALL": "Todos los proveedores",
+        "MANUAL": "Contrato manual",
+        "BANK_TRANSFER": "Transferencia bancaria"
+      },
+      "statusFilter": {
+        "ALL": "Todos los estados",
+        "SUCCEEDED": "Completado",
+        "PENDING": "En curso",
+        "FAILED": "Fallido",
+        "REFUNDED": "Reembolsado"
+      },
+      "loading": "Cargando transacciones…",
+      "empty": "No hay pagos para los filtros activos.",
+      "table": {
+        "reference": "Referencia",
+        "date": "Fecha de confirmación",
+        "tenant": "Comercio",
+        "provider": "Proveedor y método",
+        "gross": "Bruto",
+        "fees": "Comisiones",
+        "net": "Neto FOVE",
+        "status": "Estado",
+        "actions": "Acciones"
+      },
+      "card": "tarjeta",
+      "status": {
+        "succeeded": "Cobrado",
+        "refunded": "Reembolsado",
+        "failed": "Fallido"
+      },
+      "refund": "Reembolsar",
+      "refunded": "Reemb.: {amount}"
+    },
+    "referrals": {
+      "title": "Recomendaciones y créditos de comercios",
+      "description": "Créditos concedidos a los comercios embajadores cuando recomiendan otros establecimientos.",
+      "credits": "Total de créditos por recomendación concedidos",
+      "creditsHelp": "Descontados de las facturas de suscripción",
+      "count": "Recomendaciones registradas",
+      "countHelp": "Empresas creadas por recomendación",
+      "loading": "Cargando recomendaciones…",
+      "empty": "Todavía no hay recomendaciones.",
+      "table": {
+        "date": "Fecha",
+        "referrer": "Comercio que recomienda",
+        "referred": "Comercio recomendado",
+        "credit": "Crédito concedido",
+        "status": "Estado"
+      },
+      "status": {
+        "applied": "Aplicado",
+        "pending": "Pendiente"
+      }
+    },
+    "refunds": {
+      "title": "Reembolsos y disputas",
+      "description": "Historial de reembolsos concedidos, disputas de pago y contracargos.",
+      "loading": "Cargando reembolsos…",
+      "empty": "No hay reembolsos ni disputas.",
+      "table": {
+        "date": "Fecha",
+        "reference": "Referencia del pago",
+        "tenant": "Comercio",
+        "initial": "Importe inicial",
+        "refunded": "Importe reembolsado",
+        "status": "Estado"
+      },
+      "status": "Reembolsado"
+    },
+    "reports": {
+      "title": "Informes financieros para los socios",
+      "description": "Resumen analítico mensual para Sid Ali, Arnold y los socios.",
+      "print": "Imprimir / exportar a PDF",
+      "select": "Seleccionar el informe:",
+      "month": "Mes",
+      "year": "Año",
+      "loading": "Generando el informe…",
+      "tagline": "Plataforma de tarjetas de fidelidad digitales y wallets",
+      "badge": "INFORME DE SOCIOS",
+      "currency": "Moneda de referencia: {currency}",
+      "statementTitle": "Cuenta de explotación y resultado del periodo",
+      "lines": {
+        "revenueHt": "1. Ingresos facturados (sin impuestos)",
+        "taxes": "IVA / impuestos recaudados",
+        "revenueTtc": "Total facturado con impuestos",
+        "gross": "2. Cobros reales recibidos (bruto)",
+        "fees": "Menos: comisiones de proveedores (Stripe / bancos)",
+        "refunds": "Menos: reembolsos a clientes emitidos",
+        "net": "Neto realmente disponible",
+        "expenses": "3. Gastos operativos reales (servidores, base de datos, SaaS)",
+        "commissions": "Menos: comisiones de socios FOVE debidas",
+        "result": "RESULTADO NETO DEL MES (provisional)"
+      },
+      "saasTitle": "Indicadores SaaS y recurrencia comercial",
+      "mrr": "MRR normalizado",
+      "arr": "ARR anualizado",
+      "activePaid": "Comercios de pago activos",
+      "newSubs": "Nuevas suscripciones",
+      "certified": "Informe certificado conforme a los datos contables y transacciones bancarias registradas a {date}.",
+      "signature": "Firma de la dirección general / socio",
+      "visa": "Visto bueno del responsable financiero"
+    },
+    "sales": {
+      "title": "Registro de ventas y facturación",
+      "description": "Todas las ventas cerradas, renovaciones, facturas emitidas y cobros asociados.",
+      "search": "Buscar por comercio, n.º de factura, correo…",
+      "statusLabel": "Estado:",
+      "statusFilter": {
+        "ALL": "Todas",
+        "PAID": "Pagadas",
+        "OPEN": "Pendientes",
+        "VOID": "Anuladas"
+      },
+      "loading": "Cargando ventas…",
+      "empty": "No hay ventas para los criterios seleccionados.",
+      "table": {
+        "number": "N.º de factura",
+        "date": "Fecha",
+        "tenant": "Comercio",
+        "plan": "Plan FOVE",
+        "subtotal": "Sin impuestos",
+        "paid": "Pagado con impuestos",
+        "payment": "Pago",
+        "partner": "Socio",
+        "status": "Estado",
+        "action": "Acción"
+      },
+      "custom": "A medida",
+      "card": "tarjeta",
+      "direct": "Directo",
+      "status": {
+        "paid": "Pagada",
+        "open": "Pendiente"
+      },
+      "viewInvoice": "Ver la factura",
+      "detail": {
+        "title": "Ficha de venta",
+        "close": "Cerrar",
+        "tenant": "Comercio",
+        "id": "ID: {id}",
+        "slug": "Slug: {slug}",
+        "breakdown": "Desglose financiero",
+        "subtotal": "Importe sin impuestos",
+        "tax": "Impuestos e IVA",
+        "discount": "Descuentos / créditos",
+        "total": "Total facturado con impuestos",
+        "paid": "Importe pagado",
+        "transactions": "Transacciones asociadas",
+        "provider": "Proveedor: {provider} · Estado: <strong>{status}</strong>",
+        "fees": "Comisiones: {fee} · Neto recibido: <strong>{net}</strong>",
+        "download": "Descargar la factura original"
+      }
+    },
+    "subscriptions": {
+      "title": "Suscripciones e ingresos recurrentes (MRR / ARR)",
+      "description": "Contratos, renovaciones anuales, vencimientos e ingresos normalizados.",
+      "mrr": "MRR consolidado",
+      "perMonth": "/mes",
+      "mrrHelp": "Planes anuales divididos entre 12",
+      "arr": "ARR consolidado",
+      "perYear": "/año",
+      "arrHelp": "Ingresos contractuales anualizados",
+      "paying": "Suscripciones de pago",
+      "payingHelp": "{count, plural, one {De # contrato activo} other {De # contratos activos}}",
+      "trialing": "Pruebas en curso",
+      "trialingHelp": "Potencial de conversión a pago",
+      "loading": "Cargando suscripciones…",
+      "empty": "No se encontró ninguna suscripción.",
+      "table": {
+        "tenant": "Comercio",
+        "plan": "Plan",
+        "billing": "Facturación",
+        "price": "Precio contractual",
+        "mrr": "MRR normalizado",
+        "nextDue": "Próximo vencimiento",
+        "provider": "Proveedor",
+        "status": "Estado"
+      },
+      "yearly": "Anual (1 año)",
+      "monthly": "Mensual",
+      "free": "Gratis",
+      "cancelScheduled": "Baja programada",
+      "trialUntil": "Prueba hasta el {date}",
+      "manual": "Contrato directo",
+      "status": {
+        "ACTIVE": "Activa",
+        "TRIALING": "Prueba",
+        "PAST_DUE": "Impagada",
+        "CANCELED": "Cancelada"
+      }
+    },
+    "treasury": {
+      "title": "Tesorería y conciliación bancaria",
+      "description": "Tesorería neta disponible, saldos de Stripe y control de asientos.",
+      "cash": "Tesorería neta disponible",
+      "cashHelp": "Cobros netos − gastos pagados",
+      "stripe": "Saldo estimado de Stripe",
+      "stripeHelp": "Disponible para transferencia bancaria",
+      "collected": "Total de cobros netos",
+      "collectedHelp": "Todas las fuentes",
+      "spent": "Total de pagos",
+      "spentHelp": "Gastos + comisiones pagadas",
+      "noteTitle": "Conciliación bancaria estricta:",
+      "noteBody": "Los saldos de tesorería se contrastan con los extractos bancarios reales de FOVE. Cada transacción de Stripe o contrato directo se vincula a una cuenta de resultados para evitar descuadres de caja.",
+      "loading": "Cargando la tesorería…",
+      "empty": "No hay asientos bancarios manuales. El saldo corresponde a los flujos automáticos de Stripe y contratos.",
+      "table": {
+        "date": "Fecha",
+        "reference": "Referencia",
+        "label": "Concepto bancario",
+        "amount": "Importe",
+        "status": "Estado de conciliación"
+      },
+      "reconciled": "Conciliado ({type})",
+      "unreconciled": "Por conciliar"
+    },
+    "common": {
+      "notAvailable": "n/d"
+    },
+    "nav": {
+      "ariaLabel": "Secciones financieras",
+      "tabs": {
+        "overview": "Resumen",
+        "sales": "Ventas",
+        "payments": "Pagos",
+        "subscriptions": "Suscripciones",
+        "customers": "Clientes",
+        "invoices": "Facturas",
+        "commissions": "Socios",
+        "expenses": "Gastos",
+        "treasury": "Tesorería",
+        "reports": "Informes de socios",
+        "audit": "Auditoría"
+      }
+    },
+    "filter": {
+      "period": "Periodo:",
+      "currency": "Moneda:",
+      "periods": {
+        "today": "Hoy",
+        "yesterday": "Ayer",
+        "7d": "7 días",
+        "30d": "30 días",
+        "month": "Este mes",
+        "last_month": "Mes pasado",
+        "quarter": "Este trimestre",
+        "year": "Este año",
+        "all": "Todo el historial"
+      }
+    },
+    "partnerModal": {
+      "title": "Nuevo socio FOVE",
+      "description": "Registrar un intermediario o prescriptor",
+      "close": "Cerrar",
+      "invalidRate": "La tasa de comisión debe estar entre 0 y 100 %.",
+      "name": "Nombre completo / contacto *",
+      "namePlaceholder": "Ej.: Arnold Kabasele",
+      "email": "Correo electrónico *",
+      "emailPlaceholder": "socio@dominio.com",
+      "code": "Código de socio único *",
+      "codePlaceholder": "Ej.: ARNOLD20",
+      "rate": "Tasa de comisión (%) *",
+      "company": "Empresa / agencia (opcional)",
+      "companyPlaceholder": "Ej.: Dzyn Agency",
+      "phone": "Teléfono (opcional)",
+      "cancel": "Cancelar",
+      "saving": "Creando…",
+      "save": "Guardar socio"
+    },
+    "refundModal": {
+      "title": "Emitir un reembolso",
+      "reference": "Ref.: {reference}",
+      "close": "Cerrar",
+      "invalidAmount": "Importe no válido.",
+      "tooHigh": "El reembolso no puede superar {amount}.",
+      "reasonRequired": "El motivo del reembolso es obligatorio.",
+      "customer": "Cliente:",
+      "unknown": "Desconocido",
+      "totalPaid": "Importe total pagado:",
+      "refundable": "Disponible para reembolsar:",
+      "amount": "Importe a reembolsar (dejar vacío para un reembolso total)",
+      "reason": "Motivo obligatorio (trazabilidad de auditoría) *",
+      "reasonPlaceholder": "Ej.: solicitud del cliente, cancelación durante la prueba…",
+      "cancel": "Cancelar",
+      "saving": "Procesando…",
+      "save": "Confirmar el reembolso"
+    },
+    "expenseModal": {
+      "title": "Registrar un gasto",
+      "description": "Añadir un gasto operativo real",
+      "close": "Cerrar",
+      "invalidAmount": "El importe debe ser mayor que cero.",
+      "label": "Concepto del gasto *",
+      "labelPlaceholder": "Ej.: alojamiento del servidor Railway",
+      "supplier": "Proveedor *",
+      "supplierPlaceholder": "Ej.: Railway Inc.",
+      "category": "Partida de gasto *",
+      "currency": "Moneda",
+      "amount": "Importe con impuestos *",
+      "date": "Fecha del gasto *",
+      "paymentMethod": "Medio de pago",
+      "paymentMethodPlaceholder": "Ej.: tarjeta, transferencia",
+      "proof": "Enlace al justificante / factura (opcional)",
+      "recurring": "Gasto recurrente (suscripción mensual o anual)",
+      "monthly": "Mensual",
+      "yearly": "Anual",
+      "cancel": "Cancelar",
+      "saving": "Guardando…",
+      "save": "Guardar el gasto"
+    },
+    "expenseCategories": {
+      "HOSTING": "Alojamiento (Railway / nube)",
+      "DATABASE": "Base de datos (Neon Postgres)",
+      "EMAILS": "Correos transaccionales (Resend / Brevo)",
+      "DOMAINS": "Nombres de dominio / DNS",
+      "SAAS": "Herramientas y SaaS (GitHub, Sentry, Notion)",
+      "MARKETING": "Marketing y relaciones con la prensa",
+      "ADS": "Publicidad (Meta, Google, TikTok)",
+      "DEV": "Desarrollo e infraestructura",
+      "FREELANCE": "Servicios freelance / diseño",
+      "BANK_FEES": "Comisiones bancarias y mantenimiento",
+      "LEGAL": "Contabilidad, asesoría jurídica y abogados",
+      "OFFICE": "Material y ofimática",
+      "OTHER": "Otros gastos"
+    },
+    "charts": {
+      "timeTitle": "Evolución en el tiempo",
+      "timeDescription": "Cobros reales y gastos realizados",
+      "collected": "Cobros",
+      "expenses": "Gastos",
+      "invoiced": "Facturado",
+      "hoverCollected": "Cobrado:",
+      "hoverExpenses": "Gastos:",
+      "hoverNet": "Neto:",
+      "hoverHint": "Pasa el cursor sobre una barra para ver el detalle del día",
+      "empty": "No hay transacciones en el periodo seleccionado",
+      "planTitle": "Ingresos por plan",
+      "planDescription": "Distribución de las ventas facturadas",
+      "planEmpty": "Ningún plan facturado en el periodo",
+      "expenseTitle": "Partidas de gasto",
+      "expenseDescription": "Desglose de los gastos realizados",
+      "expenseEmpty": "No hay gastos registrados en el periodo"
+    }
+  },
+  "tenant": {
+    "back": "Empresas",
+    "createdOn": "creada el {date}",
+    "publicPage": "Página pública",
+    "support": {
+      "button": "Acceso de soporte",
+      "title": "Abrir un acceso de soporte",
+      "description": "Solo lectura, 30 minutos, motivo obligatorio. El acceso queda registrado en el historial de la empresa.",
+      "reason": "Motivo",
+      "reasonHint": "Ej.: n.º de ticket, solicitud del comercio.",
+      "submit": "Abrir acceso de solo lectura"
+    },
+    "status": {
+      "reactivate": "Reactivar",
+      "suspend": "Suspender",
+      "reactivateTitle": "¿Reactivar esta empresa?",
+      "suspendTitle": "¿Suspender esta empresa?",
+      "reactivateConsequence": "Su equipo recupera el acceso de inmediato.",
+      "suspendConsequence": "Su equipo, sus claves API y sus páginas públicas quedan bloqueados. No se elimina ningún dato.",
+      "defaultReactivate": "Reactivación",
+      "defaultSuspend": "Suspensión administrativa",
+      "reason": "Motivo (registrado)"
+    },
+    "suspendedBadge": "Suspendida: {reason}",
+    "activity": {
+      "title": "Actividad",
+      "customers": "Clientes",
+      "accounts": "Tarjetas",
+      "transactions": "Operaciones",
+      "programs": "Programas",
+      "establishments": "Establecimientos"
+    },
+    "subscription": {
+      "title": "Suscripción",
+      "none": "Sin suscripción",
+      "trialUntil": ", prueba hasta el {date}",
+      "until": ", hasta el {date}",
+      "contract": ", contrato {price}/año"
+    },
+    "subStatus": {
+      "TRIALING": "prueba",
+      "ACTIVE": "activa",
+      "PAST_DUE": "pago fallido",
+      "CANCELED": "cancelada",
+      "INCOMPLETE": "pendiente"
+    },
+    "provider": {
+      "STRIPE": "Stripe",
+      "MOCK": "simulado",
+      "MANUAL": "manual"
+    },
+    "role": {
+      "OWNER": "Propietario",
+      "MANAGER": "Gerente",
+      "CASHIER": "Cajero",
+      "VIEWER": "Lector"
+    },
+    "team": {
+      "title": "Equipo",
+      "empty": "Todavía no hay colaboradores."
+    },
+    "brand": {
+      "title": "Identidad y marca",
+      "logo": "Logotipo oficial",
+      "open": "Abrir",
+      "noLogo": "No se ha subido ningún logotipo",
+      "color": "Color principal",
+      "countryCurrency": "País y moneda",
+      "email": "Correo de contacto",
+      "banner": "Banner de Wallet personalizado"
+    },
+    "structure": {
+      "title": "Estructura y puntos de venta",
+      "establishments": "Tiendas y establecimientos",
+      "programs": "Programas de fidelidad",
+      "points": "Puntos",
+      "stamps": "{count, plural, one {# sello} other {# sellos}}"
+    },
+    "volume": {
+      "title": "Volumen activo",
+      "privacy": "Confidencialidad B2B estricta",
+      "customers": "Clientes registrados",
+      "accounts": "Tarjetas activas",
+      "transactions": "Pasos por caja",
+      "notice": "De acuerdo con el RGPD y el secreto empresarial, las identidades, datos de contacto y saldos de los clientes finales pertenecen exclusivamente a <strong>{name}</strong> y la administración de FOVE no puede consultarlos."
+    },
+    "audit": {
+      "title": "Registro de auditoría",
+      "empty": "No hay acciones registradas."
+    },
+    "form": {
+      "unlimited": "ilimitado",
+      "saved": "Suscripción actualizada",
+      "proActivated": "Suscripción Pro activada",
+      "plan": "Plan",
+      "status": "Estado",
+      "statuses": {
+        "ACTIVE": "Activa (manual)",
+        "TRIALING": "Prueba",
+        "CANCELED": "Cancelada"
+      },
+      "end": "Fin del contrato",
+      "endHint": "Vacío = sin vencimiento. En esa fecha, la empresa vuelve al plan Gratuito.",
+      "price": "Precio anual del contrato (USD)",
+      "priceHint": "Facturado fuera de Stripe, contabilizado en los ingresos.",
+      "quotas": "Cuotas negociadas (vacío = las del plan, se acepta «{unlimited}»)",
+      "quota": {
+        "customers": "Clientes",
+        "establishments": "Establecimientos",
+        "staff": "Colaboradores",
+        "programs": "Programas"
+      },
+      "pro": {
+        "button": "Pasar a Pro",
+        "title": "¿Activar la suscripción Pro?",
+        "consequence": "El plan Business se activará de inmediato y manualmente, sin pago por Stripe.",
+        "confirm": "Activar Pro"
+      },
+      "advanced": {
+        "button": "Aplicar ajustes avanzados",
+        "title": "¿Modificar la suscripción manualmente?",
+        "consequence": "La suscripción se sustituye sin pasar por Stripe: periodo regalado, prueba o contrato a medida. Se eliminan las cuotas y el precio no indicados.",
+        "stripeWarning": "La suscripción de Stripe en curso se cancelará de inmediato, sin reembolso automático: reembolsa el periodo restante desde Stripe si es necesario.",
+        "confirm": "Aplicar"
+      }
+    }
+  },
+  "home": {
+    "title": "Empresas",
+    "description": "Todas las empresas de la plataforma.",
+    "stats": {
+      "tenants": "Empresas",
+      "tenantsHelp": "{count, plural, one {# nueva en 30 días} other {# nuevas en 30 días}}",
+      "paying": "De pago",
+      "payingHelp": "{free, number} en el plan Gratuito · {trialing, number} en prueba",
+      "cards": "Tarjetas",
+      "cardsHelp": "{count, plural, one {# operación en 30 días} other {# operaciones en 30 días}}",
+      "suspended": "Suspendidas",
+      "suspendedHelp": "acceso bloqueado"
+    },
+    "mrrNote": "Ingresos mensuales facturados (Stripe y contratos a medida): <strong>{amount}</strong>. No se cuentan las pruebas, el plan Gratuito ni las suscripciones simuladas.",
+    "searchLabel": "Buscar una empresa",
+    "searchPlaceholder": "Nombre, dirección o email de un miembro",
+    "noPlan": "Sin plan",
+    "customersCount": "{count, plural, one {# cliente} other {# clientes}}",
+    "badges": {
+      "suspended": "Suspendida",
+      "trial": "Prueba",
+      "paid": "De pago",
+      "active": "Activo",
+      "none": "Ninguna"
+    },
+    "table": {
+      "tenant": "Empresa",
+      "plan": "Plan",
+      "customers": "Clientes",
+      "cards": "Tarjetas",
+      "team": "Equipo",
+      "createdAt": "Creada el",
+      "actions": "Acciones"
+    },
+    "open": "Abrir",
+    "openNamed": "Abrir {name}"
+  },
+  "messages": {
+    "updated": "Mensaje actualizado",
+    "title": "Mensajes y prospectos",
+    "descriptionPending": "Solicitudes recibidas desde el sitio. {count, number} por atender.",
+    "description": "Solicitudes de demostración y mensajes recibidos desde el sitio.",
+    "filterLabel": "Filtrar por estado",
+    "filters": {
+      "ALL": "Todos los mensajes",
+      "NEW": "Nuevos",
+      "IN_PROGRESS": "En curso",
+      "CONTACTED": "Atendidos",
+      "ARCHIVED": "Archivados"
+    },
+    "loading": "Cargando mensajes...",
+    "empty": "No hay mensajes para este filtro.",
+    "defaultSubject": "Solicitud de información",
+    "status": {
+      "NEW": "Nuevo",
+      "IN_PROGRESS": "En curso",
+      "CONTACTED": "Atendido",
+      "ARCHIVED": "Archivado"
+    },
+    "receivedOn": "Recibido el {date}",
+    "mailSubject": "Seguimiento de su solicitud FOVE",
+    "sendEmail": "Enviar un email",
+    "whatsapp": "WhatsApp directo",
+    "message": "Mensaje",
+    "changeStatus": "Cambiar el estado",
+    "notes": "Notas internas (equipo comercial)",
+    "saveNote": "Guardar la nota",
+    "selectHint": "Seleccione un mensaje de la lista para leer su detalle y responder."
+  },
+  "partners": {
+    "title": "Programa de socios",
+    "description": "Solicitudes, socios activos y ajustes del programa de afiliación.",
+    "create": "Nuevo socio",
+    "kpi": {
+      "pendingApplications": "Solicitudes pendientes",
+      "pendingApplicationsHelp": "Por revisar",
+      "activePartners": "Socios",
+      "activePartnersHelp": "Aprobados, activos o suspendidos",
+      "pendingCommissions": "Comisiones por pagar",
+      "pendingCommissionsHelp": "Pendientes de transferencia",
+      "paidCommissions": "Comisiones pagadas",
+      "paidCommissionsHelp": "Total ya pagado"
+    },
+    "tabs": {
+      "applications": "Solicitudes ({count})",
+      "partners": "Socios ({count})",
+      "settings": "Ajustes"
+    },
+    "applications": {
+      "empty": "No hay solicitudes pendientes.",
+      "pending": "Pendiente",
+      "profile": "Perfil:",
+      "area": "Zona:",
+      "network": "Red:",
+      "notSpecified": "No indicado",
+      "code": "Código:",
+      "strategy": "Estrategia de promoción",
+      "website": "Ver el sitio web",
+      "approve": "Aprobar"
+    },
+    "partners": {
+      "searchLabel": "Buscar un socio",
+      "searchPlaceholder": "Nombre, correo, código o empresa",
+      "empty": "No se encontró ningún socio.",
+      "table": {
+        "partner": "Socio",
+        "code": "Código",
+        "rate": "Tasa",
+        "clicks": "Clics",
+        "conversions": "Conversiones",
+        "status": "Estado",
+        "actions": "Acciones"
+      },
+      "rateButton": "Tasa",
+      "reactivate": "Reactivar",
+      "suspend": "Suspender"
+    },
+    "status": {
+      "active": "Activo",
+      "suspended": "Suspendido"
+    },
+    "toggle": {
+      "suspendTitle": "¿Suspender a {name}?",
+      "suspendConsequence": "Su enlace dejará de generar comisiones mientras esté suspendido.",
+      "reactivateTitle": "¿Reactivar a {name}?",
+      "reactivateConsequence": "Su enlace volverá a generar comisiones."
+    },
+    "settings": {
+      "title": "Ajustes del programa",
+      "description": "Parámetros que se aplican por defecto a todos los socios.",
+      "defaultRate": "Tasa de comisión por defecto",
+      "cookieDays": "Duración de atribución (cookie)",
+      "validationDelay": "Plazo de validación",
+      "minimumPayout": "Umbral mínimo de pago",
+      "days": "{count, plural, one {# día} other {# días}}"
+    },
+    "reject": {
+      "button": "Rechazar",
+      "title": "¿Rechazar la solicitud de {name}?",
+      "consequence": "Se informará al solicitante y no podrá usar su código.",
+      "confirm": "Rechazar",
+      "reasonLabel": "Motivo (opcional)",
+      "defaultReason": "Solicitud no aceptada"
+    },
+    "rate": {
+      "title": "Tasa de comisión de {name}",
+      "description": "Porcentaje abonado por cada pago atribuido a este socio.",
+      "label": "Tasa (%)",
+      "cancel": "Cancelar",
+      "save": "Guardar",
+      "invalid": "Introduce una tasa entre 0 y 100."
+    }
+  },
+  "layout": {
+    "title": "Administración",
+    "titleTemplate": "%s · Administración FOVE"
+  },
+  "shell": {
+    "badge": "Admin",
+    "menuLabel": "Menú de administración",
+    "merchantSpace": "Mi espacio de comercio",
+    "logout": "Cerrar sesión",
+    "openMenu": "Abrir el menú",
+    "closeMenu": "Cerrar el menú",
+    "groups": {
+      "finance": "Finanzas y socios",
+      "businesses": "Comercios",
+      "sales": "Relación comercial",
+      "configuration": "Configuración"
+    },
+    "nav": {
+      "overview": "Resumen",
+      "sales": "Ventas y facturación",
+      "payments": "Pagos y flujos",
+      "subscriptions": "Suscripciones y MRR",
+      "customers": "Clientes de pago",
+      "invoices": "Facturas y documentos",
+      "partners": "Programa de socios",
+      "expenses": "Gastos y cargas",
+      "treasury": "Tesorería y banco",
+      "reports": "Informes para socios",
+      "audit": "Registro de auditoría",
+      "tenants": "Empresas",
+      "messages": "Mensajes y prospectos",
+      "plans": "Planes y suscripciones",
+      "system": "Integraciones y errores"
+    }
+  },
+  "system": {
+    "title": "Integraciones y errores",
+    "integrations": "Integraciones",
+    "noIntegrations": "No hay integraciones configuradas.",
+    "status": {
+      "error": "Error",
+      "ok": "OK",
+      "never": "Nunca sincronizada"
+    },
+    "lastSync": "Última sincronización el {date}",
+    "syncError": "{id}: {error}",
+    "recentErrors": "Errores recientes del servidor",
+    "noErrors": "No hay errores registrados.",
+    "errorMeta": "{date} · solicitud {requestId}"
+  },
+  "plans": {
+    "title": "Planes",
+    "description": "Precios, cuotas y funciones. Los cambios se aplican de inmediato al sitio y a los derechos de las empresas.",
+    "subscriptionsCount": "{count, plural, one {# suscripción} other {# suscripciones}}",
+    "kind": {
+      "FREE": "Plan por defecto",
+      "PAID": "Comprable en línea",
+      "CUSTOM": "Bajo presupuesto, asignado por el administrador"
+    },
+    "name": "Nombre",
+    "descriptionLabel": "Descripción",
+    "yearlyPrice": "Precio anual ({currency})",
+    "yearlyPriceHint": "Para las nuevas suscripciones.",
+    "stripePriceId": "ID del precio de Stripe",
+    "trialDays": "Días de prueba",
+    "trialDaysHint": "Duración por defecto de una prueba concedida desde la ficha de la empresa.",
+    "quotas": "Cuotas (vacío = ilimitado)",
+    "limits": {
+      "customers": "Clientes",
+      "establishments": "Establecimientos",
+      "staff": "Colaboradores",
+      "programs": "Programas"
+    },
+    "features": "Funciones incluidas",
+    "featureLabels": {
+      "api": "API y webhooks",
+      "widget": "Widget",
+      "integrations": "Tienda en línea",
+      "exports": "Exportaciones",
+      "walletCampaigns": "Campañas Wallet",
+      "whatsappAuto": "WhatsApp automático",
+      "removeBranding": "Sin mención FOVE"
+    },
+    "onSale": "Plan a la venta",
+    "saved": "Plan guardado",
+    "save": "Guardar {name}"
+  }
+}

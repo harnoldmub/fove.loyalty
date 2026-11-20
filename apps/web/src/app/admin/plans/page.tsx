@@ -2,12 +2,13 @@
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Checkbox, Field, Input } from "@/components/ui/field";
 import { PageHeader, Panel } from "@/components/ui/misc";
 import type { PlanFeatures } from "@fove/shared";
-import { api, errorMessage } from "@/lib/api";
+import { api, useErrorMessage } from "@/lib/api";
 
 interface Plan {
   id: string;
@@ -27,19 +28,12 @@ interface Plan {
   _count: { subscriptions: number };
 }
 
-const LIMITS = { customers: "Clients", establishments: "Établissements", staff: "Collaborateurs", programs: "Programmes" } as const;
-const FEATURES: Record<keyof PlanFeatures, string> = {
-  api: "API et webhooks",
-  widget: "Widget",
-  integrations: "Boutique en ligne",
-  exports: "Exports",
-  walletCampaigns: "Campagnes Wallet",
-  whatsappAuto: "WhatsApp automatique",
-  removeBranding: "Sans mention FOVE",
-};
-const KIND = { FREE: "Offre par défaut", PAID: "Achetable en ligne", CUSTOM: "Sur devis, attribuée par l’admin" } as const;
+const LIMITS = ["customers", "establishments", "staff", "programs"] as const;
+const FEATURES: (keyof PlanFeatures)[] = ["api", "widget", "integrations", "exports", "walletCampaigns", "whatsappAuto", "removeBranding"];
 
 function PlanEditor({ plan }: { plan: Plan }) {
+  const t = useTranslations("admin.plans");
+  const errMsg = useErrorMessage();
   const qc = useQueryClient();
   const [p, setP] = useState(plan);
   const [busy, setBusy] = useState(false);
@@ -49,15 +43,15 @@ function PlanEditor({ plan }: { plan: Plan }) {
       <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
         <h2 className="font-display text-xl font-semibold">{plan.name}</h2>
         <span className="text-sm text-ink-3">
-          {plan._count.subscriptions} abonnement{plan._count.subscriptions > 1 ? "s" : ""}
+          {t("subscriptionsCount", { count: plan._count.subscriptions })}
         </span>
       </div>
-      <p className="-mt-2 text-sm text-ink-3">{KIND[plan.kind]}</p>
-      <Field label="Nom">{(f) => <Input {...f} value={p.name} onChange={(e) => setP({ ...p, name: e.target.value })} />}</Field>
-      <Field label="Description">{(f) => <Input {...f} value={p.description} onChange={(e) => setP({ ...p, description: e.target.value })} />}</Field>
+      <p className="-mt-2 text-sm text-ink-3">{t(`kind.${plan.kind}`)}</p>
+      <Field label={t("name")}>{(f) => <Input {...f} value={p.name} onChange={(e) => setP({ ...p, name: e.target.value })} />}</Field>
+      <Field label={t("descriptionLabel")}>{(f) => <Input {...f} value={p.description} onChange={(e) => setP({ ...p, description: e.target.value })} />}</Field>
       {plan.kind === "PAID" && (
       <div className="grid gap-3 sm:grid-cols-2">
-        <Field label={`Prix annuel (${p.currency})`} hint="Pour les nouvelles souscriptions.">
+        <Field label={t("yearlyPrice", { currency: p.currency })} hint={t("yearlyPriceHint")}>
           {(f) => (
             <Input
               {...f}
@@ -70,27 +64,27 @@ function PlanEditor({ plan }: { plan: Plan }) {
             />
           )}
         </Field>
-        <Field label="Identifiant du prix Stripe">{(f) => <Input {...f} placeholder="price_…" value={p.stripePriceYearlyId ?? ""} onChange={(e) => setP({ ...p, stripePriceYearlyId: e.target.value || null })} />}</Field>
+        <Field label={t("stripePriceId")}>{(f) => <Input {...f} placeholder="price_…" value={p.stripePriceYearlyId ?? ""} onChange={(e) => setP({ ...p, stripePriceYearlyId: e.target.value || null })} />}</Field>
       </div>
       )}
       {plan.kind === "PAID" && (
-        <Field label="Jours d’essai" hint="Durée par défaut d’un essai accordé depuis la fiche entreprise.">
+        <Field label={t("trialDays")} hint={t("trialDaysHint")}>
           {(f) => <Input {...f} type="number" value={p.trialDays} onChange={(e) => setP({ ...p, trialDays: Number(e.target.value) })} />}
         </Field>
       )}
       <fieldset className="grid gap-3 sm:grid-cols-2">
-        <legend className="mb-2 text-sm font-medium">Quotas (vide = illimité)</legend>
-        {(Object.keys(LIMITS) as (keyof typeof LIMITS)[]).map((k) => (
-          <Field key={k} label={LIMITS[k]}>{(f) => <Input {...f} type="number" value={p.limits[k] ?? ""} onChange={(e) => setP({ ...p, limits: { ...p.limits, [k]: num(e.target.value) } })} />}</Field>
+        <legend className="mb-2 text-sm font-medium">{t("quotas")}</legend>
+        {LIMITS.map((k) => (
+          <Field key={k} label={t(`limits.${k}`)}>{(f) => <Input {...f} type="number" value={p.limits[k] ?? ""} onChange={(e) => setP({ ...p, limits: { ...p.limits, [k]: num(e.target.value) } })} />}</Field>
         ))}
       </fieldset>
       <fieldset className="grid grid-cols-2 gap-2">
-        <legend className="mb-2 text-sm font-medium">Fonctions incluses</legend>
-        {(Object.keys(FEATURES) as (keyof typeof FEATURES)[]).map((k) => (
-          <Checkbox key={k} label={FEATURES[k]} checked={p.features[k]} onChange={(e) => setP({ ...p, features: { ...p.features, [k]: e.target.checked } })} />
+        <legend className="mb-2 text-sm font-medium">{t("features")}</legend>
+        {FEATURES.map((k) => (
+          <Checkbox key={k} label={t(`featureLabels.${k}`)} checked={p.features[k]} onChange={(e) => setP({ ...p, features: { ...p.features, [k]: e.target.checked } })} />
         ))}
       </fieldset>
-      <Checkbox label="Offre proposée à la vente" checked={p.active} onChange={(e) => setP({ ...p, active: e.target.checked })} />
+      <Checkbox label={t("onSale")} checked={p.active} onChange={(e) => setP({ ...p, active: e.target.checked })} />
       <Button
         loading={busy}
         onClick={async () => {
@@ -99,25 +93,26 @@ function PlanEditor({ plan }: { plan: Plan }) {
             const { id: _id, code: _c, _count: _n, ...body } = p;
             await api.patch(`/admin/plans/${plan.id}`, body);
             qc.invalidateQueries({ queryKey: ["admin-plans"] });
-            toast.success("Offre enregistrée");
+            toast.success(t("saved"));
           } catch (e) {
-            toast.error(errorMessage(e));
+            toast.error(errMsg(e));
           } finally {
             setBusy(false);
           }
         }}
       >
-        Enregistrer {plan.name}
+        {t("save", { name: plan.name })}
       </Button>
     </Panel>
   );
 }
 
 export default function AdminPlans() {
+  const t = useTranslations("admin.plans");
   const { data = [] } = useQuery({ queryKey: ["admin-plans"], queryFn: () => api.get<Plan[]>("/admin/plans") });
   return (
     <>
-      <PageHeader title="Offres" description="Prix, quotas et fonctions. Les changements s’appliquent immédiatement au site et aux droits des entreprises." />
+      <PageHeader title={t("title")} description={t("description")} />
       <div className="grid gap-5 lg:grid-cols-2 2xl:grid-cols-3">{data.map((p) => <PlanEditor key={p.id} plan={p} />)}</div>
     </>
   );

@@ -12,6 +12,8 @@ import { EmailService } from "../notifications/email.service";
 import { PlanService } from "../billing/plan.service";
 import { SessionService } from "../auth/session.service";
 import { systemRoleId } from "./tenants.service";
+import { tenantLocale, userLocale } from "../i18n/locale";
+import { teamInviteMessage } from "../i18n/emails";
 
 @Injectable()
 export class TeamService {
@@ -63,7 +65,7 @@ export class TeamService {
     if (existing) throw conflict("already_member", "Cette personne fait déjà partie de l'équipe");
 
     const token = randomToken("", 32);
-    const tenant = await this.prisma.client.tenant.findUniqueOrThrow({ where: { id: ctx.tenantId } });
+    const tenant = await this.prisma.client.tenant.findUniqueOrThrow({ where: { id: ctx.tenantId }, include: { settings: true } });
     const invitation = await this.prisma.client.invitation.create({
       data: {
         tenantId: ctx.tenantId,
@@ -75,11 +77,10 @@ export class TeamService {
         expiresAt: new Date(Date.now() + 7 * 86_400_000),
       },
     });
-    await this.email.send({
-      to: email,
-      subject: `Invitation à rejoindre ${tenant.name} sur FOVE`,
-      text: `Vous êtes invité(e) à rejoindre l'équipe ${tenant.name} sur FOVE.\n\nAcceptez l'invitation (valable 7 jours) :\n${loadConfig().APP_URL}/invite?token=${token}`,
-    });
+    // Langue de la personne invitée si elle a déjà un compte, sinon celle du commerce.
+    const invitee = await this.prisma.client.user.findUnique({ where: { email }, select: { locale: true } });
+    const locale = userLocale(invitee, tenantLocale(tenant.settings));
+    await this.email.send({ to: email, ...teamInviteMessage(locale, tenant.name, `${loadConfig().APP_URL}/invite?token=${token}`) });
     await this.audit.forTenant(ctx, "member.invited", { type: "invitation", id: invitation.id }, { email, role: input.role });
     return { id: invitation.id };
   }

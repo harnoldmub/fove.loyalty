@@ -2,7 +2,8 @@
 
 import { useRouter } from "next/navigation";
 import { useState, useSyncExternalStore } from "react";
-import { ArrowRight, Sparkles } from "lucide-react";
+import { ArrowLeft, ArrowRight, Sparkles } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Checkbox, Field, Input } from "@/components/ui/field";
 import { PhoneInput } from "@/components/ui/phone-input";
@@ -25,6 +26,7 @@ function subscribeHash(onChange: () => void) {
 
 export function JoinForm({ token, data }: { token: string; data: JoinPage }) {
   const router = useRouter();
+  const t = useTranslations("public");
   // Le widget ouvre directement « Retrouver ma carte » via #retrouver.
   const wantsRecover = useSyncExternalStore(subscribeHash, () => window.location.hash === "#retrouver", () => false);
   const [tab, setTab] = useState<string | null>(null);
@@ -45,8 +47,8 @@ export function JoinForm({ token, data }: { token: string; data: JoinPage }) {
   const needsEmail = program.verification === "EMAIL_OTP";
   const rule =
     program.mode === "STAMPS"
-      ? `Un achat = un tampon. ${program.stampsTarget} tampons = ${program.rewards[0]?.name ?? "une récompense"}.`
-      : `${formatNumber(Number(program.spendStep))} ${program.currency} dépensés = ${program.pointsPerStep} point${program.pointsPerStep > 1 ? "s" : ""}.`;
+      ? t("rules.stamps", { target: program.stampsTarget, reward: program.rewards[0]?.name ?? t("rules.defaultReward") })
+      : t("rules.points", { amount: formatNumber(Number(program.spendStep)), currency: program.currency, points: program.pointsPerStep });
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -80,7 +82,7 @@ export function JoinForm({ token, data }: { token: string; data: JoinPage }) {
             <span className="grid size-14 place-items-center rounded-full bg-white/20 font-display text-2xl font-bold">{tenant.name.slice(0, 1)}</span>
           )}
           <div>
-            <p className="text-sm text-white/80">{data.establishment ?? "Programme de fidélité"}</p>
+            <p className="text-sm text-white/80">{data.establishment ?? t("join.programLabel")}</p>
             <h1 className="font-display text-2xl font-semibold leading-tight">{tenant.name}</h1>
           </div>
         </div>
@@ -93,9 +95,9 @@ export function JoinForm({ token, data }: { token: string; data: JoinPage }) {
                 <Sparkles className="size-8" aria-hidden />
               </div>
               <div>
-                <h2 className="font-display text-2xl font-bold text-ink">Votre carte est prête !</h2>
+                <h2 className="font-display text-2xl font-bold text-ink">{t("join.rememberedTitle")}</h2>
                 <p className="mt-1.5 text-sm text-ink-2 max-w-xs mx-auto">
-                  Votre carte de fidélité chez <strong>{tenant.name}</strong> est déjà enregistrée sur ce téléphone.
+                  {t.rich("join.rememberedText", { tenant: tenant.name, b: (c) => <strong>{c}</strong> })}
                 </p>
               </div>
 
@@ -106,8 +108,8 @@ export function JoinForm({ token, data }: { token: string; data: JoinPage }) {
                 style={{ background: "var(--brand)", color: "#fff" }}
               >
                 <a href={remembered}>
-                  Ouvrir ma carte
-                  <ArrowRight className="size-4 ml-2" />
+                  {t("join.openCard")}
+                  <ArrowRight className="size-4 ms-2 rtl-flip" aria-hidden />
                 </a>
               </Button>
 
@@ -117,37 +119,38 @@ export function JoinForm({ token, data }: { token: string; data: JoinPage }) {
                   onClick={() => setShowFormAnyway(true)}
                   className="text-xs text-ink-3 hover:text-ink underline underline-offset-4 transition-colors"
                 >
-                  Créer une autre carte ou utiliser un autre numéro
+                  {t("join.createAnother")}
                 </button>
               </div>
             </div>
           ) : (
             <>
               {remembered && (
-                <div className="mb-4 text-left">
+                <div className="mb-4 text-start">
                   <button
                     type="button"
                     onClick={() => setShowFormAnyway(false)}
                     className="inline-flex items-center gap-1.5 text-xs font-semibold text-mint hover:underline"
                   >
-                    ← Revenir à ma carte enregistrée
+                    <ArrowLeft className="size-3.5 rtl-flip" aria-hidden />
+                    {t("join.backToSaved")}
                   </button>
                 </div>
               )}
               <Tabs value={tab ?? (wantsRecover ? "recover" : "join")} onValueChange={setTab}>
             <TabsList className="mb-5 grid w-full grid-cols-2">
-              <TabsTrigger value="join">Créer ma carte</TabsTrigger>
-              <TabsTrigger value="recover">Retrouver ma carte</TabsTrigger>
+              <TabsTrigger value="join">{t("join.tabJoin")}</TabsTrigger>
+              <TabsTrigger value="recover">{t("join.tabRecover")}</TabsTrigger>
             </TabsList>
             <TabsContent value="join">
               <p className="mb-5 text-ink-2">{rule}</p>
               <form onSubmit={submit} className="grid gap-4" noValidate>
                 {error && <ErrorNote>{error}</ErrorNote>}
                 <div className="grid grid-cols-2 gap-3">
-                  <Field label="Prénom">{(p) => <Input {...p} autoComplete="given-name" value={f.firstName} onChange={(e) => setF({ ...f, firstName: e.target.value })} />}</Field>
-                  <Field label="Nom">{(p) => <Input {...p} autoComplete="family-name" value={f.lastName} onChange={(e) => setF({ ...f, lastName: e.target.value })} />}</Field>
+                  <Field label={t("join.firstName")}>{(p) => <Input {...p} autoComplete="given-name" value={f.firstName} onChange={(e) => setF({ ...f, firstName: e.target.value })} />}</Field>
+                  <Field label={t("join.lastName")}>{(p) => <Input {...p} autoComplete="family-name" value={f.lastName} onChange={(e) => setF({ ...f, lastName: e.target.value })} />}</Field>
                 </div>
-                <Field label="Téléphone">
+                <Field label={t("join.phone")}>
                   {(p) => (
                     <PhoneInput
                       {...p}
@@ -157,45 +160,45 @@ export function JoinForm({ token, data }: { token: string; data: JoinPage }) {
                     />
                   )}
                 </Field>
-                <Field label={needsEmail ? "Email" : "Email (facultatif)"} hint={needsEmail ? "Un code de validation vous sera envoyé." : "Pour retrouver votre carte si vous changez de téléphone."}>
+                <Field label={needsEmail ? t("join.email") : t("join.emailOptional")} hint={needsEmail ? t("join.emailCodeHint") : t("join.emailRecoverHint")}>
                   {(p) => <Input {...p} type="email" autoComplete="email" value={f.email} onChange={(e) => setF({ ...f, email: e.target.value })} />}
                 </Field>
                 <div className="hidden" aria-hidden>
                   <label>
-                    Site web <input tabIndex={-1} autoComplete="off" value={f.website} onChange={(e) => setF({ ...f, website: e.target.value })} />
+                    {t("join.honeypot")} <input tabIndex={-1} autoComplete="off" value={f.website} onChange={(e) => setF({ ...f, website: e.target.value })} />
                   </label>
                 </div>
                 <Checkbox
                   checked={f.acceptTerms}
                   onChange={(e) => setF({ ...f, acceptTerms: e.target.checked })}
                   label={
-                    <>
-                      J’accepte les conditions du programme
-                      {tenant.privacyPolicyUrl && (
-                        <>
-                          {" "}et la <a href={tenant.privacyPolicyUrl} className="underline" target="_blank" rel="noreferrer">politique de confidentialité</a>
-                        </>
-                      )}
-                      .
-                    </>
+                    tenant.privacyPolicyUrl
+                      ? t.rich("join.acceptTermsWithPrivacy", {
+                          link: (c) => (
+                            <a href={tenant.privacyPolicyUrl ?? undefined} className="underline" target="_blank" rel="noreferrer">
+                              {c}
+                            </a>
+                          ),
+                        })
+                      : t("join.acceptTerms")
                   }
                 />
-                <Checkbox checked={f.marketingConsent} onChange={(e) => setF({ ...f, marketingConsent: e.target.checked })} label={`Je souhaite recevoir les offres de ${tenant.name} (facultatif).`} />
+                <Checkbox checked={f.marketingConsent} onChange={(e) => setF({ ...f, marketingConsent: e.target.checked })} label={t("join.marketingConsent", { tenant: tenant.name })} />
                 <Button type="submit" size="lg" loading={busy} disabled={!f.firstName || !f.phone || !f.acceptTerms || (needsEmail && !f.email)} style={{ background: "var(--brand)", color: "#fff" }}>
-                  Créer ma carte
+                  {t("join.submit")}
                 </Button>
-                {already && <p className="text-sm text-ink-2">Utilisez l’onglet « Retrouver ma carte » ou demandez au personnel de vous la renvoyer.</p>}
+                {already && <p className="text-sm text-ink-2">{t("join.alreadyEnrolled")}</p>}
               </form>
               {program.terms && (
                 <details className="mt-5 text-sm text-ink-2">
-                  <summary className="cursor-pointer font-medium text-ink">Conditions du programme</summary>
+                  <summary className="cursor-pointer font-medium text-ink">{t("join.programTerms")}</summary>
                   <p className="mt-2 whitespace-pre-line">{program.terms}</p>
                 </details>
               )}
             </TabsContent>
             <TabsContent value="recover">
               {recovered ? (
-                <p role="status" className="text-ink-2">Si une carte correspond, son lien vient d’être envoyé à l’email de la fiche. Pensez à vérifier les courriers indésirables.</p>
+                <p role="status" className="text-ink-2">{t("join.recoverSent")}</p>
               ) : (
                 <form
                   className="grid gap-4"
@@ -209,9 +212,9 @@ export function JoinForm({ token, data }: { token: string; data: JoinPage }) {
                     }
                   }}
                 >
-                  <p className="text-ink-2">Le lien de votre carte est envoyé à l’email enregistré sur votre fiche. Sans email, demandez-le au personnel en caisse.</p>
-                  <Field label="Email ou téléphone utilisé à l’inscription">{(p) => <Input {...p} autoComplete="email" value={recoverId} onChange={(e) => setRecoverId(e.target.value)} />}</Field>
-                  <Button type="submit" variant="secondary" disabled={recoverId.trim().length < 6}>Recevoir le lien</Button>
+                  <p className="text-ink-2">{t("join.recoverIntro")}</p>
+                  <Field label={t("join.recoverIdentifier")}>{(p) => <Input {...p} autoComplete="email" value={recoverId} onChange={(e) => setRecoverId(e.target.value)} />}</Field>
+                  <Button type="submit" variant="secondary" disabled={recoverId.trim().length < 6}>{t("join.recoverSubmit")}</Button>
                 </form>
               )}
             </TabsContent>
@@ -219,7 +222,7 @@ export function JoinForm({ token, data }: { token: string; data: JoinPage }) {
         </>
       )}
     </div>
-        <p className="mt-6 text-center text-xs text-ink-3">Carte de fidélité propulsée par FOVE</p>
+        <p className="mt-6 text-center text-xs text-ink-3">{t("join.poweredBy")}</p>
       </main>
     </div>
   );

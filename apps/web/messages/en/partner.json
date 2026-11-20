@@ -1,0 +1,434 @@
+{
+  "landing": {
+    "meta": {
+      "title": "Become a FOVE sales partner · Partner Program",
+      "description": "Recommend FOVE’s digital loyalty card solution to merchants and earn attractive commissions on every subscription."
+    },
+    "hero": {
+      "badge": "Official FOVE Partner Program",
+      "title": "Become a FOVE partner.",
+      "subtitle": "Recommend FOVE to merchants, grow your network and earn commissions on the subscriptions you bring in.",
+      "cta": "Become a partner",
+      "howItWorks": "How does it work?",
+      "perkFree": "100% free to join",
+      "perkCommission": "20% net commission",
+      "perkPayment": "Paid by bank transfer & Mobile Money"
+    },
+    "steps": {
+      "title": "How does the program work?",
+      "subtitle": "A clear, smooth journey from your application to your first payouts.",
+      "apply": {
+        "title": "You apply",
+        "desc": "Fill in the form in 2 minutes with your profile, your city and your referral channels."
+      },
+      "review": {
+        "title": "FOVE review",
+        "desc": "Our team reviews your application within 24 to 48 hours and activates your partner status."
+      },
+      "link": {
+        "title": "Your personal link",
+        "desc": "You receive your unique code, your referral link, your QR codes and your marketing resources."
+      },
+      "earn": {
+        "title": "Earn commissions",
+        "desc": "Every business that takes out a paid subscription through your link earns you a 20% net commission."
+      }
+    },
+    "profiles": {
+      "title": "Who is the partnership for?",
+      "subtitle": "Professionals who support retailers and local service businesses every day.",
+      "agencies": {
+        "title": "Digital agencies & Media",
+        "desc": "Expand your digital services for local brands and neighborhood businesses."
+      },
+      "developers": {
+        "title": "Developers & Integrators",
+        "desc": "Connect FOVE to your business clients’ point-of-sale systems and e-commerce sites."
+      },
+      "freelancers": {
+        "title": "Independent sales reps",
+        "desc": "Sell a modern, ready-to-use SaaS solution that is very easy to demo on a smartphone."
+      },
+      "consultants": {
+        "title": "Retail consultants & coaches",
+        "desc": "Help merchants modernize their customer relationships and boost retention through mobile."
+      },
+      "entrepreneurs": {
+        "title": "Entrepreneurs & Referrers",
+        "desc": "Monetize your network of merchants, restaurant owners and shops with predictable income."
+      },
+      "networks": {
+        "title": "Merchant networks",
+        "desc": "Offer your members a modern tool to drive more foot traffic to businesses in your city."
+      }
+    },
+    "tools": {
+      "title": "Tools designed to help you succeed",
+      "subtitle": "We give you a complete platform to recommend FOVE without friction.",
+      "qr": {
+        "title": "QR code & unique link",
+        "desc": "A permanent link and an official QR code, ready to print or display on your presentations and flyers."
+      },
+      "whatsapp": {
+        "title": "One-click WhatsApp sharing",
+        "desc": "Pre-written messages to reach out directly to the merchants in your contacts."
+      },
+      "pipeline": {
+        "title": "Prospecting pipeline",
+        "desc": "Log your prospects to track your sales efforts from first contact to conversion."
+      },
+      "payouts": {
+        "title": "Flexible payouts",
+        "desc": "Get paid by bank transfer or Mobile Money once you have earned $50."
+      },
+      "attribution": {
+        "title": "30-day first-party attribution",
+        "desc": "Even if the merchant signs up several days after their visit, the sale is credited to you."
+      },
+      "support": {
+        "title": "Priority support",
+        "desc": "Direct access to the FOVE team to answer your prospects’ technical or sales questions."
+      }
+    },
+    "faq": {
+      "title": "Frequently asked questions",
+      "subtitle": "Everything you need to know before applying.",
+      "who": {
+        "q": "Who can become a FOVE sales partner?",
+        "a": "The program is open to any person or organization with a professional network of merchants: agencies, freelancers, developers, retail consultants, merchant associations or business referrers."
+      },
+      "attribution": {
+        "q": "How are sales attributed?",
+        "a": "Each partner has a personal link (e.g. https://fove.digital/p/YOURCODE). When a merchant clicks your link, a 30-day first-party cookie is set. If they sign up within that window, their business is permanently linked to you in our database."
+      },
+      "base": {
+        "q": "What amount is the commission based on?",
+        "a": "The commission is 20% of the amount actually collected by FOVE (excluding taxes and after any promotional coupons). It applies from the first paid subscription."
+      },
+      "withdraw": {
+        "q": "When and how can I withdraw my earnings?",
+        "a": "As soon as your available commission balance reaches the minimum threshold of $50 or €50 (depending on your currency), you can request a payout directly from your partner space. We pay by bank transfer or Mobile Money (Airtel Money, Orange Money, M-Pesa depending on availability in your area)."
+      },
+      "fees": {
+        "q": "Are there any fees or commitments?",
+        "a": "No, joining the FOVE partner program is 100% free, with no entry fee and no mandatory quota."
+      },
+      "both": {
+        "q": "Can I be both a FOVE merchant and a partner?",
+        "a": "Absolutely. Your single FOVE user account gives you easy access to both your merchant space (/app) and your partner space (/partner)."
+      }
+    },
+    "finalCta": {
+      "title": "Ready to grow your business with FOVE?",
+      "subtitle": "Join the sales partnership program. Free application and a guaranteed answer within 48 hours.",
+      "cta": "Submit my application"
+    }
+  },
+  "commissions": {
+    "badge": "2026 rates",
+    "title": "Earn 20% on every subscription",
+    "subtitle": "Commissions are calculated on the net amount actually paid by the merchant. No misleading math, no hidden fees.",
+    "perYear": "{price} / year",
+    "clientPrice": "Client’s annual price: {price}",
+    "rate": "({rate} commission)",
+    "recommended": "Most recommended",
+    "plans": {
+      "starter": "For small businesses & independents",
+      "business": "For restaurants, salons & shops",
+      "premium": "For multi-location brands"
+    },
+    "features": {
+      "annual": "1-year annual subscription",
+      "net": "Net commission after payment is collected",
+      "tracking": "Live tracking in your space",
+      "fastPayout": "Fast payout by transfer or mobile",
+      "support": "FOVE sales support"
+    },
+    "cta": "Join the partner network",
+    "footnote": "Free sign-up in 2 minutes · Commissions apply to every plan subscribed"
+  },
+  "join": {
+    "back": "Back to the program overview",
+    "badge": "Partner application",
+    "title": "Join the FOVE network",
+    "subtitle": "Fill in this form to submit your application. Our team reviews applications within 24 to 48 hours.",
+    "fields": {
+      "name": "Full name *",
+      "email": "Work email *",
+      "phone": "Phone / WhatsApp *",
+      "company": "Agency or business name (optional)",
+      "profile": "Your profile *",
+      "country": "Country *",
+      "city": "Main city *",
+      "website": "Website, LinkedIn or portfolio (optional)",
+      "strategy": "How do you plan to promote FOVE to merchants? *",
+      "network": "Estimated number of businesses in your network"
+    },
+    "types": {
+      "AGENCY": "Digital / Marketing agency",
+      "DEVELOPER": "Developer / Integrator",
+      "SALES_FREELANCE": "Independent sales rep",
+      "CONSULTANT": "Retail consultant / Trainer",
+      "ENTREPRENEUR": "Entrepreneur / B2B influencer",
+      "MERCHANT_NETWORK": "Merchant network / Federation",
+      "OTHER": "Other profile"
+    },
+    "network": {
+      "small": "1 to 10 businesses",
+      "medium": "11 to 50 businesses",
+      "large": "51 to 200 businesses",
+      "xlarge": "More than 200 businesses"
+    },
+    "terms": "I accept the <link>Terms of Use</link> and commit to recommending FOVE fairly and professionally, without any spam practices.",
+    "submit": "Submit my application",
+    "submitting": "Sending your application...",
+    "errors": {
+      "terms": "Please accept the partner program terms.",
+      "city": "Please enter your main city.",
+      "generic": "We couldn’t submit your application. Please try again."
+    },
+    "success": {
+      "title": "Application submitted successfully!",
+      "body": "Thank you <strong>{name}</strong>. Your application has been sent to our team. A confirmation email has been sent to <strong>{email}</strong>.",
+      "code": "Projected partner code:",
+      "status": "Current status:",
+      "statusValue": "Under review (24-48h)",
+      "commission": "Proposed commission:",
+      "commissionValue": "20% net",
+      "home": "Back to home",
+      "login": "Go to FOVE sign-in"
+    }
+  },
+  "portal": {
+    "meta": {
+      "title": "Sales Partner Space · FOVE"
+    }
+  },
+  "dashboard": {
+    "loading": "Loading your partner space...",
+    "inactive": {
+      "title": "Partner space not activated",
+      "body": "Either your application is awaiting approval by the FOVE team, or you haven’t applied yet.",
+      "cta": "Submit an application"
+    },
+    "header": {
+      "badge": "Partner",
+      "code": "Code: <strong>{code}</strong>",
+      "merchantSpace": "Merchant space",
+      "admin": "Admin back office"
+    },
+    "banner": {
+      "greeting": "Hello {name}",
+      "rateBadge": "Partner {rate}%",
+      "link": "Your permanent sales link:",
+      "copied": "Copied!",
+      "copyLink": "Copy my link",
+      "qr": "QR code",
+      "utm": "UTM link",
+      "newLead": "New prospect"
+    },
+    "whatsappShare": "Hi! Check out FOVE, the modern way to build customer loyalty right on their smartphone (Apple Wallet & Google Wallet cards, no app to install): {link}",
+    "tabsLabel": "Partner space",
+    "tabs": {
+      "overview": "Overview",
+      "links": "My sales link",
+      "leads": "Prospects",
+      "clients": "Referred clients",
+      "commissions": "Commissions",
+      "payouts": "Payments & Withdrawals",
+      "resources": "Sales resources"
+    },
+    "overview": {
+      "clicks": "Clicks on your link",
+      "clicksHint": "Visitors sent to FOVE",
+      "signups": "Sign-ups & conversions",
+      "signupsCount": "/ {count, plural, one {# sign-up} other {# sign-ups}}",
+      "conversionRate": "Conversion rate: {rate}%",
+      "available": "Available commissions",
+      "pending": "Pending: {amount}",
+      "totalEarned": "Total earnings",
+      "alreadyPaid": "Already paid out: {amount}",
+      "balance": "Balance available for payout: {amount}",
+      "threshold": "Withdrawal threshold: {amount} · Paid by bank transfer or Mobile Money.",
+      "requestPayout": "Request a payout",
+      "recentClients": "Recently referred businesses",
+      "seeAll": "See all",
+      "noClients": "No business has used your link yet. Share it to get started!",
+      "registeredOn": "Signed up on {date}",
+      "paidClient": "Paying client",
+      "trial": "Trial / Free",
+      "recentLeads": "Your latest prospects",
+      "seePipeline": "View pipeline",
+      "noLeads": "No prospects in your pipeline yet.",
+      "declareLead": "Add a business",
+      "inProgress": "In progress"
+    },
+    "leadStatus": {
+      "NEW": "New",
+      "CONTACTED": "Contacted",
+      "INTERESTED": "Interested",
+      "REGISTERED": "Signed up",
+      "CONVERTED": "Converted",
+      "LOST": "Lost"
+    },
+    "links": {
+      "title": "Your official referral link",
+      "body": "Every visitor who clicks this link receives a 30-day first-party cookie. If they sign up and subscribe to FOVE, you automatically earn a 20% commission.",
+      "copied": "Copied!",
+      "copy": "Copy",
+      "codeTitle": "Unique partner code",
+      "codeHint": "Can be entered manually at checkout.",
+      "cookieTitle": "Cookie attribution period",
+      "cookieValue": "30 days",
+      "cookieHint": "Conversion window after the first click.",
+      "rateTitle": "Guaranteed commission",
+      "rateValue": "{rate}%",
+      "rateHint": "On the net amount of the first subscription."
+    },
+    "leads": {
+      "title": "Prospecting pipeline",
+      "subtitle": "Track your outreach to merchants in your area.",
+      "newLead": "New prospect",
+      "empty": "No prospects yet. Click “New prospect” to add your first target businesses.",
+      "colBusiness": "Business",
+      "colContact": "Contact",
+      "colDetails": "Contact details",
+      "colCity": "City / Sector",
+      "colStatus": "Status",
+      "colNotes": "Notes",
+      "defaultSector": "Retail"
+    },
+    "clients": {
+      "title": "Businesses signed up through your link",
+      "empty": "No businesses linked to you yet. Share your sales link to get your first sign-ups.",
+      "colBusiness": "Business",
+      "colRegistered": "Sign-up date",
+      "colPlan": "Active plan",
+      "colStatus": "Conversion status",
+      "colFirstPayment": "First payment date",
+      "paidClient": "Paying client",
+      "trial": "Trial / Free"
+    },
+    "commissions": {
+      "title": "Commission log",
+      "empty": "No commissions yet. As soon as a client takes out a paid subscription, it will appear here.",
+      "colDate": "Date",
+      "colBusiness": "Business",
+      "colAmount": "Subscription amount",
+      "colCommission": "Your commission",
+      "colAvailability": "Availability",
+      "colStatus": "Status",
+      "immediate": "Immediate",
+      "paid": "Paid out",
+      "available": "Available",
+      "cancelled": "Cancelled (Refund)",
+      "pending": "Pending (30 days)"
+    },
+    "payouts": {
+      "balance": "Available balance: {amount}",
+      "minimum": "Minimum withdrawal amount: {amount}",
+      "requestPayout": "Request a payout",
+      "history": "Payout history",
+      "empty": "No payouts requested yet.",
+      "colDate": "Request date",
+      "colMethod": "Method",
+      "colAmount": "Amount",
+      "colStatus": "Status",
+      "colReference": "Reference",
+      "paid": "Paid",
+      "failed": "Rejected",
+      "processing": "Processing",
+      "methods": {
+        "BANK_TRANSFER": "Bank transfer",
+        "MOBILE_MONEY": "Mobile Money"
+      }
+    },
+    "resources": {
+      "title": "Sales kit & Selling points",
+      "subtitle": "Ready-to-use resources to win over merchants, restaurants and salons in minutes.",
+      "pitchTitle": "The 30-second FOVE pitch",
+      "pitch": "“80% of paper loyalty cards get lost or left at home. With FOVE, your customers save your card straight to their Apple Wallet or Google Wallet by scanning a QR code at your counter. No app to download, push notification reminders, and you double repeat visits from your best customers in the very first month.”",
+      "whatsappTitle": "Sample WhatsApp message",
+      "copy": "Copy",
+      "whatsappCopied": "WhatsApp message copied to the clipboard!",
+      "whatsappMessage": "Hi! I thought of your business: take a look at this solution that replaces paper loyalty cards with digital Apple Wallet & Google Wallet cards. It takes 5 minutes to set up and works without any app: {link}",
+      "objectionsTitle": "Answers to the 3 most common objections",
+      "objectionPaper": "“My customers prefer paper”",
+      "answerPaper": "In reality, 70% of customers forget their paper card. Their smartphone, on the other hand, is always in their pocket when it’s time to pay.",
+      "objectionPrice": "“It’s too expensive for me”",
+      "answerPrice": "The Starter plan is only $99 a year (less than $9 a month). Just one extra loyal customer a week pays for the investment.",
+      "objectionTime": "“I don’t have time to set it up”",
+      "answerTime": "The account takes just 5 minutes to set up on a smartphone or computer, and the QR code poster is generated instantly, ready to print."
+    }
+  },
+  "leadModal": {
+    "title": "New prospect",
+    "subtitle": "Log a business to reach out to",
+    "close": "Close",
+    "businessName": "Brand / business name *",
+    "contact": "Contact / Manager",
+    "email": "Work email",
+    "phone": "Phone / WhatsApp",
+    "country": "Country",
+    "city": "City",
+    "sector": "Industry",
+    "notes": "Notes & context",
+    "cancel": "Cancel",
+    "submit": "Add to pipeline",
+    "submitting": "Saving...",
+    "error": "We couldn’t save the prospect"
+  },
+  "payoutModal": {
+    "title": "Request a payout",
+    "available": "Available to withdraw: {amount}",
+    "close": "Close",
+    "amount": "Withdrawal amount (USD) *",
+    "threshold": "Minimum threshold: {amount}",
+    "method": "Payout method *",
+    "bankTransfer": "Bank transfer (IBAN / SWIFT)",
+    "mobileMoney": "Mobile Money (Airtel, Orange, M-Pesa)",
+    "accountHolder": "Account holder’s full name *",
+    "iban": "IBAN / Account number *",
+    "bic": "BIC / SWIFT code (optional)",
+    "bankName": "Bank name",
+    "provider": "Provider *",
+    "providers": {
+      "AIRTEL_MONEY": "Airtel Money",
+      "ORANGE_MONEY": "Orange Money",
+      "M_PESA": "M-Pesa (Vodacom)",
+      "MTN_MOMO": "MTN Mobile Money",
+      "OTHER": "Other provider"
+    },
+    "mobileNumber": "Mobile Money number *",
+    "mobileHolder": "Official name registered on the line *",
+    "cancel": "Cancel",
+    "submit": "Confirm payout request",
+    "submitting": "Sending...",
+    "errors": {
+      "minimum": "The minimum withdrawal amount is {amount}",
+      "exceeds": "The requested amount exceeds your available balance ({amount})",
+      "bankRequired": "The IBAN and the account holder’s name are required",
+      "mobileRequired": "The Mobile Money number and the holder’s name are required",
+      "generic": "We couldn’t submit the withdrawal request"
+    }
+  },
+  "qrModal": {
+    "title": "Partner QR code",
+    "close": "Close",
+    "hint": "Have a merchant scan this QR code to open your referral page directly.",
+    "copied": "Link copied to the clipboard!",
+    "copy": "Copy direct link",
+    "download": "Download QR code (SVG)"
+  },
+  "utmModal": {
+    "title": "Campaign link builder",
+    "subtitle": "UTM parameters to track your different channels",
+    "close": "Close",
+    "source": "Source (utm_source)",
+    "medium": "Medium (utm_medium)",
+    "campaign": "Campaign name (utm_campaign)",
+    "generated": "Generated link",
+    "copied": "Campaign link copied!",
+    "copy": "Copy link with UTM"
+  }
+}

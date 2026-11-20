@@ -14,8 +14,11 @@ import {
   UserRound,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
-import { computeRewardDiscount, rewardValueLabel, buildWhatsAppLink, buildWhatsAppMessage } from "@fove/shared";
+import { computeRewardDiscount, buildWhatsAppLink } from "@fove/shared";
+import { useRewardValueLabel } from "@/components/app/use-reward-value";
+import { useWhatsAppMessage } from "@/components/app/use-whatsapp-message";
 import { useActiveTenant, useCan } from "@/components/app/me-context";
 import type { Account, Establishment } from "@/components/app/types";
 import { Stamps, stampsStatus } from "@/components/stamps";
@@ -24,9 +27,10 @@ import { ConfirmDialog } from "@/components/ui/dialog";
 import { Field, Input, Select } from "@/components/ui/field";
 import { Badge, ErrorNote, Panel, Skeleton } from "@/components/ui/misc";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { api, errorMessage } from "@/lib/api";
+import { api, useErrorMessage } from "@/lib/api";
 import { playChime } from "@/lib/sound";
-import { formatNumber, newIdempotencyKey, unitLabel } from "@/lib/utils";
+import { useUnitLabel } from "@/lib/labels";
+import { formatNumber, newIdempotencyKey } from "@/lib/utils";
 
 type Done = { kind: "earn"; delta: number; balance: number } | { kind: "redeem"; reward: string; balance: number; discount: string | null; purchaseAmount: string | null };
 
@@ -40,6 +44,12 @@ function readEstablishment(): string {
 
 /** Fiche caisse ouverte après le scan : valider un achat ou une récompense, avec intelligence client Sidely. */
 export function CheckoutView({ accountId }: { accountId: string }) {
+  const toErrorMessage = useErrorMessage();
+  const t = useTranslations("app.checkout");
+  const ts = useTranslations("app.segment");
+  const rewardValueLabel = useRewardValueLabel();
+  const unitLabel = useUnitLabel();
+  const buildMessage = useWhatsAppMessage();
   const router = useRouter();
   const qc = useQueryClient();
   const tenant = useActiveTenant();
@@ -80,13 +90,13 @@ export function CheckoutView({ accountId }: { accountId: string }) {
 
   useEffect(() => {
     if (!account || !isPoints || !amountValid) return;
-    const t = setTimeout(() => {
+    const timer = setTimeout(() => {
       api
         .post<{ delta: number }>("/app/scanner/preview", { accountId: account.id, amount })
         .then((r) => setPreviewState({ amount, delta: r.delta }))
         .catch(() => setPreviewState(null));
     }, 250);
-    return () => clearTimeout(t);
+    return () => clearTimeout(timer);
   }, [amount, account, isPoints, amountValid]);
 
   const next = () => router.push("/app/scanner");
@@ -94,9 +104,9 @@ export function CheckoutView({ accountId }: { accountId: string }) {
   if (loadError) {
     return (
       <div className="mx-auto grid max-w-md gap-4">
-        <ErrorNote>{errorMessage(loadError)}</ErrorNote>
+        <ErrorNote>{toErrorMessage(loadError)}</ErrorNote>
         <Button onClick={next}>
-          <ScanLine /> Scanner une autre carte
+          <ScanLine /> {t("scanAnother")}
         </Button>
       </div>
     );
@@ -119,7 +129,7 @@ export function CheckoutView({ accountId }: { accountId: string }) {
       qc.invalidateQueries({ queryKey: ["overview"] });
       qc.invalidateQueries({ queryKey: ["account", accountId] });
     } catch (e) {
-      setError(errorMessage(e));
+      setError(toErrorMessage(e));
     } finally {
       setBusy(false);
     }
@@ -138,7 +148,7 @@ export function CheckoutView({ accountId }: { accountId: string }) {
       setDone({ kind: "redeem", reward: result.redemption.rewardName, balance: account.balance - result.redemption.cost, discount: result.redemption.discountAmount, purchaseAmount: result.redemption.purchaseAmount });
       qc.invalidateQueries({ queryKey: ["account", accountId] });
     } catch (e) {
-      toast.error(errorMessage(e));
+      toast.error(toErrorMessage(e));
       throw e;
     }
   };
@@ -149,12 +159,12 @@ export function CheckoutView({ accountId }: { accountId: string }) {
     setSavingNote(true);
     try {
       await api.post(`/app/customers/${account.customer.id}/notes`, { content: newNote.trim() });
-      toast.success("Note enregistrée sur la fiche client");
+      toast.success(t("noteSaved"));
       setNewNote("");
       setShowNoteInput(false);
       qc.invalidateQueries({ queryKey: ["account", accountId] });
     } catch (err) {
-      toast.error(errorMessage(err));
+      toast.error(toErrorMessage(err));
     } finally {
       setSavingNote(false);
     }
@@ -162,12 +172,12 @@ export function CheckoutView({ accountId }: { accountId: string }) {
 
   // Préparation du message WhatsApp en 1 clic
   const whatsAppCardUrl = account.cardUrl ?? "";
-  const whatsAppShareMessage = buildWhatsAppMessage({
-    kind: "CARD_SHARE",
-    customerFirstName: account.customer.firstName,
-    businessName: tenant?.name || "votre boutique",
+  const whatsAppShareMessage = buildMessage("CARD_SHARE", {
+    firstName: account.customer.firstName,
+    store: tenant?.name || t("defaultStore"),
     balance: account.balance,
-    unitLabel: unitLabel(account.program.mode, account.balance),
+    unit: unitLabel(account.program.mode, account.balance),
+    mode: account.program.mode,
     cardUrl: whatsAppCardUrl,
   });
   const whatsAppLink = buildWhatsAppLink(account.customer.phone, whatsAppShareMessage);
@@ -179,25 +189,25 @@ export function CheckoutView({ accountId }: { accountId: string }) {
         <h1 className="font-display text-3xl font-semibold" role="status">
           {done.kind === "earn"
             ? done.delta > 0
-              ? `+${formatNumber(done.delta)} ${unitLabel(account.program.mode, done.delta)} pour ${account.customer.firstName}`
-              : "Achat enregistré, sans points pour ce montant"
-            : `${done.reward} validé`}
+              ? t("doneEarn", { amount: formatNumber(done.delta), unit: unitLabel(account.program.mode, done.delta), name: account.customer.firstName })
+              : t("doneNoPoints")
+            : t("doneRedeem", { reward: done.reward })}
         </h1>
-        {done.kind === "redeem" && done.discount !== null && <p className="text-lg text-ink-2">Réduction à appliquer en caisse : <strong>{formatNumber(Number(done.discount))} {account.program.currency}</strong>. Reste à payer : {formatNumber(Number(done.purchaseAmount) - Number(done.discount))} {account.program.currency}.</p>}
+        {done.kind === "redeem" && done.discount !== null && <p className="text-lg text-ink-2">{t.rich("discount", { discount: formatNumber(Number(done.discount)), rest: formatNumber(Number(done.purchaseAmount) - Number(done.discount)), currency: account.program.currency, strong: (c) => <strong>{c}</strong> })}</p>}
         <p className="text-lg text-ink-2">
-          Nouveau solde : <strong className="tabular text-ink">{formatNumber(done.balance)}</strong> {unitLabel(account.program.mode, done.balance)}
+          {t.rich("newBalance", { balance: formatNumber(done.balance), unit: unitLabel(account.program.mode, done.balance), strong: (c) => <strong className="tabular text-ink">{c}</strong> })}
         </p>
 
         {whatsAppLink && (
           <Button asChild variant="secondary" className="w-full">
             <a href={whatsAppLink} target="_blank" rel="noopener noreferrer">
-              <MessageCircle className="text-mint" /> Partager la carte par WhatsApp
+              <MessageCircle className="text-mint" /> {t("shareWhatsapp")}
             </a>
           </Button>
         )}
 
         <Button size="lg" className="w-full" onClick={next}>
-          <ScanLine /> Client suivant
+          <ScanLine /> {t("nextCustomer")}
         </Button>
       </div>
     );
@@ -231,47 +241,46 @@ export function CheckoutView({ accountId }: { accountId: string }) {
                       ? "bg-mint/15 text-mint"
                       : "bg-surface text-ink-2"
                   }`}
-                  title={segment.description}
+                  title={ts(`${segment.segment}.description`)}
                 >
                   {segment.segment === "VIP" && <Sparkles className="size-3" />}
-                  {segment.label}
+                  {ts(`${segment.segment}.label`)}
                 </span>
               )}
             </div>
             <p className="text-sm text-ink-3 tabular">
-              {account.program.name} · {account.cardNumber}
+              {account.program.name} · <span dir="ltr">{account.cardNumber}</span>
             </p>
           </div>
           <div className="flex items-center gap-1">
             {whatsAppLink && (
-              <Button asChild variant="ghost" size="sm" title="Partager la carte sur WhatsApp">
-                <a href={whatsAppLink} target="_blank" rel="noopener noreferrer" aria-label="Partager la carte sur WhatsApp">
+              <Button asChild variant="ghost" size="sm" title={t("shareWhatsappShort")}>
+                <a href={whatsAppLink} target="_blank" rel="noopener noreferrer" aria-label={t("shareWhatsappShort")}>
                   <MessageCircle className="size-4 text-mint" />
                 </a>
               </Button>
             )}
             <Button asChild variant="ghost" size="sm">
               <Link href={`/app/customers/${account.customer.id}`}>
-                <UserRound /> Fiche
+                <UserRound /> {t("profile")}
               </Link>
             </Button>
           </div>
         </div>
 
         {/* Conseil d'accueil vendeur proactif Sidely */}
-        {segment?.suggestedAction && (
-          <div className="mt-3 rounded-md bg-subtle p-2.5 text-xs text-ink-2 flex items-start gap-2">
-            <span className="text-sm">💡</span>
-            <p><strong className="text-ink">Conseil d&apos;accueil :</strong> {segment.suggestedAction}</p>
+        {segment && (
+          <div className="mt-3 rounded-md bg-subtle p-2.5 text-xs text-ink-2">
+            <p><strong className="text-ink">{t("greetingTip")}</strong> {ts(`${segment.segment}.action`)}</p>
           </div>
         )}
 
         {/* Tags client */}
         {tags.length > 0 && (
           <div className="mt-2.5 flex flex-wrap gap-1">
-            {tags.map((t) => (
-              <span key={t} className="inline-flex items-center gap-1 rounded-sm bg-surface px-1.5 py-0.5 text-xs text-ink-2">
-                <Tag className="size-2.5 opacity-60" /> {t}
+            {tags.map((tag) => (
+              <span key={tag} className="inline-flex items-center gap-1 rounded-sm bg-surface px-1.5 py-0.5 text-xs text-ink-2">
+                <Tag className="size-2.5 opacity-60" /> {tag}
               </span>
             ))}
           </div>
@@ -291,12 +300,12 @@ export function CheckoutView({ accountId }: { accountId: string }) {
 
         {account.status !== "ACTIVE" && (
           <Badge tone="danger" className="mt-3">
-            {account.status === "BLOCKED" ? "Carte bloquée" : "Carte à valider : activez-la depuis la fiche client"}
+            {account.status === "BLOCKED" ? t("blocked") : t("pending")}
           </Badge>
         )}
         {affordable.length > 0 && account.status === "ACTIVE" && (
           <p className="mt-3 rounded-md bg-stamp-soft px-3 py-2 text-sm font-medium text-stamp-ink dark:text-stamp">
-            {affordable.length === 1 ? `${affordable[0]!.name} disponible` : `${affordable.length} récompenses disponibles`}
+            {affordable.length === 1 ? t("oneAvailable", { name: affordable[0]!.name }) : t("available", { count: affordable.length })}
           </p>
         )}
       </Panel>
@@ -306,11 +315,11 @@ export function CheckoutView({ accountId }: { accountId: string }) {
         <Panel className="p-4">
           <div className="flex items-center justify-between">
             <span className="text-sm font-medium text-ink-2 flex items-center gap-1">
-              <StickyNote className="size-3.5" /> Mémoires & Préférences Vendeur
+              <StickyNote className="size-3.5" /> {t("notesTitle")}
             </span>
             {!showNoteInput && canWriteCustomer && (
               <Button variant="ghost" size="sm" onClick={() => setShowNoteInput(true)} className="h-7 text-xs">
-                <Plus className="size-3" /> Ajouter
+                <Plus className="size-3" /> {t("addNote")}
               </Button>
             )}
           </div>
@@ -318,7 +327,7 @@ export function CheckoutView({ accountId }: { accountId: string }) {
             <div className="mt-2 grid gap-1.5">
               {notes.slice(0, 3).map((n) => (
                 <div key={n.id} className="rounded-sm bg-subtle p-2 text-xs">
-                  <span className="font-semibold text-ink">{n.authorName} :</span>{" "}
+                  <span className="font-semibold text-ink">{t("noteAuthor", { name: n.authorName })}</span>{" "}
                   <span className="text-ink-2">{n.content}</span>
                 </div>
               ))}
@@ -328,16 +337,17 @@ export function CheckoutView({ accountId }: { accountId: string }) {
             <form onSubmit={handleAddNote} className="mt-3 grid gap-2">
               <Input
                 autoFocus
+                aria-label={t("newNote")}
                 value={newNote}
                 onChange={(e) => setNewNote(e.target.value)}
                 className="text-xs"
               />
               <div className="flex justify-end gap-2">
                 <Button type="button" variant="ghost" size="sm" onClick={() => setShowNoteInput(false)} className="h-7 text-xs">
-                  Annuler
+                  {t("cancel")}
                 </Button>
                 <Button type="submit" size="sm" loading={savingNote} className="h-7 text-xs">
-                  Enregistrer
+                  {t("save")}
                 </Button>
               </div>
             </form>
@@ -348,15 +358,15 @@ export function CheckoutView({ accountId }: { accountId: string }) {
       {/* Onglets d'action caisse */}
       <Tabs defaultValue={affordable.length > 0 && canRedeem ? "reward" : "earn"}>
         <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="earn">Valider un achat</TabsTrigger>
+          <TabsTrigger value="earn">{t("tabEarn")}</TabsTrigger>
           <TabsTrigger value="reward" disabled={!canRedeem}>
-            Récompense
+            {t("tabReward")}
           </TabsTrigger>
         </TabsList>
         <TabsContent value="earn" className="mt-4 grid gap-4">
           {error && <ErrorNote>{error}</ErrorNote>}
           {isPoints && (
-            <Field label={`Montant de l’achat (${account.program.currency})`}>
+            <Field label={t("amount", { currency: account.program.currency })}>
               {(p) => (
                 <Input
                   {...p}
@@ -369,11 +379,11 @@ export function CheckoutView({ accountId }: { accountId: string }) {
               )}
             </Field>
           )}
-          <Field label="Référence du ticket (facultatif)">
+          <Field label={t("saleRef")}>
             {(p) => <Input {...p} value={saleRef} onChange={(e) => setSaleRef(e.target.value)} />}
           </Field>
           {activeEsts.length > 1 && (
-            <Field label="Établissement">
+            <Field label={t("establishment")}>
               {(p) => (
                 <Select
                   {...p}
@@ -405,37 +415,37 @@ export function CheckoutView({ accountId }: { accountId: string }) {
           >
             {isPoints
               ? preview !== null
-                ? `Ajouter ${formatNumber(preview)} ${unitLabel("POINTS", preview)}`
-                : "Saisissez le montant"
+                ? t("addPoints", { amount: formatNumber(preview), unit: unitLabel("POINTS", preview) })
+                : t("enterAmount")
               : isFullStamps
-                ? `Carte complète (${account.program.stampsTarget}/${account.program.stampsTarget})`
-                : `Compter le passage (+${nextStampsCount})`}
+                ? t("full", { target: account.program.stampsTarget })
+                : t("countVisit", { count: nextStampsCount })}
           </Button>
         </TabsContent>
         <TabsContent value="reward" className="mt-4 grid gap-3">
-          {account.rewards.some((r) => r.kind !== "GIFT") && <Field label={`Montant de l’achat avant réduction (${account.program.currency})`} hint="La réduction est calculée ici ; appliquez-la ensuite dans votre caisse.">
+          {account.rewards.some((r) => r.kind !== "GIFT") && <Field label={t("amountBefore", { currency: account.program.currency })} hint={t("amountBeforeHint")}>
             {(p) => <Input {...p} inputMode="decimal" value={purchaseAmount} onChange={(e) => { setPurchaseAmount(e.target.value); setRedeemKey(newIdempotencyKey("redeem")); }} />}
           </Field>}
-          {account.rewards.length === 0 && <p className="text-sm text-ink-2">Aucune récompense dans ce programme.</p>}
+          {account.rewards.length === 0 && <p className="text-sm text-ink-2">{t("noRewards")}</p>}
           {account.rewards.map((r) => (
             <div key={r.id} className="flex items-center gap-3 rounded-md bg-surface p-3.5 shadow-1">
               <div className="min-w-0 flex-1">
                 <p className="font-medium">{r.name}</p>
-                {r.kind !== "GIFT" && <p className="text-sm text-ink-2">{rewardValueLabel(r, account.program.currency)}{(() => { try { return ` · ${computeRewardDiscount(r, purchaseAmount.replace(",", "."))} ${account.program.currency} sur cet achat`; } catch { return ""; } })()}</p>}
+                {r.kind !== "GIFT" && <p className="text-sm text-ink-2">{rewardValueLabel(r, account.program.currency)}{(() => { try { return ` · ${t("onPurchase", { amount: computeRewardDiscount(r, purchaseAmount.replace(",", ".")) ?? "", currency: account.program.currency })}`; } catch { return ""; } })()}</p>}
                 <p className="text-sm text-ink-3 tabular">
                   {formatNumber(r.cost)} {unitLabel(account.program.mode, r.cost)}
-                  {r.stock !== null && ` · ${r.stock} en stock`}
+                  {r.stock !== null && ` · ${t("stock", { count: r.stock })}`}
                 </p>
               </div>
               <ConfirmDialog
                 trigger={
                   <Button size="sm" variant={r.affordable ? "stamp" : "secondary"} disabled={!r.affordable || account.status !== "ACTIVE" || (r.kind !== "GIFT" && (!/^\d{1,12}(\.\d{1,2})?$/.test(purchaseAmount.replace(",", ".")) || Number(purchaseAmount.replace(",", ".")) <= 0))}>
-                    Valider
+                    {t("redeem")}
                   </Button>
                 }
-                title={`Valider « ${r.name} » ?`}
-                consequence={`${formatNumber(r.cost)} ${unitLabel(account.program.mode, r.cost)} seront retirés de la carte de ${account.customer.firstName}. Remettez la récompense au client.`}
-                confirmLabel="Valider la récompense"
+                title={t("redeemTitle", { name: r.name })}
+                consequence={t("redeemConsequence", { amount: formatNumber(r.cost), unit: unitLabel(account.program.mode, r.cost), name: account.customer.firstName })}
+                confirmLabel={t("redeemConfirm")}
                 onConfirm={() => redeem(r)}
               />
             </div>
@@ -443,7 +453,7 @@ export function CheckoutView({ accountId }: { accountId: string }) {
         </TabsContent>
       </Tabs>
       <Button variant="ghost" onClick={next}>
-        <ScanLine /> Scanner une autre carte
+        <ScanLine /> {t("scanAnother")}
       </Button>
     </div>
   );

@@ -15,6 +15,9 @@ import { WebhooksService } from "../notifications/webhooks.service";
 import { CustomersService, buildIdentities, findByIdentities } from "../customers/customers.service";
 import { createCard } from "../loyalty/cards";
 import { CardsService, cardUrl } from "../cards/cards.service";
+import { tenantLocale, type Locale } from "../i18n/locale";
+import { recoverCardMessage } from "../i18n/notifications";
+import { cardLinkSubject, otpMessage } from "../i18n/emails";
 
 const OTP_TTL_MS = 10 * 60_000;
 const OTP_MAX_ATTEMPTS = 5;
@@ -151,7 +154,7 @@ export class PublicService {
         return { card, customerId: customer.id };
       });
       if (status === "PENDING_VERIFICATION" && program.enrollmentVerification === "EMAIL_OTP" && input.email) {
-        await this.sendOtp(tenantId, card.accountId, normalizeEmail(input.email), link.tenant.name);
+        await this.sendOtp(tenantId, card.accountId, normalizeEmail(input.email), link.tenant.name, tenantLocale(link.tenant.settings));
       }
       await this.audit.log({ tenantId, action: "customer.self_enrolled", targetType: "account", targetId: card.accountId, ip });
       await this.webhooks.emit(tenantId, "customer.created", { id: customerId, externalRef: null });
@@ -194,12 +197,13 @@ export class PublicService {
     });
     if (!account) return;
     const url = await this.cards.linkFor(account.id, link.tenantId);
-    const text = `${identity.customer.firstName ? `Bonjour ${identity.customer.firstName},\n\n` : ""}Voici le lien de votre carte ${link.program.name} :\n${url}\n\nAjoutez-la à l'écran d'accueil de votre téléphone ou téléchargez-la en image pour la présenter à chaque passage.`;
+    const locale = tenantLocale(link.tenant.settings);
+    const text = recoverCardMessage(locale, { firstName: identity.customer.firstName, programName: link.program.name, url });
     await this.audit.log({ tenantId: link.tenantId, action: "account.link_emailed", targetType: "account", targetId: account.id });
     if (email) {
       await this.email.send({
         to: email,
-        subject: `Votre carte de fidélité ${link.tenant.name}`,
+        subject: cardLinkSubject(locale, link.tenant.name),
         text,
       });
     }
@@ -247,7 +251,7 @@ export class PublicService {
         stampsTarget: account.program.stampsTarget,
         currency: account.program.currency,
         terms: account.program.terms,
-        rule: this.cards.rule(account.program, rewards[0]?.name),
+        rule: this.cards.rule(account.program, rewards[0]?.name, tenantLocale(s)),
       },
       customer: { firstName: account.customer.firstName, lastInitial: account.customer.lastName.slice(0, 1) },
       card: {
@@ -280,16 +284,12 @@ export class PublicService {
     return QRCode.toString(account.qrToken, { type: "svg", margin: 1, errorCorrectionLevel: "M" });
   }
 
-  private async sendOtp(tenantId: string, accountId: string, email: string, tenantName: string) {
+  private async sendOtp(tenantId: string, accountId: string, email: string, tenantName: string, locale: Locale) {
     const code = randomDigits(6);
     await this.prisma.client.otpChallenge.create({
       data: { tenantId, accountId, channel: "EMAIL", target: email, codeHash: sha256(`${accountId}:${code}`), expiresAt: new Date(Date.now() + OTP_TTL_MS) },
     });
-    await this.email.send({
-      to: email,
-      subject: `Votre code de validation — ${tenantName}`,
-      text: `Votre code de validation de carte de fidélité : ${code}\nIl expire dans 10 minutes.`,
-    });
+    await this.email.send({ to: email, ...otpMessage(locale, tenantName, code) });
   }
 
   async resendCode(accessToken: string) {
@@ -299,7 +299,7 @@ export class PublicService {
     }
     const recent = await this.prisma.client.otpChallenge.count({ where: { accountId: account.id, createdAt: { gt: new Date(Date.now() - 60_000) } } });
     if (recent > 0) throw badRequest("too_soon", "Patientez une minute avant de redemander un code");
-    await this.sendOtp(account.tenantId, account.id, account.customer.email, account.tenant.name);
+    await this.sendOtp(account.tenantId, account.id, account.customer.email, account.tenant.name, tenantLocale(account.tenant.settings));
   }
 
   async verify(accessToken: string, code: string) {

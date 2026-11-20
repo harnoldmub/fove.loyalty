@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { QRCodeSVG } from "qrcode.react";
 
 export function PosterQr({ value }: { value: string }) {
@@ -7,9 +8,10 @@ export function PosterQr({ value }: { value: string }) {
 }
 
 export function PrintButton() {
+  const t = useTranslations("public.poster");
   return (
     <button type="button" onClick={() => window.print()} className="poster-print mt-[10mm] rounded-md bg-[#14204a] px-6 py-3 font-medium text-white">
-      Imprimer l’affiche
+      {t("print")}
     </button>
   );
 }

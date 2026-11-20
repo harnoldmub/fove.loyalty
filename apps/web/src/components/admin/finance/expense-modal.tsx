@@ -4,7 +4,8 @@ import { useState } from "react";
 import { X, ArrowDownRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/field";
-import { api } from "@/lib/api";
+import { useTranslations } from "next-intl";
+import { api, useErrorMessage } from "@/lib/api";
 
 interface ExpenseModalProps {
   open: boolean;
@@ -12,23 +13,26 @@ interface ExpenseModalProps {
   onCreated: () => void;
 }
 
-const CATEGORIES = [
-  { value: "HOSTING", label: "Hébergement (Railway / Cloud)" },
-  { value: "DATABASE", label: "Base de données (Neon Postgres)" },
-  { value: "EMAILS", label: "Emails transactionnels (Resend / Brevo)" },
-  { value: "DOMAINS", label: "Noms de domaine / DNS" },
-  { value: "SAAS", label: "Outils & SaaS (GitHub, Sentry, Notion)" },
-  { value: "MARKETING", label: "Marketing & Relations presse" },
-  { value: "ADS", label: "Publicités (Meta, Google, TikTok)" },
-  { value: "DEV", label: "Développement & Infrastructure" },
-  { value: "FREELANCE", label: "Prestations freelance / Design" },
-  { value: "BANK_FEES", label: "Frais bancaires & Tenue de compte" },
-  { value: "LEGAL", label: "Comptabilité, Juridique & Avocat" },
-  { value: "OFFICE", label: "Matériel & Bureautique" },
-  { value: "OTHER", label: "Autres charges diverses" },
-];
+export const EXPENSE_CATEGORIES = [
+  "HOSTING",
+  "DATABASE",
+  "EMAILS",
+  "DOMAINS",
+  "SAAS",
+  "MARKETING",
+  "ADS",
+  "DEV",
+  "FREELANCE",
+  "BANK_FEES",
+  "LEGAL",
+  "OFFICE",
+  "OTHER",
+] as const;
 
 export function ExpenseModal({ open, onClose, onCreated }: ExpenseModalProps) {
+  const t = useTranslations("admin.finance.expenseModal");
+  const tc = useTranslations("admin.finance.expenseCategories");
+  const errMsg = useErrorMessage();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -38,7 +42,7 @@ export function ExpenseModal({ open, onClose, onCreated }: ExpenseModalProps) {
   const [amountStr, setAmountStr] = useState("");
   const [currency, setCurrency] = useState("USD");
   const [expenseDate, setExpenseDate] = useState(new Date().toISOString().slice(0, 10));
-  const [paymentMethod, setPaymentMethod] = useState("Carte bancaire");
+  const [paymentMethod, setPaymentMethod] = useState("");
   const [isRecurring, setIsRecurring] = useState(false);
   const [recurringInterval, setRecurringInterval] = useState<"month" | "year">("month");
   const [proofUrl, setProofUrl] = useState("");
@@ -50,7 +54,7 @@ export function ExpenseModal({ open, onClose, onCreated }: ExpenseModalProps) {
     setError(null);
     const amountFloat = Number.parseFloat(amountStr.replace(",", "."));
     if (Number.isNaN(amountFloat) || amountFloat <= 0) {
-      setError("Le montant doit être supérieur à zéro");
+      setError(t("invalidAmount"));
       return;
     }
 
@@ -72,8 +76,8 @@ export function ExpenseModal({ open, onClose, onCreated }: ExpenseModalProps) {
       });
       onCreated();
       onClose();
-    } catch (err: any) {
-      setError(err?.message || "Impossible d'enregistrer la dépense");
+    } catch (err) {
+      setError(errMsg(err));
     } finally {
       setLoading(false);
     }
@@ -89,13 +93,14 @@ export function ExpenseModal({ open, onClose, onCreated }: ExpenseModalProps) {
               <ArrowDownRight className="size-4" />
             </span>
             <div>
-              <h2 className="font-display text-base font-semibold text-ink">Enregistrer une dépense</h2>
-              <p className="text-xs text-ink-3">Ajout d&apos;une charge opérationnelle réelle</p>
+              <h2 className="font-display text-base font-semibold text-ink">{t("title")}</h2>
+              <p className="text-xs text-ink-3">{t("description")}</p>
             </div>
           </div>
           <button
             type="button"
             onClick={onClose}
+            aria-label={t("close")}
             className="grid size-8 place-items-center rounded-lg text-ink-3 hover:bg-surface-2 hover:text-ink"
           >
             <X className="size-4" />
@@ -111,19 +116,19 @@ export function ExpenseModal({ open, onClose, onCreated }: ExpenseModalProps) {
         <form onSubmit={handleSubmit} className="mt-4 space-y-4">
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="mb-1 block text-xs font-medium text-ink-2">Libellé de la dépense *</label>
+              <label className="mb-1 block text-xs font-medium text-ink-2">{t("label")}</label>
               <Input
                 required
-                placeholder="Ex : Hébergement serveur Railway"
+                placeholder={t("labelPlaceholder")}
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
               />
             </div>
             <div>
-              <label className="mb-1 block text-xs font-medium text-ink-2">Fournisseur / Prestataire *</label>
+              <label className="mb-1 block text-xs font-medium text-ink-2">{t("supplier")}</label>
               <Input
                 required
-                placeholder="Ex : Railway Inc."
+                placeholder={t("supplierPlaceholder")}
                 value={supplier}
                 onChange={(e) => setSupplier(e.target.value)}
               />
@@ -132,21 +137,21 @@ export function ExpenseModal({ open, onClose, onCreated }: ExpenseModalProps) {
 
           <div className="grid grid-cols-3 gap-3">
             <div className="col-span-2">
-              <label className="mb-1 block text-xs font-medium text-ink-2">Poste de charge *</label>
+              <label className="mb-1 block text-xs font-medium text-ink-2">{t("category")}</label>
               <select
                 className="w-full rounded-md border border-line bg-surface px-3 py-2 text-sm text-ink focus-visible:outline-none focus-visible:border-cobalt"
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
               >
-                {CATEGORIES.map((c) => (
-                  <option key={c.value} value={c.value}>
-                    {c.label}
+                {EXPENSE_CATEGORIES.map((c) => (
+                  <option key={c} value={c}>
+                    {tc(c)}
                   </option>
                 ))}
               </select>
             </div>
             <div>
-              <label className="mb-1 block text-xs font-medium text-ink-2">Devise</label>
+              <label className="mb-1 block text-xs font-medium text-ink-2">{t("currency")}</label>
               <select
                 className="w-full rounded-md border border-line bg-surface px-3 py-2 text-sm text-ink focus-visible:outline-none focus-visible:border-cobalt"
                 value={currency}
@@ -161,19 +166,20 @@ export function ExpenseModal({ open, onClose, onCreated }: ExpenseModalProps) {
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="mb-1 block text-xs font-medium text-ink-2">Montant TTC *</label>
+              <label className="mb-1 block text-xs font-medium text-ink-2">{t("amount")}</label>
               <Input
                 required
                 type="number"
                 step="0.01"
                 min="0.01"
-                placeholder="Ex : 49.00"
+                placeholder="49.00"
+                dir="ltr"
                 value={amountStr}
                 onChange={(e) => setAmountStr(e.target.value)}
               />
             </div>
             <div>
-              <label className="mb-1 block text-xs font-medium text-ink-2">Date d&apos;engagement *</label>
+              <label className="mb-1 block text-xs font-medium text-ink-2">{t("date")}</label>
               <Input
                 required
                 type="date"
@@ -185,18 +191,19 @@ export function ExpenseModal({ open, onClose, onCreated }: ExpenseModalProps) {
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="mb-1 block text-xs font-medium text-ink-2">Moyen de règlement</label>
+              <label className="mb-1 block text-xs font-medium text-ink-2">{t("paymentMethod")}</label>
               <Input
-                placeholder="Ex : CB Corporate, Virement"
+                placeholder={t("paymentMethodPlaceholder")}
                 value={paymentMethod}
                 onChange={(e) => setPaymentMethod(e.target.value)}
               />
             </div>
             <div>
-              <label className="mb-1 block text-xs font-medium text-ink-2">Lien justificatif / facture (optionnel)</label>
+              <label className="mb-1 block text-xs font-medium text-ink-2">{t("proof")}</label>
               <Input
                 type="url"
                 placeholder="https://drive.google.com/..."
+                dir="ltr"
                 value={proofUrl}
                 onChange={(e) => setProofUrl(e.target.value)}
               />
@@ -211,7 +218,7 @@ export function ExpenseModal({ open, onClose, onCreated }: ExpenseModalProps) {
                 onChange={(e) => setIsRecurring(e.target.checked)}
                 className="rounded border-line"
               />
-              Charge récurrente (abonnement mensuel/annuel)
+              {t("recurring")}
             </label>
             {isRecurring && (
               <select
@@ -219,18 +226,18 @@ export function ExpenseModal({ open, onClose, onCreated }: ExpenseModalProps) {
                 value={recurringInterval}
                 onChange={(e) => setRecurringInterval(e.target.value as "month" | "year")}
               >
-                <option value="month">Mensuelle</option>
-                <option value="year">Annuelle</option>
+                <option value="month">{t("monthly")}</option>
+                <option value="year">{t("yearly")}</option>
               </select>
             )}
           </div>
 
           <div className="mt-6 flex justify-end gap-3 border-t border-line pt-4">
             <Button type="button" variant="ghost" onClick={onClose} disabled={loading}>
-              Annuler
+              {t("cancel")}
             </Button>
             <Button type="submit" variant="primary" disabled={loading}>
-              {loading ? "Enregistrement..." : "Valider la dépense"}
+              {loading ? t("saving") : t("save")}
             </Button>
           </div>
         </form>

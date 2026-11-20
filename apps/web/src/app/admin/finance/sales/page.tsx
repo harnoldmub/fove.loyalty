@@ -2,8 +2,9 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { useQuery } from "@tanstack/react-query";
-import { Download, ExternalLink, FileText, Search, X } from "lucide-react";
+import { FileText, Search, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/field";
 import { Badge, PageHeader, Panel } from "@/components/ui/misc";
@@ -55,6 +56,7 @@ interface SaleItem {
 }
 
 export default function SalesPage() {
+  const t = useTranslations("admin.finance.sales");
   const [period, setPeriod] = useState<PeriodKey>("month");
   const [q, setQ] = useState("");
   const [status, setStatus] = useState("ALL");
@@ -79,8 +81,8 @@ export default function SalesPage() {
   return (
     <>
       <PageHeader
-        title="Journal des ventes & Facturation"
-        description="Ensemble des ventes conclues, renouvellements, factures émises et encaissements liés."
+        title={t("title")}
+        description={t("description")}
       />
 
       <FinanceNav />
@@ -90,18 +92,19 @@ export default function SalesPage() {
 
         <div className="flex flex-wrap items-center gap-3">
           <div className="relative min-w-[260px] flex-1">
-            <Search className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-ink-3" />
+            <Search className="pointer-events-none absolute start-3.5 top-1/2 size-4 -translate-y-1/2 text-ink-3" />
             <Input
               type="search"
-              placeholder="Rechercher par commerce, n° facture, email..."
-              className="pl-10"
+              aria-label={t("search")}
+              placeholder={t("search")}
+              className="ps-10"
               value={q}
               onChange={(e) => setQ(e.target.value)}
             />
           </div>
 
           <div className="flex items-center gap-1.5 text-xs">
-            <span className="text-ink-3">Statut :</span>
+            <span className="text-ink-3">{t("statusLabel")}</span>
             {(["ALL", "PAID", "OPEN", "VOID"] as const).map((s) => (
               <button
                 key={s}
@@ -113,7 +116,7 @@ export default function SalesPage() {
                     : "bg-surface border border-line text-ink-2 hover:bg-surface-2"
                 }`}
               >
-                {s === "ALL" ? "Tous" : s === "PAID" ? "Payées" : s === "OPEN" ? "En attente" : "Annulées"}
+                {t(`statusFilter.${s}`)}
               </button>
             ))}
           </div>
@@ -121,26 +124,26 @@ export default function SalesPage() {
       </div>
 
       {isLoading ? (
-        <div className="py-20 text-center text-sm text-ink-3">Chargement des ventes...</div>
+        <div className="py-20 text-center text-sm text-ink-3">{t("loading")}</div>
       ) : sales.length === 0 ? (
         <Panel className="p-12 text-center text-sm text-ink-3">
-          Aucune vente enregistrée pour les critères sélectionnés.
+          {t("empty")}
         </Panel>
       ) : (
         <Panel className="overflow-x-auto">
-          <table className="w-full min-w-[900px] text-left text-sm">
+          <table className="w-full min-w-[900px] text-start text-sm">
             <thead className="border-b border-line bg-surface-2 text-xs text-ink-3">
               <tr>
-                <th className="py-3 px-4 font-medium">Réf. Facture</th>
-                <th className="py-3 px-4 font-medium">Date</th>
-                <th className="py-3 px-4 font-medium">Commerce</th>
-                <th className="py-3 px-4 font-medium">Offre FOVE</th>
-                <th className="py-3 px-4 font-medium text-right">Montant HT</th>
-                <th className="py-3 px-4 font-medium text-right">TTC Payé</th>
-                <th className="py-3 px-4 font-medium">Règlement</th>
-                <th className="py-3 px-4 font-medium">Partenaire</th>
-                <th className="py-3 px-4 font-medium">Statut</th>
-                <th className="py-3 px-4 font-medium text-right">Action</th>
+                <th className="py-3 px-4 font-medium">{t("table.number")}</th>
+                <th className="py-3 px-4 font-medium">{t("table.date")}</th>
+                <th className="py-3 px-4 font-medium">{t("table.tenant")}</th>
+                <th className="py-3 px-4 font-medium">{t("table.plan")}</th>
+                <th className="py-3 px-4 font-medium text-end">{t("table.subtotal")}</th>
+                <th className="py-3 px-4 font-medium text-end">{t("table.paid")}</th>
+                <th className="py-3 px-4 font-medium">{t("table.payment")}</th>
+                <th className="py-3 px-4 font-medium">{t("table.partner")}</th>
+                <th className="py-3 px-4 font-medium">{t("table.status")}</th>
+                <th className="py-3 px-4 font-medium text-end">{t("table.action")}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-line">
@@ -171,44 +174,45 @@ export default function SalesPage() {
                     </td>
                     <td className="py-3.5 px-4">
                       <span className="rounded bg-surface-2 px-2 py-0.5 text-xs font-medium text-ink-2">
-                        {sale.subscription?.plan.name ?? "Sur-mesure"}
+                        {sale.subscription?.plan.name ?? t("custom")}
                       </span>
                     </td>
-                    <td className="py-3.5 px-4 text-right font-mono text-xs text-ink-2">
+                    <td className="py-3.5 px-4 text-end font-mono text-xs text-ink-2">
                       {formatFinance(sale.amountSubtotalCents, sale.currency)}
                     </td>
-                    <td className="py-3.5 px-4 text-right font-mono text-xs font-bold text-ink">
+                    <td className="py-3.5 px-4 text-end font-mono text-xs font-bold text-ink">
                       {formatFinance(sale.amountPaidCents || sale.amountTotalCents, sale.currency)}
                     </td>
                     <td className="py-3.5 px-4 text-xs text-ink-3">
-                      {payment ? `${payment.provider} (${payment.method ?? "carte"})` : "—"}
+                      {payment ? `${payment.provider} (${payment.method ?? t("card")})` : "—"}
                     </td>
                     <td className="py-3.5 px-4 text-xs">
                       {sale.partner ? (
                         <span className="text-cobalt font-medium">{sale.partner.name}</span>
                       ) : (
-                        <span className="text-ink-3">Direct</span>
+                        <span className="text-ink-3">{t("direct")}</span>
                       )}
                     </td>
                     <td className="py-3.5 px-4">
                       {isPaid ? (
-                        <Badge tone="mint">Réglée</Badge>
+                        <Badge tone="mint">{t("status.paid")}</Badge>
                       ) : sale.status === "OPEN" ? (
-                        <Badge tone="stamp">En attente</Badge>
+                        <Badge tone="stamp">{t("status.open")}</Badge>
                       ) : (
                         <Badge tone="neutral">{sale.status}</Badge>
                       )}
                     </td>
-                    <td className="py-3.5 px-4 text-right" onClick={(e) => e.stopPropagation()}>
+                    <td className="py-3.5 px-4 text-end" onClick={(e) => e.stopPropagation()}>
                       {sale.pdfUrl || sale.hostedInvoiceUrl ? (
                         <a
                           href={sale.pdfUrl ?? sale.hostedInvoiceUrl!}
                           target="_blank"
                           rel="noreferrer"
                           className="inline-flex size-8 items-center justify-center rounded-lg border border-line text-ink-3 hover:text-ink hover:bg-surface"
-                          title="Voir la facture"
+                          aria-label={t("viewInvoice")}
+                          title={t("viewInvoice")}
                         >
-                          <ExternalLink className="size-3.5" />
+                          <FileText className="size-3.5" />
                         </a>
                       ) : (
                         <span className="text-ink-3 text-xs">—</span>
@@ -229,15 +233,16 @@ export default function SalesPage() {
             className="fixed inset-0 bg-black/60 backdrop-blur-xs"
             onClick={() => setSelectedSaleId(null)}
           />
-          <div className="relative w-full max-w-md border-l border-line bg-surface p-6 shadow-2xl overflow-y-auto">
+          <div className="relative w-full max-w-md border-s border-line bg-surface p-6 shadow-2xl overflow-y-auto">
             <div className="flex items-center justify-between border-b border-line pb-4">
               <div>
-                <h3 className="font-display text-base font-semibold text-ink">Fiche de vente</h3>
+                <h3 className="font-display text-base font-semibold text-ink">{t("detail.title")}</h3>
                 <p className="font-mono text-xs text-ink-3">{detail.number}</p>
               </div>
               <button
                 type="button"
                 onClick={() => setSelectedSaleId(null)}
+                aria-label={t("detail.close")}
                 className="grid size-8 place-items-center rounded-lg text-ink-3 hover:bg-surface-2 hover:text-ink"
               >
                 <X className="size-4" />
@@ -246,35 +251,35 @@ export default function SalesPage() {
 
             <div className="mt-6 space-y-6">
               <div>
-                <h4 className="text-xs font-semibold uppercase text-ink-3 mb-2">Commerce</h4>
+                <h4 className="text-xs font-semibold uppercase text-ink-3 mb-2">{t("detail.tenant")}</h4>
                 <div className="rounded-lg bg-surface-2 p-3 text-xs space-y-1">
                   <p className="font-bold text-ink">{detail.tenant?.name}</p>
-                  <p className="text-ink-3">ID : {detail.tenant?.id}</p>
-                  <p className="text-ink-3">Slug : {detail.tenant?.slug}</p>
+                  <p className="text-ink-3">{t("detail.id", { id: detail.tenant?.id })}</p>
+                  <p className="text-ink-3">{t("detail.slug", { slug: detail.tenant?.slug })}</p>
                 </div>
               </div>
 
               <div>
-                <h4 className="text-xs font-semibold uppercase text-ink-3 mb-2">Décomposition financière</h4>
+                <h4 className="text-xs font-semibold uppercase text-ink-3 mb-2">{t("detail.breakdown")}</h4>
                 <div className="rounded-lg border border-line p-3 text-xs space-y-2">
                   <div className="flex justify-between">
-                    <span className="text-ink-3">Montant HT</span>
+                    <span className="text-ink-3">{t("detail.subtotal")}</span>
                     <span className="font-mono">{formatFinance(detail.amountSubtotalCents, detail.currency)}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-ink-3">Taxes & TVA</span>
+                    <span className="text-ink-3">{t("detail.tax")}</span>
                     <span className="font-mono">{formatFinance(detail.amountTaxCents, detail.currency)}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-ink-3">Remises / Crédits</span>
-                    <span className="font-mono">-{formatFinance(detail.amountDiscountCents, detail.currency)}</span>
+                    <span className="text-ink-3">{t("detail.discount")}</span>
+                    <span className="font-mono" dir="ltr">-{formatFinance(detail.amountDiscountCents, detail.currency)}</span>
                   </div>
                   <div className="border-t border-line pt-2 flex justify-between font-bold text-ink">
-                    <span>Total TTC facturé</span>
+                    <span>{t("detail.total")}</span>
                     <span className="font-mono">{formatFinance(detail.amountTotalCents, detail.currency)}</span>
                   </div>
                   <div className="flex justify-between text-emerald-600 dark:text-emerald-400 font-bold">
-                    <span>Montant réglé</span>
+                    <span>{t("detail.paid")}</span>
                     <span className="font-mono">{formatFinance(detail.amountPaidCents, detail.currency)}</span>
                   </div>
                 </div>
@@ -282,7 +287,7 @@ export default function SalesPage() {
 
               {detail.payments && detail.payments.length > 0 && (
                 <div>
-                  <h4 className="text-xs font-semibold uppercase text-ink-3 mb-2">Transactions associées</h4>
+                  <h4 className="text-xs font-semibold uppercase text-ink-3 mb-2">{t("detail.transactions")}</h4>
                   <div className="space-y-2">
                     {detail.payments.map((p: any) => (
                       <div key={p.id} className="rounded-lg bg-surface-2 p-3 text-xs space-y-1">
@@ -291,11 +296,10 @@ export default function SalesPage() {
                           <span>{formatFinance(p.amountCents, p.currency)}</span>
                         </div>
                         <p className="text-ink-3">
-                          Prestataire : {p.provider} · Statut : <strong className="text-ink">{p.status}</strong>
+                          {t.rich("detail.provider", { provider: p.provider, status: p.status, strong: (c) => <strong className="text-ink">{c}</strong> })}
                         </p>
                         <p className="text-ink-3">
-                          Frais prélevés : {formatFinance(p.feeCents, p.currency)} · Net reçu :{" "}
-                          <strong className="text-emerald-500">{formatFinance(p.netCents, p.currency)}</strong>
+                          {t.rich("detail.fees", { fee: formatFinance(p.feeCents, p.currency), net: formatFinance(p.netCents, p.currency), strong: (c) => <strong className="text-emerald-500">{c}</strong> })}
                         </p>
                       </div>
                     ))}
@@ -313,7 +317,7 @@ export default function SalesPage() {
                   >
                     <Button variant="secondary" className="w-full gap-2">
                       <FileText className="size-4" />
-                      Télécharger la facture originale
+                      {t("detail.download")}
                     </Button>
                   </a>
                 </div>

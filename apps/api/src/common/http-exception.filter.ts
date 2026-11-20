@@ -3,6 +3,26 @@ import type { Response } from "express";
 import { ThrottlerException } from "@nestjs/throttler";
 import type { AppRequest } from "./context";
 import type { PrismaService } from "./prisma.service";
+import { requestLocale, type Locale } from "../i18n/locale";
+import { translateError } from "../i18n/errors";
+
+interface ErrorBody {
+  error: { code: string; message: string; details?: unknown; requestId?: string };
+}
+
+/** Traduit le message et, pour une validation, le message de chaque champ. */
+export function localizeErrorBody(body: ErrorBody, locale: Locale): ErrorBody {
+  if (locale === "fr") return body;
+  const { error } = body;
+  const details = Array.isArray(error.details)
+    ? error.details.map((d: unknown) =>
+        d && typeof d === "object" && typeof (d as { message?: unknown }).message === "string"
+          ? { ...(d as object), message: translateError(locale, (d as { message: string }).message) }
+          : d,
+      )
+    : error.details;
+  return { error: { ...error, message: translateError(locale, error.message), ...(details !== undefined ? { details } : {}) } };
+}
 
 /** Format d'erreur uniforme ; les 5xx sont journalisées pour l'administration. */
 @Catch()
@@ -15,9 +35,12 @@ export class HttpExceptionFilter implements ExceptionFilter {
     const ctx = host.switchToHttp();
     const res = ctx.getResponse<Response>();
     const req = ctx.getRequest<AppRequest>();
+    const locale = requestLocale(req);
+    res.setHeader("Content-Language", locale);
+    const send = (status: number, body: ErrorBody) => res.status(status).json(localizeErrorBody(body, locale));
 
     if (exception instanceof ThrottlerException) {
-      res.status(429).json({ error: { code: "rate_limited", message: "Trop de requêtes, réessayez dans un instant." } });
+      send(429, { error: { code: "rate_limited", message: "Trop de requêtes, réessayez dans un instant." } });
       return;
     }
 
@@ -25,10 +48,10 @@ export class HttpExceptionFilter implements ExceptionFilter {
       const status = exception.getStatus();
       const body = exception.getResponse();
       if (typeof body === "object" && body !== null && "error" in body) {
-        res.status(status).json(body);
+        send(status, body as ErrorBody);
       } else {
         const message = typeof body === "string" ? body : ((body as { message?: string }).message ?? exception.message);
-        res.status(status).json({ error: { code: HttpStatus[status]?.toLowerCase() ?? "error", message } });
+        send(status, { error: { code: HttpStatus[status]?.toLowerCase() ?? "error", message } });
       }
       return;
     }
@@ -48,6 +71,6 @@ export class HttpExceptionFilter implements ExceptionFilter {
         },
       })
       .catch(() => undefined);
-    res.status(500).json({ error: { code: "internal_error", message: "Erreur interne", requestId: req.requestId } });
+    send(500, { error: { code: "internal_error", message: "Erreur interne", requestId: req.requestId } });
   }
 }

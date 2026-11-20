@@ -5,6 +5,7 @@ import type { Request, Response } from "express";
 import {
   acceptInviteSchema,
   forgotPasswordSchema,
+  localeSchema,
   loginSchema,
   resetPasswordSchema,
   signupSchema,
@@ -22,6 +23,7 @@ import { UserRoute } from "./guards";
 import { TeamService } from "../tenants/team.service";
 import { loadConfig } from "../config";
 import { randomToken, safeEqual, sha256 } from "../common/crypto";
+import { requestLocaleOrNull } from "../i18n/locale";
 
 const strict = { default: { limit: 10, ttl: 60_000 } };
 const GOOGLE_STATE_COOKIE = "fove_google_oauth";
@@ -185,8 +187,16 @@ export class AuthController {
   @HttpCode(204)
   @Throttle(strict)
   @UserRoute()
-  async resend(@Auth() auth: AuthState) {
-    await this.auth.resendVerification(auth);
+  async resend(@Auth() auth: AuthState, @Req() req: Request) {
+    await this.auth.resendVerification(auth, requestLocaleOrNull(req));
+  }
+
+  /** Langue préférée de l'utilisateur (emails), enregistrée quand il change de langue. */
+  @Post("locale")
+  @HttpCode(204)
+  @UserRoute()
+  async setLocale(@Auth() auth: AuthState, @Body(new ZodPipe(localeSchema)) body: z.infer<typeof localeSchema>) {
+    await this.auth.setLocale(auth, body.locale);
   }
 
   @Post("forgot-password")
@@ -194,7 +204,7 @@ export class AuthController {
   @Throttle({ default: { limit: 5, ttl: 60_000 } })
   async forgot(@Body(new ZodPipe(forgotPasswordSchema)) body: z.infer<typeof forgotPasswordSchema>, @Req() req: Request) {
     requireCsrf(req);
-    await this.auth.forgotPassword(body.email);
+    await this.auth.forgotPassword(body.email, requestLocaleOrNull(req));
   }
 
   @Post("reset-password")

@@ -1,0 +1,154 @@
+{
+  "meta": {
+    "joinTitle": "Join {tenant}",
+    "notFound": "Program not found",
+    "joinDescriptionTenant": "Create your {program} loyalty card at {tenant} in 30 seconds.",
+    "joinDescription": "Create your {program} loyalty card in 30 seconds.",
+    "cardTitle": "My loyalty card",
+    "cardShortTitle": "My card",
+    "manifestName": "{tenant} card",
+    "posterTitle": "Sign-up poster"
+  },
+  "rules": {
+    "stamps": "One purchase = one stamp. {target, plural, one {# stamp} other {# stamps}} = {reward}.",
+    "points": "{amount} {currency} spent = {points, plural, one {# point} other {# points}}.",
+    "defaultReward": "a reward"
+  },
+  "join": {
+    "programLabel": "Loyalty program",
+    "rememberedTitle": "Your card is ready!",
+    "rememberedText": "Your loyalty card at <b>{tenant}</b> is already saved on this phone.",
+    "openCard": "Open my card",
+    "createAnother": "Create another card or use another number",
+    "backToSaved": "Back to my saved card",
+    "tabJoin": "Create my card",
+    "tabRecover": "Find my card",
+    "firstName": "First name",
+    "lastName": "Last name",
+    "phone": "Phone",
+    "email": "Email",
+    "emailOptional": "Email (optional)",
+    "emailCodeHint": "A verification code will be sent to you.",
+    "emailRecoverHint": "To find your card if you change phones.",
+    "honeypot": "Website",
+    "acceptTerms": "I accept the program terms.",
+    "acceptTermsWithPrivacy": "I accept the program terms and the <link>privacy policy</link>.",
+    "marketingConsent": "I would like to receive offers from {tenant} (optional).",
+    "submit": "Create my card",
+    "alreadyEnrolled": "Use the “Find my card” tab or ask the staff to send it to you again.",
+    "programTerms": "Program terms",
+    "recoverSent": "If a card matches, its link has just been sent to the email on file. Remember to check your junk mail.",
+    "recoverIntro": "Your card link is sent to the email saved on your record. No email? Ask the staff at the counter.",
+    "recoverIdentifier": "Email or phone used to sign up",
+    "recoverSubmit": "Get the link",
+    "poweredBy": "Loyalty card powered by FOVE"
+  },
+  "homeScreen": {
+    "added": "Card added to your home screen!",
+    "linkCopied": "Your card link has been copied!",
+    "linkFallback": "Link: {url}",
+    "installed": "On the home screen",
+    "buttonLabel": "Add the card to the home screen",
+    "button": "Add to home screen",
+    "dialogTitle": "Add to home screen",
+    "dialogDescription": "Keep your {tenant} card one tap away on your phone.",
+    "ios": {
+      "step1": "Tap <icon></icon> Share",
+      "step1Hint": "In the Safari toolbar at the bottom of your iPhone screen (or at the top on iPad).",
+      "step2": "Tap <icon></icon> “Add to Home Screen”",
+      "step2Hint": "Scroll down the options menu to select this action.",
+      "step3": "Tap “Add”",
+      "step3Hint": "Your card appears like a real app on your home screen!",
+      "inAppTitle": "Are you inside an app (Instagram, WhatsApp...)?",
+      "inAppText": "Tap the options at the top right to open the page in <b>Safari</b> first."
+    },
+    "android": {
+      "step1": "Tap the <icon></icon> menu",
+      "step1Hint": "The 3 vertical dots at the top right of Google Chrome.",
+      "step2": "Select <icon></icon> “Add to Home screen”",
+      "step2Hint": "(Or “Install app”, depending on your browser).",
+      "step3": "Confirm with “Add”",
+      "step3Hint": "Your {tenant} card will be available right away in one tap."
+    },
+    "desktop": {
+      "intro": "To find your card in store, the easiest way is to open it on your smartphone:",
+      "tipsTitle": "Tips:",
+      "tip1": "Scan the QR code on this page with your smartphone.",
+      "tip2": "Copy the link below to send it to yourself by message or email.",
+      "tip3": "On a Mac or PC, bookmark the page (<kbd>Cmd+D</kbd> or <kbd>Ctrl+D</kbd>)."
+    },
+    "copied": "Link copied!",
+    "copy": "Copy the direct link",
+    "gotIt": "Got it"
+  },
+  "card": {
+    "live": {
+      "completeTitle": "Congratulations! Your card is complete!",
+      "completeText": "Your reward “{reward}” is unlocked.",
+      "rewardFallback": "Reward",
+      "stampsEarned": "{count, plural, one {+# stamp added at the counter!} other {+# stamps added at the counter!}}",
+      "pointsEarned": "{count, plural, one {+# point credited at the counter!} other {+# points credited at the counter!}}",
+      "balanceUpdated": "Your balance has just been updated.",
+      "redeemTitle": "Reward redeemed at the counter!",
+      "redeemText": "Thank you for your loyalty."
+    },
+    "ready": "Your card is ready, {name}. Show this QR code at the counter with every purchase.",
+    "cardLabel": "Loyalty card",
+    "pointsUnit": "{count, plural, one {point} other {points}}",
+    "liveSync": "Counter visits synced in real time",
+    "keepHandy": "Keep your card always within reach",
+    "downloadLabel": "Download the card as an image (PNG)",
+    "download": "Save the image",
+    "verify": {
+      "title": "Confirm your card",
+      "text": "Enter the 6-digit code you received by email.",
+      "code": "Verification code",
+      "submit": "Confirm my card",
+      "resend": "Resend the code",
+      "resent": "New code sent."
+    },
+    "inStore": "Your card will be activated by the staff on your next visit to the counter.",
+    "blocked": "This card is suspended. Please contact {tenant}.",
+    "qrLabel": "QR code to show at the counter",
+    "qrHint": "Show at the counter",
+    "nextReward": "Next reward",
+    "progress": "Progress",
+    "remainingPoints": "{count, plural, one {# point} other {# points}} to go",
+    "rewards": "Rewards",
+    "available": "Available",
+    "rewardValue": {
+      "percent": "{value}% off",
+      "fixed": "{value} {currency} off"
+    },
+    "history": "History",
+    "kinds": {
+      "EARN": "Purchase",
+      "ADJUSTMENT": "Adjustment",
+      "REDEMPTION": "Reward",
+      "REDEMPTION_REVERSAL": "Reward cancelled",
+      "REVERSAL": "Cancellation",
+      "REFUND": "Refund",
+      "EXPIRATION": "Expiry"
+    },
+    "memberSince": "Member since {date}. This link is personal: do not share it.",
+    "poweredBy": "Powered by <link>FOVE</link>"
+  },
+  "wallet": {
+    "apple": "Add to Apple Wallet",
+    "google": "Add to Google Wallet"
+  },
+  "stamps": {
+    "ariaLabel": "{filled, plural, one {# stamp} other {# stamps}} out of {target}",
+    "ariaLabelReward": "{filled, plural, one {# stamp} other {# stamps}} out of {target}, {reward} at the end",
+    "complete": "{reward} available on your next visit.",
+    "completeDefault": "Reward available on your next visit.",
+    "progress": "{capped}/{target} · {left, plural, one {# more visit} other {# more visits}} until {reward}",
+    "progressDefault": "{capped}/{target} · {left, plural, one {# more visit} other {# more visits}} until the reward"
+  },
+  "poster": {
+    "title": "Your loyalty card, free",
+    "scan": "Scan with your phone’s camera",
+    "stampsOffer": "{count, plural, one {# visit} other {# visits}} = {reward}",
+    "print": "Print the poster"
+  }
+}

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import { serverGet } from "@/lib/server-api";
 import { CardView, type CardData } from "./view";
 
@@ -7,11 +8,12 @@ type Props = { params: Promise<{ token: string }> };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { token } = await params;
+  const t = await getTranslations("public.meta");
   return {
-    title: "Ma carte de fidélité",
+    title: t("cardTitle"),
     robots: { index: false, follow: false },
     manifest: `/card/${token}/manifest.webmanifest`,
-    appleWebApp: { capable: true, title: "Ma carte", statusBarStyle: "black-translucent" },
+    appleWebApp: { capable: true, title: t("cardShortTitle"), statusBarStyle: "black-translucent" },
   };
 }
 

@@ -1,8 +1,9 @@
 "use client";
 
-import { rewardValueLabel, type RewardKind } from "@fove/shared";
+import type { RewardKind } from "@fove/shared";
 import { useSearchParams } from "next/navigation";
-import { useEffect, useState, useSyncExternalStore } from "react";
+import { useEffect, useState, useSyncExternalStore, type ReactNode } from "react";
+import { useTranslations } from "next-intl";
 import { Check, CheckCircle2, Copy, Download, Gift, MoreVertical, PartyPopper, PlusSquare, Share, Smartphone, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { QRCodeSVG } from "qrcode.react";
@@ -16,7 +17,10 @@ import { Field, Input } from "@/components/ui/field";
 import { ErrorNote } from "@/components/ui/misc";
 import { api, errorMessage } from "@/lib/api";
 import { playChime } from "@/lib/sound";
-import { cn, formatDate, formatNumber, KIND_LABEL } from "@/lib/utils";
+import { cn, formatDate, formatNumber } from "@/lib/utils";
+
+const KINDS = new Set(["EARN", "ADJUSTMENT", "REDEMPTION", "REDEMPTION_REVERSAL", "REVERSAL", "REFUND", "EXPIRATION"]);
+const KBD = "rounded bg-surface px-1 py-0.5 font-mono text-[11px] border";
 
 export interface CardData {
   tenant: { name: string; logoUrl: string | null; primaryColor: string };
@@ -49,6 +53,7 @@ function useDeviceOS(): "ios" | "android" | "other" {
 }
 
 function AddToHomeScreenButton({ tenantName }: { tenantName: string }) {
+  const t = useTranslations("public.homeScreen");
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const [prompt, setPrompt] = useState<(Event & { prompt: () => Promise<void>; userChoice?: Promise<{ outcome: string }> }) | null>(null);
@@ -91,7 +96,7 @@ function AddToHomeScreenButton({ tenantName }: { tenantName: string }) {
         await prompt.prompt();
         const choice = await prompt.userChoice;
         if (choice?.outcome === "accepted") {
-          toast.success("Carte ajoutée à votre écran d'accueil !");
+          toast.success(t("added"));
           return;
         }
       } catch {
@@ -107,20 +112,20 @@ function AddToHomeScreenButton({ tenantName }: { tenantName: string }) {
       try {
         await navigator.clipboard.writeText(url);
         setCopied(true);
-        toast.success("Lien de votre carte copié !");
+        toast.success(t("linkCopied"));
         setTimeout(() => setCopied(false), 2500);
         return;
       } catch {
         // fallback
       }
     }
-    toast.info("Lien : " + url);
+    toast.info(t("linkFallback", { url }));
   };
 
   if (isStandalone) {
     return (
       <span className="inline-flex items-center gap-1.5 text-xs text-mint font-medium px-3 py-1.5 rounded-full bg-mint-soft border border-mint/20">
-        <CheckCircle2 className="size-3.5" /> Sur l’écran d’accueil
+        <CheckCircle2 className="size-3.5" /> {t("installed")}
       </span>
     );
   }
@@ -133,16 +138,16 @@ function AddToHomeScreenButton({ tenantName }: { tenantName: string }) {
         size="sm"
         className="rounded-full shadow-xs hover:bg-surface-2 transition-all font-medium"
         onClick={handleClick}
-        aria-label="Ajouter la carte sur l'écran d'accueil"
+        aria-label={t("buttonLabel")}
       >
         <Smartphone className="size-3.5 text-ink-2" />
-        <span>Ajouter à l’écran d’accueil</span>
+        <span>{t("button")}</span>
       </Button>
 
       <DialogRoot open={open} onOpenChange={setOpen}>
         <DialogContent
-          title="Ajouter à l’écran d’accueil"
-          description={`Gardez votre carte ${tenantName} accessible en 1 clic sur votre téléphone.`}
+          title={t("dialogTitle")}
+          description={t("dialogDescription", { tenant: tenantName })}
           className="sm:max-w-md"
         >
           {os === "ios" ? (
@@ -153,10 +158,10 @@ function AddToHomeScreenButton({ tenantName }: { tenantName: string }) {
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-semibold text-ink">
-                    Appuyez sur <Share className="inline size-4 text-cobalt align-text-bottom mx-0.5" aria-hidden /> Partager
+                    {t.rich("ios.step1", { icon: () => <Share className="inline size-4 text-cobalt align-text-bottom mx-0.5" aria-hidden /> })}
                   </p>
                   <p className="text-xs text-ink-2 mt-0.5">
-                    Dans la barre de navigation Safari en bas de votre écran iPhone (ou en haut sur iPad).
+                    {t("ios.step1Hint")}
                   </p>
                 </div>
               </div>
@@ -167,10 +172,10 @@ function AddToHomeScreenButton({ tenantName }: { tenantName: string }) {
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-semibold text-ink">
-                    Touchez <PlusSquare className="inline size-4 text-ink align-text-bottom mx-0.5" aria-hidden /> « Sur l’écran d’accueil »
+                    {t.rich("ios.step2", { icon: () => <PlusSquare className="inline size-4 text-ink align-text-bottom mx-0.5" aria-hidden /> })}
                   </p>
                   <p className="text-xs text-ink-2 mt-0.5">
-                    Faites défiler le menu des options vers le bas pour sélectionner cette action.
+                    {t("ios.step2Hint")}
                   </p>
                 </div>
               </div>
@@ -181,10 +186,10 @@ function AddToHomeScreenButton({ tenantName }: { tenantName: string }) {
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-semibold text-ink">
-                    Appuyez sur « Ajouter »
+                    {t("ios.step3")}
                   </p>
                   <p className="text-xs text-ink-2 mt-0.5">
-                    Votre carte apparaît comme une vraie application sur votre écran d'accueil !
+                    {t("ios.step3Hint")}
                   </p>
                 </div>
               </div>
@@ -192,10 +197,10 @@ function AddToHomeScreenButton({ tenantName }: { tenantName: string }) {
               {isInApp && (
                 <div className="rounded-lg bg-stamp-soft/30 p-2.5 text-xs text-ink-2">
                   <p className="font-medium text-stamp-ink dark:text-stamp">
-                    💡 Vous êtes dans une application (Instagram, WhatsApp...) ?
+                    {t("ios.inAppTitle")}
                   </p>
                   <p className="text-ink-3 mt-0.5">
-                    Appuyez sur les options en haut à droite pour ouvrir d'abord la page dans <strong>Safari</strong>.
+                    {t.rich("ios.inAppText", { b: (c) => <strong>{c}</strong> })}
                   </p>
                 </div>
               )}
@@ -208,10 +213,10 @@ function AddToHomeScreenButton({ tenantName }: { tenantName: string }) {
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-semibold text-ink">
-                    Appuyez sur le menu <MoreVertical className="inline size-4 text-ink align-text-bottom mx-0.5" aria-hidden />
+                    {t.rich("android.step1", { icon: () => <MoreVertical className="inline size-4 text-ink align-text-bottom mx-0.5" aria-hidden /> })}
                   </p>
                   <p className="text-xs text-ink-2 mt-0.5">
-                    Les 3 points verticaux en haut à droite de Google Chrome.
+                    {t("android.step1Hint")}
                   </p>
                 </div>
               </div>
@@ -222,10 +227,10 @@ function AddToHomeScreenButton({ tenantName }: { tenantName: string }) {
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-semibold text-ink">
-                    Sélectionnez <Smartphone className="inline size-4 text-ink align-text-bottom mx-0.5" aria-hidden /> « Ajouter à l’écran d’accueil »
+                    {t.rich("android.step2", { icon: () => <Smartphone className="inline size-4 text-ink align-text-bottom mx-0.5" aria-hidden /> })}
                   </p>
                   <p className="text-xs text-ink-2 mt-0.5">
-                    (Ou « Installer l'application » selon votre navigateur).
+                    {t("android.step2Hint")}
                   </p>
                 </div>
               </div>
@@ -236,10 +241,10 @@ function AddToHomeScreenButton({ tenantName }: { tenantName: string }) {
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-semibold text-ink">
-                    Confirmez avec « Ajouter »
+                    {t("android.step3")}
                   </p>
                   <p className="text-xs text-ink-2 mt-0.5">
-                    Votre carte {tenantName} sera accessible immédiatement en 1 clic.
+                    {t("android.step3Hint", { tenant: tenantName })}
                   </p>
                 </div>
               </div>
@@ -247,14 +252,14 @@ function AddToHomeScreenButton({ tenantName }: { tenantName: string }) {
           ) : (
             <div className="grid gap-3 py-1">
               <p className="text-sm text-ink-2">
-                Pour retrouver votre carte en boutique, le plus pratique est de l’ouvrir sur votre smartphone :
+                {t("desktop.intro")}
               </p>
               <div className="rounded-xl border border-line bg-surface-2/60 p-3.5 space-y-2 text-xs text-ink-2">
-                <p className="font-semibold text-ink">Astuces :</p>
+                <p className="font-semibold text-ink">{t("desktop.tipsTitle")}</p>
                 <ul className="space-y-1.5 list-disc list-inside">
-                  <li>Scannez le QR code de cette page avec votre smartphone.</li>
-                  <li>Copiez le lien ci-dessous pour vous l'envoyer par message ou email.</li>
-                  <li>Sur Mac ou PC, ajoutez la page aux favoris (<kbd className="rounded bg-surface px-1 py-0.5 font-mono text-[11px] border">Cmd+D</kbd> ou <kbd className="rounded bg-surface px-1 py-0.5 font-mono text-[11px] border">Ctrl+D</kbd>).</li>
+                  <li>{t("desktop.tip1")}</li>
+                  <li>{t("desktop.tip2")}</li>
+                  <li>{t.rich("desktop.tip3", { kbd: (c: ReactNode) => <kbd dir="ltr" className={KBD}>{c}</kbd> })}</li>
                 </ul>
               </div>
             </div>
@@ -269,7 +274,7 @@ function AddToHomeScreenButton({ tenantName }: { tenantName: string }) {
               className="w-full sm:w-auto text-xs text-ink-2 hover:text-ink"
             >
               {copied ? <Check className="size-3.5 text-mint" /> : <Copy className="size-3.5" />}
-              <span>{copied ? "Lien copié !" : "Copier le lien direct"}</span>
+              <span>{copied ? t("copied") : t("copy")}</span>
             </Button>
             <Button
               type="button"
@@ -278,7 +283,7 @@ function AddToHomeScreenButton({ tenantName }: { tenantName: string }) {
               onClick={() => setOpen(false)}
               className="w-full sm:w-auto"
             >
-              J’ai compris
+              {t("gotIt")}
             </Button>
           </div>
         </DialogContent>
@@ -288,6 +293,7 @@ function AddToHomeScreenButton({ tenantName }: { tenantName: string }) {
 }
 
 export function CardView({ token, initial }: { token: string; initial: CardData }) {
+  const t = useTranslations("public.card");
   const fresh = useSearchParams().get("new") === "1";
   const [data, setData] = useState(initial);
   const [code, setCode] = useState("");
@@ -344,16 +350,14 @@ export function CardView({ token, initial }: { token: string; initial: CardData 
               if (freshData.program.mode === "STAMPS" && freshData.card.balance >= freshData.program.stampsTarget) {
                 setLiveNotice({
                   kind: "target",
-                  message: "🎉 Félicitations ! Votre carte est complète !",
-                  sub: `Votre récompense « ${freshData.rewards[0]?.name ?? "Récompense"} » est débloquée.`,
+                  message: t("live.completeTitle"),
+                  sub: t("live.completeText", { reward: freshData.rewards[0]?.name ?? t("live.rewardFallback") }),
                 });
               } else {
                 setLiveNotice({
                   kind: "earn",
-                  message: freshData.program.mode === "STAMPS"
-                    ? `+${delta} tampon${delta > 1 ? "s" : ""} validé en caisse !`
-                    : `+${formatNumber(delta)} point${delta > 1 ? "s" : ""} crédité en caisse !`,
-                  sub: "Votre solde est mis à jour à l’instant.",
+                  message: freshData.program.mode === "STAMPS" ? t("live.stampsEarned", { count: delta }) : t("live.pointsEarned", { count: delta }),
+                  sub: t("live.balanceUpdated"),
                 });
               }
               setTimeout(() => { if (active) setLiveNotice(null); }, 6000);
@@ -361,8 +365,8 @@ export function CardView({ token, initial }: { token: string; initial: CardData 
               playChime("redeem");
               setLiveNotice({
                 kind: "redeem",
-                message: "Récompense validée en caisse ! 🎁",
-                sub: "Merci pour votre fidélité.",
+                message: t("live.redeemTitle"),
+                sub: t("live.redeemText"),
               });
               setTimeout(() => { if (active) setLiveNotice(null); }, 6000);
             }
@@ -396,7 +400,7 @@ export function CardView({ token, initial }: { token: string; initial: CardData 
       document.removeEventListener("visibilitychange", onVisible);
       window.removeEventListener("focus", onVisible);
     };
-  }, [token]);
+  }, [token, t]);
 
   return (
     <div className="min-h-dvh pb-12" style={{ ["--brand" as string]: tenant.primaryColor }}>
@@ -430,11 +434,11 @@ export function CardView({ token, initial }: { token: string; initial: CardData 
 
         {fresh && card.status === "ACTIVE" && !liveNotice && (
           <p role="status" className="rounded-md bg-mint-soft px-4 py-3 text-sm font-medium text-mint">
-            Votre carte est prête, {data.customer.firstName}. Montrez ce QR code en caisse à chaque achat.
+            {t("ready", { name: data.customer.firstName })}
           </p>
         )}
 
-        <section aria-label="Carte de fidélité" className="relative overflow-hidden rounded-[28px] p-6 text-white shadow-2" style={{ background: "linear-gradient(155deg, var(--brand) 0%, color-mix(in srgb, var(--brand) 72%, #0d1430) 100%)" }}>
+        <section aria-label={t("cardLabel")} className="relative overflow-hidden rounded-[28px] p-6 text-white shadow-2" style={{ background: "linear-gradient(155deg, var(--brand) 0%, color-mix(in srgb, var(--brand) 72%, #0d1430) 100%)" }}>
           <div className="flex items-center gap-3">
             {tenant.logoUrl ? <img src={tenant.logoUrl} alt="" className="size-11 rounded-full bg-white object-cover" /> : <span className="grid size-11 place-items-center rounded-full bg-white/20 font-display text-lg font-bold">{tenant.name.slice(0, 1)}</span>}
             <div className="min-w-0">
@@ -449,16 +453,16 @@ export function CardView({ token, initial }: { token: string; initial: CardData 
             </div>
           ) : (
             <p className="mt-6 font-display text-5xl font-semibold tabular">
-              {formatNumber(card.balance)} <span className="text-xl font-normal text-white/80">points</span>
+              {formatNumber(card.balance)} <span className="text-xl font-normal text-white/80">{t("pointsUnit", { count: card.balance })}</span>
             </p>
           )}
 
           <div className="mt-6 flex items-end justify-between gap-4">
             <div>
               <p className="text-sm text-white/80">{data.customer.firstName} {data.customer.lastInitial}.</p>
-              <p className="tabular text-sm tracking-[0.12em]">{card.number}</p>
+              <p dir="ltr" className="tabular text-sm tracking-[0.12em]">{card.number}</p>
             </div>
-            {stamps && <p className="font-display text-2xl font-semibold tabular">{Math.min(card.balance, program.stampsTarget)}<span className="text-base text-white/70">/{program.stampsTarget}</span></p>}
+            {stamps && <p dir="ltr" className="font-display text-2xl font-semibold tabular">{Math.min(card.balance, program.stampsTarget)}<span className="text-base text-white/70">/{program.stampsTarget}</span></p>}
           </div>
         </section>
 
@@ -468,12 +472,12 @@ export function CardView({ token, initial }: { token: string; initial: CardData 
             <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-mint opacity-75" />
             <span className="relative inline-flex size-2 rounded-full bg-mint" />
           </span>
-          <span>Passage en caisse synchronisé en temps réel</span>
+          <span>{t("liveSync")}</span>
         </div>
 
         {card.status === "ACTIVE" && (
-          <section aria-label="Gardez votre carte toujours à portée de main" className="grid justify-items-center gap-3 rounded-[var(--radius-lg)] bg-surface p-4 shadow-1">
-            <p className="text-center text-sm font-medium text-ink-2">Gardez votre carte toujours à portée de main</p>
+          <section aria-label={t("keepHandy")} className="grid justify-items-center gap-3 rounded-[var(--radius-lg)] bg-surface p-4 shadow-1">
+            <p className="text-center text-sm font-medium text-ink-2">{t("keepHandy")}</p>
             {(showAppleWallet || showGoogleWallet) && (
               <div className="flex flex-wrap items-center justify-center gap-3">
                 {showAppleWallet && <AppleWalletButton token={token} />}
@@ -483,8 +487,8 @@ export function CardView({ token, initial }: { token: string; initial: CardData 
             <div className="flex flex-wrap items-center justify-center gap-2 pt-0.5">
               <AddToHomeScreenButton tenantName={tenant.name} />
               <Button asChild variant="secondary" size="sm" className="rounded-full shadow-xs hover:bg-surface-2 transition-all">
-                <a href={`/api/public/cards/${token}/carte.png?download=1`} download aria-label="Télécharger la carte en image (PNG)">
-                  <Download className="size-3.5" /> Enregistrer l'image
+                <a href={`/api/public/cards/${token}/carte.png?download=1`} download aria-label={t("downloadLabel")}>
+                  <Download className="size-3.5" /> {t("download")}
                 </a>
               </Button>
             </div>
@@ -506,12 +510,12 @@ export function CardView({ token, initial }: { token: string; initial: CardData 
                 }
               }}
             >
-              <h2 className="font-display text-lg font-semibold">Validez votre carte</h2>
-              <p className="text-sm text-ink-2">Saisissez le code à 6 chiffres reçu par email.</p>
+              <h2 className="font-display text-lg font-semibold">{t("verify.title")}</h2>
+              <p className="text-sm text-ink-2">{t("verify.text")}</p>
               {error && <ErrorNote>{error}</ErrorNote>}
               {info && <p className="text-sm text-mint">{info}</p>}
-              <Field label="Code de validation">{(p) => <Input {...p} inputMode="numeric" autoComplete="one-time-code" maxLength={6} className="text-center text-2xl tracking-[0.4em] tabular" value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))} />}</Field>
-              <Button type="submit" disabled={code.length !== 6}>Valider ma carte</Button>
+              <Field label={t("verify.code")}>{(p) => <Input {...p} dir="ltr" inputMode="numeric" autoComplete="one-time-code" maxLength={6} className="text-center text-2xl tracking-[0.4em] tabular" value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))} />}</Field>
+              <Button type="submit" disabled={code.length !== 6}>{t("verify.submit")}</Button>
               <Button
                 type="button"
                 variant="link"
@@ -519,24 +523,24 @@ export function CardView({ token, initial }: { token: string; initial: CardData 
                   setError(null);
                   try {
                     await api.post(`/public/cards/${token}/resend-code`);
-                    setInfo("Nouveau code envoyé.");
+                    setInfo(t("verify.resent"));
                   } catch (err) {
                     setError(errorMessage(err));
                   }
                 }}
               >
-                Renvoyer le code
+                {t("verify.resend")}
               </Button>
             </form>
           ) : (
-            <p className="rounded-md bg-stamp-soft px-4 py-3 text-sm text-stamp-ink dark:text-stamp">Votre carte sera activée par le personnel lors de votre prochain passage en caisse.</p>
+            <p className="rounded-md bg-stamp-soft px-4 py-3 text-sm text-stamp-ink dark:text-stamp">{t("inStore")}</p>
           )
         ) : card.status === "BLOCKED" ? (
-          <ErrorNote>Cette carte est suspendue. Rapprochez-vous de {tenant.name}.</ErrorNote>
+          <ErrorNote>{t("blocked", { tenant: tenant.name })}</ErrorNote>
         ) : (
-          <section aria-label="QR code à présenter en caisse" className="grid justify-items-center gap-3 rounded-[var(--radius-lg)] bg-white p-6 shadow-1">
+          <section aria-label={t("qrLabel")} className="grid justify-items-center gap-3 rounded-[var(--radius-lg)] bg-white p-6 shadow-1">
             <QRCodeSVG value={card.qr} size={220} marginSize={2} fgColor="#14204a" level="M" />
-            <p className="text-sm text-[#4a5579]">À présenter en caisse</p>
+            <p className="text-sm text-[#4a5579]">{t("qrHint")}</p>
           </section>
         )}
 
@@ -545,27 +549,33 @@ export function CardView({ token, initial }: { token: string; initial: CardData 
 
         {!stamps && data.nextReward && (
           <div className="rounded-[var(--radius-lg)] bg-surface p-5 shadow-1">
-            <p className="text-sm text-ink-2">Prochaine récompense</p>
+            <p className="text-sm text-ink-2">{t("nextReward")}</p>
             <p className="font-display text-lg font-semibold">{data.nextReward.name}</p>
-            <div className="mt-3 h-2 overflow-hidden rounded-full bg-surface-2" role="progressbar" aria-valuemin={0} aria-valuemax={data.nextReward.cost} aria-valuenow={card.balance} aria-label="Progression">
+            <div className="mt-3 h-2 overflow-hidden rounded-full bg-surface-2" role="progressbar" aria-valuemin={0} aria-valuemax={data.nextReward.cost} aria-valuenow={card.balance} aria-label={t("progress")}>
               <div className="h-full rounded-full" style={{ width: `${Math.min(100, (card.balance / data.nextReward.cost) * 100)}%`, background: "var(--brand)" }} />
             </div>
-            <p className="mt-2 text-sm text-ink-3">Encore {formatNumber(data.nextReward.remaining)} {stamps ? "tampon" : "point"}{data.nextReward.remaining > 1 ? "s" : ""}</p>
+            <p className="mt-2 text-sm text-ink-3">{t("remainingPoints", { count: data.nextReward.remaining })}</p>
           </div>
         )}
 
         {data.rewards.length > 0 && (
           <section aria-labelledby="recompenses" className="grid gap-2">
-            <h2 id="recompenses" className="font-display text-lg font-semibold">Récompenses</h2>
+            <h2 id="recompenses" className="font-display text-lg font-semibold">{t("rewards")}</h2>
             {data.rewards.map((r) => (
               <div key={r.id} className={cn("flex items-center gap-3 rounded-md bg-surface p-4 shadow-1", !r.available && "opacity-70")}>
                 <Gift className={cn("size-5 shrink-0", r.available ? "text-stamp" : "text-ink-3")} aria-hidden />
                 <div className="min-w-0 flex-1">
                   <p className="font-medium">{r.name}</p>
-                  {r.kind !== "GIFT" && <p className="text-sm text-ink-2">{rewardValueLabel(r, program.currency)}</p>}
+                  {r.kind !== "GIFT" && r.value !== null && (
+                    <p className="text-sm text-ink-2">
+                      {r.kind === "PERCENTAGE"
+                        ? t("rewardValue.percent", { value: formatNumber(Number(r.value)) })
+                        : t("rewardValue.fixed", { value: formatNumber(Number(r.value)), currency: program.currency })}
+                    </p>
+                  )}
                   {(r.description || r.conditions) && <p className="text-sm text-ink-3">{[r.description, r.conditions].filter(Boolean).join(" · ")}</p>}
                 </div>
-                <span className="text-sm font-medium tabular">{r.available ? "Disponible" : formatNumber(r.cost)}</span>
+                <span className="text-sm font-medium tabular">{r.available ? t("available") : formatNumber(r.cost)}</span>
               </div>
             ))}
           </section>
@@ -573,28 +583,31 @@ export function CardView({ token, initial }: { token: string; initial: CardData 
 
         {data.transactions.length > 0 && (
           <section aria-labelledby="historique" className="grid gap-2">
-            <h2 id="historique" className="font-display text-lg font-semibold">Historique</h2>
+            <h2 id="historique" className="font-display text-lg font-semibold">{t("history")}</h2>
             <ul className="divide-y divide-line rounded-md bg-surface shadow-1">
-              {data.transactions.map((t) => (
-                <li key={t.id} className="flex items-center justify-between gap-3 px-4 py-3 text-sm">
+              {data.transactions.map((tx) => (
+                <li key={tx.id} className="flex items-center justify-between gap-3 px-4 py-3 text-sm">
                   <span>
-                    {t.kind === "REDEMPTION" ? t.reason : KIND_LABEL[t.kind]}
-                    <span className="block text-ink-3">{formatDate(t.createdAt)}</span>
+                    {tx.kind === "REDEMPTION" ? tx.reason : KINDS.has(tx.kind) ? t(`kinds.${tx.kind}`) : tx.kind}
+                    <span className="block text-ink-3">{formatDate(tx.createdAt)}</span>
                   </span>
-                  <span className={cn("font-semibold tabular", t.delta > 0 && "text-mint")}>{t.delta > 0 ? "+" : ""}{formatNumber(t.delta)}</span>
+                  <span dir="ltr" className={cn("font-semibold tabular", tx.delta > 0 && "text-mint")}>{tx.delta > 0 ? "+" : ""}{formatNumber(tx.delta)}</span>
                 </li>
               ))}
             </ul>
           </section>
         )}
 
-        <p className="text-center text-xs text-ink-3">Membre depuis le {formatDate(card.memberSince)}. Ce lien est personnel : ne le partagez pas.</p>
+        <p className="text-center text-xs text-ink-3">{t("memberSince", { date: formatDate(card.memberSince) })}</p>
         {data.poweredBy && (
           <p className="text-center text-xs text-ink-3">
-            Propulsé par{" "}
-            <a href="https://fove.digital" target="_blank" rel="noopener" className="font-medium underline underline-offset-2">
-              FOVE
-            </a>
+            {t.rich("poweredBy", {
+              link: (c) => (
+                <a href="https://fove.digital" target="_blank" rel="noopener" className="font-medium underline underline-offset-2">
+                  {c}
+                </a>
+              ),
+            })}
           </p>
         )}
       </main>

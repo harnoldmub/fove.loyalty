@@ -1,0 +1,88 @@
+{
+  "skipToContent": "الانتقال إلى المحتوى",
+  "language": "اللغة",
+  "chooseLanguage": "اختر اللغة",
+  "select": {
+    "search": "بحث…",
+    "noResult": "لا توجد نتائج.",
+    "frequent": "الأكثر استخدامًا",
+    "all": "الكل"
+  },
+  "country": {
+    "label": "البلد",
+    "search": "ابحث عن بلد…",
+    "noResult": "لم يتم العثور على أي بلد.",
+    "frequent": "البلدان الأكثر استخدامًا",
+    "all": "جميع البلدان"
+  },
+  "city": {
+    "label": "المدينة",
+    "search": "ابحث عن مدينة…",
+    "placeholder": "اختر مدينة",
+    "typeToSearch": "اكتب اسم مدينة للبحث.",
+    "useTyped": "استخدام «{value}»"
+  },
+  "currency": {
+    "label": "العملة",
+    "search": "ابحث عن عملة…",
+    "noResult": "لم يتم العثور على أي عملة.",
+    "frequent": "العملات الأكثر استخدامًا",
+    "all": "جميع العملات"
+  },
+  "phone": {
+    "callingCode": "رمز الاتصال: {code} ({country})",
+    "search": "ابحث عن بلد أو رمز اتصال…"
+  },
+  "dialog": {
+    "close": "إغلاق",
+    "cancel": "إلغاء"
+  },
+  "cookies": {
+    "settings": "إدارة ملفات تعريف الارتباط",
+    "region": "الموافقة على ملفات تعريف الارتباط",
+    "title": "نحترم خصوصيتك",
+    "closeWithoutAccepting": "إغلاق دون قبول",
+    "body": "نقيس عدد الزيارات (Google Analytics وClarity) لتحسين تجربتك على FOVE. تبقى بياناتك آمنة ولا تُباع أبدًا.",
+    "learnMore": "معرفة المزيد",
+    "decline": "رفض",
+    "accept": "قبول"
+  },
+  "theme": {
+    "toggle": "تغيير المظهر (فاتح أو داكن)",
+    "toggleTitle": "تغيير المظهر"
+  },
+  "toast": {
+    "region": "الإشعارات",
+    "close": "إغلاق الإشعار"
+  },
+  "kind": {
+    "EARN": "شراء",
+    "ADJUSTMENT": "تعديل",
+    "REDEMPTION": "مكافأة",
+    "REDEMPTION_REVERSAL": "مكافأة ملغاة",
+    "REVERSAL": "إلغاء",
+    "REFUND": "استرداد",
+    "EXPIRATION": "انتهاء الصلاحية"
+  },
+  "unit": {
+    "POINTS": "{count, plural, zero {نقطة} one {نقطة} two {نقطتان} few {نقاط} many {نقطة} other {نقطة}}",
+    "STAMPS": "{count, plural, zero {ختم} one {ختم} two {ختمان} few {أختام} many {ختمًا} other {ختم}}"
+  },
+  "unitCount": {
+    "POINTS": "{count, plural, zero {# نقطة} one {نقطة واحدة} two {نقطتان} few {# نقاط} many {# نقطة} other {# نقطة}}",
+    "STAMPS": "{count, plural, zero {# ختم} one {ختم واحد} two {ختمان} few {# أختام} many {# ختمًا} other {# ختم}}"
+  },
+  "errorPage": {
+    "sessionTitle": "انتهت الجلسة",
+    "sessionBody": "انتهت صلاحية جلسة تسجيل الدخول. جارٍ تحويلك إلى صفحة تسجيل الدخول…",
+    "reconnect": "تسجيل الدخول مجددًا",
+    "title": "الخدمة غير متاحة مؤقتًا",
+    "body": "بياناتك لم تُفقد. أعد المحاولة بعد لحظات؛ وإذا استمرت المشكلة، فتواصل مع دعم FOVE.",
+    "retry": "إعادة المحاولة"
+  },
+  "notFound": {
+    "title": "الصفحة غير موجودة",
+    "body": "قد يكون الرابط ناقصًا أو تم استبداله. إذا كانت بطاقة ولاء، فاطلب رابطًا جديدًا من التاجر.",
+    "home": "العودة إلى الصفحة الرئيسية"
+  }
+}

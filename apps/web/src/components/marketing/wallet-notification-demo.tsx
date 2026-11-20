@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 import {
   Bell,
@@ -52,82 +53,23 @@ function GoogleWalletIcon({ className = "size-5" }: { className?: string }) {
   );
 }
 
-interface Scenario {
-  id: string;
-  label: string;
-  icon: typeof Bell;
-  tag: string;
-  time: string;
-  title: string;
-  body: string;
-  badgeText: string;
-  passBalance: string;
-  passStamps: number;
-  passDetail: string;
-}
-
-const SCENARIOS: Scenario[] = [
-  {
-    id: "promo",
-    label: "Offre Flash",
-    icon: Flame,
-    tag: "Campagne commerciale",
-    time: "À l’instant",
-    title: "Café Matonge · Offre Flash",
-    body: "Profitez de -20% sur toutes les boissons gourmandes cet après-midi jusqu’à 17h sur présentation de votre pass !",
-    badgeText: "-20% jusqu’à 17h",
-    passBalance: "7 / 10",
-    passStamps: 7,
-    passDetail: "Avantage flash actif",
-  },
-  {
-    id: "earn",
-    label: "Achat en Caisse",
-    icon: Coffee,
-    tag: "Mise à jour en temps réel",
-    time: "Il y a 1 min",
-    title: "Café Matonge · Solde mis à jour",
-    body: "+1 tampon ajouté ! Vous avez désormais 8 tampons sur 10. Plus que 2 passages avant votre café offert.",
-    badgeText: "+1 tampon validé",
-    passBalance: "8 / 10",
-    passStamps: 8,
-    passDetail: "Prochaine récompense à 10",
-  },
-  {
-    id: "reward",
-    label: "Cadeau Débloqué",
-    icon: Gift,
-    tag: "Fidélisation VIP",
-    time: "Il y a 2 min",
-    title: "Café Matonge · Récompense prête !",
-    body: "Félicitations Nadia ! Votre carte est complète. Venez savourer votre café signature offert lors de votre prochain passage.",
-    badgeText: "1 café offert débloqué",
-    passBalance: "10 / 10",
-    passStamps: 10,
-    passDetail: "Récompense prête au comptoir",
-  },
-  {
-    id: "location",
-    label: "Proximité GPS",
-    icon: MapPin,
-    tag: "Rappel géolocalisé",
-    time: "À l’instant",
-    title: "Café Matonge · Vous êtes tout près",
-    body: "Envie d'une pause ? Votre barista vous attend. Présentez votre carte pour doubler vos points aujourd'hui !",
-    badgeText: "Boutique à 50m",
-    passBalance: "Points ×2",
-    passStamps: 8,
-    passDetail: "Bonus proximité actif",
-  },
+/** Scénarios de la démo ; les textes sont dans `marketing.walletDemo.scenarios.<id>`. */
+const SCENARIOS: { id: "promo" | "earn" | "reward" | "location"; icon: typeof Bell; passStamps: number }[] = [
+  { id: "promo", icon: Flame, passStamps: 7 },
+  { id: "earn", icon: Coffee, passStamps: 8 },
+  { id: "reward", icon: Gift, passStamps: 10 },
+  { id: "location", icon: MapPin, passStamps: 8 },
 ];
 
 export function WalletNotificationDemo() {
+  const t = useTranslations("marketing.walletDemo");
   const [activeScenarioId, setActiveScenarioId] = useState<string>("promo");
   const [platform, setPlatform] = useState<WalletPlatform>("apple");
   const [isAnimating, setIsAnimating] = useState(false);
   const [notificationKey, setNotificationKey] = useState(0);
 
   const scenario = SCENARIOS.find((s) => s.id === activeScenarioId) ?? SCENARIOS[0]!;
+  const st = (key: string) => t(`scenarios.${scenario.id}.${key}`);
 
   const triggerNotification = (scId: string) => {
     setActiveScenarioId(scId);
@@ -142,17 +84,16 @@ export function WalletNotificationDemo() {
       {/* Colonne gauche : Explications & Boutons de scénarios */}
       <div>
         <h2 className="font-display text-3xl font-semibold sm:text-4xl">
-          Communiquez directement sur l’écran de vos clients.
+          {t("title")}
         </h2>
 
         <p className="mt-4 text-lg text-ink-2">
-          Vos cartes s’installent en 1 clic dans <strong>Apple Wallet</strong> et <strong>Google Wallet</strong>.
-          Diffusez des messages, offres et alertes visibles immédiatement sur l’écran verrouillé de l’iPhone ou d’Android avec un taux d’ouverture proche de 100%.
+          {t.rich("text", { strong: (chunks) => <strong>{chunks}</strong> })}
         </p>
 
         {/* Sélecteur de plateforme Apple Wallet / Google Wallet avec vraies icônes */}
         <div className="mt-6 flex flex-wrap items-center gap-3">
-          <span className="text-sm font-medium text-ink-3">Aperçu OS :</span>
+          <span className="text-sm font-medium text-ink-3">{t("osPreview")}</span>
           <div className="inline-flex rounded-xl border border-line bg-surface p-1 shadow-1">
             <button
               type="button"
@@ -200,7 +141,7 @@ export function WalletNotificationDemo() {
                 type="button"
                 onClick={() => triggerNotification(item.id)}
                 className={cn(
-                  "group flex items-start gap-3 rounded-xl border p-3.5 text-left transition-all",
+                  "group flex items-start gap-3 rounded-xl border p-3.5 text-start transition-all",
                   active
                     ? "border-cobalt bg-cobalt-soft/60 shadow-sm"
                     : "border-line bg-surface/50 hover:border-line-2 hover:bg-surface",
@@ -219,14 +160,14 @@ export function WalletNotificationDemo() {
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
                     <span className="font-display text-sm font-semibold text-ink">
-                      {item.label}
+                      {t(`scenarios.${item.id}.label`)}
                     </span>
                     {active && (
                       <span className="size-1.5 rounded-full bg-cobalt animate-ping" />
                     )}
                   </div>
                   <p className="mt-0.5 truncate text-xs text-ink-3">
-                    {item.tag}
+                    {t(`scenarios.${item.id}.tag`)}
                   </p>
                 </div>
               </button>
@@ -237,15 +178,15 @@ export function WalletNotificationDemo() {
         <div className="mt-6 flex flex-wrap items-center gap-4 text-xs text-ink-3">
           <div className="flex items-center gap-1.5">
             <CheckCircle2 className="size-4 text-emerald-600" />
-            <span>100% de délivrabilité (écran verrouillé)</span>
+            <span>{t("benefits.delivery")}</span>
           </div>
           <div className="flex items-center gap-1.5">
             <CheckCircle2 className="size-4 text-emerald-600" />
-            <span>0 $ de frais SMS</span>
+            <span>{t("benefits.sms")}</span>
           </div>
           <div className="flex items-center gap-1.5">
             <CheckCircle2 className="size-4 text-emerald-600" />
-            <span>Mise à jour en direct du solde</span>
+            <span>{t("benefits.live")}</span>
           </div>
         </div>
       </div>
@@ -257,10 +198,10 @@ export function WalletNotificationDemo() {
           <div className="pointer-events-none absolute -inset-5 rounded-[64px] bg-gradient-to-tr from-cobalt/25 via-sky-500/15 to-amber-400/15 blur-2xl opacity-80" />
 
           {/* Boutons physiques latéraux de l'iPhone (Action, Volume +, Volume -, Power) */}
-          <div aria-hidden className=" absolute -left-[3px] top-24 h-7 w-[3px] rounded-l-full bg-slate-700" />
-          <div aria-hidden className="absolute -left-[3px] top-36 h-12 w-[3px] rounded-l-full bg-slate-700" />
-          <div aria-hidden className="absolute -left-[3px] top-52 h-12 w-[3px] rounded-l-full bg-slate-700" />
-          <div aria-hidden className="absolute -right-[3px] top-40 h-16 w-[3px] rounded-r-full bg-slate-700" />
+          <div aria-hidden className=" absolute -start-[3px] top-24 h-7 w-[3px] rounded-s-full bg-slate-700" />
+          <div aria-hidden className="absolute -start-[3px] top-36 h-12 w-[3px] rounded-s-full bg-slate-700" />
+          <div aria-hidden className="absolute -start-[3px] top-52 h-12 w-[3px] rounded-s-full bg-slate-700" />
+          <div aria-hidden className="absolute -end-[3px] top-40 h-16 w-[3px] rounded-e-full bg-slate-700" />
 
           {/* Châssis iPhone Titane */}
           <div className="relative overflow-hidden rounded-[54px] border-[3px] border-slate-700/90 bg-[#0b0e17] p-[9px] shadow-2xl ring-1 ring-white/15">
@@ -274,7 +215,7 @@ export function WalletNotificationDemo() {
             >
               {/* Barre d'état iOS + Dynamic Island */}
               <div className="relative flex items-center justify-between px-2 pt-0.5 text-[11px] font-semibold tracking-tight text-white/90">
-                <span className="w-12 pl-1 tabular">9:41</span>
+                <span className="w-12 ps-1 tabular">9:41</span>
 
                 {/* Dynamic Island */}
                 <div className="flex h-[26px] w-[104px] items-center justify-between rounded-full bg-black px-2.5 shadow-inner ring-1 ring-white/10">
@@ -283,7 +224,7 @@ export function WalletNotificationDemo() {
                 </div>
 
                 {/* Icônes réseau / Wi-Fi / Batterie iOS */}
-                <div className="flex w-14 items-center justify-end gap-1.5 pr-1">
+                <div className="flex w-14 items-center justify-end gap-1.5 pe-1">
                   <svg viewBox="0 0 16 11" className="h-2.5 w-3.5 fill-white" aria-hidden>
                     <rect x="0" y="7" width="2.5" height="4" rx="0.7" />
                     <rect x="4" y="5" width="2.5" height="6" rx="0.7" />
@@ -302,7 +243,7 @@ export function WalletNotificationDemo() {
               {/* Heure et Date iOS Lock Screen */}
               <div className="mt-4 text-center">
                 <p className="text-[0.8rem] font-medium tracking-wide text-white/75">
-                  Jeudi 30 octobre
+                  {t("lockDate")}
                 </p>
                 <p className="font-display text-[3.4rem] font-bold leading-none tracking-tight text-white/95 tabular">
                   09:41
@@ -327,25 +268,25 @@ export function WalletNotificationDemo() {
                       </span>
                     )}
                     <span className="text-[0.7rem] font-semibold tracking-wide text-white/95 uppercase">
-                      {platform === "apple" ? "Cartes · Apple Wallet" : "Google Wallet"}
+                      {platform === "apple" ? t("appleSource") : "Google Wallet"}
                     </span>
                   </div>
-                  <span className="text-[0.68rem] text-white/65">{scenario.time}</span>
+                  <span className="text-[0.68rem] text-white/65">{st("time")}</span>
                 </div>
 
                 <p className="mt-2 text-[0.84rem] font-semibold leading-snug text-white">
-                  {scenario.title}
+                  {st("title")}
                 </p>
                 <p className="mt-1 text-[0.76rem] leading-relaxed text-white/85">
-                  {scenario.body}
+                  {st("body")}
                 </p>
 
                 <div className="mt-2.5 flex items-center justify-between border-t border-white/15 pt-2 text-[0.7rem]">
                   <span className="inline-flex items-center gap-1 font-medium text-amber-300">
                     <Sparkles className="size-3" aria-hidden />
-                    {scenario.badgeText}
+                    {st("badge")}
                   </span>
-                  <span className="text-white/60">Toucher pour ouvrir ›</span>
+                  <span className="text-white/60">{t("tapToOpen")}</span>
                 </div>
               </div>
 
@@ -362,16 +303,16 @@ export function WalletNotificationDemo() {
                         Café Matonge
                       </p>
                       <p className="text-[0.62rem] tracking-wider text-white/75 uppercase">
-                        Pass Fidélité
+                        {t("passLabel")}
                       </p>
                     </div>
                   </div>
-                  <div className="text-right">
+                  <div className="text-end">
                     <p className="text-[0.6rem] tracking-wider text-white/70 uppercase">
-                      Solde
+                      {t("balance")}
                     </p>
                     <p className="font-display text-sm font-bold tabular">
-                      {scenario.passBalance}
+                      {st("balance")}
                     </p>
                   </div>
                 </div>
@@ -402,10 +343,10 @@ export function WalletNotificationDemo() {
                 <div className="mt-2.5 flex items-center justify-between pt-1 text-xs">
                   <div>
                     <p className="text-[0.62rem] text-white/70 uppercase">
-                      Titulaire · Nadia K.
+                      {t("holder")}
                     </p>
                     <p className="text-[0.72rem] font-medium text-amber-200">
-                      {scenario.passDetail}
+                      {st("detail")}
                     </p>
                   </div>
                   <div className="grid size-8 place-items-center rounded-lg bg-white p-1 text-slate-950 shadow-xs">
@@ -424,7 +365,7 @@ export function WalletNotificationDemo() {
                     <Flashlight className="size-4" />
                   </span>
                   <span className="text-[0.65rem] font-medium tracking-wide text-white/45">
-                    Balayer vers le haut pour déverrouiller
+                    {t("unlock")}
                   </span>
                   <span
                     aria-hidden
@@ -446,7 +387,7 @@ export function WalletNotificationDemo() {
           className="mt-4 inline-flex items-center justify-center gap-2 rounded-full border border-line bg-surface px-4 py-2 text-xs font-semibold text-ink-2 shadow-1 transition-colors hover:border-cobalt hover:text-ink"
         >
           <Volume2 className="size-3.5 text-cobalt" aria-hidden />
-          <span>Tester la notification push sonore</span>
+          <span>{t("replay")}</span>
         </button>
       </div>
     </div>

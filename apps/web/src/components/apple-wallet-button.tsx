@@ -1,6 +1,7 @@
 "use client";
 
 import { LoaderCircle } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useEffect, useState, useSyncExternalStore } from "react";
 
 /**
@@ -14,6 +15,7 @@ export function AppleWalletButton({ token, className = "" }: { token: string; cl
     () => /Macintosh|iPhone|iPad|iPod/.test(navigator.userAgent),
     () => false,
   );
+  const t = useTranslations("public.wallet");
   const [loading, setLoading] = useState(false);
 
   // Débloque le chargement dès que la feuille native PassKit apparaît ou que la page reprend le focus
@@ -37,12 +39,12 @@ export function AppleWalletButton({ token, className = "" }: { token: string; cl
         href={href}
         onClick={() => setLoading(true)}
         aria-busy={loading}
-        aria-label="Ajouter à Apple Wallet"
+        aria-label={t("apple")}
         className="group relative inline-flex h-[44px] shrink-0 items-center transition-opacity hover:opacity-90 active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black"
       >
         <img
           src="/wallet/add-to-apple-wallet.svg"
-          alt="Ajouter à Apple Wallet"
+          alt={t("apple")}
           width={141}
           height={44}
           className="h-[44px] w-auto shrink-0 select-none"

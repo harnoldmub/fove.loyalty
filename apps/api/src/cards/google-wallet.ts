@@ -3,7 +3,8 @@ import { HttpStatus, Injectable, Logger } from "@nestjs/common";
 import { loadConfig } from "../config";
 import { AppError } from "../common/errors";
 import type { WalletCardState, WalletProvider } from "../loyalty/wallet";
-import { getClubExplanations } from "./club-card";
+import { DEFAULT_LOCALE } from "../i18n/locale";
+import { cardLabels, clubName as clubNameFor, getClubExplanations } from "./club-card";
 
 type ServiceAccount = { client_email: string; private_key: string };
 
@@ -64,8 +65,9 @@ export class GoogleWalletProvider implements WalletProvider {
 
   private loyaltyClass(card: WalletCardState) {
     const logo = card.logoUrl?.startsWith("https://") ? card.logoUrl : `${process.env.NEXT_PUBLIC_SITE_URL ?? "https://fove.digital"}/share-icon.png`;
-    const clubName = card.tenantName.toLowerCase().includes("club") ? card.tenantName : `Club ${card.tenantName}`;
-    const explanations = getClubExplanations(card.tenantName, card.unit === "tampons", 10, card.rewardSummary);
+    const locale = card.locale ?? DEFAULT_LOCALE;
+    const clubName = clubNameFor(card.tenantName, locale);
+    const explanations = getClubExplanations(card.tenantName, card.unit === "tampons", 10, card.rewardSummary, locale);
     const textModulesData = explanations.map((section) => ({
       id: `fove_${section.key}`,
       header: section.title,
@@ -84,6 +86,7 @@ export class GoogleWalletProvider implements WalletProvider {
   }
 
   private loyaltyObject(card: WalletCardState) {
+    const labels = cardLabels(card.locale ?? DEFAULT_LOCALE);
     return {
       id: this.objectId(card.accountId),
       classId: this.classId(card.programId),
@@ -91,11 +94,11 @@ export class GoogleWalletProvider implements WalletProvider {
       accountId: card.cardNumber,
       accountName: card.holder,
       loyaltyPoints: {
-        label: card.unit === "tampons" ? "Passages" : "Points",
+        label: card.unit === "tampons" ? labels.passages : labels.points,
         balance: { string: String(Math.max(0, card.balance)) },
       },
       barcode: { type: "QR_CODE", value: card.qrPayload, alternateText: card.cardNumber },
-      linksModuleData: { uris: [{ uri: card.cardUrl, description: "Ma carte en ligne" }] },
+      linksModuleData: { uris: [{ uri: card.cardUrl, description: labels.onlineCard }] },
     };
   }
 

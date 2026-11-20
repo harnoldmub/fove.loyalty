@@ -1,12 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
+import { toast } from "sonner";
 import { useQuery } from "@tanstack/react-query";
 import {
   Award,
   CheckCircle2,
   Clock,
-  ExternalLink,
   Plus,
   RotateCcw,
   Search,
@@ -19,11 +20,12 @@ import {
   X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/field";
+import { Field, Input, Textarea } from "@/components/ui/field";
+import { ConfirmDialog, DialogContent, DialogRoot } from "@/components/ui/dialog";
 import { Badge, PageHeader, Panel } from "@/components/ui/misc";
-import { api } from "@/lib/api";
+import { api, useErrorMessage } from "@/lib/api";
 import { formatDate } from "@/lib/utils";
-import { formatFinance } from "@/components/admin/finance/finance-utils";
+import { formatFinance, formatPct } from "@/components/admin/finance/finance-utils";
 import { PartnerModal } from "@/components/admin/finance/partner-modal";
 
 interface AdminPartnerRow {
@@ -56,6 +58,9 @@ interface AdminPartnerRow {
 }
 
 export default function AdminPartnersPage() {
+  const t = useTranslations("admin.partners");
+  const errMsg = useErrorMessage();
+  const [rateTarget, setRateTarget] = useState<AdminPartnerRow | null>(null);
   const [activeTab, setActiveTab] = useState<"applications" | "partners" | "payouts" | "settings">("applications");
   const [q, setQ] = useState("");
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
@@ -101,22 +106,20 @@ export default function AdminPartnersPage() {
     try {
       await api.post(`/admin/partners/${id}/approve`);
       refetch();
-    } catch (err: any) {
-      alert(err?.message || "Erreur lors de l'approbation");
+    } catch (err) {
+      toast.error(errMsg(err));
     } finally {
       setActionLoadingId(null);
     }
   };
 
-  const handleReject = async (id: string) => {
-    const reason = prompt("Indiquez le motif du rejet de la candidature :");
-    if (reason === null) return;
+  const handleReject = async (id: string, reason: string) => {
     setActionLoadingId(id);
     try {
-      await api.post(`/admin/partners/${id}/reject`, { reason: reason.trim() || "Dossier non retenu" });
+      await api.post(`/admin/partners/${id}/reject`, { reason: reason.trim() || t("reject.defaultReason") });
       refetch();
-    } catch (err: any) {
-      alert(err?.message || "Erreur lors du rejet");
+    } catch (err) {
+      toast.error(errMsg(err));
     } finally {
       setActionLoadingId(null);
     }
@@ -124,34 +127,25 @@ export default function AdminPartnersPage() {
 
   const handleToggleStatus = async (partner: AdminPartnerRow) => {
     const nextStatus = partner.status === "ACTIVE" || partner.status === "APPROVED" ? "SUSPENDED" : "ACTIVE";
-    if (!confirm(`Changer le statut de ${partner.name} vers "${nextStatus}" ?`)) return;
-
     setActionLoadingId(partner.id);
     try {
       await api.patch(`/admin/partners/${partner.id}`, { status: nextStatus });
       refetch();
-    } catch (err: any) {
-      alert(err?.message || "Erreur lors de la mise à jour");
+    } catch (err) {
+      toast.error(errMsg(err));
     } finally {
       setActionLoadingId(null);
     }
   };
 
-  const handleEditRate = async (partner: AdminPartnerRow) => {
-    const input = prompt(`Nouveau taux de commission en % pour ${partner.name} :`, String(partner.commissionRatePercent));
-    if (input === null) return;
-    const rate = Number.parseFloat(input);
-    if (Number.isNaN(rate) || rate < 0 || rate > 100) {
-      alert("Taux invalide");
-      return;
-    }
-
+  const handleEditRate = async (partner: AdminPartnerRow, rate: number) => {
     setActionLoadingId(partner.id);
     try {
       await api.patch(`/admin/partners/${partner.id}`, { commissionRatePercent: rate, status: partner.status });
       refetch();
-    } catch (err: any) {
-      alert(err?.message || "Erreur lors de la mise à jour");
+      setRateTarget(null);
+    } catch (err) {
+      toast.error(errMsg(err));
     } finally {
       setActionLoadingId(null);
     }
@@ -161,12 +155,12 @@ export default function AdminPartnersPage() {
     <>
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
         <PageHeader
-          title="Programme Partenaires & Affiliation"
-          description="Recrutement des apporteurs d'affaires, attribution des commerces et validation des commissions."
+          title={t("title")}
+          description={t("description")}
         />
         <Button onClick={() => setPartnerModalOpen(true)} className="gap-2" variant="primary">
           <Plus className="size-4" />
-          Créer un partenaire
+          {t("create")}
         </Button>
       </div>
 
@@ -174,46 +168,46 @@ export default function AdminPartnersPage() {
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-6">
         <Panel className="p-4">
           <div className="flex items-center justify-between text-xs text-ink-3">
-            <span>Candidatures en attente</span>
+            <span>{t("kpi.pendingApplications")}</span>
             <Clock className="size-4 text-amber-500" />
           </div>
           <div className="mt-2 font-display text-2xl font-bold tabular text-amber-500">
             {pendingApplications.length}
           </div>
-          <p className="mt-1 text-xs text-ink-3">Dossiers à examiner</p>
+          <p className="mt-1 text-xs text-ink-3">{t("kpi.pendingApplicationsHelp")}</p>
         </Panel>
 
         <Panel className="p-4">
           <div className="flex items-center justify-between text-xs text-ink-3">
-            <span>Partenaires actifs</span>
+            <span>{t("kpi.activePartners")}</span>
             <Users className="size-4 text-cobalt" />
           </div>
           <div className="mt-2 font-display text-2xl font-bold tabular text-ink">
             {approvedPartners.length}
           </div>
-          <p className="mt-1 text-xs text-ink-3">Apporteurs d&apos;affaires validés</p>
+          <p className="mt-1 text-xs text-ink-3">{t("kpi.activePartnersHelp")}</p>
         </Panel>
 
         <Panel className="p-4">
           <div className="flex items-center justify-between text-xs text-ink-3">
-            <span>Commissions en attente</span>
+            <span>{t("kpi.pendingCommissions")}</span>
             <Wallet className="size-4 text-rose-500" />
           </div>
           <div className="mt-2 font-display text-2xl font-bold tabular text-rose-500">
             {formatFinance(commissionsData?.totalPendingCents ?? 0, "USD")}
           </div>
-          <p className="mt-1 text-xs text-ink-3">À verser aux partenaires</p>
+          <p className="mt-1 text-xs text-ink-3">{t("kpi.pendingCommissionsHelp")}</p>
         </Panel>
 
         <Panel className="p-4">
           <div className="flex items-center justify-between text-xs text-ink-3">
-            <span>Commissions déjà versées</span>
+            <span>{t("kpi.paidCommissions")}</span>
             <CheckCircle2 className="size-4 text-emerald-500" />
           </div>
           <div className="mt-2 font-display text-2xl font-bold tabular text-emerald-600 dark:text-emerald-400">
             {formatFinance(commissionsData?.totalPaidCents ?? 0, "USD")}
           </div>
-          <p className="mt-1 text-xs text-ink-3">Règlements honorés</p>
+          <p className="mt-1 text-xs text-ink-3">{t("kpi.paidCommissionsHelp")}</p>
         </Panel>
       </div>
 
@@ -229,7 +223,7 @@ export default function AdminPartnersPage() {
           }`}
         >
           <Clock className="size-3.5" />
-          Candidatures ({pendingApplications.length})
+          {t("tabs.applications", { count: pendingApplications.length })}
         </button>
 
         <button
@@ -242,7 +236,7 @@ export default function AdminPartnersPage() {
           }`}
         >
           <Users className="size-3.5" />
-          Partenaires actifs ({approvedPartners.length})
+          {t("tabs.partners", { count: approvedPartners.length })}
         </button>
 
         <button
@@ -255,7 +249,7 @@ export default function AdminPartnersPage() {
           }`}
         >
           <Settings className="size-3.5" />
-          Réglages du programme
+          {t("tabs.settings")}
         </button>
       </div>
 
@@ -264,7 +258,7 @@ export default function AdminPartnersPage() {
         <div className="space-y-4">
           {pendingApplications.length === 0 ? (
             <Panel className="p-12 text-center text-sm text-ink-3">
-              Aucune candidature en attente d&apos;examen.
+              {t("applications.empty")}
             </Panel>
           ) : (
             <div className="grid gap-4 md:grid-cols-2">
@@ -277,31 +271,31 @@ export default function AdminPartnersPage() {
                         <div className="text-xs text-ink-3">{app.email} · {app.phone}</div>
                         {app.company && <div className="text-xs text-cobalt font-medium">{app.company}</div>}
                       </div>
-                      <Badge tone="stamp">En attente</Badge>
+                      <Badge tone="stamp">{t("applications.pending")}</Badge>
                     </div>
 
                     <div className="grid grid-cols-2 gap-2 text-xs bg-surface-2 p-3 rounded-lg">
                       <div>
-                        <span className="text-ink-3">Profil :</span>{" "}
+                        <span className="text-ink-3">{t("applications.profile")}</span>{" "}
                         <strong className="text-ink">{app.partnerType}</strong>
                       </div>
                       <div>
-                        <span className="text-ink-3">Zone :</span>{" "}
+                        <span className="text-ink-3">{t("applications.area")}</span>{" "}
                         <strong className="text-ink">{app.city}, {app.country}</strong>
                       </div>
                       <div>
-                        <span className="text-ink-3">Réseau estimé :</span>{" "}
-                        <strong className="text-ink">{app.networkSizeEstimate ?? "Non précisé"}</strong>
+                        <span className="text-ink-3">{t("applications.network")}</span>{" "}
+                        <strong className="text-ink">{app.networkSizeEstimate ?? t("applications.notSpecified")}</strong>
                       </div>
                       <div>
-                        <span className="text-ink-3">Code projeté :</span>{" "}
-                        <strong className="font-mono text-cobalt">{app.code}</strong>
+                        <span className="text-ink-3">{t("applications.code")}</span>{" "}
+                        <strong className="font-mono text-cobalt" dir="ltr">{app.code}</strong>
                       </div>
                     </div>
 
                     {app.promotionStrategy && (
                       <div className="text-xs text-ink-2 bg-surface p-3 rounded-lg border border-line">
-                        <strong className="block text-ink-3 mb-1">Stratégie de promotion :</strong>
+                        <strong className="block text-ink-3 mb-1">{t("applications.strategy")}</strong>
                         {app.promotionStrategy}
                       </div>
                     )}
@@ -313,21 +307,17 @@ export default function AdminPartnersPage() {
                         rel="noreferrer"
                         className="inline-flex items-center gap-1 text-xs text-cobalt hover:underline"
                       >
-                        Site / Profil public <ExternalLink className="size-3" />
+                        {t("applications.website")}
                       </a>
                     )}
                   </div>
 
                   <div className="flex items-center justify-end gap-2 border-t border-line pt-3">
-                    <Button
-                      onClick={() => handleReject(app.id)}
+                    <RejectDialog
+                      name={app.name}
                       disabled={actionLoadingId === app.id}
-                      variant="ghost"
-                      size="sm"
-                      className="text-xs text-rose-500 hover:text-rose-600 hover:bg-rose-500/10"
-                    >
-                      <UserX className="size-3.5 mr-1" /> Rejeter
-                    </Button>
+                      onReject={(reason) => handleReject(app.id, reason)}
+                    />
                     <Button
                       onClick={() => handleApprove(app.id)}
                       disabled={actionLoadingId === app.id}
@@ -335,7 +325,7 @@ export default function AdminPartnersPage() {
                       size="sm"
                       className="text-xs gap-1"
                     >
-                      <UserCheck className="size-3.5" /> Approuver le partenaire
+                      <UserCheck className="size-3.5" /> {t("applications.approve")}
                     </Button>
                   </div>
                 </Panel>
@@ -349,30 +339,31 @@ export default function AdminPartnersPage() {
       {activeTab === "partners" && (
         <div className="space-y-4">
           <div className="relative max-w-md">
-            <Search className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-ink-3" />
+            <Search className="pointer-events-none absolute start-3.5 top-1/2 size-4 -translate-y-1/2 text-ink-3" />
             <Input
               type="search"
-              placeholder="Rechercher par nom, code ou email..."
-              className="pl-10"
+              aria-label={t("partners.searchLabel")}
+              placeholder={t("partners.searchPlaceholder")}
+              className="ps-10"
               value={q}
               onChange={(e) => setQ(e.target.value)}
             />
           </div>
 
           {filteredApproved.length === 0 ? (
-            <Panel className="p-12 text-center text-sm text-ink-3">Aucun partenaire trouvé.</Panel>
+            <Panel className="p-12 text-center text-sm text-ink-3">{t("partners.empty")}</Panel>
           ) : (
             <Panel className="overflow-x-auto">
-              <table className="w-full min-w-[950px] text-left text-sm">
+              <table className="w-full min-w-[950px] text-start text-sm">
                 <thead className="border-b border-line bg-surface-2 text-xs text-ink-3">
                   <tr>
-                    <th className="py-3 px-4 font-medium">Partenaire</th>
-                    <th className="py-3 px-4 font-medium">Code Unique</th>
-                    <th className="py-3 px-4 font-medium text-center">Taux</th>
-                    <th className="py-3 px-4 font-medium text-center">Clics</th>
-                    <th className="py-3 px-4 font-medium text-center">Clients acquis</th>
-                    <th className="py-3 px-4 font-medium">Statut</th>
-                    <th className="py-3 px-4 font-medium text-right">Actions</th>
+                    <th className="py-3 px-4 font-medium">{t("partners.table.partner")}</th>
+                    <th className="py-3 px-4 font-medium">{t("partners.table.code")}</th>
+                    <th className="py-3 px-4 font-medium text-center">{t("partners.table.rate")}</th>
+                    <th className="py-3 px-4 font-medium text-center">{t("partners.table.clicks")}</th>
+                    <th className="py-3 px-4 font-medium text-center">{t("partners.table.conversions")}</th>
+                    <th className="py-3 px-4 font-medium">{t("partners.table.status")}</th>
+                    <th className="py-3 px-4 font-medium text-end">{t("partners.table.actions")}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-line text-xs">
@@ -381,19 +372,19 @@ export default function AdminPartnersPage() {
                       <td className="py-3.5 px-4">
                         <button
                           type="button"
-                          onClick={() => handleEditRate(p)}
-                          className="font-semibold text-ink hover:text-cobalt hover:underline text-left block truncate"
+                          onClick={() => setRateTarget(p)}
+                          className="font-semibold text-ink hover:text-cobalt hover:underline text-start block truncate"
                         >
                           {p.name}
                         </button>
                         <div className="text-ink-3">{p.email} · {p.phone ?? ""}</div>
                         {p.company && <div className="text-[11px] text-cobalt">{p.company}</div>}
                       </td>
-                      <td className="py-3.5 px-4 font-mono font-bold text-cobalt">
+                      <td className="py-3.5 px-4 font-mono font-bold text-cobalt" dir="ltr">
                         {p.code}
                       </td>
                       <td className="py-3.5 px-4 text-center font-mono font-semibold text-ink">
-                        {p.commissionRatePercent} %
+                        {formatPct(p.commissionRatePercent)}
                       </td>
                       <td className="py-3.5 px-4 text-center font-mono text-ink">
                         {p.totalClicksCount || p._count.clicks}
@@ -403,32 +394,43 @@ export default function AdminPartnersPage() {
                       </td>
                       <td className="py-3.5 px-4">
                         {p.status === "ACTIVE" || p.status === "APPROVED" ? (
-                          <Badge tone="mint">Actif</Badge>
+                          <Badge tone="mint">{t("status.active")}</Badge>
                         ) : p.status === "SUSPENDED" ? (
-                          <Badge tone="danger">Suspendu</Badge>
+                          <Badge tone="danger">{t("status.suspended")}</Badge>
                         ) : (
                           <Badge tone="neutral">{p.status}</Badge>
                         )}
                       </td>
-                      <td className="py-3.5 px-4 text-right space-x-1">
-                        <Button
-                          onClick={() => handleEditRate(p)}
-                          variant="secondary"
-                          size="sm"
-                          className="h-7 text-[11px]"
-                        >
-                          Taux %
-                        </Button>
-                        <Button
-                          onClick={() => handleToggleStatus(p)}
-                          variant="ghost"
-                          size="sm"
-                          className={`h-7 text-[11px] ${
-                            p.status === "SUSPENDED" ? "text-emerald-500" : "text-rose-500"
-                          }`}
-                        >
-                          {p.status === "SUSPENDED" ? "Réactiver" : "Suspendre"}
-                        </Button>
+                      <td className="py-3.5 px-4 text-end">
+                        <div className="inline-flex gap-1">
+                          <Button
+                            onClick={() => setRateTarget(p)}
+                            variant="secondary"
+                            size="sm"
+                            className="h-7 text-[11px]"
+                          >
+                            {t("partners.rateButton")}
+                          </Button>
+                          <ConfirmDialog
+                            trigger={
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                disabled={actionLoadingId === p.id}
+                                className={`h-7 text-[11px] ${
+                                  p.status === "SUSPENDED" ? "text-emerald-500" : "text-rose-500"
+                                }`}
+                              >
+                                {p.status === "SUSPENDED" ? t("partners.reactivate") : t("partners.suspend")}
+                              </Button>
+                            }
+                            title={p.status === "SUSPENDED" ? t("toggle.reactivateTitle", { name: p.name }) : t("toggle.suspendTitle", { name: p.name })}
+                            consequence={p.status === "SUSPENDED" ? t("toggle.reactivateConsequence") : t("toggle.suspendConsequence")}
+                            confirmLabel={p.status === "SUSPENDED" ? t("partners.reactivate") : t("partners.suspend")}
+                            destructive={p.status !== "SUSPENDED"}
+                            onConfirm={() => handleToggleStatus(p)}
+                          />
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -442,35 +444,35 @@ export default function AdminPartnersPage() {
       {/* TAB : RÉGLAGES DU PROGRAMME */}
       {activeTab === "settings" && settings && (
         <Panel className="p-6 max-w-2xl space-y-4">
-          <h2 className="font-display text-base font-bold text-ink">Paramètres globaux du programme partenaires</h2>
+          <h2 className="font-display text-base font-bold text-ink">{t("settings.title")}</h2>
           <p className="text-xs text-ink-3">
-            Règles par défaut appliquées aux nouvelles candidatures et aux calculs d&apos;attribution.
+            {t("settings.description")}
           </p>
 
           <div className="grid grid-cols-2 gap-4 text-xs">
             <div className="rounded-lg border border-line p-3">
-              <span className="text-ink-3">Taux de commission par défaut</span>
+              <span className="text-ink-3">{t("settings.defaultRate")}</span>
               <div className="mt-1 font-mono text-lg font-bold text-ink">
-                {settings.defaultCommissionRatePercent} %
+                {formatPct(settings.defaultCommissionRatePercent)}
               </div>
             </div>
 
             <div className="rounded-lg border border-line p-3">
-              <span className="text-ink-3">Durée d&apos;attribution cookie</span>
+              <span className="text-ink-3">{t("settings.cookieDays")}</span>
               <div className="mt-1 font-mono text-lg font-bold text-ink">
-                {settings.cookieAttributionDays} jours
+                {t("settings.days", { count: settings.cookieAttributionDays })}
               </div>
             </div>
 
             <div className="rounded-lg border border-line p-3">
-              <span className="text-ink-3">Délai de garantie validation</span>
+              <span className="text-ink-3">{t("settings.validationDelay")}</span>
               <div className="mt-1 font-mono text-lg font-bold text-ink">
-                {settings.validationDelayDays} jours
+                {t("settings.days", { count: settings.validationDelayDays })}
               </div>
             </div>
 
             <div className="rounded-lg border border-line p-3">
-              <span className="text-ink-3">Seuil minimum de retrait</span>
+              <span className="text-ink-3">{t("settings.minimumPayout")}</span>
               <div className="mt-1 font-mono text-lg font-bold text-ink">
                 {formatFinance(settings.minimumPayoutThresholdCents, "USD")}
               </div>
@@ -484,6 +486,93 @@ export default function AdminPartnersPage() {
         onClose={() => setPartnerModalOpen(false)}
         onCreated={() => refetch()}
       />
+
+      <RateDialog
+        partner={rateTarget}
+        busy={rateTarget !== null && actionLoadingId === rateTarget.id}
+        onClose={() => setRateTarget(null)}
+        onSave={(rate) => rateTarget && handleEditRate(rateTarget, rate)}
+      />
     </>
+  );
+}
+
+function RejectDialog({ name, disabled, onReject }: { name: string; disabled: boolean; onReject: (reason: string) => Promise<void> }) {
+  const t = useTranslations("admin.partners.reject");
+  const [reason, setReason] = useState("");
+  return (
+    <ConfirmDialog
+      trigger={
+        <Button
+          disabled={disabled}
+          variant="ghost"
+          size="sm"
+          className="text-xs text-rose-500 hover:text-rose-600 hover:bg-rose-500/10"
+        >
+          <UserX className="size-3.5 me-1" /> {t("button")}
+        </Button>
+      }
+      title={t("title", { name })}
+      consequence={t("consequence")}
+      confirmLabel={t("confirm")}
+      destructive
+      onConfirm={() => onReject(reason)}
+    >
+      <Field label={t("reasonLabel")}>
+        {(f) => <Textarea {...f} rows={3} value={reason} onChange={(e) => setReason(e.target.value)} />}
+      </Field>
+    </ConfirmDialog>
+  );
+}
+
+function RateDialog({ partner, busy, onClose, onSave }: { partner: AdminPartnerRow | null; busy: boolean; onClose: () => void; onSave: (rate: number) => void }) {
+  const t = useTranslations("admin.partners.rate");
+  const [value, setValue] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [lastId, setLastId] = useState<string | null>(null);
+  if (partner && partner.id !== lastId) {
+    setLastId(partner.id);
+    setValue(String(partner.commissionRatePercent));
+    setError(null);
+  }
+  return (
+    <DialogRoot open={partner !== null} onOpenChange={(o) => !o && !busy && onClose()}>
+      {partner && (
+        <DialogContent title={t("title", { name: partner.name })} description={t("description")}>
+          <Field label={t("label")} error={error ?? undefined}>
+            {(f) => (
+              <Input
+                {...f}
+                type="number"
+                min="0"
+                max="100"
+                step="0.5"
+                dir="ltr"
+                value={value}
+                onChange={(e) => setValue(e.target.value)}
+              />
+            )}
+          </Field>
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <Button variant="secondary" onClick={onClose} disabled={busy}>
+              {t("cancel")}
+            </Button>
+            <Button
+              loading={busy}
+              onClick={() => {
+                const rate = Number.parseFloat(value.replace(",", "."));
+                if (Number.isNaN(rate) || rate < 0 || rate > 100) {
+                  setError(t("invalid"));
+                  return;
+                }
+                onSave(rate);
+              }}
+            >
+              {t("save")}
+            </Button>
+          </div>
+        </DialogContent>
+      )}
+    </DialogRoot>
   );
 }

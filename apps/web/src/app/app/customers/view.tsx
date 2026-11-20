@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useInfiniteQuery, useQuery, useQueryClient } from "@tanstack/react-query";
 import { FileUp, Search, UserPlus, Users } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { useActiveTenant, useCan } from "@/components/app/me-context";
 import type { CustomerRow, Page, Program } from "@/components/app/types";
@@ -13,7 +14,7 @@ import { DialogContent, DialogRoot } from "@/components/ui/dialog";
 import { Checkbox, Field, Input, Select } from "@/components/ui/field";
 import { PhoneInput } from "@/components/ui/phone-input";
 import { EmptyState, ErrorNote, PageHeader, Panel, Skeleton } from "@/components/ui/misc";
-import { api, errorMessage } from "@/lib/api";
+import { api, useErrorMessage } from "@/lib/api";
 import { formatDate, formatNumber } from "@/lib/utils";
 
 function useDebounced<T>(value: T, ms = 300) {
@@ -26,6 +27,8 @@ function useDebounced<T>(value: T, ms = 300) {
 }
 
 function NewCustomerDialog({ open, onOpenChange, programs }: { open: boolean; onOpenChange: (o: boolean) => void; programs: Program[] }) {
+  const toErrorMessage = useErrorMessage();
+  const t = useTranslations("app.customers.new");
   const router = useRouter();
   const qc = useQueryClient();
   // « auto » : premier programme actif ; « none » : pas de carte.
@@ -47,12 +50,12 @@ function NewCustomerDialog({ open, onOpenChange, programs }: { open: boolean; on
         programId: programId === "none" ? null : programId,
         marketingSmsConsent: form.marketingSmsConsent,
       });
-      toast.success("Client créé");
+      toast.success(t("created"));
       qc.invalidateQueries({ queryKey: ["customers"] });
       onOpenChange(false);
       router.push(`/app/customers/${res.customer.id}`);
     } catch (err) {
-      setError(errorMessage(err));
+      setError(toErrorMessage(err));
     } finally {
       setBusy(false);
     }
@@ -60,14 +63,14 @@ function NewCustomerDialog({ open, onOpenChange, programs }: { open: boolean; on
 
   return (
     <DialogRoot open={open} onOpenChange={onOpenChange}>
-      <DialogContent title="Nouveau client" description="Le téléphone ou l’email évite les doublons.">
+      <DialogContent title={t("title")} description={t("description")}>
         <form onSubmit={submit} className="grid gap-4" noValidate>
           {error && <ErrorNote>{error}</ErrorNote>}
           <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="Prénom">{(p) => <Input {...p} required value={form.firstName} onChange={(e) => setForm({ ...form, firstName: e.target.value })} />}</Field>
-            <Field label="Nom">{(p) => <Input {...p} value={form.lastName} onChange={(e) => setForm({ ...form, lastName: e.target.value })} />}</Field>
+            <Field label={t("firstName")}>{(p) => <Input {...p} required value={form.firstName} onChange={(e) => setForm({ ...form, firstName: e.target.value })} />}</Field>
+            <Field label={t("lastName")}>{(p) => <Input {...p} value={form.lastName} onChange={(e) => setForm({ ...form, lastName: e.target.value })} />}</Field>
           </div>
-          <Field label="Téléphone">
+          <Field label={t("phone")}>
             {(p) => (
               <PhoneInput
                 {...p}
@@ -76,21 +79,21 @@ function NewCustomerDialog({ open, onOpenChange, programs }: { open: boolean; on
               />
             )}
           </Field>
-          <Field label="Email (facultatif)">{(p) => <Input {...p} type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />}</Field>
+          <Field label={t("email")}>{(p) => <Input {...p} type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />}</Field>
           {programs.length > 0 && (
-            <Field label="Créer sa carte dans">
+            <Field label={t("program")}>
               {(p) => (
                 <Select {...p} value={programId} onChange={(e) => setForm({ ...form, programId: e.target.value })}>
                   {programs.map((pr) => (
                     <option key={pr.id} value={pr.id}>{pr.name}</option>
                   ))}
-                  <option value="none">Ne pas créer de carte</option>
+                  <option value="none">{t("noCard")}</option>
                 </Select>
               )}
             </Field>
           )}
-          <Checkbox checked={form.marketingSmsConsent} onChange={(e) => setForm({ ...form, marketingSmsConsent: e.target.checked })} label="Le client accepte de recevoir des offres par SMS ou WhatsApp" />
-          <Button type="submit" loading={busy} disabled={!form.firstName || (!form.phone && !form.email)}>Créer le client</Button>
+          <Checkbox checked={form.marketingSmsConsent} onChange={(e) => setForm({ ...form, marketingSmsConsent: e.target.checked })} label={t("consent")} />
+          <Button type="submit" loading={busy} disabled={!form.firstName || (!form.phone && !form.email)}>{t("submit")}</Button>
         </form>
       </DialogContent>
     </DialogRoot>
@@ -109,6 +112,8 @@ function parseCsv(text: string): Record<string, string>[] {
 }
 
 function ImportDialog({ open, onOpenChange, programs }: { open: boolean; onOpenChange: (o: boolean) => void; programs: Program[] }) {
+  const toErrorMessage = useErrorMessage();
+  const t = useTranslations("app.customers.import");
   const qc = useQueryClient();
   const [rows, setRows] = useState<Record<string, string>[]>([]);
   const [programId, setProgramId] = useState("");
@@ -124,7 +129,7 @@ function ImportDialog({ open, onOpenChange, programs }: { open: boolean; onOpenC
       setResult(res.summary);
       qc.invalidateQueries({ queryKey: ["customers"] });
     } catch (e) {
-      setError(errorMessage(e));
+      setError(toErrorMessage(e));
     } finally {
       setBusy(false);
     }
@@ -132,34 +137,34 @@ function ImportDialog({ open, onOpenChange, programs }: { open: boolean; onOpenC
 
   return (
     <DialogRoot open={open} onOpenChange={(o) => { onOpenChange(o); if (!o) { setRows([]); setResult(null); } }}>
-      <DialogContent title="Importer des clients" description="Fichier CSV avec les colonnes prenom, nom, telephone, email (et reference si besoin). 5 000 lignes maximum.">
+      <DialogContent title={t("title")} description={t("description")}>
         {error && <ErrorNote>{error}</ErrorNote>}
         {result ? (
           <div className="grid gap-2">
-            <p><strong>{result.created}</strong> clients créés.</p>
-            {result.duplicates > 0 && <p className="text-ink-2">{result.duplicates} déjà présents (même téléphone, email ou référence), ignorés.</p>}
-            {result.invalid > 0 && <p className="text-ink-2">{result.invalid} lignes invalides (téléphone incorrect ou contact manquant).</p>}
-            {result.overQuota > 0 && <p className="text-danger">{result.overQuota} lignes non importées : limite de clients de votre offre atteinte.</p>}
-            <Button className="mt-2" onClick={() => onOpenChange(false)}>Fermer</Button>
+            <p>{t.rich("created", { count: result.created, strong: (c) => <strong>{c}</strong> })}</p>
+            {result.duplicates > 0 && <p className="text-ink-2">{t("duplicates", { count: result.duplicates })}</p>}
+            {result.invalid > 0 && <p className="text-ink-2">{t("invalid", { count: result.invalid })}</p>}
+            {result.overQuota > 0 && <p className="text-danger">{t("overQuota", { count: result.overQuota })}</p>}
+            <Button className="mt-2" onClick={() => onOpenChange(false)}>{t("close")}</Button>
           </div>
         ) : (
           <div className="grid gap-4">
             <label className="flex cursor-pointer items-center gap-3 rounded-md bg-surface-2 p-4 text-sm">
               <FileUp className="size-5 text-ink-3" aria-hidden />
-              {rows.length ? `${formatNumber(rows.length)} lignes prêtes` : "Choisir un fichier CSV"}
+              {rows.length ? t("ready", { count: rows.length, formatted: formatNumber(rows.length) }) : t("choose")}
               <input type="file" accept=".csv,text/csv" className="sr-only" onChange={async (e) => { const f = e.target.files?.[0]; if (f) setRows(parseCsv(await f.text())); }} />
             </label>
             {programs.length > 0 && (
-              <Field label="Créer aussi leur carte dans">
+              <Field label={t("program")}>
                 {(p) => (
                   <Select {...p} value={programId} onChange={(e) => setProgramId(e.target.value)}>
-                    <option value="">Ne pas créer de carte</option>
+                    <option value="">{t("noCard")}</option>
                     {programs.map((pr) => <option key={pr.id} value={pr.id}>{pr.name}</option>)}
                   </Select>
                 )}
               </Field>
             )}
-            <Button onClick={submit} loading={busy} disabled={rows.length === 0}>Importer {rows.length ? formatNumber(rows.length) : ""} clients</Button>
+            <Button onClick={submit} loading={busy} disabled={rows.length === 0}>{rows.length ? t("submitCount", { count: rows.length, formatted: formatNumber(rows.length) }) : t("submit")}</Button>
           </div>
         )}
       </DialogContent>
@@ -167,7 +172,11 @@ function ImportDialog({ open, onOpenChange, programs }: { open: boolean; onOpenC
   );
 }
 
+const SEGMENT_FILTERS = ["ALL", "VIP", "REGULAR", "AT_RISK", "DORMANT", "NEW"] as const;
+
 export function CustomersView() {
+  const t = useTranslations("app.customers");
+  const ts = useTranslations("app.segment");
   const params = useSearchParams();
   const canWrite = useCan("customers.write");
   const canImport = useCan("customers.import");
@@ -193,18 +202,18 @@ export function CustomersView() {
   return (
     <>
       <PageHeader
-        title="Clients"
-        description="Recherchez par nom, téléphone, email ou numéro de carte."
+        title={t("title")}
+        description={t("description")}
         actions={
           <>
             {canImport && (
               <Button variant="secondary" onClick={() => setImporting(true)}>
-                <FileUp /> Importer
+                <FileUp /> {t("importButton")}
               </Button>
             )}
             {canWrite && (
               <Button onClick={() => setCreating(true)}>
-                <UserPlus /> Nouveau client
+                <UserPlus /> {t("newButton")}
               </Button>
             )}
           </>
@@ -212,28 +221,21 @@ export function CustomersView() {
       />
       <div className="flex flex-col gap-3 mb-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="relative flex-1">
-          <Search className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-ink-3" aria-hidden />
-          <Input type="search" aria-label="Rechercher un client" placeholder="Nom, téléphone, email ou numéro de carte" className="pl-10" value={q} onChange={(e) => setQ(e.target.value)} />
+          <Search className="pointer-events-none absolute start-3.5 top-1/2 size-4 -translate-y-1/2 text-ink-3" aria-hidden />
+          <Input type="search" aria-label={t("searchLabel")} placeholder={t("searchPlaceholder")} className="ps-10" value={q} onChange={(e) => setQ(e.target.value)} />
         </div>
-        <div role="group" aria-label="Filtrer par segment" className="flex flex-wrap gap-1 rounded-md bg-surface-2 p-1 text-sm">
-          {[
-            { id: "ALL", label: "Tous" },
-            { id: "VIP", label: "VIP" },
-            { id: "REGULAR", label: "Actifs" },
-            { id: "AT_RISK", label: "En risque" },
-            { id: "DORMANT", label: "Dormants" },
-            { id: "NEW", label: "Nouveaux" },
-          ].map((s) => (
+        <div role="group" aria-label={t("filterLabel")} className="flex flex-wrap gap-1 rounded-md bg-surface-2 p-1 text-sm">
+          {SEGMENT_FILTERS.map((id) => (
             <button
-              key={s.id}
+              key={id}
               type="button"
-              aria-pressed={selectedSegment === s.id}
-              onClick={() => setSelectedSegment(s.id)}
+              aria-pressed={selectedSegment === id}
+              onClick={() => setSelectedSegment(id)}
               className={`h-8 rounded-sm px-3 font-medium transition-colors ${
-                selectedSegment === s.id ? "bg-surface text-ink shadow-1" : "text-ink-2 hover:text-ink"
+                selectedSegment === id ? "bg-surface text-ink shadow-1" : "text-ink-2 hover:text-ink"
               }`}
             >
-              {s.label}
+              {t(`filters.${id}`)}
             </button>
           ))}
         </div>
@@ -242,8 +244,8 @@ export function CustomersView() {
       {list.isLoading ? (
         <Skeleton className="h-64" />
       ) : rows.length === 0 ? (
-        <EmptyState icon={<Users />} title={query || selectedSegment !== "ALL" ? "Aucun client dans ce filtre" : "Aucun client"} action={canWrite && !query ? <Button onClick={() => setCreating(true)}>Ajouter un client</Button> : undefined}>
-          {query || selectedSegment !== "ALL" ? "Essayez de modifier votre recherche ou de sélectionner « Tous »." : "Les clients inscrits par QR code apparaîtront ici automatiquement."}
+        <EmptyState icon={<Users />} title={query || selectedSegment !== "ALL" ? t("emptyFiltered") : t("empty")} action={canWrite && !query ? <Button onClick={() => setCreating(true)}>{t("add")}</Button> : undefined}>
+          {query || selectedSegment !== "ALL" ? t("emptyFilteredBody") : t("emptyBody")}
         </EmptyState>
       ) : (
         <Panel className="overflow-hidden">
@@ -267,18 +269,18 @@ export function CustomersView() {
                               : "bg-surface text-ink-3"
                           }`}
                         >
-                          {c.segment.label}
+                          {ts(`${c.segment.segment}.label`)}
                         </span>
                       )}
-                      {c.tags?.map((t) => (
-                        <span key={t} className="rounded-sm bg-subtle px-1.5 py-0.2 text-[10px] text-ink-3">
-                          #{t}
+                      {c.tags?.map((tag) => (
+                        <span key={tag} className="rounded-sm bg-subtle px-1.5 py-0.2 text-[10px] text-ink-3">
+                          #{tag}
                         </span>
                       ))}
                     </span>
-                    <span className="block truncate text-sm text-ink-3">{c.phone ?? c.email ?? "Sans contact"} · depuis le {formatDate(c.createdAt)}</span>
+                    <span className="block truncate text-sm text-ink-3">{t("rowMeta", { contact: c.phone ?? c.email ?? t("noContact"), date: formatDate(c.createdAt) })}</span>
                   </span>
-                  <span className="hidden text-right text-sm sm:block">
+                  <span className="hidden text-end text-sm sm:block">
                     {c.accounts.map((a) => (
                       <span key={a.id} className="block tabular">
                         <strong>{formatNumber(a.balance)}</strong> <span className="text-ink-3">{programName(a.programId)}</span>
@@ -291,7 +293,7 @@ export function CustomersView() {
           </ul>
           {list.hasNextPage && (
             <div className="border-t border-line p-3 text-center">
-              <Button variant="ghost" onClick={() => list.fetchNextPage()} loading={list.isFetchingNextPage}>Afficher plus</Button>
+              <Button variant="ghost" onClick={() => list.fetchNextPage()} loading={list.isFetchingNextPage}>{t("more")}</Button>
             </div>
           )}
         </Panel>

@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
-import { Search, ExternalLink } from "lucide-react";
+import { useTranslations } from "next-intl";
+import { ChevronRight, Search } from "lucide-react";
 import { Input } from "@/components/ui/field";
 import { Badge, PageHeader, Panel } from "@/components/ui/misc";
 import { api } from "@/lib/api";
@@ -39,6 +40,7 @@ interface CustomerFinanceRow {
 }
 
 export default function CustomersFinancePage() {
+  const t = useTranslations("admin.finance.customers");
   const [q, setQ] = useState("");
 
   const { data = [], isLoading } = useQuery({
@@ -58,49 +60,50 @@ export default function CustomersFinancePage() {
   return (
     <>
       <PageHeader
-        title="Portefeuille clients & Valeur vie (LTV)"
-        description="Fiches financières de chaque établissement : montants cumulés facturés, encaissés et fidélité."
+        title={t("title")}
+        description={t("description")}
       />
 
       <FinanceNav />
 
       <div className="mb-6 relative max-w-md">
-        <Search className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-ink-3" />
+        <Search className="pointer-events-none absolute start-3.5 top-1/2 size-4 -translate-y-1/2 text-ink-3" />
         <Input
           type="search"
-          placeholder="Filtrer par nom du commerce, slug ou partenaire..."
-          className="pl-10"
+          aria-label={t("search")}
+          placeholder={t("search")}
+          className="ps-10"
           value={q}
           onChange={(e) => setQ(e.target.value)}
         />
       </div>
 
       {isLoading ? (
-        <div className="py-20 text-center text-sm text-ink-3">Chargement des fiches clients...</div>
+        <div className="py-20 text-center text-sm text-ink-3">{t("loading")}</div>
       ) : filtered.length === 0 ? (
-        <Panel className="p-12 text-center text-sm text-ink-3">Aucun commerce trouvé.</Panel>
+        <Panel className="p-12 text-center text-sm text-ink-3">{t("empty")}</Panel>
       ) : (
         <Panel className="overflow-x-auto">
-          <table className="w-full min-w-[950px] text-left text-sm">
+          <table className="w-full min-w-[950px] text-start text-sm">
             <thead className="border-b border-line bg-surface-2 text-xs text-ink-3">
               <tr>
-                <th className="py-3 px-4 font-medium">Entreprise cliente</th>
-                <th className="py-3 px-4 font-medium">Offre active</th>
-                <th className="py-3 px-4 font-medium text-right">Cumul facturé</th>
-                <th className="py-3 px-4 font-medium text-right">Total encaissé (LTV)</th>
-                <th className="py-3 px-4 font-medium text-center">Paiements</th>
-                <th className="py-3 px-4 font-medium">1er paiement</th>
-                <th className="py-3 px-4 font-medium">Dernière transaction</th>
-                <th className="py-3 px-4 font-medium">Partenaire apporteur</th>
-                <th className="py-3 px-4 font-medium text-right">Fiche</th>
+                <th className="py-3 px-4 font-medium">{t("table.tenant")}</th>
+                <th className="py-3 px-4 font-medium">{t("table.plan")}</th>
+                <th className="py-3 px-4 font-medium text-end">{t("table.invoiced")}</th>
+                <th className="py-3 px-4 font-medium text-end">{t("table.collected")}</th>
+                <th className="py-3 px-4 font-medium text-center">{t("table.payments")}</th>
+                <th className="py-3 px-4 font-medium">{t("table.first")}</th>
+                <th className="py-3 px-4 font-medium">{t("table.last")}</th>
+                <th className="py-3 px-4 font-medium">{t("table.partner")}</th>
+                <th className="py-3 px-4 font-medium text-end">{t("table.open")}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-line">
               {filtered.map((c) => {
                 const id = c.tenantId || c.id || "";
-                const name = c.tenantName || c.name || "Commerce";
+                const name = c.tenantName || c.name || t("fallbackName");
                 const slug = c.tenantSlug || c.slug || "—";
-                const plan = c.planName || c.plan || "Gratuit";
+                const plan = c.planName || c.plan || t("free");
                 const invoiced = c.totalInvoicedCents ?? 0;
                 const collected = c.totalCollectedCents ?? c.totalPaidCents ?? 0;
                 const count = c.paymentsCount ?? 0;
@@ -123,17 +126,17 @@ export default function CustomersFinancePage() {
                         </span>
                         {c.provider === "MANUAL" && (c.contractPriceYearlyCents === 0 || (!invoiced && !collected)) && (
                           <span className="rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[10px] font-medium px-1.5 py-0.5">
-                            Offert
+                            {t("offered")}
                           </span>
                         )}
                       </div>
                     </td>
-                    <td className={`py-3.5 px-4 text-right font-mono text-xs ${
+                    <td className={`py-3.5 px-4 text-end font-mono text-xs ${
                       invoiced > 0 ? "text-ink-2" : "text-ink-3"
                     }`}>
                       {formatFinance(invoiced, "USD")}
                     </td>
-                    <td className={`py-3.5 px-4 text-right font-mono text-xs font-bold ${
+                    <td className={`py-3.5 px-4 text-end font-mono text-xs font-bold ${
                       collected > 0 ? "text-emerald-600 dark:text-emerald-400" : "text-ink-3 font-normal"
                     }`}>
                       {formatFinance(collected, "USD")}
@@ -151,16 +154,17 @@ export default function CustomersFinancePage() {
                       {c.partnerName ? (
                         <span className="text-cobalt font-medium">{c.partnerName}</span>
                       ) : (
-                        <span className="text-ink-3">Direct</span>
+                        <span className="text-ink-3">{t("direct")}</span>
                       )}
                     </td>
-                    <td className="py-3.5 px-4 text-right">
+                    <td className="py-3.5 px-4 text-end">
                       <Link
                         href={`/admin/tenants/${id}`}
                         className="inline-flex size-8 items-center justify-center rounded-lg border border-line text-ink-3 hover:text-ink hover:bg-surface"
-                        title="Voir le commerce"
+                        aria-label={t("openTenant", { name })}
+                        title={t("openTenant", { name })}
                       >
-                        <ExternalLink className="size-3.5" />
+                        <ChevronRight className="size-3.5 rtl:rotate-180" />
                       </Link>
                     </td>
                   </tr>

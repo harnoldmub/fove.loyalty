@@ -5,19 +5,23 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Copy, Gift, MessageCircle } from "lucide-react";
+import { useTranslations } from "next-intl";
+import { LOCALE_NAMES, LOCALES } from "@/i18n/config";
 import { toast } from "sonner";
-import { defaultCurrencyForCountry, SUPPORTED_CURRENCIES } from "@fove/shared";
+import { defaultCurrencyForCountry } from "@fove/shared";
 import { useCan } from "@/components/app/me-context";
 import { Button } from "@/components/ui/button";
 import { CountrySelect, getCountryOption } from "@/components/ui/country-select";
+import { CurrencySelect } from "@/components/ui/currency-select";
 import { Field, Input, Select } from "@/components/ui/field";
 import { ErrorNote, PageHeader, Panel, Skeleton } from "@/components/ui/misc";
-import { api, errorMessage } from "@/lib/api";
+import { api, useErrorMessage } from "@/lib/api";
 
 interface Tenant {
   name: string;
   slug: string;
   settings: {
+    locale?: string | null;
     primaryColor: string;
     logoUrl: string | null;
     walletBannerUrl?: string | null;
@@ -33,6 +37,8 @@ interface Tenant {
 }
 
 export default function SettingsPage() {
+  const toErrorMessage = useErrorMessage();
+  const t = useTranslations("app.settings");
   const { data, isLoading, error } = useQuery({ queryKey: ["tenant"], queryFn: () => api.get<Tenant>("/app/tenant") });
   const { data: walletStatus } = useQuery({
     queryKey: ["wallet-status"],
@@ -42,13 +48,13 @@ export default function SettingsPage() {
   return (
     <>
       <PageHeader
-        title="Paramètres"
-        description={data ? `Adresse de votre page : app.fove.digital/${data.slug}` : undefined}
+        title={t("title")}
+        description={data ? t("pageAddress", { url: `app.fove.digital/${data.slug}` }) : undefined}
         actions={
           data ? (
             <Button asChild variant="secondary" size="sm">
               <Link href={`/${data.slug}`} target="_blank">
-                Voir ma page publique
+                {t("viewPublic")}
               </Link>
             </Button>
           ) : undefined
@@ -61,11 +67,11 @@ export default function SettingsPage() {
           <div className="flex items-start justify-between gap-2">
             <h2 className="font-semibold text-ink">Apple Wallet</h2>
             <span className={walletStatus?.appleWallet ? "shrink-0 whitespace-nowrap rounded-full bg-mint-soft px-2 py-0.5 text-xs font-medium text-mint" : "shrink-0 whitespace-nowrap rounded-full bg-stamp-soft px-2 py-0.5 text-xs font-medium text-stamp-ink dark:text-stamp"}>
-              {walletStatus?.appleWallet ? "Activé" : "À configurer"}
+              {walletStatus?.appleWallet ? t("enabled") : t("toConfigure")}
             </span>
           </div>
           <p className="mt-1.5 text-xs text-ink-3">
-            {walletStatus?.appleWallet ? "Cartes ajoutées sur iPhone, mises à jour à chaque passage." : "Le bouton Apple Wallet est masqué tant que les certificats ne sont pas installés."}
+            {walletStatus?.appleWallet ? t("apple.on") : t("apple.off")}
           </p>
         </section>
 
@@ -73,11 +79,11 @@ export default function SettingsPage() {
           <div className="flex items-start justify-between gap-2">
             <h2 className="font-semibold text-ink">Google Wallet</h2>
             <span className={walletStatus?.googleWallet ? "shrink-0 whitespace-nowrap rounded-full bg-mint-soft px-2 py-0.5 text-xs font-medium text-mint" : "shrink-0 whitespace-nowrap rounded-full bg-stamp-soft px-2 py-0.5 text-xs font-medium text-stamp-ink dark:text-stamp"}>
-              {walletStatus?.googleWallet ? "Activé" : "À configurer"}
+              {walletStatus?.googleWallet ? t("enabled") : t("toConfigure")}
             </span>
           </div>
           <p className="mt-1.5 text-xs text-ink-3">
-            {walletStatus?.googleWallet ? "Ajout en un geste sur Android, solde mis à jour automatiquement." : "Le bouton Google Wallet est masqué tant que le compte émetteur n’est pas configuré."}
+            {walletStatus?.googleWallet ? t("google.on") : t("google.off")}
           </p>
         </section>
 
@@ -85,11 +91,11 @@ export default function SettingsPage() {
           <div className="flex items-start justify-between gap-2">
             <h2 className="font-semibold text-ink">WhatsApp</h2>
             <span className="shrink-0 whitespace-nowrap rounded-full bg-mint-soft px-2 py-0.5 text-xs font-medium text-mint">
-              Activé
+              {t("enabled")}
             </span>
           </div>
           <p className="mt-1.5 text-xs text-ink-3">
-            Envoi instantané du lien de la carte par WhatsApp aux nouveaux clients.
+            {t("whatsapp")}
           </p>
         </section>
       </div>
@@ -104,13 +110,13 @@ export default function SettingsPage() {
               </span>
               <div>
                 <div className="flex items-center gap-2">
-                  <h2 className="font-display text-base font-semibold text-ink">Parrainage entre commerçants</h2>
+                  <h2 className="font-display text-base font-semibold text-ink">{t("referral.title")}</h2>
                   <span className="rounded-full bg-emerald-500/20 px-2 py-0.5 text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
-                    1 mois offert
+                    {t("referral.badge")}
                   </span>
                 </div>
                 <p className="mt-1 text-xs text-ink-2 max-w-xl leading-relaxed">
-                  Recommandez FOVE à un confrère commerçant : recevez <strong>20 $ de crédit</strong> déduits de votre abonnement dès sa première souscription.
+                  {t.rich("referral.body", { strong: (c) => <strong>{c}</strong> })}
                 </p>
               </div>
             </div>
@@ -124,10 +130,10 @@ export default function SettingsPage() {
                 onClick={() => {
                   const url = `https://fove.digital/signup?ref=${data.slug}`;
                   navigator.clipboard.writeText(url);
-                  toast.success("Lien de parrainage copié dans le presse-papier !");
+                  toast.success(t("referral.copied"));
                 }}
               >
-                <Copy className="size-3.5" /> Copier mon lien
+                <Copy className="size-3.5" /> {t("referral.copy")}
               </Button>
               <Button
                 asChild
@@ -135,11 +141,11 @@ export default function SettingsPage() {
                 className="gap-1.5 text-xs bg-[#25D366] text-white hover:bg-[#20ba59] w-full sm:w-auto"
               >
                 <a
-                  href={`https://wa.me/?text=${encodeURIComponent(`Bonjour, je gère la fidélité de mes clients avec FOVE sur Apple Wallet et Google Wallet. Découvre et teste gratuitement ici : https://fove.digital/signup?ref=${data.slug}`)}`}
+                  href={`https://wa.me/?text=${encodeURIComponent(t("referral.message", { url: `https://fove.digital/signup?ref=${data.slug}` }))}`}
                   target="_blank"
                   rel="noopener noreferrer"
                 >
-                  <MessageCircle className="size-3.5" /> Partager
+                  <MessageCircle className="size-3.5" /> {t("referral.share")}
                 </a>
               </Button>
             </div>
@@ -148,18 +154,20 @@ export default function SettingsPage() {
       )}
 
       {isLoading && <Skeleton className="h-64" />}
-      {error && <ErrorNote>{errorMessage(error)}</ErrorNote>}
+      {error && <ErrorNote>{toErrorMessage(error)}</ErrorNote>}
       {data && <SettingsForm data={data} />}
       <div className="mt-6 flex flex-wrap gap-3">
-        <Button asChild variant="secondary"><Link href="/app/programs">Règles de fidélité</Link></Button>
-        <Button asChild variant="secondary"><Link href="/app/rewards">Réductions et récompenses</Link></Button>
-        <Button asChild variant="secondary"><Link href="/app/establishments">Points de vente</Link></Button>
+        <Button asChild variant="secondary"><Link href="/app/programs">{t("links.programs")}</Link></Button>
+        <Button asChild variant="secondary"><Link href="/app/rewards">{t("links.rewards")}</Link></Button>
+        <Button asChild variant="secondary"><Link href="/app/establishments">{t("links.establishments")}</Link></Button>
       </div>
     </>
   );
 }
 
 function SettingsForm({ data }: { data: Tenant }) {
+  const toErrorMessage = useErrorMessage();
+  const t = useTranslations("app.settings.form");
   const router = useRouter();
   const [uploading, setUploading] = useState(false);
   const canWrite = useCan("tenant.update");
@@ -175,6 +183,7 @@ function SettingsForm({ data }: { data: Tenant }) {
       instagramHandle: data.settings.instagramHandle ?? "",
       country: data.settings.country,
       currency: data.settings.currency,
+      locale: data.settings.locale ?? "",
       timezone: data.settings.timezone,
       legalName: data.settings.legalName ?? "",
       contactEmail: data.settings.contactEmail ?? "",
@@ -198,6 +207,7 @@ function SettingsForm({ data }: { data: Tenant }) {
                 primaryColor: f.primaryColor,
                 country: f.country,
                 currency: f.currency,
+                locale: f.locale || null,
                 timezone: f.timezone,
                 logoUrl: f.logoUrl || null,
                 walletBannerUrl: f.walletBannerUrl || null,
@@ -209,9 +219,9 @@ function SettingsForm({ data }: { data: Tenant }) {
               });
               qc.invalidateQueries({ queryKey: ["tenant"] });
               router.refresh();
-              toast.success("Paramètres enregistrés sur vos pages et cartes clients");
+              toast.success(t("saved"));
             } catch (err) {
-              setError(errorMessage(err));
+              setError(toErrorMessage(err));
             } finally {
               setBusy(false);
             }
@@ -219,14 +229,14 @@ function SettingsForm({ data }: { data: Tenant }) {
         >
           {error && <ErrorNote>{error}</ErrorNote>}
           <fieldset disabled={!canWrite} className="grid gap-4">
-            <Field label="Nom du commerce">{(p) => <Input {...p} value={f.name ?? ""} onChange={set("name")} />}</Field>
+            <Field label={t("name")}>{(p) => <Input {...p} value={f.name ?? ""} onChange={set("name")} />}</Field>
             <Field
-              label="Adresse de votre page"
-              hint={`app.fove.digital/${f.slug || "votre-commerce"}`}
+              label={t("slug")}
+              hint={`app.fove.digital/${f.slug || t("slugPlaceholder")}`}
             >
               {(p) => (
                 <div className="flex items-stretch overflow-hidden rounded-[var(--radius)] bg-surface shadow-1 ring-1 ring-line focus-within:ring-2 focus-within:ring-cobalt">
-                  <span className="flex select-none items-center border-r border-line bg-surface-2 px-3.5 text-sm font-medium text-ink-2">
+                  <span dir="ltr" className="flex select-none items-center border-e border-line bg-surface-2 px-3.5 text-sm font-medium text-ink-2">
                     app.fove.digital/
                   </span>
                   <Input
@@ -247,82 +257,83 @@ function SettingsForm({ data }: { data: Tenant }) {
                 </div>
               )}
             </Field>
-            <Field label="Raison sociale">{(p) => <Input {...p} value={f.legalName ?? ""} onChange={set("legalName")} />}</Field>
+            <Field label={t("legalName")}>{(p) => <Input {...p} value={f.legalName ?? ""} onChange={set("legalName")} />}</Field>
             <div className="grid gap-4 sm:grid-cols-[auto_1fr]">
-              <Field label="Couleur">{(p) => <input {...p} type="color" className="h-11 w-16 cursor-pointer rounded-md bg-surface shadow-1" value={f.primaryColor ?? "#2C55F5"} onChange={set("primaryColor")} />}</Field>
-              <Field label="Importer le logo" hint="PNG, JPEG ou WebP, 512 Ko maximum. Enregistrez ensuite vos paramètres.">
+              <Field label={t("color")}>{(p) => <input {...p} type="color" className="h-11 w-16 cursor-pointer rounded-md bg-surface shadow-1" value={f.primaryColor ?? "#2C55F5"} onChange={set("primaryColor")} />}</Field>
+              <Field label={t("logoUpload")} hint={t("logoHint")}>
                 {(p) => <Input {...p} type="file" accept="image/png,image/jpeg,image/webp" disabled={uploading} onChange={async (e) => {
                   const file = e.target.files?.[0];
                   if (!file) return;
-                  if (file.size > 512 * 1024) { setError("Le logo ne doit pas dépasser 512 Ko."); return; }
+                  if (file.size > 512 * 1024) { setError(t("logoTooBig")); return; }
                   setUploading(true); setError(null);
                   try {
                     const dataBase64 = await new Promise<string>((resolve, reject) => {
                       const reader = new FileReader();
                       reader.onload = () => resolve(String(reader.result).split(",")[1] ?? "");
-                      reader.onerror = () => reject(new Error("Lecture du fichier impossible"));
+                      reader.onerror = () => reject(new Error(t("readError")));
                       reader.readAsDataURL(file);
                     });
                     const { url } = await api.post<{ url: string }>("/app/media", { dataBase64 });
                     setF((current) => ({ ...current, logoUrl: url }));
-                  } catch (err) { setError(errorMessage(err)); } finally { setUploading(false); }
+                  } catch (err) { setError(toErrorMessage(err)); } finally { setUploading(false); }
                 }} />}
               </Field>
-              <Field label="Adresse du logo">{(p) => <Input {...p} value={f.logoUrl ?? ""} onChange={set("logoUrl")} />}</Field>
+              <Field label={t("logoUrl")}>{(p) => <Input {...p} value={f.logoUrl ?? ""} onChange={set("logoUrl")} />}</Field>
             </div>
 
             <div className="grid gap-2 rounded-xl border border-line bg-surface-2/60 p-4">
               <div className="flex items-center justify-between">
-                <p className="text-sm font-medium text-ink">Bannière des cartes Wallet</p>
+                <p className="text-sm font-medium text-ink">{t("banner")}</p>
                 {f.walletBannerUrl && (
                   <button
                     type="button"
                     onClick={() => setF({ ...f, walletBannerUrl: "" })}
                     className="text-xs font-medium text-danger hover:underline"
                   >
-                    Revenir au bandeau automatique
+                    {t("bannerReset")}
                   </button>
                 )}
               </div>
               <p className="text-xs text-ink-3">
-                Visible sous le logo sur iPhone et sous les infos sur Android. Sans image personnalisée, une bannière élégante reprend automatiquement votre nom et votre offre de fidélité.
+                {t("bannerHint")}
               </p>
               <div className="mt-2 aspect-[375/144] w-full max-w-md overflow-hidden rounded-xl border border-line bg-surface shadow-xs">
                 <img
                   src={f.walletBannerUrl || `/api/public/tenants/${f.slug}/wallet-banner.png?v=${encodeURIComponent(`${f.name ?? ""}-${f.primaryColor ?? ""}`)}`}
-                  alt="Bannière des cartes Wallet"
+                  alt={t("banner")}
                   className="size-full object-cover"
                 />
               </div>
               <Input
                 type="file"
+                aria-label={t("bannerUpload")}
                 accept="image/png,image/jpeg,image/webp"
                 disabled={uploading}
                 onChange={async (e) => {
                   const file = e.target.files?.[0];
                   if (!file) return;
-                  if (file.size > 1024 * 1024) { setError("La bannière ne doit pas dépasser 1 Mo."); return; }
+                  if (file.size > 1024 * 1024) { setError(t("bannerTooBig")); return; }
                   setUploading(true); setError(null);
                   try {
                     const dataBase64 = await new Promise<string>((resolve, reject) => {
                       const reader = new FileReader();
                       reader.onload = () => resolve(String(reader.result).split(",")[1] ?? "");
-                      reader.onerror = () => reject(new Error("Lecture impossible"));
+                      reader.onerror = () => reject(new Error(t("readError")));
                       reader.readAsDataURL(file);
                     });
                     const { url } = await api.post<{ url: string }>("/app/media", { dataBase64 });
                     setF((current) => ({ ...current, walletBannerUrl: url }));
-                  } catch (err) { setError(errorMessage(err)); } finally { setUploading(false); }
+                  } catch (err) { setError(toErrorMessage(err)); } finally { setUploading(false); }
                 }}
               />
             </div>
 
-            <Field label="Compte Instagram" hint="Affiché sur les cartes téléchargées (PNG et PDF) de vos clients.">
+            <Field label={t("instagram")} hint={t("instagramHint")}>
               {(p) => <Input {...p} value={f.instagramHandle ?? ""} onChange={set("instagramHandle")} />}
             </Field>
 
             <div className="grid gap-4 sm:grid-cols-3">
-              <Field label="Pays">
+              <Field label={t("country")}>
                 {(p) => (
                   <CountrySelect
                     {...p}
@@ -338,31 +349,37 @@ function SettingsForm({ data }: { data: Tenant }) {
                   />
                 )}
               </Field>
-              <Field label="Devise" hint="Utilisée pour les nouveaux programmes. Les programmes existants conservent leur devise.">
+              <Field label={t("currency")} hint={t("currencyHint")}>
                 {(p) => (
-                  <Select {...p} value={f.currency ?? "CDF"} onChange={set("currency")}>
-                    {SUPPORTED_CURRENCIES.map((c) => (
-                      <option key={c.code} value={c.code}>
-                        {c.label}
+                  <CurrencySelect {...p} value={f.currency ?? "CDF"} onChange={(code) => setF({ ...f, currency: code })} />
+                )}
+              </Field>
+              <Field label={t("customerLanguage")} hint={t("customerLanguageHint")}>
+                {(p) => (
+                  <Select {...p} value={f.locale ?? ""} onChange={set("locale")}>
+                    <option value="">{t("customerLanguageAuto")}</option>
+                    {LOCALES.map((l) => (
+                      <option key={l} value={l} lang={l}>
+                        {LOCALE_NAMES[l]}
                       </option>
                     ))}
                   </Select>
                 )}
               </Field>
-              <Field label="Fuseau horaire">
+              <Field label={t("timezone")}>
                 {(p) => (
                   <Select {...p} value={f.timezone ?? "Africa/Kinshasa"} onChange={set("timezone")}>
-                    <option value="Africa/Kinshasa">Kinshasa</option>
-                    <option value="Africa/Lubumbashi">Lubumbashi</option>
-                    <option value="Europe/Paris">Paris</option>
-                    <option value="Europe/Brussels">Bruxelles</option>
+                    <option value="Africa/Kinshasa">{t("tz.kinshasa")}</option>
+                    <option value="Africa/Lubumbashi">{t("tz.lubumbashi")}</option>
+                    <option value="Europe/Paris">{t("tz.paris")}</option>
+                    <option value="Europe/Brussels">{t("tz.brussels")}</option>
                   </Select>
                 )}
               </Field>
             </div>
-            <Field label="Email de contact">{(p) => <Input {...p} type="email" value={f.contactEmail ?? ""} onChange={set("contactEmail")} />}</Field>
-            <Field label="Politique de confidentialité (URL)" hint="Affichée aux clients lors de l’inscription.">{(p) => <Input {...p} value={f.privacyPolicyUrl ?? ""} onChange={set("privacyPolicyUrl")} />}</Field>
-            {canWrite && <Button type="submit" loading={busy || uploading} className="justify-self-start">Enregistrer</Button>}
+            <Field label={t("contactEmail")}>{(p) => <Input {...p} type="email" value={f.contactEmail ?? ""} onChange={set("contactEmail")} />}</Field>
+            <Field label={t("privacy")} hint={t("privacyHint")}>{(p) => <Input {...p} value={f.privacyPolicyUrl ?? ""} onChange={set("privacyPolicyUrl")} />}</Field>
+            {canWrite && <Button type="submit" loading={busy || uploading} className="justify-self-start">{t("submit")}</Button>}
           </fieldset>
         </form>
       </Panel>

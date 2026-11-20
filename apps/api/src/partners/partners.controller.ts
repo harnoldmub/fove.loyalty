@@ -13,12 +13,13 @@ import {
   Req,
 } from "@nestjs/common";
 import { ApiTags } from "@nestjs/swagger";
-import { Request } from "express";
+import type { Request } from "express";
 import { ZodPipe } from "../common/zod.pipe";
 import { Auth } from "../common/decorators";
 import type { AuthState } from "../common/context";
 import { FinanceRoute, SuperAdminRoute, UserRoute } from "../auth/guards";
 import { PartnersService } from "./partners.service";
+import { requestLocaleOrNull } from "../i18n/locale";
 import {
   partnerApplySchema,
   partnerLeadSchema,
@@ -44,8 +45,8 @@ export class PartnersController {
   // --- ROUTES PUBLIQUES ------------------------------------------------------
 
   @Post("partners/apply")
-  apply(@Body(new ZodPipe(partnerApplySchema)) body: PartnerApplyDto, @Ip() ip: string) {
-    return this.partners.apply(body, ip);
+  apply(@Body(new ZodPipe(partnerApplySchema)) body: PartnerApplyDto, @Ip() ip: string, @Req() req: Request) {
+    return this.partners.apply(body, ip, requestLocaleOrNull(req));
   }
 
   @Get("partners/track/:code")

@@ -4,6 +4,8 @@ import { PrismaService } from "../common/prisma.service";
 import { AuditService } from "../common/audit.service";
 import { EmailService } from "../notifications/email.service";
 import { PlanService } from "./plan.service";
+import { tenantLocale } from "../i18n/locale";
+import { quotaAlertMessage } from "../i18n/emails";
 
 type Reason = "reached" | "blocked";
 
@@ -55,16 +57,9 @@ export class QuotaAlertService {
       const to = tenant?.settings?.contactEmail;
       if (!tenant || !to) return;
       const billingUrl = `${loadConfig().APP_URL}/app/billing`;
-      const subject =
-        reason === "blocked" ? `Un client n'a pas pu rejoindre ${tenant.name}` : `${tenant.name} a atteint ${limit} clients`;
-      const situation =
-        reason === "blocked"
-          ? `Un client vient d'essayer de rejoindre votre programme de fidélité, mais votre offre est limitée à ${limit} clients. Il a vu un message lui indiquant que les inscriptions sont momentanément fermées.`
-          : `Votre programme de fidélité compte désormais ${limit} clients, la limite de votre offre. Les prochaines inscriptions seront refusées.`;
       await this.email.send({
         to,
-        subject,
-        text: `Bonjour,\n\n${situation}\n\nVos clients actuels gardent leurs cartes et leurs points. Pour accueillir de nouveaux clients, passez à une offre supérieure : ${billingUrl}\n\nL'équipe FOVE`,
+        ...quotaAlertMessage(tenantLocale(tenant.settings), { reason, tenantName: tenant.name, limit, billingUrl }),
       });
       await this.audit.log({ tenantId, action: "billing.quota_alert", metadata: { reason, limit } });
     } catch (error) {

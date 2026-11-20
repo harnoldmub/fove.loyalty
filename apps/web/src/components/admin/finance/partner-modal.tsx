@@ -4,7 +4,8 @@ import { useState } from "react";
 import { X, WalletCards } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/field";
-import { api } from "@/lib/api";
+import { useTranslations } from "next-intl";
+import { api, useErrorMessage } from "@/lib/api";
 
 interface PartnerModalProps {
   open: boolean;
@@ -13,6 +14,8 @@ interface PartnerModalProps {
 }
 
 export function PartnerModal({ open, onClose, onCreated }: PartnerModalProps) {
+  const t = useTranslations("admin.finance.partnerModal");
+  const errMsg = useErrorMessage();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -30,7 +33,7 @@ export function PartnerModal({ open, onClose, onCreated }: PartnerModalProps) {
     setError(null);
     const rateFloat = Number.parseFloat(rateStr);
     if (Number.isNaN(rateFloat) || rateFloat < 0 || rateFloat > 100) {
-      setError("Le taux de commission doit être compris entre 0 et 100%");
+      setError(t("invalidRate"));
       return;
     }
 
@@ -46,8 +49,8 @@ export function PartnerModal({ open, onClose, onCreated }: PartnerModalProps) {
       });
       onCreated();
       onClose();
-    } catch (err: any) {
-      setError(err?.message || "Impossible d'enregistrer le partenaire");
+    } catch (err) {
+      setError(errMsg(err));
     } finally {
       setLoading(false);
     }
@@ -63,13 +66,14 @@ export function PartnerModal({ open, onClose, onCreated }: PartnerModalProps) {
               <WalletCards className="size-4" />
             </span>
             <div>
-              <h2 className="font-display text-base font-semibold text-ink">Nouveau Partenaire FOVE</h2>
-              <p className="text-xs text-ink-3">Enregistrer un apporteur d&apos;affaires ou prescripteur</p>
+              <h2 className="font-display text-base font-semibold text-ink">{t("title")}</h2>
+              <p className="text-xs text-ink-3">{t("description")}</p>
             </div>
           </div>
           <button
             type="button"
             onClick={onClose}
+            aria-label={t("close")}
             className="grid size-8 place-items-center rounded-lg text-ink-3 hover:bg-surface-2 hover:text-ink"
           >
             <X className="size-4" />
@@ -85,20 +89,21 @@ export function PartnerModal({ open, onClose, onCreated }: PartnerModalProps) {
         <form onSubmit={handleSubmit} className="mt-4 space-y-4">
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="mb-1 block text-xs font-medium text-ink-2">Nom complet / Contact *</label>
+              <label className="mb-1 block text-xs font-medium text-ink-2">{t("name")}</label>
               <Input
                 required
-                placeholder="Ex : Arnold Kabasele"
+                placeholder={t("namePlaceholder")}
                 value={name}
                 onChange={(e) => setName(e.target.value)}
               />
             </div>
             <div>
-              <label className="mb-1 block text-xs font-medium text-ink-2">Email *</label>
+              <label className="mb-1 block text-xs font-medium text-ink-2">{t("email")}</label>
               <Input
                 required
                 type="email"
-                placeholder="partenaire@domaine.com"
+                placeholder={t("emailPlaceholder")}
+                dir="ltr"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
               />
@@ -107,16 +112,17 @@ export function PartnerModal({ open, onClose, onCreated }: PartnerModalProps) {
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="mb-1 block text-xs font-medium text-ink-2">Code Partenaire unique *</label>
+              <label className="mb-1 block text-xs font-medium text-ink-2">{t("code")}</label>
               <Input
                 required
-                placeholder="Ex : ARNOLD20"
+                placeholder={t("codePlaceholder")}
+                dir="ltr"
                 value={code}
                 onChange={(e) => setCode(e.target.value.toUpperCase())}
               />
             </div>
             <div>
-              <label className="mb-1 block text-xs font-medium text-ink-2">Taux de commission (%) *</label>
+              <label className="mb-1 block text-xs font-medium text-ink-2">{t("rate")}</label>
               <Input
                 required
                 type="number"
@@ -132,17 +138,18 @@ export function PartnerModal({ open, onClose, onCreated }: PartnerModalProps) {
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="mb-1 block text-xs font-medium text-ink-2">Société / Agence (optionnel)</label>
+              <label className="mb-1 block text-xs font-medium text-ink-2">{t("company")}</label>
               <Input
-                placeholder="Ex : Dzyn Agency"
+                placeholder={t("companyPlaceholder")}
                 value={company}
                 onChange={(e) => setCompany(e.target.value)}
               />
             </div>
             <div>
-              <label className="mb-1 block text-xs font-medium text-ink-2">Téléphone (optionnel)</label>
+              <label className="mb-1 block text-xs font-medium text-ink-2">{t("phone")}</label>
               <Input
                 placeholder="+243 / +33 ..."
+                dir="ltr"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
               />
@@ -151,10 +158,10 @@ export function PartnerModal({ open, onClose, onCreated }: PartnerModalProps) {
 
           <div className="mt-6 flex justify-end gap-3 border-t border-line pt-4">
             <Button type="button" variant="ghost" onClick={onClose} disabled={loading}>
-              Annuler
+              {t("cancel")}
             </Button>
             <Button type="submit" variant="primary" disabled={loading}>
-              {loading ? "Création..." : "Enregistrer le partenaire"}
+              {loading ? t("saving") : t("save")}
             </Button>
           </div>
         </form>

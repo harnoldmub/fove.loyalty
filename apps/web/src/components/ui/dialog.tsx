@@ -2,6 +2,7 @@
 
 import * as D from "@radix-ui/react-dialog";
 import { X } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useState, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "./button";
@@ -11,6 +12,7 @@ export const DialogTrigger = D.Trigger;
 export const DialogClose = D.Close;
 
 export function DialogContent({ title, description, children, className }: { title: string; description?: ReactNode; children?: ReactNode; className?: string }) {
+  const t = useTranslations("common.dialog");
   return (
     <D.Portal>
       <D.Overlay className="fixed inset-0 z-50 bg-[rgb(13_20_48/0.45)] backdrop-blur-[2px] data-[state=open]:animate-in" />
@@ -26,7 +28,7 @@ export function DialogContent({ title, description, children, className }: { tit
             <D.Title className="font-display text-xl font-semibold">{title}</D.Title>
             {description ? <D.Description className="text-sm text-ink-2">{description}</D.Description> : <D.Description className="sr-only">{title}</D.Description>}
           </div>
-          <D.Close className="-m-1 rounded-sm p-1 text-ink-3 hover:text-ink" aria-label="Fermer">
+          <D.Close className="-m-1 rounded-sm p-1 text-ink-3 hover:text-ink" aria-label={t("close")}>
             <X className="size-5" />
           </D.Close>
         </div>
@@ -42,13 +44,16 @@ interface ConfirmProps {
   /** Conséquence de l’action, en une phrase. */
   consequence: string;
   confirmLabel: string;
+  /** Libellé du bouton d’annulation ; par défaut `common.dialog.cancel`. */
+  cancelLabel?: string;
   destructive?: boolean;
   onConfirm: () => Promise<unknown>;
   children?: ReactNode;
 }
 
 /** Modale de confirmation du projet (jamais window.confirm). */
-export function ConfirmDialog({ trigger, title, consequence, confirmLabel, destructive, onConfirm, children }: ConfirmProps) {
+export function ConfirmDialog({ trigger, title, consequence, confirmLabel, cancelLabel, destructive, onConfirm, children }: ConfirmProps) {
+  const t = useTranslations("common.dialog");
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   return (
@@ -58,7 +63,7 @@ export function ConfirmDialog({ trigger, title, consequence, confirmLabel, destr
         {children}
         <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
           <Button variant="secondary" onClick={() => setOpen(false)} disabled={busy}>
-            Annuler
+            {cancelLabel ?? t("cancel")}
           </Button>
           <Button
             variant={destructive ? "danger" : "primary"}

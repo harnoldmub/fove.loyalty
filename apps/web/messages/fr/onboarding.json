@@ -1,0 +1,82 @@
+{
+  "meta": {
+    "title": "Configuration"
+  },
+  "steps": {
+    "business": "Votre commerce",
+    "branding": "Logo et couleur",
+    "establishment": "Établissement",
+    "program": "Programme",
+    "reward": "Récompense",
+    "qr": "QR code"
+  },
+  "progress": "Étape {current} sur {total}",
+  "continue": "Continuer",
+  "later": "Reprendre plus tard",
+  "defaults": {
+    "establishment": "Boutique principale",
+    "stampsProgram": "Carte à tampons",
+    "pointsProgram": "Carte à points",
+    "stampsReward": "Produit offert",
+    "pointsReward": "Bon de réduction",
+    "slug": "votre-commerce",
+    "business": "Votre commerce"
+  },
+  "errors": {
+    "logoTooLarge": "Image trop lourde (512 Ko maximum)"
+  },
+  "business": {
+    "title": "Bonjour {name}, présentez votre commerce",
+    "name": "Nom du commerce",
+    "country": "Pays",
+    "city": "Ville",
+    "currency": "Devise de vos ventes",
+    "slug": "Adresse de votre page",
+    "submit": "Créer mon commerce"
+  },
+  "branding": {
+    "title": "Votre logo et votre couleur",
+    "subtitle": "Ils habillent la carte de vos clients et votre page d’inscription.",
+    "logo": "Logo (facultatif)",
+    "logoAlt": "Logo",
+    "change": "Changer l’image",
+    "choose": "Choisir une image PNG, JPEG ou WebP (512 Ko max.)",
+    "color": "Couleur principale"
+  },
+  "establishment": {
+    "title": "Votre point de vente",
+    "subtitle": "Vous pourrez en ajouter d’autres ensuite.",
+    "name": "Nom de l’établissement",
+    "country": "Pays",
+    "city": "Ville"
+  },
+  "program": {
+    "title": "Comment vos clients gagnent-ils ?",
+    "stampsLabel": "Tampons",
+    "stampsText": "Un achat = un tampon. Simple, idéal pour un café, un salon, un snack.",
+    "pointsLabel": "Points",
+    "pointsText": "Les points suivent le montant dépensé. Idéal pour une boutique ou un supermarché.",
+    "spendStep": "Montant pour gagner 1 point ({currency})",
+    "spendStepHint": "Exemple : {amount} {currency} dépensés = 1 point.",
+    "stampsTarget": "Tampons pour une récompense",
+    "submit": "Créer le programme"
+  },
+  "reward": {
+    "title": "La récompense",
+    "stampsText": "Offerte quand la carte atteint {count, plural, one {# tampon} other {# tampons}}.",
+    "pointsText": "Ce que vos clients obtiennent avec leurs points. Vous en ajouterez d’autres plus tard.",
+    "name": "Nom de la récompense",
+    "cost": "Coût en points"
+  },
+  "qr": {
+    "title": "Votre QR code d’inscription",
+    "subtitle": "Affichez-le au comptoir. Vos clients le scannent pour créer leur carte.",
+    "print": "Imprimer",
+    "customerPage": "Voir la page client",
+    "submit": "Ouvrir mon tableau de bord"
+  },
+  "preview": {
+    "label": "Carte de fidélité",
+    "caption": "Aperçu de la carte que vos clients verront sur leur téléphone."
+  }
+}

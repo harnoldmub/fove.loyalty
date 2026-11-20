@@ -5,10 +5,10 @@ import sharp from "sharp";
 import { PrismaService } from "../common/prisma.service";
 import { loadConfig } from "../config";
 import { WalletBannerService } from "./wallet-banner.service";
-import {
-  getClubExplanations,
-  getClubMemberSummary,
-} from "./club-card";
+import { tenantLocale } from "../i18n/locale";
+import { cardLabels, cardTexts, clubName as clubNameFor, getClubExplanations, getClubMemberSummary, memberSince } from "./club-card";
+
+export { memberSince };
 
 function certificate(value: string | undefined, label: string): Buffer {
   if (!value) throw new Error(`${label} manquant.`);
@@ -18,10 +18,6 @@ function certificate(value: string | undefined, label: string): Buffer {
     throw new Error(`${label} invalide.`);
   }
 }
-
-/** « oct. 2026 » : mois et année d'inscription. */
-export const memberSince = (date: Date) =>
-  date.toLocaleDateString("fr-FR", { month: "short", year: "numeric" });
 
 async function passLogoImages(logoBuffer: Buffer | null, tenantName: string, primaryColor: string) {
   let input = logoBuffer;
@@ -75,6 +71,8 @@ export interface AppleWalletCardAccount {
       primaryColor?: string | null;
       logoUrl?: string | null;
       contactEmail?: string | null;
+      locale?: string | null;
+      country?: string | null;
     } | null;
   };
 }
@@ -99,7 +97,9 @@ export class AppleWalletProvider {
       throw new Error("Apple Wallet n'est pas configuré sur ce serveur.");
     }
 
-    const holder = [account.customer.firstName, account.customer.lastName].filter(Boolean).join(" ") || "Membre";
+    const locale = tenantLocale(account.tenant.settings);
+    const labels = cardLabels(locale);
+    const holder = [account.customer.firstName, account.customer.lastName].filter(Boolean).join(" ") || cardTexts(locale).member;
     const primaryColor = account.tenant.settings?.primaryColor ?? "#1F4FFF";
     const isStamps = account.program.mode === "STAMPS";
 
@@ -109,10 +109,10 @@ export class AppleWalletProvider {
     ]);
 
     const target = isStamps ? account.program.stampsTarget : 100;
-    const since = memberSince(account.createdAt);
-    const clubName = account.tenant.name.toLowerCase().includes("club") ? account.tenant.name : `Club ${account.tenant.name}`;
+    const since = memberSince(account.createdAt, locale);
+    const clubName = clubNameFor(account.tenant.name, locale);
 
-    const sections = getClubExplanations(account.tenant.name, isStamps, target);
+    const sections = getClubExplanations(account.tenant.name, isStamps, target, undefined, locale);
     sections.splice(
       1,
       0,
@@ -123,6 +123,7 @@ export class AppleWalletProvider {
         isStamps,
         target,
         since,
+        locale,
       }),
     );
 
@@ -133,7 +134,7 @@ export class AppleWalletProvider {
     if (hasMessage) {
       auxiliaryFields.push({
         key: "message",
-        label: "MESSAGE",
+        label: labels.message,
         value: messageValue,
         changeMessage: "%@",
       });
@@ -148,14 +149,14 @@ export class AppleWalletProvider {
     if (hasMessage) {
       backFields.unshift({
         key: "latestMessageBack",
-        label: account.lastWalletMessageTitle || "Message du commerce",
+        label: account.lastWalletMessageTitle || labels.merchantMessage,
         value: account.lastWalletMessageBody || "",
       });
     }
 
     backFields.push(
-      { key: "number", label: "Numéro de carte", value: account.cardNumber },
-      { key: "website", label: "Page du commerce", value: `${cfg.APP_URL}/${account.tenant.slug}` },
+      { key: "number", label: labels.cardNumber, value: account.cardNumber },
+      { key: "website", label: labels.merchantPage, value: `${cfg.APP_URL}/${account.tenant.slug}` },
     );
 
     const passJson = {
@@ -177,7 +178,7 @@ export class AppleWalletProvider {
         headerFields: [
           {
             key: "balance",
-            label: isStamps ? "PASSAGES" : "POINTS",
+            label: (isStamps ? labels.passages : labels.points).toLocaleUpperCase(locale),
             value: isStamps ? `${Math.min(target, Math.max(0, account.balance))}/${target}` : `${Math.max(0, account.balance)}`,
             changeMessage: `${account.tenant.name} : %@`,
             textAlignment: "PKTextAlignmentRight",
@@ -185,8 +186,8 @@ export class AppleWalletProvider {
         ],
         primaryFields: [],
         secondaryFields: [
-          { key: "holder", label: "MEMBRE", value: holder },
-          { key: "since", label: "MEMBRE DEPUIS", value: since, textAlignment: "PKTextAlignmentRight" },
+          { key: "holder", label: labels.memberUpper, value: holder },
+          { key: "since", label: labels.memberSinceUpper, value: since, textAlignment: "PKTextAlignmentRight" },
         ],
         auxiliaryFields,
         backFields,

@@ -1,6 +1,11 @@
-import { Check, ChevronDown, Loader2, MapPin, Search } from "lucide-react";
-import { useEffect, useId, useMemo, useRef, useState } from "react";
+"use client";
+
+import "flag-icons/css/flag-icons.min.css";
+import { MapPin } from "lucide-react";
+import { useLocale, useTranslations } from "next-intl";
+import { useEffect, useMemo, useState } from "react";
 import { cn } from "@/lib/utils";
+import { normalizeSearch, SearchSelect, type SearchOption } from "./search-select";
 
 export interface CountryOption {
   code: string;
@@ -25,7 +30,8 @@ const ISO_CODES = [
   "VC", "VE", "VN", "VU", "WF", "WS", "YE", "YT", "ZA", "ZM", "ZW",
 ] as const;
 
-const PRIORITY_CODES = ["CD", "CG", "FR", "BE", "CI", "SN", "CM", "GA", "AO", "RW", "CA", "CH", "GB", "US"] as const;
+// Ordre voulu : France, Belgique, Algérie, RD Congo, Maroc, puis le reste de la clientèle.
+export const PRIORITY_CODES = ["FR", "BE", "DZ", "CD", "MA", "TN", "CI", "SN", "CM", "CG", "GA", "CH", "CA", "ES", "GB", "US"] as const;
 
 const COUNTRY_LABELS: Record<string, string> = {
   CD: "RD Congo",
@@ -96,6 +102,10 @@ const COUNTRY_TIMEZONES: Record<string, string> = {
   RW: "Africa/Kigali",
   FR: "Europe/Paris",
   BE: "Europe/Brussels",
+  DZ: "Africa/Algiers",
+  MA: "Africa/Casablanca",
+  TN: "Africa/Tunis",
+  ES: "Europe/Madrid",
   CH: "Europe/Zurich",
   GB: "Europe/London",
   CA: "America/Toronto",
@@ -214,35 +224,27 @@ export function countryFlagEmoji(code: string): string {
   return String.fromCodePoint(...[...upper].map((char) => 0x1f1e6 + char.charCodeAt(0) - 65));
 }
 
+/** Drapeau embarqué (paquet flag-icons) : rien à charger depuis un site tiers. */
 export function Flag({ code, className }: { code: string; className?: string }) {
   const clean = code.trim().toLowerCase();
-  const [failedCode, setFailedCode] = useState<string | null>(null);
-  const imgFailed = failedCode === clean;
-
-  if (imgFailed || !/^[a-z]{2}$/.test(clean)) {
-    return (
-      <span aria-hidden="true" className={cn("inline-flex shrink-0 select-none text-lg leading-none", className)}>
-        {countryFlagEmoji(code)}
-      </span>
-    );
-  }
-
-  return (
-    <img
-      src={`https://flagcdn.com/${clean}.svg`}
-      alt=""
-      aria-hidden="true"
-      onError={() => setFailedCode(clean)}
-      className={cn("h-4 w-[1.35rem] shrink-0 rounded-[2px] object-cover ring-1 ring-black/10", className)}
-    />
-  );
+  if (!/^[a-z]{2}$/.test(clean)) return <span aria-hidden="true" className={cn("inline-block h-4 w-[1.35rem] shrink-0 rounded-[2px] bg-surface-2", className)} />;
+  return <span aria-hidden="true" className={cn(`fi fi-${clean} !h-4 !w-[1.35rem] shrink-0 rounded-[2px] !bg-cover ring-1 ring-black/10`, className)} />;
 }
 
-const normalize = (value: string) =>
-  value
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase();
+/** Pays avec leur nom dans la langue de l'interface, fréquents en tête. */
+export function useCountryOptions(): SearchOption[] {
+  const locale = useLocale();
+  return useMemo(() => {
+    const names = new Intl.DisplayNames([locale], { type: "region" });
+    const label = (code: string) => (locale === "fr" ? labelForCountry(code) : (names.of(code) ?? code));
+    const frequent = PRIORITY_CODES.map((code) => ({ value: code, label: label(code), icon: <Flag code={code} />, frequent: true }));
+    const prioritySet = new Set<string>(PRIORITY_CODES);
+    const others = ISO_CODES.filter((code) => !prioritySet.has(code))
+      .map((code) => ({ value: code, label: label(code), keywords: labelForCountry(code), icon: <Flag code={code} /> }))
+      .sort((a, b) => a.label.localeCompare(b.label, locale));
+    return [...frequent, ...others];
+  }, [locale]);
+}
 
 interface CountrySelectProps {
   id?: string;
@@ -253,181 +255,26 @@ interface CountrySelectProps {
   "aria-describedby"?: string;
 }
 
-/**
- * Sélecteur de pays avec drapeaux et recherche instantanée.
- */
-export function CountrySelect({ id, value, onChange, disabled, ...aria }: CountrySelectProps) {
-  const fallbackId = useId();
-  const baseId = id ?? fallbackId;
-  const listId = `${baseId}-list`;
-  const [open, setOpen] = useState(false);
-  const [query, setQuery] = useState("");
-  const [active, setActive] = useState(0);
-  const root = useRef<HTMLDivElement>(null);
-  const trigger = useRef<HTMLButtonElement>(null);
-  const search = useRef<HTMLInputElement>(null);
-  const list = useRef<HTMLUListElement>(null);
-
-  const selected = useMemo(() => getCountryOption(value) ?? COUNTRY_OPTIONS[0]!, [value]);
-  const filtered = useMemo(() => {
-    const q = normalize(query.trim());
-    if (!q) return COUNTRY_OPTIONS;
-    return COUNTRY_OPTIONS.filter((opt) => normalize(opt.label).includes(q) || opt.code.toLowerCase() === q);
-  }, [query]);
-  const showGroups = !query.trim();
-  const firstOther = filtered.findIndex((opt) => !opt.priority);
-
-  useEffect(() => {
-    if (!open) return;
-    requestAnimationFrame(() => search.current?.focus());
-    const onPointer = (event: PointerEvent) => {
-      if (!root.current?.contains(event.target as Node)) {
-        setOpen(false);
-        setQuery("");
-      }
-    };
-    document.addEventListener("pointerdown", onPointer);
-    return () => document.removeEventListener("pointerdown", onPointer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open]);
-
-  useEffect(() => {
-    if (!open || !list.current) return;
-    const item = list.current.querySelector<HTMLElement>(`[data-index="${active}"]`);
-    if (!item) return;
-    const container = list.current;
-    const itemTop = item.offsetTop;
-    const itemBottom = itemTop + item.offsetHeight;
-    if (itemTop < container.scrollTop) {
-      container.scrollTop = itemTop;
-    } else if (itemBottom > container.scrollTop + container.clientHeight) {
-      container.scrollTop = itemBottom - container.clientHeight;
-    }
-  }, [active, open]);
-
-  function openList() {
-    setActive(Math.max(0, filtered.findIndex((opt) => opt.code === value)));
-    setOpen(true);
-  }
-
-  function close(focusTrigger = true) {
-    setOpen(false);
-    setQuery("");
-    if (focusTrigger) trigger.current?.focus();
-  }
-
-  function choose(code: string) {
-    onChange(code);
-    close();
-  }
-
-  function onSearchKey(event: React.KeyboardEvent) {
-    if (event.key === "ArrowDown") {
-      event.preventDefault();
-      setActive((i) => Math.min(filtered.length - 1, i + 1));
-    } else if (event.key === "ArrowUp") {
-      event.preventDefault();
-      setActive((i) => Math.max(0, i - 1));
-    } else if (event.key === "Home") {
-      setActive(0);
-    } else if (event.key === "End") {
-      setActive(filtered.length - 1);
-    } else if (event.key === "Enter") {
-      event.preventDefault();
-      const option = filtered[active];
-      if (option) choose(option.code);
-    } else if (event.key === "Escape") {
-      event.preventDefault();
-      close();
-    } else if (event.key === "Tab") {
-      close(false);
-    }
-  }
-
+/** Sélecteur de pays avec drapeaux et recherche instantanée. */
+export function CountrySelect(props: CountrySelectProps) {
+  const t = useTranslations("common.country");
+  const options = useCountryOptions();
   return (
-    <div ref={root} className="relative">
-      <button
-        ref={trigger}
-        id={baseId}
-        type="button"
-        disabled={disabled}
-        role="combobox"
-        aria-haspopup="listbox"
-        aria-expanded={open}
-        aria-controls={listId}
-        {...aria}
-        onClick={() => (open ? setOpen(false) : openList())}
-        onKeyDown={(event) => {
-          if (["ArrowDown", "ArrowUp"].includes(event.key)) {
-            event.preventDefault();
-            if (!open) openList();
-          }
-        }}
-        className="flex h-11 w-full items-center gap-2.5 rounded-md bg-surface px-3.5 text-left text-[0.95rem] text-ink shadow-1 transition-shadow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cobalt aria-[invalid=true]:ring-2 aria-[invalid=true]:ring-danger disabled:opacity-60"
-      >
-        <Flag code={selected.code} />
-        <span className="flex-1 truncate">{selected.label}</span>
-        <ChevronDown className={cn("size-4 shrink-0 text-ink-3 transition-transform", open && "rotate-180")} aria-hidden="true" />
-      </button>
-
-      {open && (
-        <div className="absolute inset-x-0 top-full z-[100] mt-1.5 overflow-hidden rounded-[var(--radius)] bg-surface shadow-2 ring-1 ring-line">
-          <div className="flex items-center gap-2 border-b border-line px-3">
-            <Search className="size-4 shrink-0 text-ink-3" aria-hidden="true" />
-            <input
-              ref={search}
-              type="text"
-              value={query}
-              onChange={(e) => { setQuery(e.target.value); setActive(0); }}
-              onKeyDown={onSearchKey}
-              placeholder="Rechercher un pays…"
-              aria-label="Rechercher un pays"
-              aria-controls={listId}
-              aria-activedescendant={filtered[active] ? `${baseId}-${filtered[active].code}` : undefined}
-              autoComplete="off"
-              className="h-10 w-full bg-transparent text-sm text-ink outline-none placeholder:text-ink-3"
-            />
-          </div>
-          <ul ref={list} id={listId} role="listbox" aria-label="Pays" className="max-h-[min(16rem,40dvh)] overflow-y-auto overscroll-contain py-1">
-            {filtered.length === 0 && <li className="px-3.5 py-3 text-sm text-ink-3">Aucun pays trouvé.</li>}
-            {filtered.map((option, index) => (
-              <li key={option.code} role="presentation">
-                {showGroups && index === 0 && option.priority && (
-                  <p className="px-3.5 pt-2 pb-1 text-xs font-semibold text-ink-3">Pays fréquents</p>
-                )}
-                {showGroups && index === firstOther && firstOther > 0 && (
-                  <p className="mt-1 border-t border-line px-3.5 pt-2.5 pb-1 text-xs font-semibold text-ink-3">Tous les pays</p>
-                )}
-                <div
-                  id={`${baseId}-${option.code}`}
-                  role="option"
-                  data-index={index}
-                  aria-selected={option.code === value}
-                  onPointerMove={() => setActive(index)}
-                  onClick={() => choose(option.code)}
-                  className={cn(
-                    "flex cursor-pointer items-center gap-2.5 px-3.5 py-2 text-sm text-ink",
-                    index === active && "bg-surface-2",
-                    option.code === value && "font-semibold",
-                  )}
-                >
-                  <Flag code={option.code} />
-                  <span className="flex-1 truncate">{option.label}</span>
-                  {option.code === value && <Check className="size-4 text-cobalt" aria-hidden="true" />}
-                </div>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-    </div>
+    <SearchSelect
+      {...props}
+      options={options}
+      searchPlaceholder={t("search")}
+      emptyText={t("noResult")}
+      listLabel={t("label")}
+      frequentLabel={t("frequent")}
+      allLabel={t("all")}
+    />
   );
 }
 
 interface CityApiItem {
   name: string;
   admin1?: string;
-  countryCode?: string;
 }
 
 const geocodeCache = new Map<string, CityApiItem[]>();
@@ -444,304 +291,89 @@ interface CitySelectProps {
 }
 
 /**
- * Sélecteur de ville connecté à l'API de géocodage mondiale,
- * avec suggestions locales par pays, autocomplétion temps réel et saisie libre.
+ * Sélecteur de ville : suggestions locales par pays, recherche mondiale
+ * (géocodage Open-Meteo) et saisie libre.
  */
-export function CitySelect({
-  id,
-  countryCode,
-  value,
-  onChange,
-  disabled,
-  placeholder,
-  ...aria
-}: CitySelectProps) {
-  const fallbackId = useId();
-  const baseId = id ?? fallbackId;
-  const listId = `${baseId}-list`;
-  const [open, setOpen] = useState(false);
+export function CitySelect({ countryCode, value, onChange, placeholder, ...rest }: CitySelectProps) {
+  const t = useTranslations("common.city");
+  const locale = useLocale();
   const [query, setQuery] = useState("");
-  const [active, setActive] = useState(0);
-  const [apiCities, setApiCities] = useState<CityApiItem[]>([]);
-  const [apiLoading, setApiLoading] = useState(false);
-  const root = useRef<HTMLDivElement>(null);
-  const trigger = useRef<HTMLButtonElement>(null);
-  const search = useRef<HTMLInputElement>(null);
-  const list = useRef<HTMLUListElement>(null);
+  const [remote, setRemote] = useState<{ key: string; items: CityApiItem[] } | null>(null);
+  const country = countryCode.toUpperCase();
+  const q = query.trim();
+  const key = `${country}:${locale}:${normalizeSearch(q)}`;
 
-  // Villes suggérées par défaut selon le pays choisi
-  const presetCities: CityApiItem[] = useMemo(() => {
-    const list = SUGGESTED_CITIES[countryCode.toUpperCase()] ?? [];
-    const items: CityApiItem[] = list.map((name) => ({
-      name,
-      countryCode: countryCode.toUpperCase(),
-    }));
-    if (value && !items.some((c) => normalize(c.name) === normalize(value))) {
-      items.unshift({ name: value, countryCode: countryCode.toUpperCase() });
-    }
-    return items;
-  }, [countryCode, value]);
-
-  const trimmedQuery = query.trim();
-
-  // Recherche API de villes en temps réel
   useEffect(() => {
-    if (!open || trimmedQuery.length < 2) {
-      setApiCities([]);
-      setApiLoading(false);
-      return;
-    }
-
-    const cacheKey = `${countryCode.toUpperCase()}:${normalize(trimmedQuery)}`;
-    if (geocodeCache.has(cacheKey)) {
-      setApiCities(geocodeCache.get(cacheKey)!);
-      return;
-    }
-
-    let activeFetch = true;
+    if (q.length < 2 || geocodeCache.has(key)) return;
     const controller = new AbortController();
-    setApiLoading(true);
-
     const timer = setTimeout(async () => {
       try {
-        const countryParam = countryCode ? `&country_code=${encodeURIComponent(countryCode.toLowerCase())}` : "";
-        const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(trimmedQuery)}&count=10&language=fr${countryParam}`;
-        const res = await fetch(url, { signal: controller.signal });
-        if (!res.ok) throw new Error("Geocoding API error");
-        const data = await res.json();
-        if (!activeFetch) return;
-
-        const rawResults: any[] = Array.isArray(data?.results) ? data.results : [];
-        const mapped: CityApiItem[] = rawResults.map((r: any) => ({
-          name: r.name,
-          admin1: r.admin1 || r.admin2 || undefined,
-          countryCode: r.country_code?.toUpperCase(),
-        }));
-
-        geocodeCache.set(cacheKey, mapped);
-        setApiCities(mapped);
-      } catch (err: any) {
-        if (err.name !== "AbortError") {
-          setApiCities([]);
-        }
-      } finally {
-        if (activeFetch) setApiLoading(false);
+        const countryParam = country ? `&country_code=${encodeURIComponent(country.toLowerCase())}` : "";
+        const res = await fetch(
+          `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(q)}&count=10&language=${locale}${countryParam}`,
+          { signal: controller.signal },
+        );
+        const data = (await res.json()) as { results?: { name: string; admin1?: string; admin2?: string }[] };
+        const items = (data.results ?? []).map((r) => ({ name: r.name, admin1: r.admin1 ?? r.admin2 }));
+        geocodeCache.set(key, items);
+        setRemote({ key, items });
+      } catch {
+        // Hors ligne ou requête annulée : les suggestions locales suffisent.
       }
     }, 250);
-
     return () => {
-      activeFetch = false;
       controller.abort();
       clearTimeout(timer);
     };
-  }, [open, trimmedQuery, countryCode]);
+  }, [q, key, country, locale]);
 
-  // Fusion intelligente : résultats API prioritaires + suggestions locales
-  const displayedCities = useMemo(() => {
-    const q = normalize(trimmedQuery);
-    if (!q) return presetCities;
-
-    const presetMatches = presetCities.filter((c) => normalize(c.name).includes(q));
+  const options = useMemo(() => {
+    const preset = SUGGESTED_CITIES[country] ?? [];
+    const remoteItems = q.length >= 2 ? (geocodeCache.get(key) ?? (remote?.key === key ? remote.items : [])) : [];
     const seen = new Set<string>();
-    const combined: CityApiItem[] = [];
-
-    // Priorité aux résultats API
-    for (const item of apiCities) {
-      const key = normalize(item.name);
-      if (!seen.has(key)) {
-        seen.add(key);
-        combined.push(item);
-      }
-    }
-
-    // Ajout des correspondances prédéfinies non encore présentes
-    for (const item of presetMatches) {
-      const key = normalize(item.name);
-      if (!seen.has(key)) {
-        seen.add(key);
-        combined.push(item);
-      }
-    }
-
-    return combined;
-  }, [trimmedQuery, presetCities, apiCities]);
-
-  useEffect(() => {
-    if (!open) return;
-    requestAnimationFrame(() => search.current?.focus());
-    const onPointer = (event: PointerEvent) => {
-      if (!root.current?.contains(event.target as Node)) {
-        setOpen(false);
-        setQuery("");
-      }
+    const out: SearchOption[] = [];
+    const push = (name: string, meta?: string) => {
+      const k = normalizeSearch(name);
+      if (seen.has(k)) return;
+      seen.add(k);
+      out.push({ value: name, label: name, meta, icon: <MapPin className="size-4 shrink-0 text-ink-3" aria-hidden="true" /> });
     };
-    document.addEventListener("pointerdown", onPointer);
-    return () => document.removeEventListener("pointerdown", onPointer);
-  }, [open]);
-
-  useEffect(() => {
-    if (!open || !list.current) return;
-    const item = list.current.querySelector<HTMLElement>(`[data-index="${active}"]`);
-    if (!item) return;
-    const container = list.current;
-    const itemTop = item.offsetTop;
-    const itemBottom = itemTop + item.offsetHeight;
-    if (itemTop < container.scrollTop) {
-      container.scrollTop = itemTop;
-    } else if (itemBottom > container.scrollTop + container.clientHeight) {
-      container.scrollTop = itemBottom - container.clientHeight;
+    if (value) push(value);
+    if (q) {
+      remoteItems.forEach((c) => push(c.name, c.admin1));
+      preset.filter((c) => normalizeSearch(c).includes(normalizeSearch(q))).forEach((c) => push(c));
+    } else {
+      preset.forEach((c) => push(c));
     }
-  }, [active, open]);
+    return out;
+  }, [country, key, q, remote, value]);
 
-  function openList() {
-    setActive(Math.max(0, displayedCities.findIndex((c) => normalize(c.name) === normalize(value))));
-    setOpen(true);
-  }
-
-  function close(focusTrigger = true) {
-    setOpen(false);
-    setQuery("");
-    if (focusTrigger) trigger.current?.focus();
-  }
-
-  function choose(cityName: string) {
-    onChange(cityName);
-    close();
-  }
-
-  function onSearchKey(event: React.KeyboardEvent) {
-    if (event.key === "ArrowDown") {
-      event.preventDefault();
-      setActive((i) => Math.min(displayedCities.length - 1, i + 1));
-    } else if (event.key === "ArrowUp") {
-      event.preventDefault();
-      setActive((i) => Math.max(0, i - 1));
-    } else if (event.key === "Home") {
-      setActive(0);
-    } else if (event.key === "End") {
-      setActive(displayedCities.length - 1);
-    } else if (event.key === "Enter") {
-      event.preventDefault();
-      const option = displayedCities[active]?.name ?? trimmedQuery;
-      if (option) choose(option);
-    } else if (event.key === "Escape") {
-      event.preventDefault();
-      close();
-    } else if (event.key === "Tab") {
-      if (trimmedQuery && displayedCities.length === 1 && displayedCities[0]) {
-        onChange(displayedCities[0].name);
-      }
-      close(false);
-    }
-  }
-
-  const hasExactMatch = displayedCities.some((c) => normalize(c.name) === normalize(trimmedQuery));
+  const loading = q.length >= 2 && !geocodeCache.has(key);
 
   return (
-    <div ref={root} className="relative">
-      <button
-        ref={trigger}
-        id={baseId}
-        type="button"
-        disabled={disabled}
-        role="combobox"
-        aria-haspopup="listbox"
-        aria-expanded={open}
-        aria-controls={listId}
-        {...aria}
-        onClick={() => (open ? setOpen(false) : openList())}
-        onKeyDown={(event) => {
-          if (["ArrowDown", "ArrowUp"].includes(event.key)) {
-            event.preventDefault();
-            if (!open) openList();
-          }
-        }}
-        className="flex h-11 w-full items-center gap-2.5 rounded-md bg-surface px-3.5 text-left text-[0.95rem] text-ink shadow-1 transition-shadow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cobalt aria-[invalid=true]:ring-2 aria-[invalid=true]:ring-danger disabled:opacity-60"
-      >
-        <MapPin className="size-4 shrink-0 text-ink-3" aria-hidden="true" />
-        <span className={cn("flex-1 truncate", !value && "text-ink-3")}>
-          {value || placeholder || "Sélectionner une ville"}
-        </span>
-        <ChevronDown className={cn("size-4 shrink-0 text-ink-3 transition-transform", open && "rotate-180")} aria-hidden="true" />
-      </button>
-
-      {open && (
-        <div className="absolute inset-x-0 top-full z-[100] mt-1.5 overflow-hidden rounded-[var(--radius)] bg-surface shadow-2 ring-1 ring-line">
-          <div className="flex items-center gap-2 border-b border-line px-3">
-            {apiLoading ? (
-              <Loader2 className="size-4 shrink-0 animate-spin text-cobalt" aria-hidden="true" />
-            ) : (
-              <Search className="size-4 shrink-0 text-ink-3" aria-hidden="true" />
-            )}
-            <input
-              ref={search}
-              type="text"
-              value={query}
-              onChange={(e) => { setQuery(e.target.value); setActive(0); }}
-              onKeyDown={onSearchKey}
-              aria-label="Rechercher une ville"
-              autoComplete="off"
-              className="h-10 w-full bg-transparent text-sm text-ink outline-none placeholder:text-ink-3"
-            />
-          </div>
-          <ul ref={list} id={listId} role="listbox" aria-label="Ville" className="max-h-[min(15rem,40dvh)] overflow-y-auto overscroll-contain py-1">
-            {displayedCities.length === 0 && !apiLoading && !trimmedQuery && (
-              <li className="px-3.5 py-3 text-sm text-ink-3">Saisissez un nom de ville pour rechercher.</li>
-            )}
-            {displayedCities.map((item, index) => {
-              const isSelected = normalize(item.name) === normalize(value);
-              return (
-                <li key={`${item.name}-${index}`} role="presentation">
-                  <div
-                    role="option"
-                    data-index={index}
-                    aria-selected={isSelected}
-                    onPointerMove={() => setActive(index)}
-                    onClick={() => choose(item.name)}
-                    className={cn(
-                      "flex cursor-pointer items-center justify-between gap-2.5 px-3.5 py-2 text-sm text-ink",
-                      index === active && "bg-surface-2",
-                      isSelected && "font-semibold",
-                    )}
-                  >
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      <MapPin className="size-4 shrink-0 text-ink-3" aria-hidden="true" />
-                      <span className="truncate">
-                        {item.name}
-                        {item.admin1 && (
-                          <span className="ml-1.5 text-xs font-normal text-ink-3">
-                            ({item.admin1})
-                          </span>
-                        )}
-                      </span>
-                    </div>
-                    {isSelected && <Check className="size-4 shrink-0 text-cobalt" aria-hidden="true" />}
-                  </div>
-                </li>
-              );
-            })}
-            {trimmedQuery && !hasExactMatch && (
-              <li role="presentation" className="border-t border-line mt-1 pt-1">
-                <div
-                  role="option"
-                  data-index={displayedCities.length}
-                  onPointerMove={() => setActive(displayedCities.length)}
-                  onClick={() => choose(trimmedQuery)}
-                  className={cn(
-                    "flex cursor-pointer items-center gap-2.5 px-3.5 py-2 text-sm text-ink",
-                    active === displayedCities.length && "bg-surface-2",
-                  )}
-                >
-                  <MapPin className="size-4 shrink-0 text-cobalt" aria-hidden="true" />
-                  <span className="flex-1 truncate">
-                    Utiliser <strong className="font-semibold text-cobalt">« {trimmedQuery} »</strong>
-                  </span>
-                </div>
-              </li>
-            )}
-          </ul>
-        </div>
-      )}
-    </div>
+    <SearchSelect
+      {...rest}
+      value={value}
+      onChange={onChange}
+      options={options}
+      query={query}
+      onQueryChange={setQuery}
+      loading={loading}
+      placeholder={placeholder ?? t("placeholder")}
+      trigger={
+        <>
+          <MapPin className="size-4 shrink-0 text-ink-3" aria-hidden="true" />
+          <span className={cn("flex-1 truncate", !value && "text-ink-3")}>{value || placeholder || t("placeholder")}</span>
+        </>
+      }
+      searchPlaceholder={t("search")}
+      emptyText={t("typeToSearch")}
+      listLabel={t("label")}
+      customOption={(typed) =>
+        options.some((o) => normalizeSearch(o.value) === normalizeSearch(typed))
+          ? null
+          : { value: typed, label: t("useTyped", { value: typed }), icon: <MapPin className="size-4 shrink-0 text-cobalt" aria-hidden="true" /> }
+      }
+    />
   );
 }

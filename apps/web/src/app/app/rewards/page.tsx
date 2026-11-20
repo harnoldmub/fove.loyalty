@@ -1,18 +1,21 @@
 "use client";
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { rewardValueLabel, type RewardKind } from "@fove/shared";
+import type { RewardKind } from "@fove/shared";
 import { Gift, Plus } from "lucide-react";
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { useCan } from "@/components/app/me-context";
+import { useRewardValueLabel } from "@/components/app/use-reward-value";
 import type { Program } from "@/components/app/types";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog, DialogContent, DialogRoot } from "@/components/ui/dialog";
 import { Checkbox, Field, Input, Select, Textarea } from "@/components/ui/field";
 import { Badge, EmptyState, ErrorNote, PageHeader, Panel, Skeleton } from "@/components/ui/misc";
-import { api, errorMessage } from "@/lib/api";
-import { formatDate, formatNumber, unitLabel } from "@/lib/utils";
+import { api, useErrorMessage } from "@/lib/api";
+import { useUnitLabel } from "@/lib/labels";
+import { formatDate, formatNumber } from "@/lib/utils";
 
 interface Reward {
   id: string;
@@ -40,6 +43,9 @@ interface Redemption {
 }
 
 function RewardForm({ reward, programs, onDone }: { reward?: Reward; programs: Program[]; onDone: () => void }) {
+  const toErrorMessage = useErrorMessage();
+  const t = useTranslations("app.rewards.form");
+  const unitLabel = useUnitLabel();
   const qc = useQueryClient();
   const [f, setF] = useState({
     programId: reward?.programId ?? programs[0]?.id ?? "",
@@ -80,12 +86,12 @@ function RewardForm({ reward, programs, onDone }: { reward?: Reward; programs: P
         try {
           if (reward) await api.patch(`/app/rewards/${reward.id}`, body);
           else await api.post("/app/rewards", { ...body, programId: f.programId });
-          toast.success(reward ? "Récompense mise à jour" : "Récompense créée");
+          toast.success(reward ? t("updated") : t("created"));
           qc.invalidateQueries({ queryKey: ["rewards"] });
           qc.invalidateQueries({ queryKey: ["account"] });
           onDone();
         } catch (err) {
-          setError(errorMessage(err));
+          setError(toErrorMessage(err));
         } finally {
           setBusy(false);
         }
@@ -93,7 +99,7 @@ function RewardForm({ reward, programs, onDone }: { reward?: Reward; programs: P
     >
       {error && <ErrorNote>{error}</ErrorNote>}
       {!reward && (
-        <Field label="Programme">
+        <Field label={t("program")}>
           {(p) => (
             <Select {...p} value={f.programId} onChange={(e) => setF({ ...f, programId: e.target.value })}>
               {programs.map((pr) => <option key={pr.id} value={pr.id}>{pr.name}</option>)}
@@ -101,34 +107,38 @@ function RewardForm({ reward, programs, onDone }: { reward?: Reward; programs: P
           )}
         </Field>
       )}
-      <Field label="Nom">{(p) => <Input {...p} value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} />}</Field>
-      <Field label="Type de récompense">
+      <Field label={t("name")}>{(p) => <Input {...p} value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} />}</Field>
+      <Field label={t("kind")}>
         {(p) => <Select {...p} value={f.kind} onChange={(e) => setF({ ...f, kind: e.target.value as RewardKind, value: "" })}>
-          <option value="GIFT">Cadeau ou service offert</option>
-          <option value="PERCENTAGE">Réduction en pourcentage</option>
-          <option value="FIXED">Réduction d’un montant fixe</option>
+          <option value="GIFT">{t("kinds.GIFT")}</option>
+          <option value="PERCENTAGE">{t("kinds.PERCENTAGE")}</option>
+          <option value="FIXED">{t("kinds.FIXED")}</option>
         </Select>}
       </Field>
-      {f.kind !== "GIFT" && <Field label={f.kind === "PERCENTAGE" ? "Réduction (%)" : `Montant de la réduction (${programs.find((p) => p.id === f.programId)?.currency ?? ""})`} hint="Appliquée sur le montant de l’achat, sans dépasser son total. Les utilisations passées restent inchangées.">
+      {f.kind !== "GIFT" && <Field label={f.kind === "PERCENTAGE" ? t("percentage") : t("fixed", { currency: programs.find((p) => p.id === f.programId)?.currency ?? "" })} hint={t("valueHint")}>
         {(p) => <Input {...p} inputMode="decimal" required value={f.value} onChange={(e) => setF({ ...f, value: e.target.value })} />}
       </Field>}
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field label={`Coût (${unitLabel(mode)})`}>{(p) => <Input {...p} type="number" min={1} value={f.cost} onChange={(e) => setF({ ...f, cost: e.target.value })} />}</Field>
-        <Field label="Stock (vide = illimité)">{(p) => <Input {...p} type="number" min={0} value={f.stock} onChange={(e) => setF({ ...f, stock: e.target.value })} />}</Field>
+        <Field label={t("cost", { unit: unitLabel(mode) })}>{(p) => <Input {...p} type="number" min={1} value={f.cost} onChange={(e) => setF({ ...f, cost: e.target.value })} />}</Field>
+        <Field label={t("stock")}>{(p) => <Input {...p} type="number" min={0} value={f.stock} onChange={(e) => setF({ ...f, stock: e.target.value })} />}</Field>
       </div>
-      <Field label="Description">{(p) => <Textarea {...p} value={f.description} onChange={(e) => setF({ ...f, description: e.target.value })} />}</Field>
-      <Field label="Conditions">{(p) => <Input {...p} value={f.conditions} onChange={(e) => setF({ ...f, conditions: e.target.value })} />}</Field>
+      <Field label={t("description")}>{(p) => <Textarea {...p} value={f.description} onChange={(e) => setF({ ...f, description: e.target.value })} />}</Field>
+      <Field label={t("conditions")}>{(p) => <Input {...p} value={f.conditions} onChange={(e) => setF({ ...f, conditions: e.target.value })} />}</Field>
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="Disponible à partir du">{(p) => <Input {...p} type="date" value={f.availableFrom} onChange={(e) => setF({ ...f, availableFrom: e.target.value })} />}</Field>
-        <Field label="Jusqu’au">{(p) => <Input {...p} type="date" value={f.availableUntil} onChange={(e) => setF({ ...f, availableUntil: e.target.value })} />}</Field>
+        <Field label={t("from")}>{(p) => <Input {...p} type="date" value={f.availableFrom} onChange={(e) => setF({ ...f, availableFrom: e.target.value })} />}</Field>
+        <Field label={t("until")}>{(p) => <Input {...p} type="date" value={f.availableUntil} onChange={(e) => setF({ ...f, availableUntil: e.target.value })} />}</Field>
       </div>
-      <Checkbox checked={f.active} onChange={(e) => setF({ ...f, active: e.target.checked })} label="Récompense active" />
-      <Button type="submit" loading={busy} disabled={f.name.trim().length < 2 || !f.cost}>{reward ? "Enregistrer" : "Créer la récompense"}</Button>
+      <Checkbox checked={f.active} onChange={(e) => setF({ ...f, active: e.target.checked })} label={t("active")} />
+      <Button type="submit" loading={busy} disabled={f.name.trim().length < 2 || !f.cost}>{reward ? t("save") : t("submit")}</Button>
     </form>
   );
 }
 
 export default function RewardsPage() {
+  const toErrorMessage = useErrorMessage();
+  const t = useTranslations("app.rewards");
+  const unitLabel = useUnitLabel();
+  const rewardValueLabel = useRewardValueLabel();
   const canWrite = useCan("rewards.write");
   const canCancel = useCan("redemptions.cancel");
   const qc = useQueryClient();
@@ -141,12 +151,12 @@ export default function RewardsPage() {
 
   return (
     <>
-      <PageHeader title="Récompenses" description="Ce que vos clients obtiennent avec leurs points ou tampons." actions={canWrite && programs.length > 0 && <Button onClick={() => setEditing("new")}><Plus /> Nouvelle récompense</Button>} />
+      <PageHeader title={t("title")} description={t("description")} actions={canWrite && programs.length > 0 && <Button onClick={() => setEditing("new")}><Plus /> {t("new")}</Button>} />
       {isLoading ? (
         <Skeleton className="h-40" />
       ) : !rewards?.length ? (
-        <EmptyState icon={<Gift />} title="Aucune récompense" action={canWrite && programs.length > 0 ? <Button onClick={() => setEditing("new")}>Créer une récompense</Button> : undefined}>
-          Sans récompense, vos clients accumulent sans objectif. Commencez par une seule, simple.
+        <EmptyState icon={<Gift />} title={t("empty")} action={canWrite && programs.length > 0 ? <Button onClick={() => setEditing("new")}>{t("create")}</Button> : undefined}>
+          {t("emptyBody")}
         </EmptyState>
       ) : (
         <Panel className="overflow-hidden">
@@ -158,13 +168,13 @@ export default function RewardsPage() {
                   <div className="min-w-0 flex-1">
                     <p className="flex flex-wrap items-center gap-2 font-medium">
                       {r.name}
-                      {!r.active && <Badge>Inactive</Badge>}
-                      {r.stock === 0 && <Badge tone="danger">Épuisée</Badge>}
+                      {!r.active && <Badge>{t("inactive")}</Badge>}
+                      {r.stock === 0 && <Badge tone="danger">{t("soldOut")}</Badge>}
                     </p>
                     <p className="text-sm text-ink-3">
-                      {rewardValueLabel(r, program?.currency ?? tenant?.settings.currency ?? "EUR")} · {program?.name} · {formatNumber(r._count.redemptions)} utilisations
-                      {r.stock !== null && ` · ${r.stock} en stock`}
-                      {r.availableUntil && ` · jusqu’au ${formatDate(r.availableUntil)}`}
+                      {rewardValueLabel(r, program?.currency ?? tenant?.settings.currency ?? "EUR")} · {program?.name} · {t("uses", { count: r._count.redemptions, formatted: formatNumber(r._count.redemptions) })}
+                      {r.stock !== null && ` · ${t("stock", { count: r.stock })}`}
+                      {r.availableUntil && ` · ${t("until", { date: formatDate(r.availableUntil) })}`}
                     </p>
                   </div>
                   <span className="rounded-full bg-stamp-soft px-3 py-1 font-display font-semibold tabular text-stamp-ink dark:text-stamp">
@@ -172,17 +182,17 @@ export default function RewardsPage() {
                   </span>
                   {canWrite && (
                     <div className="flex gap-1">
-                      <Button size="sm" variant="ghost" onClick={() => setEditing(r)}>Modifier</Button>
+                      <Button size="sm" variant="ghost" onClick={() => setEditing(r)}>{t("edit")}</Button>
                       <ConfirmDialog
-                        trigger={<Button size="sm" variant="ghost" className="text-danger">Retirer</Button>}
-                        title={`Retirer « ${r.name} » du catalogue ?`}
-                        consequence="Elle ne sera plus proposée aux clients. Son historique d’utilisation est conservé."
-                        confirmLabel="Retirer la récompense"
+                        trigger={<Button size="sm" variant="ghost" className="text-danger">{t("archive")}</Button>}
+                        title={t("archiveTitle", { name: r.name })}
+                        consequence={t("archiveConsequence")}
+                        confirmLabel={t("archiveConfirm")}
                         destructive
                         onConfirm={async () => {
                           await api.post(`/app/rewards/${r.id}/archive`);
                           qc.invalidateQueries({ queryKey: ["rewards"] });
-                          toast.success("Récompense retirée");
+                          toast.success(t("archived"));
                         }}
                       />
                     </div>
@@ -196,7 +206,7 @@ export default function RewardsPage() {
 
       {redemptions && redemptions.data.length > 0 && (
         <section className="mt-10" aria-labelledby="usages">
-          <h2 id="usages" className="mb-3 font-display text-xl font-semibold">Dernières utilisations</h2>
+          <h2 id="usages" className="mb-3 font-display text-xl font-semibold">{t("recent")}</h2>
           <Panel className="overflow-hidden">
             <ul className="divide-y divide-line">
               {redemptions.data.map((u) => (
@@ -206,22 +216,22 @@ export default function RewardsPage() {
                     <p className="text-sm text-ink-3">{formatDate(u.createdAt, true)}</p>
                   </div>
                   {u.status === "CANCELLED" ? (
-                    <Badge>Annulée</Badge>
+                    <Badge>{t("cancelled")}</Badge>
                   ) : (
                     canCancel && (
                       <ConfirmDialog
-                        trigger={<Button size="sm" variant="ghost">Annuler</Button>}
-                        title="Annuler cette utilisation ?"
-                        consequence={`${formatNumber(u.cost)} seront recrédités sur la carte du client et la récompense remise en stock.`}
-                        confirmLabel="Annuler l’utilisation"
+                        trigger={<Button size="sm" variant="ghost">{t("cancel")}</Button>}
+                        title={t("cancelTitle")}
+                        consequence={t("cancelConsequence", { amount: formatNumber(u.cost) })}
+                        confirmLabel={t("cancelConfirm")}
                         destructive
                         onConfirm={async () => {
                           try {
-                            await api.post(`/app/redemptions/${u.id}/cancel`, { reason: "Annulation depuis le tableau de bord" });
+                            await api.post(`/app/redemptions/${u.id}/cancel`, { reason: t("cancelReason") });
                             qc.invalidateQueries();
-                            toast.success("Utilisation annulée");
+                            toast.success(t("cancelledToast"));
                           } catch (e) {
-                            toast.error(errorMessage(e));
+                            toast.error(toErrorMessage(e));
                           }
                         }}
                       />
@@ -236,7 +246,7 @@ export default function RewardsPage() {
 
       <DialogRoot open={editing !== null} onOpenChange={(o) => !o && setEditing(null)}>
         {editing !== null && (
-          <DialogContent title={editing === "new" ? "Nouvelle récompense" : "Modifier la récompense"}>
+          <DialogContent title={editing === "new" ? t("new") : t("editTitle")}>
             <RewardForm reward={editing === "new" ? undefined : editing} programs={programs} onDone={() => setEditing(null)} />
           </DialogContent>
         )}

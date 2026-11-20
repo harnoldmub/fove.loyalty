@@ -1,0 +1,886 @@
+{
+  "finance": {
+    "audit": {
+      "title": "Financial audit log (tamper-proof)",
+      "description": "Full traceability of every financial action: who recorded an expense, approved a commission or issued a refund.",
+      "search": "Filter by action, admin, entity…",
+      "loading": "Loading audit log…",
+      "empty": "No audit entries found.",
+      "table": {
+        "date": "Date and time",
+        "action": "Operation",
+        "entity": "Target entity",
+        "author": "Performed by",
+        "details": "Details"
+      },
+      "system": "Automated system",
+      "inspect": "Inspect",
+      "detailTitle": "Operation details"
+    },
+    "commissions": {
+      "title": "FOVE partner program and commissions",
+      "description": "Payouts for referrers, introducers and partner agencies.",
+      "newPartner": "New partner",
+      "kpi": {
+        "partners": "Active partners",
+        "partnersHelp": "Referrer network",
+        "pending": "Commissions awaiting payout",
+        "pendingHelp": "To pay to partners",
+        "paid": "Commissions already paid",
+        "paidHelp": "All-time total paid out"
+      },
+      "partnersTitle": "Registered partners",
+      "partnersEmpty": "No partners yet. Click “New partner” to start the program.",
+      "logTitle": "Commission log",
+      "logEmpty": "No commissions generated yet.",
+      "loading": "Loading…",
+      "table": {
+        "partner": "Partner",
+        "code": "Promo / tracking code",
+        "rate": "Rate",
+        "sales": "Sales referred",
+        "earned": "Total earned",
+        "pending": "Pending",
+        "paid": "Already paid",
+        "date": "Date",
+        "invoice": "Invoice / business",
+        "saleAmount": "Sale amount",
+        "due": "Commission due",
+        "status": "Status",
+        "action": "Action"
+      },
+      "status": {
+        "paid": "Paid",
+        "pending": "Pending"
+      },
+      "paying": "Saving…",
+      "markPaid": "Mark as paid",
+      "paidOn": "Paid on {date}"
+    },
+    "customers": {
+      "title": "Customer portfolio and lifetime value (LTV)",
+      "description": "Financial summary for each business: cumulative invoiced and collected amounts, and loyalty.",
+      "search": "Filter by business name, slug or partner…",
+      "loading": "Loading customers…",
+      "empty": "No businesses found.",
+      "table": {
+        "tenant": "Customer business",
+        "plan": "Active plan",
+        "invoiced": "Total invoiced",
+        "collected": "Total collected (LTV)",
+        "payments": "Payments",
+        "first": "First payment",
+        "last": "Last transaction",
+        "partner": "Referring partner",
+        "open": "Details"
+      },
+      "fallbackName": "Business",
+      "free": "Free",
+      "offered": "Complimentary",
+      "direct": "Direct",
+      "openTenant": "Open {name}"
+    },
+    "expenses": {
+      "title": "Operating expenses and costs",
+      "description": "FOVE's actual costs: servers, database, domains, SaaS tools and services.",
+      "add": "Record a cost",
+      "categoryLabel": "Category:",
+      "allCategories": "All categories",
+      "total": "Total costs for the period:",
+      "loading": "Loading expenses…",
+      "empty": "No costs for this selection. Click “Record a cost” to add one.",
+      "table": {
+        "date": "Date",
+        "label": "Label",
+        "supplier": "Supplier",
+        "category": "Category",
+        "amount": "Amount incl. tax",
+        "payment": "Payment",
+        "proof": "Receipt",
+        "actions": "Actions"
+      },
+      "yearly": "Yearly",
+      "monthly": "Monthly",
+      "proofLink": "View receipt",
+      "delete": {
+        "button": "Delete expense “{title}”",
+        "title": "Delete expense “{title}”?",
+        "consequence": "The expense will be removed from the figures and the deletion logged in the audit trail.",
+        "confirm": "Delete"
+      }
+    },
+    "invoices": {
+      "title": "Invoices and accounting documents",
+      "description": "Official invoices issued to businesses and downloadable supporting documents.",
+      "search": "Search by invoice number, business…",
+      "statusFilter": {
+        "ALL": "All",
+        "PAID": "Paid",
+        "OPEN": "Due",
+        "VOID": "Void"
+      },
+      "loading": "Loading invoices…",
+      "empty": "No invoices found.",
+      "table": {
+        "number": "Number",
+        "date": "Issue date",
+        "tenant": "Customer",
+        "subtotal": "Excl. tax",
+        "tax": "VAT",
+        "total": "Total incl. tax",
+        "status": "Status",
+        "document": "Document"
+      },
+      "status": {
+        "paid": "Paid",
+        "open": "Pending"
+      },
+      "system": "System-generated"
+    },
+    "overview": {
+      "title": "Finance and partners hub",
+      "description": "A consolidated, transparent view of FOVE's actual business activity.",
+      "addExpense": "Add expense",
+      "newPartner": "New partner",
+      "monthlyReport": "Monthly report",
+      "loading": "Loading financial data…",
+      "revenue": "Revenue incl. tax",
+      "revenueDetail": "Excl. tax: <strong>{net}</strong> · Taxes: {taxes}",
+      "grossCollected": "Gross actually collected",
+      "providerFees": "Stripe / bank fees:",
+      "netCollected": "Net received in bank",
+      "netCollectedHelp": "After processing fees",
+      "netResult": "Actual net result",
+      "netResultHelp": "Net collected − costs ({expenses}) − commissions",
+      "mrr": "Normalised MRR",
+      "perMonth": "/month",
+      "mrrHelp": "Annual plans spread over 12 months",
+      "arr": "Normalised ARR",
+      "perYear": "/year",
+      "arrHelp": "Annualised value of active subscriptions",
+      "activePaid": "Active paying businesses",
+      "activePaidHelp": "+{count} new · Churn: {churn}",
+      "costs": "Costs and commissions",
+      "costsHelp": "Including {amount} in commissions",
+      "transparencyTitle": "FOVE financial transparency guarantee:",
+      "transparencyBody": "All figures above are computed in real time from Stripe transactions, approved commercial contracts, reconciled operating expenses and financial ledger entries. No figure is simulated or made up. The net result remains provisional until all of the month's costs are reconciled."
+    },
+    "payments": {
+      "title": "Payment flows and transactions",
+      "description": "Transactions straight from providers (Stripe, bank transfers, approved manual payments).",
+      "search": "Search by reference, Stripe ID, business…",
+      "providerLabel": "Provider",
+      "statusLabel": "Status",
+      "providers": {
+        "ALL": "All providers",
+        "MANUAL": "Manual contract",
+        "BANK_TRANSFER": "Bank transfer"
+      },
+      "statusFilter": {
+        "ALL": "All statuses",
+        "SUCCEEDED": "Succeeded",
+        "PENDING": "Pending",
+        "FAILED": "Failed",
+        "REFUNDED": "Refunded"
+      },
+      "loading": "Loading transactions…",
+      "empty": "No payments match the active filters.",
+      "table": {
+        "reference": "Reference",
+        "date": "Confirmed on",
+        "tenant": "Business",
+        "provider": "Provider and method",
+        "gross": "Gross",
+        "fees": "Fees",
+        "net": "FOVE net",
+        "status": "Status",
+        "actions": "Actions"
+      },
+      "card": "card",
+      "status": {
+        "succeeded": "Collected",
+        "refunded": "Refunded",
+        "failed": "Failed"
+      },
+      "refund": "Refund",
+      "refunded": "Refunded: {amount}"
+    },
+    "referrals": {
+      "title": "Referrals and merchant credits",
+      "description": "Credits given to ambassador merchants when they refer other businesses.",
+      "credits": "Total referral credits granted",
+      "creditsHelp": "Deducted from subscription invoices",
+      "count": "Referrals recorded",
+      "countHelp": "Businesses created through a referral",
+      "loading": "Loading referrals…",
+      "empty": "No referrals yet.",
+      "table": {
+        "date": "Date",
+        "referrer": "Referring merchant",
+        "referred": "Referred merchant",
+        "credit": "Credit granted",
+        "status": "Status"
+      },
+      "status": {
+        "applied": "Applied",
+        "pending": "Pending"
+      }
+    },
+    "refunds": {
+      "title": "Refunds and disputes",
+      "description": "History of refunds granted, payment disputes and chargebacks.",
+      "loading": "Loading refunds…",
+      "empty": "No refunds or disputes.",
+      "table": {
+        "date": "Date",
+        "reference": "Payment reference",
+        "tenant": "Business",
+        "initial": "Original amount",
+        "refunded": "Amount refunded",
+        "status": "Status"
+      },
+      "status": "Refunded"
+    },
+    "reports": {
+      "title": "Partner financial reports",
+      "description": "Monthly analytical summary for Sid Ali, Arnold and the partners.",
+      "print": "Print / export to PDF",
+      "select": "Select statement:",
+      "month": "Month",
+      "year": "Year",
+      "loading": "Generating report…",
+      "tagline": "Digital loyalty card and wallet platform",
+      "badge": "PARTNER REPORT",
+      "currency": "Reference currency: {currency}",
+      "statementTitle": "Operating statement and result for the period",
+      "lines": {
+        "revenueHt": "1. Revenue invoiced (excl. tax)",
+        "taxes": "VAT / taxes collected",
+        "revenueTtc": "Total invoiced incl. tax",
+        "gross": "2. Actual receipts (gross)",
+        "fees": "Less: provider fees (Stripe / banks)",
+        "refunds": "Less: customer refunds issued",
+        "net": "Net actually available",
+        "expenses": "3. Actual operating expenses (servers, database, SaaS)",
+        "commissions": "Less: FOVE partner commissions due",
+        "result": "NET RESULT FOR THE MONTH (provisional)"
+      },
+      "saasTitle": "SaaS and recurring revenue metrics",
+      "mrr": "Normalised MRR",
+      "arr": "Annualised ARR",
+      "activePaid": "Active paying businesses",
+      "newSubs": "New subscriptions",
+      "certified": "Statement certified against the accounting data and bank transactions recorded as of {date}.",
+      "signature": "Signature of management / partner",
+      "visa": "Approval of the finance lead"
+    },
+    "sales": {
+      "title": "Sales and billing log",
+      "description": "All closed sales, renewals, issued invoices and related receipts.",
+      "search": "Search by business, invoice no., email…",
+      "statusLabel": "Status:",
+      "statusFilter": {
+        "ALL": "All",
+        "PAID": "Paid",
+        "OPEN": "Pending",
+        "VOID": "Void"
+      },
+      "loading": "Loading sales…",
+      "empty": "No sales match the selected criteria.",
+      "table": {
+        "number": "Invoice no.",
+        "date": "Date",
+        "tenant": "Business",
+        "plan": "FOVE plan",
+        "subtotal": "Excl. tax",
+        "paid": "Paid incl. tax",
+        "payment": "Payment",
+        "partner": "Partner",
+        "status": "Status",
+        "action": "Action"
+      },
+      "custom": "Custom",
+      "card": "card",
+      "direct": "Direct",
+      "status": {
+        "paid": "Paid",
+        "open": "Pending"
+      },
+      "viewInvoice": "View invoice",
+      "detail": {
+        "title": "Sale details",
+        "close": "Close",
+        "tenant": "Business",
+        "id": "ID: {id}",
+        "slug": "Slug: {slug}",
+        "breakdown": "Financial breakdown",
+        "subtotal": "Amount excl. tax",
+        "tax": "Taxes and VAT",
+        "discount": "Discounts / credits",
+        "total": "Total invoiced incl. tax",
+        "paid": "Amount paid",
+        "transactions": "Related transactions",
+        "provider": "Provider: {provider} · Status: <strong>{status}</strong>",
+        "fees": "Fees: {fee} · Net received: <strong>{net}</strong>",
+        "download": "Download original invoice"
+      }
+    },
+    "subscriptions": {
+      "title": "Subscriptions and recurring revenue (MRR / ARR)",
+      "description": "Contracts, annual renewals, due dates and normalised revenue.",
+      "mrr": "Consolidated MRR",
+      "perMonth": "/month",
+      "mrrHelp": "Annual plans divided by 12",
+      "arr": "Consolidated ARR",
+      "perYear": "/year",
+      "arrHelp": "Annualised contract revenue",
+      "paying": "Paid subscriptions",
+      "payingHelp": "{count, plural, one {Out of # active contract} other {Out of # active contracts}}",
+      "trialing": "Active trials",
+      "trialingHelp": "Potential paid conversions",
+      "loading": "Loading subscriptions…",
+      "empty": "No subscriptions found.",
+      "table": {
+        "tenant": "Business",
+        "plan": "Plan",
+        "billing": "Billing",
+        "price": "Contract price",
+        "mrr": "Normalised MRR",
+        "nextDue": "Next due date",
+        "provider": "Provider",
+        "status": "Status"
+      },
+      "yearly": "Yearly (1 year)",
+      "monthly": "Monthly",
+      "free": "Free",
+      "cancelScheduled": "Cancellation scheduled",
+      "trialUntil": "Trial until {date}",
+      "manual": "Direct contract",
+      "status": {
+        "ACTIVE": "Active",
+        "TRIALING": "Trial",
+        "PAST_DUE": "Past due",
+        "CANCELED": "Cancelled"
+      }
+    },
+    "treasury": {
+      "title": "Treasury and bank reconciliation",
+      "description": "Available net cash, Stripe balances and entry checks.",
+      "cash": "Available net cash",
+      "cashHelp": "Net receipts − costs paid",
+      "stripe": "Estimated Stripe balance",
+      "stripeHelp": "Available for bank transfer",
+      "collected": "Total net receipts",
+      "collectedHelp": "All sources combined",
+      "spent": "Total outflows",
+      "spentHelp": "Expenses + commissions paid",
+      "noteTitle": "Strict bank reconciliation:",
+      "noteBody": "Cash balances are checked against FOVE's actual bank statements. Every Stripe transaction or direct contract is linked to an income account to prevent any cash discrepancy.",
+      "loading": "Loading treasury…",
+      "empty": "No manual bank entries. The balance reflects automated Stripe and contract flows.",
+      "table": {
+        "date": "Date",
+        "reference": "Reference",
+        "label": "Bank description",
+        "amount": "Amount",
+        "status": "Reconciliation status"
+      },
+      "reconciled": "Reconciled ({type})",
+      "unreconciled": "To reconcile"
+    },
+    "common": {
+      "notAvailable": "n/a"
+    },
+    "nav": {
+      "ariaLabel": "Finance sections",
+      "tabs": {
+        "overview": "Overview",
+        "sales": "Sales",
+        "payments": "Payments",
+        "subscriptions": "Subscriptions",
+        "customers": "Customers",
+        "invoices": "Invoices",
+        "commissions": "Partners",
+        "expenses": "Expenses",
+        "treasury": "Treasury",
+        "reports": "Partner reports",
+        "audit": "Audit"
+      }
+    },
+    "filter": {
+      "period": "Period:",
+      "currency": "Currency:",
+      "periods": {
+        "today": "Today",
+        "yesterday": "Yesterday",
+        "7d": "7 days",
+        "30d": "30 days",
+        "month": "This month",
+        "last_month": "Last month",
+        "quarter": "This quarter",
+        "year": "This year",
+        "all": "All time"
+      }
+    },
+    "partnerModal": {
+      "title": "New FOVE partner",
+      "description": "Register a referrer or business introducer",
+      "close": "Close",
+      "invalidRate": "The commission rate must be between 0 and 100%.",
+      "name": "Full name / contact *",
+      "namePlaceholder": "e.g. Arnold Kabasele",
+      "email": "Email *",
+      "emailPlaceholder": "partner@domain.com",
+      "code": "Unique partner code *",
+      "codePlaceholder": "e.g. ARNOLD20",
+      "rate": "Commission rate (%) *",
+      "company": "Company / agency (optional)",
+      "companyPlaceholder": "e.g. Dzyn Agency",
+      "phone": "Phone (optional)",
+      "cancel": "Cancel",
+      "saving": "Creating…",
+      "save": "Save partner"
+    },
+    "refundModal": {
+      "title": "Issue a refund",
+      "reference": "Ref: {reference}",
+      "close": "Close",
+      "invalidAmount": "Invalid amount.",
+      "tooHigh": "The refund can't exceed {amount}.",
+      "reasonRequired": "A refund reason is required.",
+      "customer": "Customer:",
+      "unknown": "Unknown",
+      "totalPaid": "Total paid:",
+      "refundable": "Available to refund:",
+      "amount": "Amount to refund (leave empty for a full refund)",
+      "reason": "Required reason (audit trail) *",
+      "reasonPlaceholder": "e.g. customer request, cancelled during trial…",
+      "cancel": "Cancel",
+      "saving": "Processing…",
+      "save": "Confirm refund"
+    },
+    "expenseModal": {
+      "title": "Record an expense",
+      "description": "Add an actual operating cost",
+      "close": "Close",
+      "invalidAmount": "The amount must be greater than zero.",
+      "label": "Expense label *",
+      "labelPlaceholder": "e.g. Railway server hosting",
+      "supplier": "Supplier / vendor *",
+      "supplierPlaceholder": "e.g. Railway Inc.",
+      "category": "Cost category *",
+      "currency": "Currency",
+      "amount": "Amount incl. tax *",
+      "date": "Date incurred *",
+      "paymentMethod": "Payment method",
+      "paymentMethodPlaceholder": "e.g. card, bank transfer",
+      "proof": "Receipt / invoice link (optional)",
+      "recurring": "Recurring cost (monthly or yearly subscription)",
+      "monthly": "Monthly",
+      "yearly": "Yearly",
+      "cancel": "Cancel",
+      "saving": "Saving…",
+      "save": "Save expense"
+    },
+    "expenseCategories": {
+      "HOSTING": "Hosting (Railway / cloud)",
+      "DATABASE": "Database (Neon Postgres)",
+      "EMAILS": "Transactional emails (Resend / Brevo)",
+      "DOMAINS": "Domain names / DNS",
+      "SAAS": "Tools and SaaS (GitHub, Sentry, Notion)",
+      "MARKETING": "Marketing and PR",
+      "ADS": "Advertising (Meta, Google, TikTok)",
+      "DEV": "Development and infrastructure",
+      "FREELANCE": "Freelance / design work",
+      "BANK_FEES": "Bank and account fees",
+      "LEGAL": "Accounting, legal and lawyers",
+      "OFFICE": "Equipment and office supplies",
+      "OTHER": "Other costs"
+    },
+    "charts": {
+      "timeTitle": "Over time",
+      "timeDescription": "Actual receipts and expenses incurred",
+      "collected": "Receipts",
+      "expenses": "Expenses",
+      "invoiced": "Invoiced",
+      "hoverCollected": "Collected:",
+      "hoverExpenses": "Expenses:",
+      "hoverNet": "Net:",
+      "hoverHint": "Hover over a bar to see that day's details",
+      "empty": "No transactions in the selected period",
+      "planTitle": "Revenue by plan",
+      "planDescription": "Breakdown of invoiced sales",
+      "planEmpty": "No plans invoiced in this period",
+      "expenseTitle": "Expense categories",
+      "expenseDescription": "Breakdown of costs incurred",
+      "expenseEmpty": "No expenses recorded in this period"
+    }
+  },
+  "tenant": {
+    "back": "Businesses",
+    "createdOn": "created on {date}",
+    "publicPage": "Public page",
+    "support": {
+      "button": "Support access",
+      "title": "Open support access",
+      "description": "Read-only, 30 minutes, reason required. Access is recorded in the business's log.",
+      "reason": "Reason",
+      "reasonHint": "e.g. ticket number, merchant request.",
+      "submit": "Open read-only access"
+    },
+    "status": {
+      "reactivate": "Reactivate",
+      "suspend": "Suspend",
+      "reactivateTitle": "Reactivate this business?",
+      "suspendTitle": "Suspend this business?",
+      "reactivateConsequence": "Their team gets access back immediately.",
+      "suspendConsequence": "Their team, API keys and public pages are blocked. No data is deleted.",
+      "defaultReactivate": "Reactivation",
+      "defaultSuspend": "Administrative suspension",
+      "reason": "Reason (logged)"
+    },
+    "suspendedBadge": "Suspended: {reason}",
+    "activity": {
+      "title": "Activity",
+      "customers": "Customers",
+      "accounts": "Cards",
+      "transactions": "Transactions",
+      "programs": "Programs",
+      "establishments": "Locations"
+    },
+    "subscription": {
+      "title": "Subscription",
+      "none": "No subscription",
+      "trialUntil": ", trial until {date}",
+      "until": ", until {date}",
+      "contract": ", contract {price}/year"
+    },
+    "subStatus": {
+      "TRIALING": "trial",
+      "ACTIVE": "active",
+      "PAST_DUE": "payment failed",
+      "CANCELED": "cancelled",
+      "INCOMPLETE": "pending"
+    },
+    "provider": {
+      "STRIPE": "Stripe",
+      "MOCK": "simulated",
+      "MANUAL": "manual"
+    },
+    "role": {
+      "OWNER": "Owner",
+      "MANAGER": "Manager",
+      "CASHIER": "Cashier",
+      "VIEWER": "Viewer"
+    },
+    "team": {
+      "title": "Team",
+      "empty": "No team members yet."
+    },
+    "brand": {
+      "title": "Identity and brand",
+      "logo": "Official logo",
+      "open": "Open",
+      "noLogo": "No logo uploaded",
+      "color": "Primary colour",
+      "countryCurrency": "Country and currency",
+      "email": "Contact email",
+      "banner": "Custom Wallet banner"
+    },
+    "structure": {
+      "title": "Structure and locations",
+      "establishments": "Shops and locations",
+      "programs": "Loyalty programs",
+      "points": "Points",
+      "stamps": "{count, plural, one {# stamp} other {# stamps}}"
+    },
+    "volume": {
+      "title": "Active volume",
+      "privacy": "Strict B2B confidentiality",
+      "customers": "Registered customers",
+      "accounts": "Active cards",
+      "transactions": "Checkout visits",
+      "notice": "In line with the GDPR and trade secrecy, end customers' identities, contact details and balances belong exclusively to <strong>{name}</strong> and cannot be viewed by FOVE administrators."
+    },
+    "audit": {
+      "title": "Audit log",
+      "empty": "No actions recorded."
+    },
+    "form": {
+      "unlimited": "unlimited",
+      "saved": "Subscription updated",
+      "proActivated": "Pro subscription activated",
+      "plan": "Plan",
+      "status": "Status",
+      "statuses": {
+        "ACTIVE": "Active (manual)",
+        "TRIALING": "Trial",
+        "CANCELED": "Cancelled"
+      },
+      "end": "Contract end",
+      "endHint": "Empty = no end date. On that date the business moves back to the Free plan.",
+      "price": "Annual contract price (USD)",
+      "priceHint": "Billed outside Stripe, counted in revenue.",
+      "quotas": "Negotiated quotas (empty = plan defaults, “{unlimited}” allowed)",
+      "quota": {
+        "customers": "Customers",
+        "establishments": "Locations",
+        "staff": "Team members",
+        "programs": "Programs"
+      },
+      "pro": {
+        "button": "Switch to Pro",
+        "title": "Activate the Pro subscription?",
+        "consequence": "The Business plan will be activated manually right away, with no Stripe payment.",
+        "confirm": "Activate Pro"
+      },
+      "advanced": {
+        "button": "Apply advanced settings",
+        "title": "Change the subscription manually?",
+        "consequence": "The subscription is replaced without going through Stripe: free period, trial or custom contract. Quotas and price left empty are removed.",
+        "stripeWarning": "The current Stripe subscription will be cancelled immediately with no automatic refund: refund the remaining period from Stripe if needed.",
+        "confirm": "Apply"
+      }
+    }
+  },
+  "home": {
+    "title": "Businesses",
+    "description": "All businesses on the platform.",
+    "stats": {
+      "tenants": "Businesses",
+      "tenantsHelp": "{count, plural, one {# new in 30 days} other {# new in 30 days}}",
+      "paying": "Paying",
+      "payingHelp": "{free, number} on Free · {trialing, number} on trial",
+      "cards": "Cards",
+      "cardsHelp": "{count, plural, one {# transaction in 30 days} other {# transactions in 30 days}}",
+      "suspended": "Suspended",
+      "suspendedHelp": "access blocked"
+    },
+    "mrrNote": "Monthly billed revenue (Stripe and custom contracts): <strong>{amount}</strong>. Trials, the Free plan and simulated subscriptions are not counted.",
+    "searchLabel": "Search for a business",
+    "searchPlaceholder": "Name, address or a member’s email",
+    "noPlan": "No plan",
+    "customersCount": "{count, plural, one {# customer} other {# customers}}",
+    "badges": {
+      "suspended": "Suspended",
+      "trial": "Trial",
+      "paid": "Paid",
+      "active": "Active",
+      "none": "None"
+    },
+    "table": {
+      "tenant": "Business",
+      "plan": "Plan",
+      "customers": "Customers",
+      "cards": "Cards",
+      "team": "Team",
+      "createdAt": "Created on",
+      "actions": "Actions"
+    },
+    "open": "Open",
+    "openNamed": "Open {name}"
+  },
+  "messages": {
+    "updated": "Message updated",
+    "title": "Messages and leads",
+    "descriptionPending": "Requests received from the website. {count, number} to handle.",
+    "description": "Demo requests and messages received from the website.",
+    "filterLabel": "Filter by status",
+    "filters": {
+      "ALL": "All messages",
+      "NEW": "New",
+      "IN_PROGRESS": "In progress",
+      "CONTACTED": "Handled",
+      "ARCHIVED": "Archived"
+    },
+    "loading": "Loading messages...",
+    "empty": "No messages found for this filter.",
+    "defaultSubject": "Information request",
+    "status": {
+      "NEW": "New",
+      "IN_PROGRESS": "In progress",
+      "CONTACTED": "Handled",
+      "ARCHIVED": "Archived"
+    },
+    "receivedOn": "Received on {date}",
+    "mailSubject": "Following up on your FOVE request",
+    "sendEmail": "Send an email",
+    "whatsapp": "WhatsApp chat",
+    "message": "Message",
+    "changeStatus": "Change status",
+    "notes": "Internal notes (sales team)",
+    "saveNote": "Save note",
+    "selectHint": "Select a message in the list to read it and reply."
+  },
+  "partners": {
+    "title": "Partner program",
+    "description": "Applications, active partners and affiliate program settings.",
+    "create": "New partner",
+    "kpi": {
+      "pendingApplications": "Pending applications",
+      "pendingApplicationsHelp": "To review",
+      "activePartners": "Partners",
+      "activePartnersHelp": "Approved, active or suspended",
+      "pendingCommissions": "Commissions due",
+      "pendingCommissionsHelp": "Awaiting transfer",
+      "paidCommissions": "Commissions paid",
+      "paidCommissionsHelp": "Total already paid"
+    },
+    "tabs": {
+      "applications": "Applications ({count})",
+      "partners": "Partners ({count})",
+      "settings": "Settings"
+    },
+    "applications": {
+      "empty": "No pending applications.",
+      "pending": "Pending",
+      "profile": "Profile:",
+      "area": "Area:",
+      "network": "Network:",
+      "notSpecified": "Not specified",
+      "code": "Code:",
+      "strategy": "Promotion strategy",
+      "website": "View website",
+      "approve": "Approve"
+    },
+    "partners": {
+      "searchLabel": "Search for a partner",
+      "searchPlaceholder": "Name, email, code or company",
+      "empty": "No partners found.",
+      "table": {
+        "partner": "Partner",
+        "code": "Code",
+        "rate": "Rate",
+        "clicks": "Clicks",
+        "conversions": "Conversions",
+        "status": "Status",
+        "actions": "Actions"
+      },
+      "rateButton": "Rate",
+      "reactivate": "Reactivate",
+      "suspend": "Suspend"
+    },
+    "status": {
+      "active": "Active",
+      "suspended": "Suspended"
+    },
+    "toggle": {
+      "suspendTitle": "Suspend {name}?",
+      "suspendConsequence": "Their link will stop earning commissions while they are suspended.",
+      "reactivateTitle": "Reactivate {name}?",
+      "reactivateConsequence": "Their link will start earning commissions again."
+    },
+    "settings": {
+      "title": "Program settings",
+      "description": "Default settings applied to every partner.",
+      "defaultRate": "Default commission rate",
+      "cookieDays": "Attribution window (cookie)",
+      "validationDelay": "Validation delay",
+      "minimumPayout": "Minimum payout threshold",
+      "days": "{count, plural, one {# day} other {# days}}"
+    },
+    "reject": {
+      "button": "Reject",
+      "title": "Reject {name}'s application?",
+      "consequence": "The applicant will be told and won't be able to use their code.",
+      "confirm": "Reject",
+      "reasonLabel": "Reason (optional)",
+      "defaultReason": "Application not accepted"
+    },
+    "rate": {
+      "title": "Commission rate for {name}",
+      "description": "Percentage paid on each payment attributed to this partner.",
+      "label": "Rate (%)",
+      "cancel": "Cancel",
+      "save": "Save",
+      "invalid": "Enter a rate between 0 and 100."
+    }
+  },
+  "layout": {
+    "title": "Administration",
+    "titleTemplate": "%s · FOVE Administration"
+  },
+  "shell": {
+    "badge": "Admin",
+    "menuLabel": "Administration menu",
+    "merchantSpace": "My merchant space",
+    "logout": "Log out",
+    "openMenu": "Open menu",
+    "closeMenu": "Close menu",
+    "groups": {
+      "finance": "Finance & Partners",
+      "businesses": "Businesses",
+      "sales": "Sales relations",
+      "configuration": "Configuration"
+    },
+    "nav": {
+      "overview": "Overview",
+      "sales": "Sales & Revenue",
+      "payments": "Payments & Flows",
+      "subscriptions": "Subscriptions & MRR",
+      "customers": "Paying customers",
+      "invoices": "Invoices & Documents",
+      "partners": "Partner program",
+      "expenses": "Expenses & Costs",
+      "treasury": "Treasury & Bank",
+      "reports": "Partner reports",
+      "audit": "Audit log",
+      "tenants": "Businesses",
+      "messages": "Messages and leads",
+      "plans": "Plans and subscriptions",
+      "system": "Integrations and errors"
+    }
+  },
+  "system": {
+    "title": "Integrations and errors",
+    "integrations": "Integrations",
+    "noIntegrations": "No integrations configured.",
+    "status": {
+      "error": "Error",
+      "ok": "OK",
+      "never": "Never synced"
+    },
+    "lastSync": "Last synced on {date}",
+    "syncError": "{id}: {error}",
+    "recentErrors": "Recent server errors",
+    "noErrors": "No errors recorded.",
+    "errorMeta": "{date} · request {requestId}"
+  },
+  "plans": {
+    "title": "Plans",
+    "description": "Prices, quotas and features. Changes apply immediately to the website and to business entitlements.",
+    "subscriptionsCount": "{count, plural, one {# subscription} other {# subscriptions}}",
+    "kind": {
+      "FREE": "Default plan",
+      "PAID": "Purchasable online",
+      "CUSTOM": "On quote, assigned by the admin"
+    },
+    "name": "Name",
+    "descriptionLabel": "Description",
+    "yearlyPrice": "Yearly price ({currency})",
+    "yearlyPriceHint": "For new subscriptions.",
+    "stripePriceId": "Stripe price ID",
+    "trialDays": "Trial days",
+    "trialDaysHint": "Default length of a trial granted from the business page.",
+    "quotas": "Quotas (empty = unlimited)",
+    "limits": {
+      "customers": "Customers",
+      "establishments": "Locations",
+      "staff": "Staff members",
+      "programs": "Programs"
+    },
+    "features": "Included features",
+    "featureLabels": {
+      "api": "API and webhooks",
+      "widget": "Widget",
+      "integrations": "Online store",
+      "exports": "Exports",
+      "walletCampaigns": "Wallet campaigns",
+      "whatsappAuto": "Automatic WhatsApp",
+      "removeBranding": "No FOVE branding"
+    },
+    "onSale": "Plan offered for sale",
+    "saved": "Plan saved",
+    "save": "Save {name}"
+  }
+}

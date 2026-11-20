@@ -1,22 +1,20 @@
 import type { Metadata, Viewport } from "next";
 import Script from "next/script";
-import { Bricolage_Grotesque, Figtree } from "next/font/google";
+import { Bricolage_Grotesque, Figtree, IBM_Plex_Sans_Arabic } from "next/font/google";
+import { NextIntlClientProvider } from "next-intl";
+import { getMessages, getTranslations } from "next-intl/server";
 import { CookieConsent } from "@/components/cookie-consent";
 import { Providers } from "@/components/providers";
-import { defaultKeywords, siteUrl } from "@/lib/og";
+import { isRtl } from "@/i18n/config";
+import { resolveLocale } from "@/i18n/request";
+import { asList, defaultKeywords, siteUrl } from "@/lib/og";
 import "./globals.css";
 
 const bricolage = Bricolage_Grotesque({ subsets: ["latin"], variable: "--font-bricolage", display: "swap" });
 const figtree = Figtree({ subsets: ["latin"], variable: "--font-figtree", display: "swap" });
+// Bricolage et Figtree n'ont pas de glyphes arabes : relais pour la version arabe.
+const arabic = IBM_Plex_Sans_Arabic({ subsets: ["arabic"], weight: ["400", "500", "600", "700"], variable: "--font-arabic", display: "swap" });
 
-const ogBanner = {
-  url: `${siteUrl}/opengraph-image`,
-  secureUrl: `${siteUrl}/opengraph-image`,
-  type: "image/png",
-  width: 1200,
-  height: 630,
-  alt: "FOVE — Plateforme de fidélisation et force de vente retail",
-};
 
 const shareImage = {
   url: `${siteUrl}/share-icon.png`,
@@ -27,49 +25,52 @@ const shareImage = {
   alt: "FOVE",
 };
 
-export const metadata: Metadata = {
-  metadataBase: new URL(siteUrl),
-  title: { default: "FOVE — Transformez vos clients en habitués | Carte de fidélité numérique & CRM", template: "%s · FOVE" },
-  description:
-    "Plateforme de fidélisation et force de vente retail : cartes de fidélité numériques (Apple & Google Wallet), QR codes en caisse, points ou tampons, CRM RFM et relances WhatsApp. Sans application à installer.",
-  applicationName: "FOVE",
-  authors: [{ name: "Dizayna", url: siteUrl }],
-  creator: "Dizayna",
-  publisher: "Dizayna",
-  category: "business",
-  keywords: defaultKeywords,
-  manifest: "/manifest.webmanifest",
-  robots: {
-    index: true,
-    follow: true,
-    googleBot: {
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("marketing.meta");
+  return {
+    metadataBase: new URL(siteUrl),
+    title: { default: t("root.title"), template: "%s · FOVE" },
+    description: t("root.description"),
+    applicationName: "FOVE",
+    authors: [{ name: "Dizayna", url: siteUrl }],
+    creator: "Dizayna",
+    publisher: "Dizayna",
+    category: "business",
+    keywords: asList<string>(t.raw("keywords")).length ? asList<string>(t.raw("keywords")) : defaultKeywords,
+    manifest: "/manifest.webmanifest",
+    robots: {
       index: true,
       follow: true,
-      "max-image-preview": "large",
-      "max-snippet": -1,
-      "max-video-preview": -1,
+      googleBot: {
+        index: true,
+        follow: true,
+        "max-image-preview": "large",
+        "max-snippet": -1,
+        "max-video-preview": -1,
+      },
     },
-  },
-  openGraph: {
-    type: "website",
-    siteName: "FOVE",
-    locale: "fr_FR",
-    url: siteUrl,
-    images: [ogBanner, shareImage],
-  },
-  twitter: {
-    card: "summary_large_image",
-    images: [ogBanner.url],
-  },
-  icons: {
-    icon: [
-      { url: "/icon.svg", type: "image/svg+xml" },
-      { url: "/icon-192.png", sizes: "192x192", type: "image/png" },
-      { url: "/icon-512.png", sizes: "512x512", type: "image/png" },
-    ],
-    apple: "/apple-touch-icon.png",
-  },
-};
+    openGraph: {
+      type: "website",
+      siteName: "FOVE",
+      locale: t("ogLocale"),
+      url: siteUrl,
+      // Icône carrée seule : WhatsApp l'affiche en petite vignette (règle du workspace).
+      images: [{ ...shareImage, alt: t("imageAlt") }],
+    },
+    twitter: {
+      card: "summary",
+      images: [shareImage.url],
+    },
+    icons: {
+      icon: [
+        { url: "/icon.svg", type: "image/svg+xml" },
+        { url: "/icon-192.png", sizes: "192x192", type: "image/png" },
+        { url: "/icon-512.png", sizes: "512x512", type: "image/png" },
+      ],
+      apple: "/apple-touch-icon.png",
+    },
+  };
+}
 
 export const viewport: Viewport = {
   themeColor: [
@@ -82,9 +83,11 @@ const GTM_ID = process.env.NEXT_PUBLIC_GTM_ID ?? "GTM-53DS2L3S";
 const CLARITY_ID = process.env.NEXT_PUBLIC_CLARITY_ID ?? "z8rrk6rpqy";
 const GA_ID = process.env.NEXT_PUBLIC_GA_ID;
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const locale = await resolveLocale();
+  const [messages, t] = await Promise.all([getMessages(), getTranslations("common")]);
   return (
-    <html lang="fr" suppressHydrationWarning className={`${bricolage.variable} ${figtree.variable}`}>
+    <html lang={locale} dir={isRtl(locale) ? "rtl" : "ltr"} suppressHydrationWarning className={`${bricolage.variable} ${figtree.variable} ${arabic.variable}`}>
       <head>
         {/* Microsoft Clarity */}
         <script
@@ -149,11 +152,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             style={{ display: "none", visibility: "hidden" }}
           />
         </noscript>
-        <a href="#contenu" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-surface focus:px-4 focus:py-2 focus:shadow-2">
-          Aller au contenu
+        <a href="#contenu" className="sr-only focus:not-sr-only focus:fixed focus:start-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-surface focus:px-4 focus:py-2 focus:shadow-2">
+          {t("skipToContent")}
         </a>
-        <Providers>{children}</Providers>
-        <CookieConsent />
+        <NextIntlClientProvider locale={locale} messages={messages}>
+          <Providers>{children}</Providers>
+          <CookieConsent />
+        </NextIntlClientProvider>
       </body>
     </html>
   );

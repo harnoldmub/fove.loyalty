@@ -1,6 +1,7 @@
 "use client";
 
 import { LoaderCircle } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { api, errorMessage } from "@/lib/api";
 
@@ -9,6 +10,7 @@ import { api, errorMessage } from "@/lib/api";
  * https://developers.google.com/wallet/generic/resources/brand-guidelines
  */
 export function GoogleWalletButton({ token, className = "" }: { token: string; className?: string }) {
+  const t = useTranslations("public.wallet");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -18,7 +20,7 @@ export function GoogleWalletButton({ token, className = "" }: { token: string; c
         type="button"
         disabled={loading}
         aria-busy={loading || undefined}
-        aria-label="Ajouter à Google Wallet"
+        aria-label={t("google")}
         onClick={async () => {
           setLoading(true);
           setError(null);
@@ -34,7 +36,7 @@ export function GoogleWalletButton({ token, className = "" }: { token: string; c
       >
         <img
           src="/wallet/add-to-google-wallet.svg"
-          alt="Ajouter à Google Wallet"
+          alt={t("google")}
           height={44}
           className="h-[44px] w-auto shrink-0 select-none"
           loading="eager"

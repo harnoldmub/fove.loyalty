@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { X, Link2, Copy, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useTranslations } from "next-intl";
 import { Input } from "@/components/ui/field";
 
 interface PartnerUtmModalProps {
@@ -12,6 +13,7 @@ interface PartnerUtmModalProps {
 }
 
 export function PartnerUtmModal({ open, partnerLink, onClose }: PartnerUtmModalProps) {
+  const t = useTranslations("partner.utmModal");
   const [copied, setCopied] = useState(false);
   const [source, setSource] = useState("whatsapp");
   const [medium, setMedium] = useState("social");
@@ -42,13 +44,14 @@ export function PartnerUtmModal({ open, partnerLink, onClose }: PartnerUtmModalP
               <Link2 className="size-4" />
             </span>
             <div>
-              <h3 className="font-display text-sm font-semibold text-ink">Générateur de liens de campagne</h3>
-              <p className="text-[11px] text-ink-3">Paramètres UTM pour suivre vos différents canaux</p>
+              <h3 className="font-display text-sm font-semibold text-ink">{t("title")}</h3>
+              <p className="text-[11px] text-ink-3">{t("subtitle")}</p>
             </div>
           </div>
           <button
             type="button"
             onClick={onClose}
+            aria-label={t("close")}
             className="grid size-8 place-items-center rounded-lg text-ink-3 hover:bg-surface-2 hover:text-ink"
           >
             <X className="size-4" />
@@ -57,7 +60,7 @@ export function PartnerUtmModal({ open, partnerLink, onClose }: PartnerUtmModalP
 
         <div className="space-y-3">
           <div>
-            <label className="block text-xs font-medium text-ink-2 mb-1">Source (utm_source)</label>
+            <label className="block text-xs font-medium text-ink-2 mb-1">{t("source")}</label>
             <Input
               value={source}
               onChange={(e) => setSource(e.target.value)}
@@ -65,7 +68,7 @@ export function PartnerUtmModal({ open, partnerLink, onClose }: PartnerUtmModalP
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-ink-2 mb-1">Support (utm_medium)</label>
+            <label className="block text-xs font-medium text-ink-2 mb-1">{t("medium")}</label>
             <Input
               value={medium}
               onChange={(e) => setMedium(e.target.value)}
@@ -73,7 +76,7 @@ export function PartnerUtmModal({ open, partnerLink, onClose }: PartnerUtmModalP
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-ink-2 mb-1">Nom de campagne (utm_campaign)</label>
+            <label className="block text-xs font-medium text-ink-2 mb-1">{t("campaign")}</label>
             <Input
               value={campaign}
               onChange={(e) => setCampaign(e.target.value)}
@@ -81,7 +84,7 @@ export function PartnerUtmModal({ open, partnerLink, onClose }: PartnerUtmModalP
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-ink-2 mb-1">Lien généré</label>
+            <label className="block text-xs font-medium text-ink-2 mb-1">{t("generated")}</label>
             <div className="rounded-lg border border-line bg-surface-2 p-3 text-xs font-mono text-ink break-all select-all">
               {fullUrl}
             </div>
@@ -89,7 +92,7 @@ export function PartnerUtmModal({ open, partnerLink, onClose }: PartnerUtmModalP
 
           <Button onClick={handleCopy} variant="primary" className="w-full gap-2 text-xs mt-2">
             {copied ? <Check className="size-3.5 text-emerald-500" /> : <Copy className="size-3.5" />}
-            {copied ? "Lien de campagne copié !" : "Copier le lien avec UTM"}
+            {copied ? t("copied") : t("copy")}
           </Button>
         </div>
       </div>

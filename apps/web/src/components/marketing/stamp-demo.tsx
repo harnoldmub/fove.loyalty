@@ -1,6 +1,7 @@
 "use client";
 
 import { Coffee, RotateCcw } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -9,6 +10,7 @@ const TARGET = 10;
 
 /** Démonstration de la carte à tampons : chaque clic imprime un tampon. */
 export function StampDemo() {
+  const t = useTranslations("marketing.stampDemo");
   const [stamps, setStamps] = useState(6);
   const full = stamps >= TARGET;
 
@@ -20,7 +22,7 @@ export function StampDemo() {
       >
         <div className="flex items-start justify-between">
           <div>
-            <p className="text-sm text-white/75">Carte de fidélité</p>
+            <p className="text-sm text-white/75">{t("cardLabel")}</p>
             <p className="font-display text-2xl font-semibold">Café Matonge</p>
           </div>
           <span className="grid size-11 place-items-center rounded-full bg-white/15">
@@ -28,7 +30,7 @@ export function StampDemo() {
           </span>
         </div>
 
-        <ol className="mt-7 grid grid-cols-5 gap-3" aria-label={`${stamps} tampons sur ${TARGET}`}>
+        <ol className="mt-7 grid grid-cols-5 gap-3" aria-label={t("progress", { count: stamps, total: TARGET })}>
           {Array.from({ length: TARGET }, (_, i) => (
             <li key={i} className="grid aspect-square place-items-center rounded-full border-2 border-dashed border-white/35">
               {i < stamps && (
@@ -45,7 +47,7 @@ export function StampDemo() {
             <p className="text-sm text-white/75">Awa K.</p>
             <p className="tabular text-sm tracking-[0.12em] text-white/90">CM-7K2M-Q9XD</p>
           </div>
-          <p className="tabular text-right font-display text-3xl font-semibold" aria-live="polite">
+          <p className="tabular text-end font-display text-3xl font-semibold" aria-live="polite">
             {stamps}
             <span className="text-lg text-white/70">/{TARGET}</span>
           </p>
@@ -56,18 +58,18 @@ export function StampDemo() {
         {full ? (
           <>
             <p className="flex-1 rounded-md bg-stamp-soft px-4 py-3 text-sm font-medium text-stamp-ink dark:text-stamp" role="status">
-              Carte complète : un café offert à Awa.
+              {t("complete")}
             </p>
-            <Button variant="secondary" size="icon" onClick={() => setStamps(0)} aria-label="Recommencer la démonstration">
+            <Button variant="secondary" size="icon" onClick={() => setStamps(0)} aria-label={t("restart")}>
               <RotateCcw />
             </Button>
           </>
         ) : (
           <>
             <Button variant="stamp" className="flex-1" onClick={() => setStamps((s) => Math.min(TARGET, s + 1))}>
-              Valider un achat
+              {t("validate")}
             </Button>
-            <p className="text-sm text-ink-2">Essayez, c’est le geste du caissier.</p>
+            <p className="text-sm text-ink-2">{t("hint")}</p>
           </>
         )}
       </div>

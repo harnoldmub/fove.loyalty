@@ -2,10 +2,11 @@
 
 import Link from "next/link";
 import { Check, X } from "lucide-react";
+import { useTranslations } from "next-intl";
 import type { ReactNode } from "react";
 import type { PlanFeatures, PlanLimits, QuotaKey } from "@fove/shared";
 import { Button } from "@/components/ui/button";
-import { cn, formatPrice } from "@/lib/utils";
+import { cn, formatNumber, formatPrice } from "@/lib/utils";
 import { useMarketingCurrency } from "@/lib/marketing-currency";
 import { CurrencyToggle } from "./currency-toggle";
 
@@ -22,57 +23,55 @@ export interface Plan {
 const FEATURED = "business";
 
 /** Quantités incluses : un chiffre par offre. */
-const QUOTA_ROWS: { key: QuotaKey; label: string }[] = [
-  { key: "customers", label: "Clients" },
-  { key: "establishments", label: "Établissements" },
-  { key: "staff", label: "Collaborateurs" },
-  { key: "programs", label: "Programmes de fidélité" },
-];
+const QUOTA_ROWS: QuotaKey[] = ["customers", "establishments", "staff", "programs"];
 
 /** Fonctions : incluse ou non. */
-const FEATURE_ROWS: { label: string; included: (f: Partial<PlanFeatures>) => boolean }[] = [
-  { label: "Cartes, QR d’inscription et scanner", included: () => true },
-  { label: "Apple Wallet et Google Wallet", included: () => true },
-  { label: "Export des données client (RGPD)", included: (f) => Boolean(f.exports) },
-  { label: "Widget pour votre site", included: (f) => Boolean(f.widget) },
-  { label: "Sans mention « Propulsé par FOVE »", included: (f) => Boolean(f.removeBranding) },
-  { label: "Campagnes Wallet à tous vos clients", included: (f) => Boolean(f.walletCampaigns) },
-  { label: "Envoi WhatsApp automatique", included: (f) => Boolean(f.whatsappAuto) },
-  { label: "API et webhooks", included: (f) => Boolean(f.api) },
-  { label: "Connexion boutique en ligne (via API)", included: (f) => Boolean(f.integrations) },
+const FEATURE_ROWS: { key: string; included: (f: Partial<PlanFeatures>) => boolean }[] = [
+  { key: "cards", included: () => true },
+  { key: "wallet", included: () => true },
+  { key: "exports", included: (f) => Boolean(f.exports) },
+  { key: "widget", included: (f) => Boolean(f.widget) },
+  { key: "removeBranding", included: (f) => Boolean(f.removeBranding) },
+  { key: "walletCampaigns", included: (f) => Boolean(f.walletCampaigns) },
+  { key: "whatsappAuto", included: (f) => Boolean(f.whatsappAuto) },
+  { key: "api", included: (f) => Boolean(f.api) },
+  { key: "integrations", included: (f) => Boolean(f.integrations) },
 ];
 
-function quota(plan: Plan, key: QuotaKey): string {
-  if (plan.kind === "CUSTOM") return "Sur mesure";
+type T = ReturnType<typeof useTranslations>;
+
+function quota(t: T, plan: Plan, key: QuotaKey): string {
+  if (plan.kind === "CUSTOM") return t("custom");
   const n = plan.limits[key];
-  if (n === null) return "Illimités";
-  if (key === "staff" && n === 1) return "1 (vous)";
-  return new Intl.NumberFormat("fr-FR").format(n);
+  if (n === null) return t("unlimited");
+  if (key === "staff" && n === 1) return t("staffSelf");
+  return formatNumber(n);
 }
 
-function cta(plan: Plan, currency: string): { href: string; label: string } {
-  if (plan.kind === "CUSTOM") return { href: "/contact?offre=sur-mesure", label: "Nous contacter" };
-  if (plan.kind === "FREE") return { href: "/signup", label: "Commencer" };
-  return { href: `/signup?offre=${plan.code}&currency=${currency}`, label: `Choisir ${plan.name}` };
+function cta(t: T, plan: Plan, currency: string): { href: string; label: string } {
+  if (plan.kind === "CUSTOM") return { href: "/contact?offre=sur-mesure", label: t("contactUs") };
+  if (plan.kind === "FREE") return { href: "/signup", label: t("start") };
+  return { href: `/signup?offre=${plan.code}&currency=${currency}`, label: t("choose", { name: plan.name }) };
 }
 
-const stickyCol = "sticky left-0 z-10 bg-surface";
+const stickyCol = "sticky start-0 z-10 bg-surface";
 
 export function PricingTable({ plans }: { plans: Plan[] }) {
+  const t = useTranslations("marketing.pricing");
   const { currency, isEuro } = useMarketingCurrency();
   const featuredCell = (plan: Plan) => plan.code === FEATURED && "bg-cobalt-soft/50";
 
   const groupRow = (label: string) => (
     <tr>
-      <th scope="colgroup" colSpan={plans.length + 1} className="bg-surface-2 px-5 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-ink-3">
-        <span className="sticky left-5">{label}</span>
+      <th scope="colgroup" colSpan={plans.length + 1} className="bg-surface-2 px-5 py-2.5 text-start text-xs font-semibold text-ink-3">
+        <span className="sticky start-5">{label}</span>
       </th>
     </tr>
   );
 
-  const row = (label: string, cells: (plan: Plan) => ReactNode) => (
-    <tr key={label} className="border-t border-line">
-      <th scope="row" className={cn(stickyCol, "px-5 py-3.5 text-left font-normal text-ink-2")}>
+  const row = (key: string, label: string, cells: (plan: Plan) => ReactNode) => (
+    <tr key={key} className="border-t border-line">
+      <th scope="row" className={cn(stickyCol, "px-5 py-3.5 text-start font-normal text-ink-2")}>
         {label}
       </th>
       {plans.map((plan) => (
@@ -87,19 +86,19 @@ export function PricingTable({ plans }: { plans: Plan[] }) {
 
   const price = (plan: Plan) => (
     <>
-      {plan.kind === "CUSTOM" ? "Sur devis" : formatPrice(plan.priceYearlyCents, currency)}
-      {plan.kind === "PAID" && <span className="text-sm font-normal text-ink-3"> /an</span>}
+      {plan.kind === "CUSTOM" ? t("onQuote") : formatPrice(plan.priceYearlyCents, currency)}
+      {plan.kind === "PAID" && <span className="text-sm font-normal text-ink-3">{t("perYear")}</span>}
     </>
   );
 
   const priceNote = (plan: Plan) =>
     plan.kind === "FREE"
-      ? "Sans carte bancaire, sans limite de durée"
+      ? t("noteFree")
       : plan.kind === "CUSTOM"
-        ? "Contrat adapté à votre réseau"
+        ? t("noteCustom")
         : isEuro
-          ? "Payé à l’avance, en euros (€)"
-          : "Payé à l’avance, en dollars US ($)";
+          ? t("noteEur")
+          : t("noteUsd");
 
   return (
     <div className="grid gap-4">
@@ -111,30 +110,30 @@ export function PricingTable({ plans }: { plans: Plan[] }) {
       {/* Mobile : une carte par offre */}
       <div className="grid gap-4 md:hidden">
         {plans.map((plan) => {
-          const action = cta(plan, currency);
+          const action = cta(t, plan, currency);
           return (
             <article key={plan.code} className={cn("rounded-[var(--radius-lg)] bg-surface p-5 shadow-1", plan.code === FEATURED && "ring-2 ring-cobalt")}>
               <div className="flex items-baseline justify-between gap-2">
                 <h3 className="font-display text-lg font-semibold">{plan.name}</h3>
-                {plan.code === FEATURED && <span className="text-xs font-medium text-cobalt">Recommandé</span>}
+                {plan.code === FEATURED && <span className="text-xs font-medium text-cobalt">{t("recommended")}</span>}
               </div>
               <p className="mt-2 font-display text-2xl font-semibold tabular">{price(plan)}</p>
               <p className="text-xs text-ink-3">{priceNote(plan)}</p>
               <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
                 {QUOTA_ROWS.map((q) => (
-                  <div key={q.key} className="flex justify-between gap-2 border-b border-line pb-1.5">
-                    <dt className="text-ink-2">{q.label}</dt>
-                    <dd className="font-medium tabular">{quota(plan, q.key)}</dd>
+                  <div key={q} className="flex justify-between gap-2 border-b border-line pb-1.5">
+                    <dt className="text-ink-2">{t(`quotas.${q}`)}</dt>
+                    <dd className="font-medium tabular">{quota(t, plan, q)}</dd>
                   </div>
                 ))}
               </dl>
               <ul className="mt-4 grid gap-2 text-sm">
                 {FEATURE_ROWS.map((f) => (
-                  <li key={f.label} className={cn("flex gap-2.5", !included(plan, f) && "text-ink-3")}>
+                  <li key={f.key} className={cn("flex gap-2.5", !included(plan, f) && "text-ink-3")}>
                     {included(plan, f) ? <Check className="mt-0.5 size-4 shrink-0 text-mint" aria-hidden /> : <X className="mt-0.5 size-4 shrink-0 text-ink-3/70" aria-hidden />}
                     <span>
-                      {f.label}
-                      {!included(plan, f) && <span className="sr-only"> : non inclus</span>}
+                      {t(`features.${f.key}`)}
+                      {!included(plan, f) && <span className="sr-only">{t("notIncludedSuffix")}</span>}
                     </span>
                   </li>
                 ))}
@@ -150,20 +149,20 @@ export function PricingTable({ plans }: { plans: Plan[] }) {
       {/* Desktop : tableau comparatif */}
       <div className="hidden overflow-x-auto rounded-[var(--radius-lg)] bg-surface shadow-1 md:block">
         <table className="w-full min-w-[760px] border-collapse text-[0.95rem]">
-          <caption className="sr-only">Comparatif des offres FOVE : capacité et fonctions incluses</caption>
+          <caption className="sr-only">{t("caption")}</caption>
           <thead>
             <tr>
-              <th scope="col" className={cn(stickyCol, "w-[22%] p-5 text-left align-bottom text-sm font-medium text-ink-2")}>
-                Comparez les offres
+              <th scope="col" className={cn(stickyCol, "w-[22%] p-5 text-start align-bottom text-sm font-medium text-ink-2")}>
+                {t("compare")}
               </th>
               {plans.map((plan) => {
-                const action = cta(plan, currency);
+                const action = cta(t, plan, currency);
                 return (
-                  <th key={plan.code} scope="col" className={cn("p-4 text-left align-top font-normal", featuredCell(plan), plan.code === FEATURED && "rounded-t-[var(--radius)]")}>
+                  <th key={plan.code} scope="col" className={cn("p-4 text-start align-top font-normal", featuredCell(plan), plan.code === FEATURED && "rounded-t-[var(--radius)]")}>
                     <div className="flex min-h-full flex-col gap-1">
                       <div className="flex items-baseline justify-between gap-2">
                         <span className="font-display text-lg font-semibold text-ink">{plan.name}</span>
-                        {plan.code === FEATURED && <span className="text-xs font-medium text-cobalt">Recommandé</span>}
+                        {plan.code === FEATURED && <span className="text-xs font-medium text-cobalt">{t("recommended")}</span>}
                       </div>
                       <p className="mt-2 font-display text-2xl font-semibold tabular text-ink">{price(plan)}</p>
                       <p className="min-h-8 text-xs text-ink-3">{priceNote(plan)}</p>
@@ -177,20 +176,20 @@ export function PricingTable({ plans }: { plans: Plan[] }) {
             </tr>
           </thead>
           <tbody>
-            {groupRow("Capacité")}
-            {QUOTA_ROWS.map((q) => row(q.label, (plan) => <span className="font-medium tabular text-ink">{quota(plan, q.key)}</span>))}
-            {groupRow("Fonctions")}
+            {groupRow(t("groupCapacity"))}
+            {QUOTA_ROWS.map((q) => row(q, t(`quotas.${q}`), (plan) => <span className="font-medium tabular text-ink">{quota(t, plan, q)}</span>))}
+            {groupRow(t("groupFeatures"))}
             {FEATURE_ROWS.map((f) =>
-              row(f.label, (plan) =>
+              row(f.key, t(`features.${f.key}`), (plan) =>
                 included(plan, f) ? (
                   <>
                     <Check className="mx-auto size-5 text-mint" aria-hidden />
-                    <span className="sr-only">Inclus</span>
+                    <span className="sr-only">{t("included")}</span>
                   </>
                 ) : (
                   <>
                     <X className="mx-auto size-5 text-ink-3/70" aria-hidden />
-                    <span className="sr-only">Non inclus</span>
+                    <span className="sr-only">{t("notIncluded")}</span>
                   </>
                 ),
               ),

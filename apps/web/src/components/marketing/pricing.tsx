@@ -1,3 +1,4 @@
+import { getTranslations } from "next-intl/server";
 import { serverGet } from "@/lib/server-api";
 import { PricingTable, type Plan } from "./pricing-table";
 
@@ -5,7 +6,8 @@ import { PricingTable, type Plan } from "./pricing-table";
 export async function Pricing() {
   const { data: plans } = await serverGet<Plan[]>("/plans");
   if (!plans?.length) {
-    return <p className="rounded-md bg-surface px-4 py-3 text-ink-2 shadow-1">Les tarifs sont momentanément indisponibles. Réessayez dans un instant.</p>;
+    const t = await getTranslations("marketing.pricing");
+    return <p className="rounded-md bg-surface px-4 py-3 text-ink-2 shadow-1">{t("unavailable")}</p>;
   }
 
   return <PricingTable plans={plans} />;

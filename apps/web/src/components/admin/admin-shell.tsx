@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, type ReactNode } from "react";
+import { useTranslations } from "next-intl";
 import {
   Activity,
   ArrowDownRight,
@@ -24,9 +25,15 @@ import {
   X,
 } from "lucide-react";
 import { Logo } from "@/components/brand";
+import { LocaleSwitcher } from "@/components/locale-switcher";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
+
+type NavGroupKey = "finance" | "businesses" | "sales" | "configuration";
+type NavItemKey =
+  | "overview" | "sales" | "payments" | "subscriptions" | "customers" | "invoices" | "partners"
+  | "expenses" | "treasury" | "reports" | "audit" | "tenants" | "messages" | "plans" | "system";
 
 interface AdminShellProps {
   user: {
@@ -37,112 +44,112 @@ interface AdminShellProps {
   children: ReactNode;
 }
 
-const NAV_GROUPS = [
+const NAV_GROUPS: { title: NavGroupKey; items: { href: string; label: NavItemKey; icon: typeof Landmark; exact: boolean }[] }[] = [
   {
-    title: "Finances & Associés",
+    title: "finance",
     items: [
       {
         href: "/admin/finance",
-        label: "Vue d'ensemble",
+        label: "overview",
         icon: Landmark,
         exact: true,
       },
       {
         href: "/admin/finance/sales",
-        label: "Ventes & Chiffre",
+        label: "sales",
         icon: Receipt,
         exact: false,
       },
       {
         href: "/admin/finance/payments",
-        label: "Paiements & Flux",
+        label: "payments",
         icon: CreditCard,
         exact: false,
       },
       {
         href: "/admin/finance/subscriptions",
-        label: "Abonnements & MRR",
+        label: "subscriptions",
         icon: RefreshCw,
         exact: false,
       },
       {
         href: "/admin/finance/customers",
-        label: "Clients payants",
+        label: "customers",
         icon: Users,
         exact: false,
       },
       {
         href: "/admin/finance/invoices",
-        label: "Factures & Pièces",
+        label: "invoices",
         icon: FileText,
         exact: false,
       },
       {
         href: "/admin/partners",
-        label: "Programme Partenaires",
+        label: "partners",
         icon: Award,
         exact: false,
       },
       {
         href: "/admin/finance/expenses",
-        label: "Dépenses & Charges",
+        label: "expenses",
         icon: ArrowDownRight,
         exact: false,
       },
       {
         href: "/admin/finance/treasury",
-        label: "Trésorerie & Banque",
+        label: "treasury",
         icon: Landmark,
         exact: false,
       },
       {
         href: "/admin/finance/reports",
-        label: "Rapports associés",
+        label: "reports",
         icon: BarChart3,
         exact: false,
       },
       {
         href: "/admin/finance/audit",
-        label: "Journal d'audit",
+        label: "audit",
         icon: ShieldCheck,
         exact: false,
       },
     ],
   },
   {
-    title: "Commerces",
+    title: "businesses",
     items: [
       {
         href: "/admin",
-        label: "Entreprises",
+        label: "tenants",
         icon: Building2,
         exact: true,
       },
     ],
   },
   {
-    title: "Relation commerciale",
+    title: "sales",
     items: [
       {
         href: "/admin/messages",
-        label: "Messages et prospects",
+        label: "messages",
         icon: MessageSquare,
         exact: false,
       },
     ],
   },
   {
-    title: "Configuration",
+    title: "configuration",
     items: [
       {
         href: "/admin/plans",
-        label: "Offres et abonnements",
+        label: "plans",
         icon: CreditCard,
         exact: false,
       },
       {
         href: "/admin/system",
-        label: "Intégrations et erreurs",
+        label: "system",
         icon: Activity,
         exact: false,
       },
@@ -151,6 +158,7 @@ const NAV_GROUPS = [
 ];
 
 export function AdminShell({ user, hasMerchantAccess, children }: AdminShellProps) {
+  const t = useTranslations("admin.shell");
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -176,14 +184,14 @@ export function AdminShell({ user, hasMerchantAccess, children }: AdminShellProp
           <Link href="/admin" className="flex items-center gap-2.5 focus-visible:outline-none">
             <Logo className="text-lg" />
           </Link>
-          <span className="ml-auto rounded-md bg-surface-2 px-2 py-0.5 text-xs font-medium text-ink-2">Admin</span>
+          <span className="ms-auto rounded-md bg-surface-2 px-2 py-0.5 text-xs font-medium text-ink-2">{t("badge")}</span>
         </div>
 
-        <nav aria-label="Menu administration" className="grid gap-6 p-4">
+        <nav aria-label={t("menuLabel")} className="grid gap-6 p-4">
           {NAV_GROUPS.map((group) => (
             <div key={group.title}>
               <p className="mb-1.5 px-3 text-xs font-medium text-ink-3">
-                {group.title}
+                {t(`groups.${group.title}`)}
               </p>
               <ul className="grid gap-1">
                 {group.items.map((item) => {
@@ -200,7 +208,7 @@ export function AdminShell({ user, hasMerchantAccess, children }: AdminShellProp
                         )}
                       >
                         <Icon className={cn("size-[18px] shrink-0", active ? "text-cobalt" : "text-ink-3")} aria-hidden />
-                        <span className="flex-1 truncate">{item.label}</span>
+                        <span className="flex-1 truncate">{t(`nav.${item.label}`)}</span>
                       </Link>
                     </li>
                   );
@@ -219,7 +227,7 @@ export function AdminShell({ user, hasMerchantAccess, children }: AdminShellProp
             className="mb-3 flex items-center gap-2 rounded-md px-3 py-2 text-sm text-ink-2 transition-colors hover:bg-surface-2 hover:text-ink"
           >
             <Store className="size-4 text-ink-3" aria-hidden />
-            Mon espace commerçant
+            {t("merchantSpace")}
           </Link>
         )}
 
@@ -237,8 +245,9 @@ export function AdminShell({ user, hasMerchantAccess, children }: AdminShellProp
               onClick={handleLogout}
               className="inline-flex h-9 items-center gap-2 rounded-md px-2 text-sm text-ink-2 transition-colors hover:bg-surface hover:text-ink"
             >
-              <LogOut className="size-4" aria-hidden /> Déconnexion
+              <LogOut className="size-4" aria-hidden /> {t("logout")}
             </button>
+            <LocaleSwitcher />
             <ThemeToggle />
           </div>
         </div>
@@ -249,7 +258,7 @@ export function AdminShell({ user, hasMerchantAccess, children }: AdminShellProp
   return (
     <div className="min-h-dvh bg-paper lg:grid lg:grid-cols-[16rem_1fr]">
       {/* Sidebar Desktop fixe */}
-      <aside className="hidden border-r border-line bg-surface lg:block lg:min-h-dvh">
+      <aside className="hidden border-e border-line bg-surface lg:block lg:min-h-dvh">
         <div className="sticky top-0 h-dvh overflow-y-auto">
           {navContent}
         </div>
@@ -259,16 +268,17 @@ export function AdminShell({ user, hasMerchantAccess, children }: AdminShellProp
       <header className="sticky top-0 z-40 flex h-14 items-center justify-between border-b border-line bg-surface px-4 lg:hidden">
         <Link href="/admin" className="flex items-center gap-2">
           <Logo className="text-lg" />
-          <span className="rounded-md bg-surface-2 px-2 py-0.5 text-xs font-medium text-ink-2">Admin</span>
+          <span className="rounded-md bg-surface-2 px-2 py-0.5 text-xs font-medium text-ink-2">{t("badge")}</span>
         </Link>
 
         <div className="flex items-center gap-2">
+          <LocaleSwitcher />
           <ThemeToggle />
           <button
             type="button"
             onClick={() => setMobileOpen(!mobileOpen)}
             className="grid size-9 place-items-center rounded-lg border border-line bg-surface text-ink hover:bg-surface-2"
-            aria-label={mobileOpen ? "Fermer le menu" : "Ouvrir le menu"}
+            aria-label={mobileOpen ? t("closeMenu") : t("openMenu")}
           >
             {mobileOpen ? <X className="size-5" /> : <Menu className="size-5" />}
           </button>
@@ -283,7 +293,7 @@ export function AdminShell({ user, hasMerchantAccess, children }: AdminShellProp
             onClick={() => setMobileOpen(false)}
             aria-hidden
           />
-          <aside className="fixed inset-y-0 left-0 w-72 max-w-[85vw] border-r border-line bg-surface shadow-2" role="dialog" aria-modal="true" aria-label="Menu administration">
+          <aside className="fixed inset-y-0 start-0 w-72 max-w-[85vw] border-e border-line bg-surface shadow-2" role="dialog" aria-modal="true" aria-label={t("menuLabel")}>
             {navContent}
           </aside>
         </div>

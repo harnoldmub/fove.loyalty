@@ -1,8 +1,12 @@
 import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 import { requireMe } from "@/lib/session";
 import { OnboardingWizard } from "./wizard";
 
-export const metadata: Metadata = { title: "Configuration", robots: { index: false } };
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("onboarding.meta");
+  return { title: t("title"), robots: { index: false } };
+}
 
 export default async function OnboardingPage({ searchParams }: { searchParams: Promise<{ new?: string }> }) {
   const me = await requireMe("/onboarding");

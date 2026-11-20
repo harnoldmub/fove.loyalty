@@ -59,6 +59,9 @@ export const forgotPasswordSchema = z.object({ email: z.email() });
 export const resetPasswordSchema = z.object({ token: z.string().min(20).max(200), password });
 export const verifyEmailSchema = z.object({ token: z.string().min(20).max(200) });
 export const switchTenantSchema = z.object({ tenantId: z.uuid() });
+/** Langues de l'interface, des emails et des cartes Wallet. */
+export const SUPPORTED_LOCALES = ["fr", "en", "ar", "es"] as const;
+export const localeSchema = z.object({ locale: z.enum(SUPPORTED_LOCALES) });
 
 // --- Tenant / onboarding ---------------------------------------------------
 export const createTenantSchema = z.object({
@@ -79,6 +82,8 @@ export const updateTenantSchema = createTenantSchema.partial().extend({
   legalName: z.string().max(120).nullable().optional(),
   contactEmail: z.email().nullable().optional(),
   privacyPolicyUrl: z.url().max(500).nullable().optional(),
+  /** Langue des cartes Wallet et messages clients ; null = langue du pays. */
+  locale: z.enum(SUPPORTED_LOCALES).nullable().optional(),
 });
 export const establishmentSchema = z.object({
   name: z.string().trim().min(2).max(80),

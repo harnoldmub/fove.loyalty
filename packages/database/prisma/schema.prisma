@@ -30,6 +30,8 @@ model User {
   adminRole        AdminRole?
   failedLoginCount Int       @default(0)
   lockedUntil      DateTime?
+  /// Langue des emails et de l'interface (fr, en, ar, es). Mise à jour à l'inscription et à chaque connexion.
+  locale           String?
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
 
@@ -160,6 +162,9 @@ model TenantSettings {
   country               String    @default("CD")
   currency              String    @default("CDF")
   timezone              String    @default("Africa/Kinshasa")
+  /// Langue des cartes Wallet et messages envoyés aux clients (fr, en, ar, es).
+  /// Déduite du pays à la création ; vide = langue par défaut du pays.
+  locale                String?
   legalName             String?
   contactEmail          String?
   privacyPolicyUrl      String?

@@ -1,0 +1,88 @@
+{
+  "skipToContent": "Ir al contenido",
+  "language": "Idioma",
+  "chooseLanguage": "Elegir idioma",
+  "select": {
+    "search": "Buscar…",
+    "noResult": "Sin resultados.",
+    "frequent": "Frecuentes",
+    "all": "Todos"
+  },
+  "country": {
+    "label": "País",
+    "search": "Buscar un país…",
+    "noResult": "No se encontró ningún país.",
+    "frequent": "Países frecuentes",
+    "all": "Todos los países"
+  },
+  "city": {
+    "label": "Ciudad",
+    "search": "Buscar una ciudad…",
+    "placeholder": "Seleccionar una ciudad",
+    "typeToSearch": "Escribe el nombre de una ciudad para buscar.",
+    "useTyped": "Usar «{value}»"
+  },
+  "currency": {
+    "label": "Moneda",
+    "search": "Buscar una moneda…",
+    "noResult": "No se encontró ninguna moneda.",
+    "frequent": "Monedas frecuentes",
+    "all": "Todas las monedas"
+  },
+  "phone": {
+    "callingCode": "Prefijo telefónico: {code} ({country})",
+    "search": "Buscar un país o prefijo…"
+  },
+  "dialog": {
+    "close": "Cerrar",
+    "cancel": "Cancelar"
+  },
+  "cookies": {
+    "settings": "Gestión de cookies",
+    "region": "Consentimiento de cookies",
+    "title": "Respetamos tu privacidad",
+    "closeWithoutAccepting": "Cerrar sin aceptar",
+    "body": "Medimos la audiencia (Google Analytics, Clarity) para mejorar tu experiencia en FOVE. Tus datos permanecen seguros y nunca se venden.",
+    "learnMore": "Más información",
+    "decline": "Rechazar",
+    "accept": "Aceptar"
+  },
+  "theme": {
+    "toggle": "Cambiar de tema (claro u oscuro)",
+    "toggleTitle": "Cambiar de tema"
+  },
+  "toast": {
+    "region": "Notificaciones",
+    "close": "Cerrar la notificación"
+  },
+  "kind": {
+    "EARN": "Compra",
+    "ADJUSTMENT": "Ajuste",
+    "REDEMPTION": "Recompensa",
+    "REDEMPTION_REVERSAL": "Recompensa anulada",
+    "REVERSAL": "Anulación",
+    "REFUND": "Reembolso",
+    "EXPIRATION": "Caducidad"
+  },
+  "unit": {
+    "POINTS": "{count, plural, one {punto} other {puntos}}",
+    "STAMPS": "{count, plural, one {sello} other {sellos}}"
+  },
+  "unitCount": {
+    "POINTS": "{count, plural, one {# punto} other {# puntos}}",
+    "STAMPS": "{count, plural, one {# sello} other {# sellos}}"
+  },
+  "errorPage": {
+    "sessionTitle": "Sesión caducada",
+    "sessionBody": "Tu sesión ha caducado. Te estamos redirigiendo a la página de inicio de sesión…",
+    "reconnect": "Volver a iniciar sesión",
+    "title": "Servicio no disponible temporalmente",
+    "body": "Tus datos no se han perdido. Vuelve a intentarlo en un momento; si el problema continúa, contacta con el soporte de FOVE.",
+    "retry": "Reintentar"
+  },
+  "notFound": {
+    "title": "Página no encontrada",
+    "body": "Puede que el enlace esté incompleto o haya sido sustituido. Si es una tarjeta de fidelidad, pide un nuevo enlace al comercio.",
+    "home": "Volver al inicio"
+  }
+}

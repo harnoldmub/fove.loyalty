@@ -1,7 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { formatFinance } from "./finance-utils";
+
+function formatShare(pct: number) {
+  const lang = typeof document !== "undefined" ? document.documentElement.lang || "fr" : "fr";
+  return new Intl.NumberFormat(lang, { style: "percent", maximumFractionDigits: 0 }).format(pct / 100);
+}
 import { cn } from "@/lib/utils";
 
 interface TimeSeriesPoint {
@@ -35,6 +41,8 @@ export function FinanceCharts({
   expenseBreakdown = [],
   currency = "USD",
 }: FinanceChartsProps) {
+  const t = useTranslations("admin.finance.charts");
+  const tc = useTranslations("admin.finance.expenseCategories");
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
 
   // Échantillonnage si trop de jours pour éviter l'encombrement graphique
@@ -56,18 +64,18 @@ export function FinanceCharts({
       <div className="rounded-xl border border-line bg-surface p-5 shadow-xs lg:col-span-2">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
           <div>
-            <h3 className="font-display text-base font-semibold text-ink">Évolution temporelle</h3>
-            <p className="text-xs text-ink-3">Encaissements réels vs Dépenses engagées</p>
+            <h3 className="font-display text-base font-semibold text-ink">{t("timeTitle")}</h3>
+            <p className="text-xs text-ink-3">{t("timeDescription")}</p>
           </div>
           <div className="flex items-center gap-4 text-xs font-medium">
             <span className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400">
-              <span className="size-2.5 rounded-full bg-emerald-500" /> Encaissements
+              <span className="size-2.5 rounded-full bg-emerald-500" /> {t("collected")}
             </span>
             <span className="flex items-center gap-1.5 text-rose-500">
-              <span className="size-2.5 rounded-full bg-rose-500" /> Dépenses
+              <span className="size-2.5 rounded-full bg-rose-500" /> {t("expenses")}
             </span>
             <span className="flex items-center gap-1.5 text-cobalt">
-              <span className="size-2.5 rounded-full bg-cobalt" /> Facturé
+              <span className="size-2.5 rounded-full bg-cobalt" /> {t("invoiced")}
             </span>
           </div>
         </div>
@@ -78,20 +86,20 @@ export function FinanceCharts({
             <div className="flex items-center gap-3 rounded-md bg-surface-2 px-3 py-1 text-ink">
               <span className="font-semibold text-ink-2">{hoveredPoint.date}</span>
               <span>
-                Encaissé : <strong className="text-emerald-500">{formatFinance(hoveredPoint.collectedCents, currency)}</strong>
+                {t("hoverCollected")} <strong className="text-emerald-500">{formatFinance(hoveredPoint.collectedCents, currency)}</strong>
               </span>
               <span>
-                Dépenses : <strong className="text-rose-500">{formatFinance(hoveredPoint.expensesCents, currency)}</strong>
+                {t("hoverExpenses")} <strong className="text-rose-500">{formatFinance(hoveredPoint.expensesCents, currency)}</strong>
               </span>
               <span>
-                Net :{" "}
+                {t("hoverNet")}{" "}
                 <strong className={hoveredPoint.netIncomeCents >= 0 ? "text-emerald-500" : "text-rose-500"}>
                   {formatFinance(hoveredPoint.netIncomeCents, currency)}
                 </strong>
               </span>
             </div>
           ) : (
-            <span className="text-ink-3">Survolez une barre pour examiner la journée</span>
+            <span className="text-ink-3">{t("hoverHint")}</span>
           )}
         </div>
 
@@ -99,7 +107,7 @@ export function FinanceCharts({
         <div className="relative flex h-48 items-end gap-1 border-b border-line pb-1">
           {data.length === 0 ? (
             <div className="grid h-full w-full place-items-center text-xs text-ink-3">
-              Aucune transaction sur la période sélectionnée
+              {t("empty")}
             </div>
           ) : (
             data.map((point, idx) => {
@@ -153,11 +161,11 @@ export function FinanceCharts({
       <div className="grid gap-6">
         {/* Par Formule */}
         <div className="rounded-xl border border-line bg-surface p-5 shadow-xs">
-          <h3 className="font-display text-sm font-semibold text-ink">Chiffre d&apos;affaires par formule</h3>
-          <p className="mb-3 text-xs text-ink-3">Distribution des ventes facturées</p>
+          <h3 className="font-display text-sm font-semibold text-ink">{t("planTitle")}</h3>
+          <p className="mb-3 text-xs text-ink-3">{t("planDescription")}</p>
 
           {planBreakdown.length === 0 ? (
-            <p className="text-xs text-ink-3">Aucune formule facturée sur la période</p>
+            <p className="text-xs text-ink-3">{t("planEmpty")}</p>
           ) : (
             <div className="space-y-2.5">
               {planBreakdown.map((p) => {
@@ -167,7 +175,7 @@ export function FinanceCharts({
                     <div className="flex justify-between text-xs mb-1">
                       <span className="font-medium text-ink">{p.label}</span>
                       <span className="text-ink-2 tabular">
-                        {formatFinance(p.amountCents, currency)} ({pct.toFixed(0)}%)
+                        {formatFinance(p.amountCents, currency)} ({formatShare(pct)})
                       </span>
                     </div>
                     <div className="h-2 w-full overflow-hidden rounded-full bg-surface-2">
@@ -182,23 +190,23 @@ export function FinanceCharts({
 
         {/* Par Catégorie de Dépense */}
         <div className="rounded-xl border border-line bg-surface p-5 shadow-xs">
-          <h3 className="font-display text-sm font-semibold text-ink">Postes de dépenses</h3>
-          <p className="mb-3 text-xs text-ink-3">Ventilation des charges engagées</p>
+          <h3 className="font-display text-sm font-semibold text-ink">{t("expenseTitle")}</h3>
+          <p className="mb-3 text-xs text-ink-3">{t("expenseDescription")}</p>
 
           {expenseBreakdown.length === 0 ? (
-            <p className="text-xs text-ink-3">Aucune dépense enregistrée sur la période</p>
+            <p className="text-xs text-ink-3">{t("expenseEmpty")}</p>
           ) : (
             <div className="space-y-2">
               {expenseBreakdown.slice(0, 5).map((e) => {
                 const pct = totalExpense > 0 ? (e.amountCents / totalExpense) * 100 : 0;
                 return (
                   <div key={e.category} className="flex items-center justify-between text-xs">
-                    <span className="rounded bg-surface-2 px-1.5 py-0.5 font-mono text-[11px] font-medium text-ink-2">
-                      {e.category}
+                    <span className="rounded bg-surface-2 px-1.5 py-0.5 text-[11px] font-medium text-ink-2">
+                      {tc.has(e.category) ? tc(e.category) : e.category}
                     </span>
                     <span className="font-medium text-ink tabular">
                       {formatFinance(e.amountCents, currency)}{" "}
-                      <span className="text-ink-3 font-normal">({pct.toFixed(0)}%)</span>
+                      <span className="text-ink-3 font-normal">({formatShare(pct)})</span>
                     </span>
                   </div>
                 );

@@ -1,0 +1,154 @@
+{
+  "meta": {
+    "joinTitle": "انضم إلى {tenant}",
+    "notFound": "البرنامج غير موجود",
+    "joinDescriptionTenant": "أنشئ بطاقة الولاء {program} لدى {tenant} في 30 ثانية.",
+    "joinDescription": "أنشئ بطاقة الولاء {program} في 30 ثانية.",
+    "cardTitle": "بطاقة الولاء الخاصة بي",
+    "cardShortTitle": "بطاقتي",
+    "manifestName": "بطاقة {tenant}",
+    "posterTitle": "ملصق التسجيل"
+  },
+  "rules": {
+    "stamps": "عملية شراء واحدة = طابع واحد. {target, plural, zero {# طابع} one {طابع واحد} two {طابعان} few {# طوابع} many {# طابعًا} other {# طابع}} = {reward}.",
+    "points": "إنفاق {amount} {currency} = {points, plural, zero {# نقطة} one {نقطة واحدة} two {نقطتان} few {# نقاط} many {# نقطة} other {# نقطة}}.",
+    "defaultReward": "مكافأة"
+  },
+  "join": {
+    "programLabel": "برنامج الولاء",
+    "rememberedTitle": "بطاقتك جاهزة!",
+    "rememberedText": "بطاقة الولاء الخاصة بك لدى <b>{tenant}</b> محفوظة بالفعل على هذا الهاتف.",
+    "openCard": "فتح بطاقتي",
+    "createAnother": "إنشاء بطاقة أخرى أو استخدام رقم آخر",
+    "backToSaved": "العودة إلى بطاقتي المحفوظة",
+    "tabJoin": "إنشاء بطاقتي",
+    "tabRecover": "استرجاع بطاقتي",
+    "firstName": "الاسم",
+    "lastName": "اللقب",
+    "phone": "الهاتف",
+    "email": "البريد الإلكتروني",
+    "emailOptional": "البريد الإلكتروني (اختياري)",
+    "emailCodeHint": "سيُرسل إليك رمز تحقق.",
+    "emailRecoverHint": "لاسترجاع بطاقتك إذا غيّرت هاتفك.",
+    "honeypot": "الموقع الإلكتروني",
+    "acceptTerms": "أوافق على شروط البرنامج.",
+    "acceptTermsWithPrivacy": "أوافق على شروط البرنامج و<link>سياسة الخصوصية</link>.",
+    "marketingConsent": "أرغب في تلقي عروض {tenant} (اختياري).",
+    "submit": "إنشاء بطاقتي",
+    "alreadyEnrolled": "استخدم علامة التبويب «استرجاع بطاقتي» أو اطلب من الموظفين إعادة إرسالها إليك.",
+    "programTerms": "شروط البرنامج",
+    "recoverSent": "إذا كانت هناك بطاقة مطابقة، فقد أُرسل رابطها للتو إلى البريد الإلكتروني المسجل في الملف. تذكّر التحقق من الرسائل غير المرغوب فيها.",
+    "recoverIntro": "يُرسل رابط بطاقتك إلى البريد الإلكتروني المسجل في ملفك. إذا لم يكن لديك بريد إلكتروني، فاطلبه من الموظفين عند الصندوق.",
+    "recoverIdentifier": "البريد الإلكتروني أو الهاتف المستخدم عند التسجيل",
+    "recoverSubmit": "استلام الرابط",
+    "poweredBy": "بطاقة ولاء مدعومة من FOVE"
+  },
+  "homeScreen": {
+    "added": "تمت إضافة البطاقة إلى شاشتك الرئيسية!",
+    "linkCopied": "تم نسخ رابط بطاقتك!",
+    "linkFallback": "الرابط: {url}",
+    "installed": "على الشاشة الرئيسية",
+    "buttonLabel": "إضافة البطاقة إلى الشاشة الرئيسية",
+    "button": "إضافة إلى الشاشة الرئيسية",
+    "dialogTitle": "إضافة إلى الشاشة الرئيسية",
+    "dialogDescription": "اجعل بطاقة {tenant} في متناولك بنقرة واحدة على هاتفك.",
+    "ios": {
+      "step1": "اضغط على <icon></icon> مشاركة",
+      "step1Hint": "في شريط التنقل في Safari أسفل شاشة iPhone (أو أعلاها على iPad).",
+      "step2": "المس <icon></icon> «إضافة إلى الشاشة الرئيسية»",
+      "step2Hint": "مرّر قائمة الخيارات للأسفل لاختيار هذا الإجراء.",
+      "step3": "اضغط على «إضافة»",
+      "step3Hint": "تظهر بطاقتك كتطبيق حقيقي على شاشتك الرئيسية!",
+      "inAppTitle": "هل أنت داخل تطبيق (Instagram، WhatsApp...)؟",
+      "inAppText": "اضغط على الخيارات في الأعلى لفتح الصفحة أولًا في <b>Safari</b>."
+    },
+    "android": {
+      "step1": "اضغط على القائمة <icon></icon>",
+      "step1Hint": "النقاط الثلاث العمودية في أعلى Google Chrome.",
+      "step2": "اختر <icon></icon> «إضافة إلى الشاشة الرئيسية»",
+      "step2Hint": "(أو «تثبيت التطبيق» حسب متصفحك).",
+      "step3": "أكّد بالضغط على «إضافة»",
+      "step3Hint": "ستكون بطاقة {tenant} متاحة فورًا بنقرة واحدة."
+    },
+    "desktop": {
+      "intro": "لاستخدام بطاقتك في المتجر، الأسهل هو فتحها على هاتفك الذكي:",
+      "tipsTitle": "نصائح:",
+      "tip1": "امسح رمز QR الموجود في هذه الصفحة بهاتفك الذكي.",
+      "tip2": "انسخ الرابط أدناه لإرساله إلى نفسك برسالة أو بريد إلكتروني.",
+      "tip3": "على Mac أو الحاسوب، أضف الصفحة إلى المفضلة (<kbd>Cmd+D</kbd> أو <kbd>Ctrl+D</kbd>)."
+    },
+    "copied": "تم نسخ الرابط!",
+    "copy": "نسخ الرابط المباشر",
+    "gotIt": "فهمت"
+  },
+  "card": {
+    "live": {
+      "completeTitle": "تهانينا! اكتملت بطاقتك!",
+      "completeText": "تم فتح مكافأتك «{reward}».",
+      "rewardFallback": "مكافأة",
+      "stampsEarned": "{count, plural, zero {+# طابع عند الصندوق!} one {+طابع واحد عند الصندوق!} two {+طابعان عند الصندوق!} few {+# طوابع عند الصندوق!} many {+# طابعًا عند الصندوق!} other {+# طابع عند الصندوق!}}",
+      "pointsEarned": "{count, plural, zero {+# نقطة عند الصندوق!} one {+نقطة واحدة عند الصندوق!} two {+نقطتان عند الصندوق!} few {+# نقاط عند الصندوق!} many {+# نقطة عند الصندوق!} other {+# نقطة عند الصندوق!}}",
+      "balanceUpdated": "تم تحديث رصيدك للتو.",
+      "redeemTitle": "تم استبدال المكافأة عند الصندوق!",
+      "redeemText": "شكرًا لولائك."
+    },
+    "ready": "بطاقتك جاهزة يا {name}. اعرض رمز QR هذا عند الصندوق مع كل عملية شراء.",
+    "cardLabel": "بطاقة الولاء",
+    "pointsUnit": "{count, plural, zero {نقطة} one {نقطة} two {نقطة} few {نقاط} many {نقطة} other {نقطة}}",
+    "liveSync": "مزامنة فورية لزياراتك عند الصندوق",
+    "keepHandy": "اجعل بطاقتك دائمًا في متناول يدك",
+    "downloadLabel": "تنزيل البطاقة كصورة (PNG)",
+    "download": "حفظ الصورة",
+    "verify": {
+      "title": "فعّل بطاقتك",
+      "text": "أدخل الرمز المكوّن من 6 أرقام الذي وصلك عبر البريد الإلكتروني.",
+      "code": "رمز التحقق",
+      "submit": "تفعيل بطاقتي",
+      "resend": "إعادة إرسال الرمز",
+      "resent": "تم إرسال رمز جديد."
+    },
+    "inStore": "سيقوم الموظفون بتفعيل بطاقتك في زيارتك القادمة للصندوق.",
+    "blocked": "هذه البطاقة معلّقة. يُرجى التواصل مع {tenant}.",
+    "qrLabel": "رمز QR لعرضه عند الصندوق",
+    "qrHint": "اعرضه عند الصندوق",
+    "nextReward": "المكافأة التالية",
+    "progress": "التقدّم",
+    "remainingPoints": "متبقٍّ {count, plural, zero {# نقطة} one {نقطة واحدة} two {نقطتان} few {# نقاط} many {# نقطة} other {# نقطة}}",
+    "rewards": "المكافآت",
+    "available": "متاحة",
+    "rewardValue": {
+      "percent": "خصم {value}%",
+      "fixed": "خصم {value} {currency}"
+    },
+    "history": "السجل",
+    "kinds": {
+      "EARN": "شراء",
+      "ADJUSTMENT": "تعديل",
+      "REDEMPTION": "مكافأة",
+      "REDEMPTION_REVERSAL": "مكافأة ملغاة",
+      "REVERSAL": "إلغاء",
+      "REFUND": "استرداد",
+      "EXPIRATION": "انتهاء الصلاحية"
+    },
+    "memberSince": "عضو منذ {date}. هذا الرابط شخصي: لا تشاركه.",
+    "poweredBy": "مدعوم من <link>FOVE</link>"
+  },
+  "wallet": {
+    "apple": "إضافة إلى Apple Wallet",
+    "google": "إضافة إلى Google Wallet"
+  },
+  "stamps": {
+    "ariaLabel": "{filled, plural, zero {# طابع} one {طابع واحد} two {طابعان} few {# طوابع} many {# طابعًا} other {# طابع}} من {target}",
+    "ariaLabelReward": "{filled, plural, zero {# طابع} one {طابع واحد} two {طابعان} few {# طوابع} many {# طابعًا} other {# طابع}} من {target}، و{reward} في النهاية",
+    "complete": "{reward} متاحة في زيارتك القادمة.",
+    "completeDefault": "المكافأة متاحة في زيارتك القادمة.",
+    "progress": "{capped}/{target} · متبقٍّ {left, plural, zero {# زيارة} one {زيارة واحدة} two {زيارتان} few {# زيارات} many {# زيارة} other {# زيارة}} قبل {reward}",
+    "progressDefault": "{capped}/{target} · متبقٍّ {left, plural, zero {# زيارة} one {زيارة واحدة} two {زيارتان} few {# زيارات} many {# زيارة} other {# زيارة}} قبل المكافأة"
+  },
+  "poster": {
+    "title": "بطاقة الولاء الخاصة بك، مجانًا",
+    "scan": "امسح الرمز بكاميرا هاتفك",
+    "stampsOffer": "{count, plural, zero {# زيارة} one {زيارة واحدة} two {زيارتان} few {# زيارات} many {# زيارة} other {# زيارة}} = {reward}",
+    "print": "طباعة الملصق"
+  }
+}

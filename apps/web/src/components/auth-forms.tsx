@@ -2,11 +2,11 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { loginSchema, password as passwordRule } from "@fove/shared";
 import { Button } from "@/components/ui/button";
 import { Checkbox, Field, Input } from "@/components/ui/field";
 import { ErrorNote, SuccessNote } from "@/components/ui/misc";
@@ -14,6 +14,19 @@ import { PrivacyDialog, TermsDialog } from "@/components/privacy-dialog";
 import { api, ApiError, errorMessage } from "@/lib/api";
 import { useIsNativeApp } from "@/lib/native-app";
 import { afterAuthPath, clearPlanChoice, rememberPlanChoice, withPlanChoice } from "@/lib/plan-choice";
+
+/** Règles de validation reprises de `@fove/shared`, avec des messages traduits. */
+function rules(t: (key: string) => string) {
+  return {
+    name: z.string().trim().min(2, t("validation.nameRequired")),
+    email: z.email(t("validation.emailInvalid")),
+    password: z
+      .string()
+      .min(10, t("validation.passwordMin"))
+      .max(200)
+      .refine((v) => /[A-Za-z]/.test(v) && /\d/.test(v), t("validation.passwordLetterDigit")),
+  };
+}
 
 /**
  * Offre choisie sur la page tarifs (`?offre=business`) : retenue pour la suite
@@ -69,6 +82,7 @@ function GoogleIcon() {
 }
 
 function GoogleLogin({ next }: { next: string }) {
+  const t = useTranslations("auth.google");
   const [enabled, setEnabled] = useState(false);
   useEffect(() => {
     api.get<{ google: boolean }>("/auth/providers").then((providers) => setEnabled(providers.google)).catch(() => undefined);
@@ -82,11 +96,11 @@ function GoogleLogin({ next }: { next: string }) {
         className="flex min-h-11 items-center justify-center gap-3 rounded-md border border-line bg-surface px-4 py-2.5 text-sm font-semibold text-ink shadow-1 transition-colors hover:bg-surface-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cobalt focus-visible:ring-offset-2"
       >
         <GoogleIcon />
-        Continuer avec Google
+        {t("continue")}
       </a>
       <div className="flex items-center gap-3 text-xs text-ink-3" aria-hidden="true">
         <span className="h-px flex-1 bg-line" />
-        ou avec votre email
+        {t("orEmail")}
         <span className="h-px flex-1 bg-line" />
       </div>
     </div>
@@ -103,6 +117,11 @@ export function LoginForm() {
   const [leaving, setLeaving] = useState(false);
   const native = useIsNativeApp();
   const { offre, planName } = usePlanChoice("login");
+  const t = useTranslations("auth");
+  const loginSchema = useMemo(
+    () => z.object({ email: z.email(t("validation.emailInvalid")), password: z.string().min(1, t("validation.passwordRequired")).max(200) }),
+    [t],
+  );
   const form = useForm<z.infer<typeof loginSchema>>({ resolver: zodResolver(loginSchema) });
 
   const onSubmit = form.handleSubmit(async (values) => {
@@ -119,38 +138,31 @@ export function LoginForm() {
 
   return (
     <>
-      <Heading title="Connexion">
-        {planName ? `Connectez-vous pour activer l’offre ${planName} : le paiement suit.` : "Accédez à l’espace de votre commerce."}
+      <Heading title={t("login.title")}>
+        {planName ? t("login.subtitleWithPlan", { plan: planName }) : t("login.subtitle")}
       </Heading>
       <GoogleLogin next={next?.startsWith("/") && !next.startsWith("//") ? next : afterAuthPath()} />
       <form onSubmit={onSubmit} className="grid gap-5" noValidate>
         {isResetSuccess && (
-          <SuccessNote>Votre mot de passe a bien été mis à jour. Vous pouvez vous connecter.</SuccessNote>
+          <SuccessNote>{t("login.resetSuccess")}</SuccessNote>
         )}
         {error && <ErrorNote>{error}</ErrorNote>}
-        {oauthError && <ErrorNote>La connexion avec Google n’a pas abouti. Réessayez ou utilisez votre email.</ErrorNote>}
-        <Field label="Email" error={form.formState.errors.email?.message}>
+        {oauthError && <ErrorNote>{t("login.oauthError")}</ErrorNote>}
+        <Field label={t("fields.email")} error={form.formState.errors.email?.message}>
           {(p) => <Input {...p} type="email" autoComplete="email" inputMode="email" {...form.register("email")} />}
         </Field>
-        <Field label="Mot de passe" error={form.formState.errors.password?.message}>
+        <Field label={t("fields.password")} error={form.formState.errors.password?.message}>
           {(p) => <Input {...p} type="password" autoComplete="current-password" {...form.register("password")} />}
         </Field>
-        <Button type="submit" loading={form.formState.isSubmitting || leaving}>{leaving ? "Ouverture de votre espace…" : "Se connecter"}</Button>
+        <Button type="submit" loading={form.formState.isSubmitting || leaving}>{leaving ? t("login.leaving") : t("actions.login")}</Button>
       </form>
       <div className="mt-6 flex flex-wrap justify-between gap-3 text-sm">
-        <Link href="/forgot-password" className="text-cobalt hover:underline">Mot de passe oublié</Link>
-        {!native && <Link href={withPlanChoice("/signup", offre)} className="text-ink-2 hover:text-ink">Pas encore de compte ? Créer un compte</Link>}
+        <Link href="/forgot-password" className="text-cobalt hover:underline">{t("login.forgot")}</Link>
+        {!native && <Link href={withPlanChoice("/signup", offre)} className="text-ink-2 hover:text-ink">{t("login.noAccount")}</Link>}
       </div>
     </>
   );
 }
-
-const signupForm = z.object({
-  name: z.string().trim().min(2, "Indiquez votre nom"),
-  email: z.email("Email invalide"),
-  password: passwordRule,
-  acceptTerms: z.boolean().refine((v) => v, "Vous devez accepter les conditions"),
-});
 
 export function SignupForm() {
   const router = useRouter();
@@ -168,6 +180,11 @@ export function SignupForm() {
     }
   }, []);
 
+  const t = useTranslations("auth");
+  const signupForm = useMemo(
+    () => z.object({ ...rules(t), acceptTerms: z.boolean().refine((v) => v, t("validation.acceptTerms")) }),
+    [t],
+  );
   const form = useForm<z.infer<typeof signupForm>>({ resolver: zodResolver(signupForm), defaultValues: { acceptTerms: false } });
   const onSubmit = form.handleSubmit(async (values) => {
     setError(null);
@@ -182,39 +199,33 @@ export function SignupForm() {
   const e = form.formState.errors;
   return (
     <>
-      <Heading title="Créer votre compte">
-        {planName
-          ? `Vous avez choisi l’offre ${planName}. Créez votre compte et votre commerce, puis réglez votre abonnement.`
-          : "Gratuit jusqu’à 100 clients, sans carte bancaire. Votre programme est prêt en quelques minutes."}
+      <Heading title={t("signup.title")}>
+        {planName ? t("signup.subtitleWithPlan", { plan: planName }) : t("signup.subtitle")}
       </Heading>
       <GoogleLogin next={afterAuthPath()} />
       <form onSubmit={onSubmit} className="grid gap-5" noValidate>
         {error && <ErrorNote>{error}</ErrorNote>}
-        <Field label="Votre nom" error={e.name?.message}>
+        <Field label={t("fields.yourName")} error={e.name?.message}>
           {(p) => <Input {...p} autoComplete="name" {...form.register("name")} />}
         </Field>
-        <Field label="Email professionnel" error={e.email?.message}>
+        <Field label={t("fields.workEmail")} error={e.email?.message}>
           {(p) => <Input {...p} type="email" autoComplete="email" inputMode="email" {...form.register("email")} />}
         </Field>
-        <Field label="Mot de passe" hint="10 caractères minimum, avec au moins une lettre et un chiffre." error={e.password?.message}>
+        <Field label={t("fields.password")} hint={t("fields.passwordHint")} error={e.password?.message}>
           {(p) => <Input {...p} type="password" autoComplete="new-password" {...form.register("password")} />}
         </Field>
         <div className="grid gap-1.5">
           <Checkbox
             {...form.register("acceptTerms")}
-            label={
-              <>
-                J’accepte les <TermsDialog /> et la <PrivacyDialog />.
-              </>
-            }
+            label={t.rich("signup.acceptTerms", { terms: () => <TermsDialog />, privacy: () => <PrivacyDialog /> })}
           />
           {e.acceptTerms && <p className="text-sm text-danger">{e.acceptTerms.message}</p>}
         </div>
-        <Button type="submit" loading={form.formState.isSubmitting || leaving}>{leaving ? "Préparation de votre espace…" : "Créer mon compte"}</Button>
+        <Button type="submit" loading={form.formState.isSubmitting || leaving}>{leaving ? t("signup.leaving") : t("signup.submit")}</Button>
       </form>
-      <p className="mt-4 text-xs leading-5 text-ink-3">En continuant avec Google, vous acceptez les <TermsDialog /> et la <PrivacyDialog />.</p>
+      <p className="mt-4 text-xs leading-5 text-ink-3">{t.rich("signup.googleTerms", { terms: () => <TermsDialog />, privacy: () => <PrivacyDialog /> })}</p>
       <p className="mt-6 text-sm text-ink-2">
-        Déjà inscrit ? <Link href={withPlanChoice("/login", offre)} className="text-cobalt hover:underline">Se connecter</Link>
+        {t("signup.alreadyRegistered")} <Link href={withPlanChoice("/login", offre)} className="text-cobalt hover:underline">{t("actions.login")}</Link>
       </p>
     </>
   );
@@ -222,7 +233,9 @@ export function SignupForm() {
 
 export function ForgotForm() {
   const [sent, setSent] = useState(false);
-  const form = useForm<{ email: string }>({ resolver: zodResolver(z.object({ email: z.email("Email invalide") })) });
+  const t = useTranslations("auth");
+  const schema = useMemo(() => z.object({ email: rules(t).email }), [t]);
+  const form = useForm<{ email: string }>({ resolver: zodResolver(schema) });
   const [error, setError] = useState<string | null>(null);
   const onSubmit = form.handleSubmit(async (values) => {
     setError(null);
@@ -236,27 +249,25 @@ export function ForgotForm() {
   if (sent) {
     return (
       <div className="grid gap-6">
-        <Heading title="Vérifiez votre boîte mail">
-          Si un compte existe pour cette adresse, un email avec un lien de réinitialisation sécurisé vient d’être envoyé. Pensez à vérifier vos courriers indésirables (spams). Le lien est valable 1 heure.
-        </Heading>
+        <Heading title={t("forgot.sentTitle")}>{t("forgot.sentText")}</Heading>
         <Button asChild variant="secondary">
-          <Link href="/login">Retour à la connexion</Link>
+          <Link href="/login">{t("actions.backToLogin")}</Link>
         </Button>
       </div>
     );
   }
   return (
     <>
-      <Heading title="Mot de passe oublié">Indiquez votre email, nous vous envoyons un lien pour en choisir un nouveau.</Heading>
+      <Heading title={t("forgot.title")}>{t("forgot.subtitle")}</Heading>
       <form onSubmit={onSubmit} className="grid gap-5" noValidate>
         {error && <ErrorNote>{error}</ErrorNote>}
-        <Field label="Email" error={form.formState.errors.email?.message}>
+        <Field label={t("fields.email")} error={form.formState.errors.email?.message}>
           {(p) => <Input {...p} type="email" autoComplete="email" {...form.register("email")} />}
         </Field>
-        <Button type="submit" loading={form.formState.isSubmitting}>Envoyer le lien</Button>
+        <Button type="submit" loading={form.formState.isSubmitting}>{t("forgot.submit")}</Button>
       </form>
       <div className="mt-6 text-center text-sm">
-        <Link href="/login" className="text-ink-2 hover:text-ink">Retour à la connexion</Link>
+        <Link href="/login" className="text-ink-2 hover:text-ink">{t("actions.backToLogin")}</Link>
       </div>
     </>
   );
@@ -267,20 +278,20 @@ export function ResetForm() {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [isTokenError, setIsTokenError] = useState(false);
-  const form = useForm<{ password: string }>({ resolver: zodResolver(z.object({ password: passwordRule })) });
+  const t = useTranslations("auth");
+  const schema = useMemo(() => z.object({ password: rules(t).password }), [t]);
+  const form = useForm<{ password: string }>({ resolver: zodResolver(schema) });
 
   if (!token) {
     return (
       <div className="grid gap-6">
-        <Heading title="Lien manquant ou incomplet">
-          Le lien de réinitialisation est incomplet ou invalide. Pour définir un nouveau mot de passe, demandez un lien depuis la page dédiée.
-        </Heading>
+        <Heading title={t("reset.missingTitle")}>{t("reset.missingText")}</Heading>
         <div className="grid gap-3">
           <Button asChild>
-            <Link href="/forgot-password">Demander un nouveau lien</Link>
+            <Link href="/forgot-password">{t("actions.requestNewLink")}</Link>
           </Button>
           <Button asChild variant="ghost">
-            <Link href="/login">Retour à la connexion</Link>
+            <Link href="/login">{t("actions.backToLogin")}</Link>
           </Button>
         </div>
       </div>
@@ -296,7 +307,7 @@ export function ResetForm() {
     } catch (e) {
       if (e instanceof ApiError && (e.code === "invalid_token" || e.status === 400)) {
         setIsTokenError(true);
-        setError("Ce lien a expiré (durée de validité : 1 heure) ou a déjà été utilisé.");
+        setError(t("reset.expired"));
       } else {
         setError(errorMessage(e));
       }
@@ -305,25 +316,25 @@ export function ResetForm() {
 
   return (
     <>
-      <Heading title="Nouveau mot de passe">Vos autres sessions seront déconnectées.</Heading>
+      <Heading title={t("reset.title")}>{t("reset.subtitle")}</Heading>
       <form onSubmit={onSubmit} className="grid gap-5" noValidate>
         {error && (
           <div className="grid gap-3">
             <ErrorNote>{error}</ErrorNote>
             {isTokenError && (
               <Button asChild variant="secondary" size="sm">
-                <Link href="/forgot-password">Demander un nouveau lien</Link>
+                <Link href="/forgot-password">{t("actions.requestNewLink")}</Link>
               </Button>
             )}
           </div>
         )}
-        <Field label="Nouveau mot de passe" hint="10 caractères minimum, avec au moins une lettre et un chiffre." error={form.formState.errors.password?.message}>
+        <Field label={t("fields.newPassword")} hint={t("fields.passwordHint")} error={form.formState.errors.password?.message}>
           {(p) => <Input {...p} type="password" autoComplete="new-password" {...form.register("password")} />}
         </Field>
-        <Button type="submit" loading={form.formState.isSubmitting}>Enregistrer le mot de passe</Button>
+        <Button type="submit" loading={form.formState.isSubmitting}>{t("reset.submit")}</Button>
       </form>
       <div className="mt-6 text-center text-sm">
-        <Link href="/login" className="text-ink-2 hover:text-ink">Retour à la connexion</Link>
+        <Link href="/login" className="text-ink-2 hover:text-ink">{t("actions.backToLogin")}</Link>
       </div>
     </>
   );
@@ -333,6 +344,7 @@ export function VerifyEmail() {
   const token = useSearchParams().get("token") ?? "";
   const [state, setState] = useState<"pending" | "ok" | "error">("pending");
   const [message, setMessage] = useState("");
+  const t = useTranslations("auth");
   useEffect(() => {
     let cancelled = false;
     api
@@ -347,19 +359,19 @@ export function VerifyEmail() {
       cancelled = true;
     };
   }, [token]);
-  if (state === "pending") return <Heading title="Vérification en cours" />;
+  if (state === "pending") return <Heading title={t("verify.pending")} />;
   if (state === "error") {
     return (
       <>
-        <Heading title="Lien invalide">{message} Depuis votre tableau de bord, vous pouvez demander un nouveau lien.</Heading>
-        <Button asChild variant="secondary"><Link href="/app">Ouvrir mon espace</Link></Button>
+        <Heading title={t("verify.errorTitle")}>{t("verify.errorText", { message })}</Heading>
+        <Button asChild variant="secondary"><Link href="/app">{t("actions.openSpace")}</Link></Button>
       </>
     );
   }
   return (
     <>
-      <Heading title="Email confirmé">Votre adresse est vérifiée. Vous pouvez activer l’abonnement et les intégrations.</Heading>
-      <Button asChild><Link href="/app">Ouvrir mon espace</Link></Button>
+      <Heading title={t("verify.successTitle")}>{t("verify.successText")}</Heading>
+      <Button asChild><Link href="/app">{t("actions.openSpace")}</Link></Button>
     </>
   );
 }
@@ -371,16 +383,19 @@ interface InvitePreview {
   hasAccount: boolean;
 }
 
-const ROLE_FR: Record<string, string> = { OWNER: "propriétaire", MANAGER: "manager", CASHIER: "caissier", VIEWER: "lecteur" };
+const ROLES = new Set(["OWNER", "MANAGER", "CASHIER", "VIEWER"]);
 
 export function AcceptInvite() {
   const token = useSearchParams().get("token") ?? "";
   const router = useRouter();
   const [preview, setPreview] = useState<InvitePreview | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const form = useForm<{ name: string; password: string }>({
-    resolver: zodResolver(z.object({ name: z.string().trim().min(2, "Indiquez votre nom"), password: passwordRule })),
-  });
+  const t = useTranslations("auth");
+  const schema = useMemo(() => {
+    const { name, password } = rules(t);
+    return z.object({ name, password });
+  }, [t]);
+  const form = useForm<{ name: string; password: string }>({ resolver: zodResolver(schema) });
 
   useEffect(() => {
     api.get<InvitePreview>(`/auth/invitations/preview?token=${encodeURIComponent(token)}`).then(setPreview).catch((e) => setError(errorMessage(e)));
@@ -392,35 +407,35 @@ export function AcceptInvite() {
       await api.post("/auth/invitations/accept", { token, ...values });
       router.replace("/app");
     } catch (e) {
-      if (e instanceof ApiError && e.status === 403) setError("Connectez-vous avec l’adresse invitée, puis rouvrez ce lien.");
+      if (e instanceof ApiError && e.status === 403) setError(t("invite.wrongAccount"));
       else setError(errorMessage(e));
     }
   };
 
-  if (!preview) return error ? <ErrorNote>{error}</ErrorNote> : <Heading title="Chargement de l’invitation" />;
+  if (!preview) return error ? <ErrorNote>{error}</ErrorNote> : <Heading title={t("invite.loading")} />;
 
   return (
     <>
-      <Heading title={`Rejoindre ${preview.tenantName}`}>
-        Vous êtes invité(e) comme {ROLE_FR[preview.role] ?? preview.role} avec l’adresse {preview.email}.
+      <Heading title={t("invite.title", { tenant: preview.tenantName })}>
+        {t("invite.subtitle", { role: ROLES.has(preview.role) ? t(`invite.roles.${preview.role}`) : preview.role, email: preview.email })}
       </Heading>
       {error && <div className="mb-5"><ErrorNote>{error}</ErrorNote></div>}
       {preview.hasAccount ? (
         <div className="grid gap-3">
-          <Button onClick={() => accept()}>Accepter l’invitation</Button>
+          <Button onClick={() => accept()}>{t("invite.accept")}</Button>
           <Button asChild variant="secondary">
-            <Link href={`/login?next=${encodeURIComponent(`/invite?token=${token}`)}`}>Me connecter d’abord</Link>
+            <Link href={`/login?next=${encodeURIComponent(`/invite?token=${token}`)}`}>{t("invite.loginFirst")}</Link>
           </Button>
         </div>
       ) : (
         <form onSubmit={form.handleSubmit(accept)} className="grid gap-5" noValidate>
-          <Field label="Votre nom" error={form.formState.errors.name?.message}>
+          <Field label={t("fields.yourName")} error={form.formState.errors.name?.message}>
             {(p) => <Input {...p} autoComplete="name" {...form.register("name")} />}
           </Field>
-          <Field label="Choisissez un mot de passe" hint="10 caractères minimum, avec au moins une lettre et un chiffre." error={form.formState.errors.password?.message}>
+          <Field label={t("fields.choosePassword")} hint={t("fields.passwordHint")} error={form.formState.errors.password?.message}>
             {(p) => <Input {...p} type="password" autoComplete="new-password" {...form.register("password")} />}
           </Field>
-          <Button type="submit" loading={form.formState.isSubmitting}>Créer mon accès</Button>
+          <Button type="submit" loading={form.formState.isSubmitting}>{t("invite.submit")}</Button>
         </form>
       )}
     </>

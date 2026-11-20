@@ -5,7 +5,8 @@ import { X, Wallet, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/field";
 import { api } from "@/lib/api";
-import { formatFinance } from "@/components/admin/finance/finance-utils";
+import { useLocale, useTranslations } from "next-intl";
+import { formatPrice } from "@/lib/utils";
 
 interface PartnerPayoutModalProps {
   open: boolean;
@@ -16,6 +17,8 @@ interface PartnerPayoutModalProps {
   onRequested: () => void;
 }
 
+const MOBILE_PROVIDERS = ["AIRTEL_MONEY", "ORANGE_MONEY", "M_PESA", "MTN_MOMO", "OTHER"] as const;
+
 export function PartnerPayoutModal({
   open,
   availableCents,
@@ -24,6 +27,9 @@ export function PartnerPayoutModal({
   onClose,
   onRequested,
 }: PartnerPayoutModalProps) {
+  const t = useTranslations("partner.payoutModal");
+  const locale = useLocale();
+  const money = (cents: number) => formatPrice(cents, "USD", locale);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -51,19 +57,19 @@ export function PartnerPayoutModal({
     const requestedCents = Math.round(amountFloat * 100);
 
     if (Number.isNaN(requestedCents) || requestedCents < thresholdCents) {
-      setError(`Le montant minimum de retrait est de ${formatFinance(thresholdCents, "USD")}`);
+      setError(t("errors.minimum", { amount: money(thresholdCents) }));
       return;
     }
 
     if (requestedCents > availableCents) {
-      setError(`Le montant demandé excède votre solde disponible (${formatFinance(availableCents, "USD")})`);
+      setError(t("errors.exceeds", { amount: money(availableCents) }));
       return;
     }
 
     let payoutDetails: Record<string, any> = {};
     if (method === "BANK_TRANSFER") {
       if (!iban.trim() || !accountHolder.trim()) {
-        setError("L'IBAN et le nom du titulaire du compte sont obligatoires");
+        setError(t("errors.bankRequired"));
         return;
       }
       payoutDetails = {
@@ -75,7 +81,7 @@ export function PartnerPayoutModal({
       };
     } else {
       if (!mobileNumber.trim() || !mobileHolder.trim()) {
-        setError("Le numéro Mobile Money et le nom du titulaire sont obligatoires");
+        setError(t("errors.mobileRequired"));
         return;
       }
       payoutDetails = {
@@ -96,7 +102,7 @@ export function PartnerPayoutModal({
       onRequested();
       onClose();
     } catch (err: any) {
-      setError(err?.message || "Impossible de soumettre la demande de retrait");
+      setError(err?.message || t("errors.generic"));
     } finally {
       setLoading(false);
     }
@@ -112,13 +118,14 @@ export function PartnerPayoutModal({
               <Wallet className="size-4" />
             </span>
             <div>
-              <h2 className="font-display text-base font-semibold text-ink">Demander un virement</h2>
-              <p className="text-xs text-ink-3">Disponible au retrait : {formatFinance(availableCents, "USD")}</p>
+              <h2 className="font-display text-base font-semibold text-ink">{t("title")}</h2>
+              <p className="text-xs text-ink-3">{t("available", { amount: money(availableCents) })}</p>
             </div>
           </div>
           <button
             type="button"
             onClick={onClose}
+            aria-label={t("close")}
             className="grid size-8 place-items-center rounded-lg text-ink-3 hover:bg-surface-2 hover:text-ink"
           >
             <X className="size-4" />
@@ -133,7 +140,7 @@ export function PartnerPayoutModal({
 
         <form onSubmit={handleSubmit} className="mt-4 space-y-4">
           <div>
-            <label className="mb-1 block text-xs font-medium text-ink-2">Montant du retrait (USD) *</label>
+            <label className="mb-1 block text-xs font-medium text-ink-2">{t("amount")}</label>
             <Input
               required
               type="number"
@@ -144,34 +151,34 @@ export function PartnerPayoutModal({
               onChange={(e) => setAmountStr(e.target.value)}
             />
             <p className="mt-1 text-[11px] text-ink-3">
-              Seuil minimum : {formatFinance(thresholdCents, "USD")}
+              {t("threshold", { amount: money(thresholdCents) })}
             </p>
           </div>
 
           <div>
-            <label className="mb-1 block text-xs font-medium text-ink-2">Méthode de versement *</label>
+            <label className="mb-1 block text-xs font-medium text-ink-2">{t("method")}</label>
             <div className="grid grid-cols-2 gap-2">
               <button
                 type="button"
                 onClick={() => setMethod("BANK_TRANSFER")}
-                className={`rounded-lg border p-3 text-left text-xs transition-colors ${
+                className={`rounded-lg border p-3 text-start text-xs transition-colors ${
                   method === "BANK_TRANSFER"
                     ? "border-cobalt bg-cobalt/5 text-ink font-semibold"
                     : "border-line bg-surface text-ink-2 hover:bg-surface-2"
                 }`}
               >
-                Virement bancaire (IBAN / SWIFT)
+                {t("bankTransfer")}
               </button>
               <button
                 type="button"
                 onClick={() => setMethod("MOBILE_MONEY")}
-                className={`rounded-lg border p-3 text-left text-xs transition-colors ${
+                className={`rounded-lg border p-3 text-start text-xs transition-colors ${
                   method === "MOBILE_MONEY"
                     ? "border-cobalt bg-cobalt/5 text-ink font-semibold"
                     : "border-line bg-surface text-ink-2 hover:bg-surface-2"
                 }`}
               >
-                Mobile Money (Airtel, Orange, M-Pesa)
+                {t("mobileMoney")}
               </button>
             </div>
           </div>
@@ -179,7 +186,7 @@ export function PartnerPayoutModal({
           {method === "BANK_TRANSFER" ? (
             <div className="space-y-3 rounded-xl border border-line bg-surface-2 p-4">
               <div>
-                <label className="mb-1 block text-[11px] font-medium text-ink-2">Nom & Prénom du titulaire du compte *</label>
+                <label className="mb-1 block text-[11px] font-medium text-ink-2">{t("accountHolder")}</label>
                 <Input
                   required
                   value={accountHolder}
@@ -188,7 +195,7 @@ export function PartnerPayoutModal({
               </div>
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="mb-1 block text-[11px] font-medium text-ink-2">IBAN / Numéro de compte *</label>
+                  <label className="mb-1 block text-[11px] font-medium text-ink-2">{t("iban")}</label>
                   <Input
                     required
                     value={iban}
@@ -196,7 +203,7 @@ export function PartnerPayoutModal({
                   />
                 </div>
                 <div>
-                  <label className="mb-1 block text-[11px] font-medium text-ink-2">Code BIC / SWIFT (optionnel)</label>
+                  <label className="mb-1 block text-[11px] font-medium text-ink-2">{t("bic")}</label>
                   <Input
                     value={bic}
                     onChange={(e) => setBic(e.target.value)}
@@ -204,7 +211,7 @@ export function PartnerPayoutModal({
                 </div>
               </div>
               <div>
-                <label className="mb-1 block text-[11px] font-medium text-ink-2">Établissement bancaire</label>
+                <label className="mb-1 block text-[11px] font-medium text-ink-2">{t("bankName")}</label>
                 <Input
                   value={bankName}
                   onChange={(e) => setBankName(e.target.value)}
@@ -215,21 +222,21 @@ export function PartnerPayoutModal({
             <div className="space-y-3 rounded-xl border border-line bg-surface-2 p-4">
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="mb-1 block text-[11px] font-medium text-ink-2">Opérateur *</label>
+                  <label className="mb-1 block text-[11px] font-medium text-ink-2">{t("provider")}</label>
                   <select
                     value={mobileProvider}
                     onChange={(e) => setMobileProvider(e.target.value)}
                     className="w-full rounded-md border border-line bg-surface px-3 py-2 text-xs text-ink"
                   >
-                    <option value="AIRTEL_MONEY">Airtel Money</option>
-                    <option value="ORANGE_MONEY">Orange Money</option>
-                    <option value="M_PESA">M-Pesa (Vodacom)</option>
-                    <option value="MTN_MOMO">MTN Mobile Money</option>
-                    <option value="OTHER">Autre opérateur</option>
+                    {MOBILE_PROVIDERS.map((provider) => (
+                      <option key={provider} value={provider}>
+                        {t(`providers.${provider}`)}
+                      </option>
+                    ))}
                   </select>
                 </div>
                 <div>
-                  <label className="mb-1 block text-[11px] font-medium text-ink-2">Numéro Mobile Money *</label>
+                  <label className="mb-1 block text-[11px] font-medium text-ink-2">{t("mobileNumber")}</label>
                   <Input
                     required
                     value={mobileNumber}
@@ -238,7 +245,7 @@ export function PartnerPayoutModal({
                 </div>
               </div>
               <div>
-                <label className="mb-1 block text-[11px] font-medium text-ink-2">Nom officiel enregistré sur la ligne *</label>
+                <label className="mb-1 block text-[11px] font-medium text-ink-2">{t("mobileHolder")}</label>
                 <Input
                   required
                   value={mobileHolder}
@@ -250,10 +257,10 @@ export function PartnerPayoutModal({
 
           <div className="flex justify-end gap-2 border-t border-line pt-4">
             <Button type="button" variant="ghost" onClick={onClose} disabled={loading}>
-              Annuler
+              {t("cancel")}
             </Button>
             <Button type="submit" variant="primary" disabled={loading}>
-              {loading ? "Transmission..." : "Confirmer la demande de virement"}
+              {loading ? t("submitting") : t("submit")}
             </Button>
           </div>
         </form>

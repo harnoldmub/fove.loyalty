@@ -1,3 +1,5 @@
+import type { Locale } from "../i18n/locale";
+
 /**
  * Portefeuilles mobiles. Google Wallet est implémenté (`cards/google-wallet.ts`),
  * activé seulement si ses identifiants sont configurés. Apple Wallet reste à
@@ -18,6 +20,8 @@ export interface WalletCardState {
   primaryColor: string;
   logoUrl: string | null;
   rewardSummary?: string;
+  /** Langue des textes de la carte (celle du commerce). */
+  locale?: Locale;
 }
 
 export interface WalletProvider {

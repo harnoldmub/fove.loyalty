@@ -1,15 +1,8 @@
 import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 
 export const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? "https://fove.digital").replace(/\/$/, "");
 
-const ogBanner = {
-  url: `${siteUrl}/opengraph-image`,
-  secureUrl: `${siteUrl}/opengraph-image`,
-  type: "image/png",
-  width: 1200,
-  height: 630,
-  alt: "FOVE — Plateforme de fidélisation et force de vente retail",
-};
 
 const shareIcon = {
   url: `${siteUrl}/share-icon.png`,
@@ -38,7 +31,13 @@ export const defaultKeywords = [
 ];
 
 /** Métadonnées enrichies d’une page publique (SEO, OpenGraph 1200×630 + vignette carrée WhatsApp, Twitter/X). */
-export function pageMeta(title: string, description: string, path: string, extraKeywords: string[] = []): Metadata {
+export function pageMeta(
+  title: string,
+  description: string,
+  path: string,
+  extraKeywords: string[] = [],
+  options: { ogLocale?: string; imageAlt?: string; keywords?: string[] } = {},
+): Metadata {
   const canonicalUrl = path === "/" ? siteUrl : `${siteUrl}${path}`;
   const fullTitle = title.startsWith("FOVE") ? title : `${title} · FOVE`;
 
@@ -46,7 +45,7 @@ export function pageMeta(title: string, description: string, path: string, extra
     // La page d'accueil porte déjà la marque dans son titre : pas de suffixe « · FOVE ».
     title: title.startsWith("FOVE") ? { absolute: title } : title,
     description,
-    keywords: [...defaultKeywords, ...extraKeywords],
+    keywords: [...(options.keywords ?? defaultKeywords), ...extraKeywords],
     alternates: {
       canonical: canonicalUrl,
       languages: {
@@ -59,17 +58,38 @@ export function pageMeta(title: string, description: string, path: string, extra
     openGraph: {
       type: "website",
       siteName: "FOVE",
-      locale: "fr_FR",
+      locale: options.ogLocale ?? "fr_FR",
       title: fullTitle,
       description,
       url: canonicalUrl,
-      images: [ogBanner, shareIcon],
+      // Icône carrée seule : WhatsApp l'affiche en petite vignette (règle du workspace).
+      images: [options.imageAlt ? { ...shareIcon, alt: options.imageAlt } : shareIcon],
     },
     twitter: {
-      card: "summary_large_image",
+      card: "summary",
       title: fullTitle,
       description,
-      images: [ogBanner.url],
+      images: [shareIcon.url],
     },
   };
+}
+
+/**
+ * Lit un tableau de messages (`t.raw`). La fusion avec le français de repli
+ * (src/i18n/request.ts) transforme les tableaux en objets indexés : on les remet en liste.
+ */
+export function asList<T>(raw: unknown): T[] {
+  if (Array.isArray(raw)) return raw as T[];
+  return raw && typeof raw === "object" ? (Object.values(raw) as T[]) : [];
+}
+
+/** Métadonnées d’une page de la vitrine, lues dans `marketing.meta.<page>` selon la langue de la requête. */
+export async function localizedPageMeta(page: string, path: string): Promise<Metadata> {
+  const t = await getTranslations("marketing.meta");
+  const extra = t.has(`${page}.keywords`) ? asList<string>(t.raw(`${page}.keywords`)) : [];
+  return pageMeta(t(`${page}.title`), t(`${page}.description`), path, extra, {
+    ogLocale: t("ogLocale"),
+    imageAlt: t("imageAlt"),
+    keywords: asList<string>(t.raw("keywords")),
+  });
 }

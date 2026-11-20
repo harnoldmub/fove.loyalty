@@ -1,0 +1,493 @@
+{
+  "meta": {
+    "ogLocale": "es_ES",
+    "inLanguage": "es-ES",
+    "imageAlt": "FOVE — Plataforma de fidelización y fuerza de ventas para retail",
+    "keywords": [
+      "tarjeta de fidelidad digital",
+      "programa de fidelidad para comercios",
+      "fidelización de clientes retail",
+      "código QR de fidelidad en caja",
+      "tarjeta de sellos digital",
+      "fidelidad Apple Wallet",
+      "fidelidad Google Wallet",
+      "CRM para comercios",
+      "seguimiento de clientes por WhatsApp",
+      "segmentación RFM retail",
+      "software de fidelidad para tiendas",
+      "fidelidad Kinshasa RDC",
+      "FOVE",
+      "Dizayna"
+    ],
+    "root": {
+      "title": "FOVE — Convierta a sus clientes en habituales | Tarjeta de fidelidad digital y CRM",
+      "description": "Plataforma de fidelización y fuerza de ventas para retail: tarjetas de fidelidad digitales (Apple y Google Wallet), códigos QR en caja, puntos o sellos, CRM RFM y seguimiento por WhatsApp. Sin aplicación que instalar."
+    },
+    "home": {
+      "title": "FOVE — Convierta a sus clientes en habituales | Tarjeta de fidelidad digital y CRM",
+      "description": "Tarjetas de fidelidad digitales (Apple Wallet y Google Wallet), códigos QR en caja, puntos o sellos, CRM RFM y seguimiento por WhatsApp para comercios. Sin aplicación que instalar."
+    },
+    "pricing": {
+      "title": "Precios — Planes de programa de fidelidad para comercios",
+      "description": "Empiece gratis con hasta 100 clientes y pase después a Essentiel, Business o Réseau, o a un plan a medida. Cero comisiones sobre sus ventas.",
+      "keywords": ["precio tarjeta de fidelidad digital", "precio software de fidelidad", "suscripción fidelización tienda"]
+    },
+    "features": {
+      "title": "Funcionalidades — Tarjetas de fidelidad, Wallet, escáner de caja y CRM RFM",
+      "description": "Programa de puntos o sellos, tarjetas digitales Apple y Google Wallet, notificaciones push en pantalla de bloqueo, escáner de caja móvil, segmentación RFM y seguimiento por WhatsApp.",
+      "keywords": ["funcionalidades tarjeta de fidelidad", "Apple Wallet para comercios", "fidelidad Google Wallet", "escáner QR de caja"]
+    },
+    "contact": {
+      "title": "Contacto y demostración",
+      "description": "Solicite una demostración personalizada de FOVE, acompañamiento para el despliegue en tienda o un presupuesto para varios establecimientos.",
+      "keywords": ["contacto FOVE", "demo programa de fidelidad", "acompañamiento fidelización retail", "presupuesto fidelidad varias tiendas"]
+    },
+    "developers": {
+      "title": "Documentación para desarrolladores — API REST de fidelidad, SDK TypeScript y webhooks",
+      "description": "Integre FOVE en su tienda online o software de caja: API REST v1 idempotente, SDK TypeScript @fove/sdk, webhooks firmados con HMAC-SHA256 y widget web.",
+      "keywords": ["API de fidelidad e-commerce", "SDK TypeScript de fidelidad", "webhook de fidelidad para caja", "widget de fidelidad para web"]
+    },
+    "terms": {
+      "title": "Condiciones Generales de Uso (CGU y DPA)",
+      "description": "Condiciones contractuales de uso de la plataforma SaaS FOVE y acuerdo de encargo del tratamiento de datos personales (RGPD).",
+      "keywords": ["condiciones FOVE", "condiciones generales de uso fidelidad", "DPA RGPD comercio", "contrato SaaS Dizayna"]
+    },
+    "privacy": {
+      "title": "Datos personales",
+      "description": "Cómo trata FOVE los datos de los comercios y de sus clientes."
+    }
+  },
+  "jsonLd": {
+    "organization": "Plataforma SaaS de fidelización de clientes y acción comercial para retail: tarjetas de fidelidad digitales, códigos QR en caja, Apple/Google Wallet y CRM para comercios.",
+    "application": "Solución de fidelización para comercios: programa de puntos o sellos, registro por código QR en el mostrador, escáner de caja móvil, segmentación RFM y seguimiento por WhatsApp."
+  },
+  "header": {
+    "homeLabel": "FOVE, inicio",
+    "mainNav": "Navegación principal",
+    "mobileNav": "Navegación móvil",
+    "links": {
+      "features": "Funcionalidades",
+      "pricing": "Precios",
+      "partners": "Socios",
+      "developers": "Desarrolladores",
+      "contact": "Contacto"
+    },
+    "login": "Iniciar sesión",
+    "signup": "Empezar gratis"
+  },
+  "footer": {
+    "tagline": "<strong>FOVE</strong>, por <strong>FOrce de VEnte</strong>, fuerza de ventas en francés.",
+    "description": "La plataforma de fidelización y acción comercial para retail. Un producto de Dizayna.",
+    "product": "Producto",
+    "info": "Información",
+    "links": {
+      "features": "Funcionalidades",
+      "pricing": "Precios",
+      "api": "Documentación de la API",
+      "contact": "Contacto y demo",
+      "partners": "Programa de socios",
+      "terms": "Condiciones de uso",
+      "privacy": "Datos personales",
+      "merchantArea": "Área de comercio",
+      "sitemap": "Mapa del sitio"
+    },
+    "rights": "© {year} Dizayna. Todos los derechos reservados."
+  },
+  "home": {
+    "hero": {
+      "title": "Convierta a sus clientes en habituales.",
+      "text": "Una tarjeta de fidelidad en el teléfono de sus clientes y un código QR en su mostrador. Escanean, compran y vuelven. Sin aplicación que instalar.",
+      "cta": "Crear mi programa",
+      "pricing": "Ver precios",
+      "note": "Gratis hasta 100 clientes, sin tarjeta bancaria. Configúrelo usted mismo en pocos minutos.",
+      "wallet": "Sus clientes añaden su tarjeta al teléfono con un solo gesto:",
+      "walletLabel": "Compatible con Apple Wallet y Google Wallet"
+    },
+    "steps": {
+      "title": "Tres gestos, del mostrador a la recompensa",
+      "step": "Paso {number}",
+      "qr": {
+        "title": "Muestre su código QR en el mostrador",
+        "text": "FOVE lo genera con sus colores. Imprímalo y péguelo junto a la caja o en el escaparate."
+      },
+      "signup": {
+        "title": "El cliente crea su tarjeta en treinta segundos",
+        "text": "Escanea e indica su nombre y su teléfono. Su tarjeta se abre en el navegador, sin nada que instalar."
+      },
+      "scan": {
+        "title": "Usted escanea su tarjeta en cada compra",
+        "text": "Desde el teléfono de la caja. Los puntos o sellos se suman y la recompensa se desbloquea sola."
+      }
+    },
+    "counter": {
+      "title": "Pensado para la caja, no para la oficina",
+      "text": "El escáner cabe en un teléfono. Se introduce el importe, FOVE calcula los puntos y se confirma con un gesto. Cada operación registra el nombre del cajero, el establecimiento y la hora.",
+      "link": "Todas las funcionalidades",
+      "rewards": {
+        "title": "Puntos o sellos",
+        "text": "1.000 CDF gastados = 1 punto, o un café gratis a la décima visita. Usted fija las reglas, los topes y las recompensas."
+      },
+      "stores": {
+        "title": "Varios puntos de venta",
+        "text": "Cada establecimiento tiene su QR y su equipo. Un cajero solo ve su tienda."
+      },
+      "stats": {
+        "title": "Cifras que salen de sus ventas",
+        "text": "Miembros, clientes que vuelven, puntos repartidos y recompensas canjeadas, calculados sobre su historial real."
+      }
+    },
+    "online": {
+      "title": "Su tienda online también cuenta",
+      "text": "Un pedido pagado en su web abona la misma tarjeta que una compra en tienda. Un reembolso retira los puntos correspondientes. Un widget añade el botón de fidelidad a su web, sea cual sea.",
+      "docs": "Leer la documentación",
+      "codeLabel": "Ejemplo de código",
+      "codeComment": "Reenviar el mismo pedido nunca abona dos veces."
+    },
+    "pricing": {
+      "title": "Un precio fijo, sin comisiones sobre sus ventas",
+      "text": "Cambie de plan cuando quiera: sus tarjetas, sus clientes y su historial se mantienen intactos."
+    }
+  },
+  "stampDemo": {
+    "cardLabel": "Tarjeta de fidelidad",
+    "progress": "{count, plural, one {# sello} other {# sellos}} de {total}",
+    "complete": "Tarjeta completa: un café gratis para Awa.",
+    "restart": "Reiniciar la demostración",
+    "validate": "Validar una compra",
+    "hint": "Pruébelo, es el gesto del cajero."
+  },
+  "walletDemo": {
+    "title": "Comuníquese directamente en la pantalla de sus clientes.",
+    "text": "Sus tarjetas se instalan con 1 clic en <strong>Apple Wallet</strong> y <strong>Google Wallet</strong>. Difunda mensajes, ofertas y alertas visibles al instante en la pantalla de bloqueo del iPhone o de Android, con una tasa de apertura cercana al 100%.",
+    "osPreview": "Vista previa del sistema:",
+    "benefits": {
+      "delivery": "100% de entregabilidad (pantalla de bloqueo)",
+      "sms": "0 $ en costes de SMS",
+      "live": "Saldo actualizado en directo"
+    },
+    "lockDate": "Jueves, 30 de octubre",
+    "appleSource": "Cartera · Apple Wallet",
+    "tapToOpen": "Tocar para abrir ›",
+    "passLabel": "Pase de fidelidad",
+    "balance": "Saldo",
+    "holder": "Titular · Nadia K.",
+    "unlock": "Deslizar hacia arriba para desbloquear",
+    "replay": "Probar la notificación push con sonido",
+    "scenarios": {
+      "promo": {
+        "label": "Oferta flash",
+        "tag": "Campaña comercial",
+        "time": "Ahora",
+        "title": "Café Matonge · Oferta flash",
+        "body": "¡Disfrute de un 20% de descuento en todas las bebidas especiales esta tarde hasta las 17 h presentando su pase!",
+        "badge": "-20% hasta las 17 h",
+        "balance": "7 / 10",
+        "detail": "Ventaja flash activa"
+      },
+      "earn": {
+        "label": "Compra en caja",
+        "tag": "Actualización en tiempo real",
+        "time": "Hace 1 min",
+        "title": "Café Matonge · Saldo actualizado",
+        "body": "¡+1 sello añadido! Ya tiene 8 sellos de 10. Solo 2 visitas más para su café gratis.",
+        "badge": "+1 sello validado",
+        "balance": "8 / 10",
+        "detail": "Próxima recompensa a los 10"
+      },
+      "reward": {
+        "label": "Regalo desbloqueado",
+        "tag": "Fidelización VIP",
+        "time": "Hace 2 min",
+        "title": "Café Matonge · ¡Recompensa lista!",
+        "body": "¡Enhorabuena, Nadia! Su tarjeta está completa. Venga a disfrutar de su café de la casa gratis en su próxima visita.",
+        "badge": "1 café gratis desbloqueado",
+        "balance": "10 / 10",
+        "detail": "Recompensa lista en el mostrador"
+      },
+      "location": {
+        "label": "Proximidad GPS",
+        "tag": "Recordatorio geolocalizado",
+        "time": "Ahora",
+        "title": "Café Matonge · Está muy cerca",
+        "body": "¿Le apetece una pausa? Su barista le espera. ¡Presente su tarjeta para duplicar sus puntos hoy!",
+        "badge": "Tienda a 50 m",
+        "balance": "Puntos ×2",
+        "detail": "Bonificación de proximidad activa"
+      }
+    }
+  },
+  "currencyToggle": {
+    "label": "Moneda:",
+    "groupLabel": "Seleccionar la moneda de los precios"
+  },
+  "pricing": {
+    "unavailable": "Los precios no están disponibles en este momento. Inténtelo de nuevo en un instante.",
+    "quotas": {
+      "customers": "Clientes",
+      "establishments": "Establecimientos",
+      "staff": "Colaboradores",
+      "programs": "Programas de fidelidad"
+    },
+    "features": {
+      "cards": "Tarjetas, QR de registro y escáner",
+      "wallet": "Apple Wallet y Google Wallet",
+      "exports": "Exportación de datos de clientes (RGPD)",
+      "widget": "Widget para su web",
+      "removeBranding": "Sin la mención «Con la tecnología de FOVE»",
+      "walletCampaigns": "Campañas Wallet a todos sus clientes",
+      "whatsappAuto": "Envío automático por WhatsApp",
+      "api": "API y webhooks",
+      "integrations": "Conexión con tienda online (vía API)"
+    },
+    "custom": "A medida",
+    "unlimited": "Ilimitados",
+    "staffSelf": "1 (usted)",
+    "contactUs": "Contáctenos",
+    "start": "Empezar",
+    "choose": "Elegir {name}",
+    "onQuote": "Bajo presupuesto",
+    "perYear": " /año",
+    "noteFree": "Sin tarjeta bancaria, sin límite de tiempo",
+    "noteCustom": "Contrato adaptado a su red",
+    "noteEur": "Pago por adelantado, en euros (€)",
+    "noteUsd": "Pago por adelantado, en dólares estadounidenses ($)",
+    "recommended": "Recomendado",
+    "notIncludedSuffix": ": no incluido",
+    "caption": "Comparativa de los planes FOVE: capacidad y funciones incluidas",
+    "compare": "Compare los planes",
+    "groupCapacity": "Capacidad",
+    "groupFeatures": "Funciones",
+    "included": "Incluido",
+    "notIncluded": "No incluido"
+  },
+  "pricingPage": {
+    "title": "Precios",
+    "intro": "Un precio anual según sus puntos de venta y el número de clientes incluidos. Sin comisiones sobre sus ventas ni costes para sus clientes.",
+    "setup": "Instalación y formación incluidas: configuración de la fidelidad, personalización de la tarjeta y cartel QR listo para imprimir.",
+    "whatsapp": "El envío automático por WhatsApp cubre compartir la tarjeta y «Recuperar mi tarjeta». Las campañas de SMS y WhatsApp no están incluidas en la suscripción; los créditos prepago se ofrecerán por separado.",
+    "faqTitle": "Preguntas frecuentes",
+    "faq": [
+      { "q": "¿El plan Gratuito tiene límite de tiempo?", "a": "No. Sigue siendo gratuito mientras se mantenga dentro de sus límites: 100 clientes, 1 establecimiento, 1 programa, sin colaboradores. Por encima, sus clientes actuales conservan sus tarjetas; solo los nuevos registros esperan a que pase a un plan superior." },
+      { "q": "¿Puedo cambiar de plan?", "a": "Sí, en cualquier momento desde el área Suscripción. Un plan superior se aplica de inmediato: la diferencia prorrateada se factura al momento. Pasar a un plan inferior no borra ninguna tarjeta: solo se bloquean las nuevas creaciones que superen los límites." },
+      { "q": "¿Y si cancelo?", "a": "Su plan sigue activo hasta el final del periodo pagado y puede cambiar de opinión hasta entonces. Después, su cuenta pasa al plan Gratuito: no se elimina nada." },
+      { "q": "¿Mi necesidad supera el plan Réseau?", "a": "El plan A medida se adapta a sus volúmenes: número de clientes, establecimientos y colaboradores, acompañamiento y contrato bajo presupuesto. Contáctenos." },
+      { "q": "¿Mis clientes pagan algo?", "a": "No. La tarjeta es gratuita para ellos y se abre en el navegador del teléfono." },
+      { "q": "¿Cómo se paga?", "a": "En dólares estadounidenses ($) o en euros (€) según su región, con un pago anual por adelantado. Las facturas están disponibles en su área." }
+    ]
+  },
+  "features": {
+    "title": "Funcionalidades",
+    "intro": "Todo lo necesario para que un cliente vuelva, y nada que tenga que configurar con un técnico.",
+    "cta": "Su código QR puede estar en el mostrador hoy mismo.",
+    "start": "Empezar gratis",
+    "groups": {
+      "program": {
+        "title": "Su programa",
+        "items": {
+          "points": { "title": "Puntos o sellos", "text": "Elija la proporción (p. ej. 1.000 CDF = 1 punto) o el número de sellos para una recompensa." },
+          "rules": { "title": "Reglas", "text": "Importe mínimo, tope por compra, caducidad tras un periodo sin visitas." },
+          "rewards": { "title": "Recompensas", "text": "Catálogo, coste, stock, fechas de disponibilidad. Active o retire una recompensa sin perder su historial." }
+        }
+      },
+      "customers": {
+        "title": "Sus clientes",
+        "items": {
+          "qr": { "title": "Registro por código QR", "text": "Un QR público con sus colores, por establecimiento. El cliente crea su tarjeta desde su teléfono." },
+          "wallet": { "title": "Apple Wallet y Google Wallet", "text": "Un pase nativo añadido con 1 clic a Apple Wallet y Google Wallet. Ninguna aplicación que descargar." },
+          "push": { "title": "Notificaciones push en pantalla de bloqueo", "text": "Comuníquese directamente en la pantalla de bloqueo de sus clientes: ofertas flash, actualizaciones de puntos y recompensas desbloqueadas." },
+          "geo": { "title": "Recordatorios de proximidad GPS", "text": "La tarjeta de fidelidad aparece en la pantalla del smartphone en cuanto su cliente se acerca a su establecimiento." },
+          "crm": { "title": "Fichero de clientes y RFM", "text": "Segmentación automática de clientes (VIP, habituales, inactivos, en riesgo), etiquetas y notas comerciales para su fuerza de ventas." }
+        }
+      },
+      "team": {
+        "title": "Su equipo",
+        "items": {
+          "roles": { "title": "Roles", "text": "Propietario, gerente, cajero, lector. Cada permiso lo verifica el servidor." },
+          "stores": { "title": "Establecimientos", "text": "Un cajero puede limitarse a una sola tienda." },
+          "audit": { "title": "Trazabilidad", "text": "Cada operación registra el empleado, el establecimiento, la hora y la referencia de venta. Un error se corrige con una anulación, nunca borrando." }
+        }
+      },
+      "tools": {
+        "title": "Sus herramientas",
+        "items": {
+          "stats": { "title": "Estadísticas", "text": "Miembros, nuevos miembros, clientes que vuelven, puntos repartidos y canjeados, actividad por día." },
+          "shop": { "title": "Tienda online", "text": "API, SDK y conector e-commerce: un pedido pagado abona la tarjeta, un reembolso la descuenta." },
+          "widget": { "title": "Widget", "text": "Un botón de fidelidad en su web, compatible con WordPress, Astro, React, Next.js, Symfony o HTML." }
+        }
+      }
+    }
+  },
+  "contact": {
+    "badge": "Hablemos de su negocio",
+    "title": "Lancemos su programa de fidelidad.",
+    "intro": "¿Desea una demostración en directo, un despliegue en varios puntos de venta o un pago anual con factura? Nuestro equipo le acompaña de principio a fin.",
+    "highlights": {
+      "setup": { "title": "En marcha en 15 minutos", "text": "Creación de su programa de puntos o sellos, personalización con los colores de su marca y generación de su cartel QR para el mostrador." },
+      "business": { "title": "Comercios independientes y redes", "text": "Adaptado a tiendas, restaurantes, salones, farmacias, supermercados y redes con varios puntos de venta en la RDC y a nivel internacional." },
+      "support": { "title": "Acompañamiento y formación incluidos", "text": "Formación de sus cajeros en el escáner móvil y puesta en marcha del seguimiento de clientes por WhatsApp y del panel RFM." }
+    },
+    "selfServe": {
+      "title": "¿Prefiere probarlo ya?",
+      "text": "Cree su cuenta por su cuenta en 2 minutos. Plan Gratuito, sin tarjeta bancaria.",
+      "start": "Empezar gratis",
+      "plans": "Ver los planes"
+    }
+  },
+  "contactForm": {
+    "subjects": {
+      "demo": "Solicitud de demostración y prueba acompañada",
+      "custom": "Plan A medida (cuotas, acompañamiento, contrato)",
+      "network": "Despliegue en varias tiendas / Plan Réseau",
+      "pricing": "Pregunta sobre precios y medios de pago (RDC / Internacional)",
+      "integration": "Integración con caja (TPV) o tienda online",
+      "other": "Colaboración u otra solicitud"
+    },
+    "sentTitle": "Su solicitud se ha registrado correctamente",
+    "sentText": "Nuestro equipo comercial ha recibido su mensaje y le responderá en un plazo de 24 horas hábiles (por email o WhatsApp según sus datos de contacto).",
+    "sendAnother": "Enviar otro mensaje",
+    "title": "Escríbanos",
+    "intro": "Instalación gratuita, configuración de su programa y creación de su cartel QR listo para imprimir.",
+    "honeypot": "Sitio web",
+    "name": "Su nombre completo",
+    "company": "Nombre de su comercio / marca",
+    "email": "Email profesional",
+    "phone": "Teléfono / WhatsApp (recomendado)",
+    "subject": "Asunto de su solicitud",
+    "message": "Su mensaje",
+    "messageHint": "Indique su sector de actividad, el número de puntos de venta y sus necesidades.",
+    "submit": "Enviar mi solicitud"
+  },
+  "developers": {
+    "toc": "Índice",
+    "nav": {
+      "auth": "Autenticación",
+      "idempotence": "Idempotencia",
+      "endpoints": "Endpoints",
+      "sdk": "SDK TypeScript",
+      "webhooks": "Webhooks",
+      "widget": "Widget",
+      "errors": "Errores y límites"
+    },
+    "title": "Documentación para desarrolladores",
+    "intro": "La API REST de FOVE conecta una caja, una tienda online o un back-office con sus programas de fidelidad. Referencia completa e interactiva: <link>OpenAPI</link>.",
+    "auth": {
+      "text": "Cree una clave secreta en <strong>Integraciones</strong>, solo con los permisos necesarios (scopes). Se usa en el servidor, nunca en un navegador. Las claves <test></test> y <live></live> están separadas.",
+      "codeLabel": "Solicitud autenticada"
+    },
+    "idempotence": {
+      "text": "Cada <post></post> exige una cabecera <header></header> única (de 8 a 120 caracteres). Repetir la misma solicitud devuelve la respuesta original con <replayed></replayed>; la misma clave con otro cuerpo se rechaza (422). Los pedidos e-commerce se deduplican además por <orderId></orderId>.",
+      "codeLabel": "Abonar una compra",
+      "sampleKey": "venta-2026-10-28-0042"
+    },
+    "endpoints": {
+      "method": "Método",
+      "path": "Ruta",
+      "usage": "Uso",
+      "items": {
+        "customersList": "Listar y buscar clientes (paginación por cursor, filtro q)",
+        "customersLookup": "Encontrar un cliente por externalId, email o phone",
+        "customersCreate": "Crear un cliente",
+        "programsList": "Listar los programas",
+        "accountsCreate": "Crear la tarjeta de un cliente en un programa",
+        "accountsGet": "Saldo, historial reciente, recompensas disponibles",
+        "transactionsList": "Historial de operaciones",
+        "transactionsCreate": "Abonar una compra (puntos calculados por FOVE)",
+        "transactionsReverse": "Anular una operación mediante un asiento compensatorio",
+        "rewardsList": "Catálogo de recompensas",
+        "redemptionsCreate": "Canjear una recompensa",
+        "ordersPaid": "Pedido pagado: cliente vinculado, tarjeta creada si es necesario, puntos abonados",
+        "ordersRefunded": "Reembolso total o parcial"
+      }
+    },
+    "sdk": {
+      "text": "El paquete <pkg></pkg> gestiona la autenticación, las claves de idempotencia y los reintentos ante errores de red.",
+      "codeLabel": "Ejemplo de SDK",
+      "commentPaid": "En el webhook de pago de su tienda",
+      "commentRefund": "Reembolso"
+    },
+    "webhooks": {
+      "text": "Eventos: <events></events>. Cada envío está firmado (cabecera <signature></signature>, HMAC-SHA256) y se reintenta hasta 8 veces en caso de fallo. Las entregas se pueden consultar en Integraciones.",
+      "codeLabel": "Verificar una firma"
+    },
+    "widget": {
+      "text": "Un script independiente de cualquier framework. Usa una clave pública (<key></key>) limitada a los dominios que usted declare: lee la configuración pública y nunca puede abonar puntos. Péguelo antes de <body></body> (WordPress, Astro, Next.js, Symfony o HTML).",
+      "codeLabel": "Integración del widget"
+    },
+    "errors": {
+      "text": "Los errores tienen la forma <shape></shape>. Códigos frecuentes: <codes></codes>. Límite por defecto: 300 solicitudes por minuto y por clave."
+    }
+  },
+  "terms": {
+    "title": "Condiciones Generales de Uso",
+    "intro": "Las presentes Condiciones Generales de Uso y de Servicio («CGU») regulan el acceso y la utilización de la plataforma <strong>FOVE</strong>, editada por <strong>Dizayna</strong>, por parte de cualquier comercio, marca o empresa cliente («el Comercio»).",
+    "purpose": {
+      "title": "1. Objeto de la plataforma",
+      "text": "FOVE pone a disposición de los comercios una solución de software en modo SaaS que permite crear y gestionar programas de fidelidad digitales (tarjetas de puntos o de sellos, códigos QR de registro en tienda, pases de Apple Wallet y Google Wallet, escáner de caja móvil, CRM de clientes, seguimiento por WhatsApp y API de integración e-commerce)."
+    },
+    "account": {
+      "title": "2. Creación de cuenta y acceso del equipo",
+      "professionals": "La apertura de una cuenta está reservada a profesionales que actúen en el marco de su actividad comercial.",
+      "roles": "El Comercio define libremente los accesos de sus colaboradores según cuatro roles estrictos: Propietario, Gerente, Cajero y Lector.",
+      "audit": "Cada operación realizada con el escáner o desde el panel de control queda vinculada al usuario conectado y registrada en un registro de auditoría con fecha y hora."
+    },
+    "plans": {
+      "title": "3. Plan gratuito, precios y continuidad de los datos",
+      "free": "Todo registro da acceso al plan Gratuito, sin límite de tiempo y sin obligación de indicar una tarjeta bancaria, dentro de los límites de sus cuotas.",
+      "commission": "No se cobra ninguna comisión sobre la facturación ni sobre las ventas del Comercio.",
+      "retention": "<strong>Garantía de no eliminación:</strong> al finalizar una suscripción o al pasar a un plan inferior, no se elimina ninguna tarjeta de cliente ni ningún historial de puntos. Solo se restringen las funcionalidades o nuevas creaciones que superen las cuotas del plan activo."
+    },
+    "duties": {
+      "title": "4. Compromisos y responsabilidades del Comercio",
+      "text": "El Comercio fija libremente sus reglas de asignación de puntos o sellos y su catálogo de recompensas. Se compromete a respetar ante sus clientes finales las recompensas legítimamente desbloqueadas y a obtener el consentimiento explícito de sus clientes antes de cualquier envío de comunicación promocional (SMS, WhatsApp o email)."
+    },
+    "dpa": {
+      "title": "5. Acuerdo de encargo del tratamiento (DPA — Artículo 28 del RGPD)",
+      "text": "En el marco de la prestación del servicio, el Comercio actúa como <strong>Responsable del tratamiento</strong> de su fichero de clientes, y Dizayna (FOVE) actúa como <strong>Encargado del tratamiento</strong>:",
+      "ownership": "<strong>Propiedad exclusiva:</strong> el Comercio conserva la plena propiedad de los datos de sus clientes. Dizayna se prohíbe toda reventa, alquiler o explotación comercial de los ficheros de clientes alojados.",
+      "isolation": "<strong>Aislamiento multiinquilino:</strong> cada base de datos de comercio está aislada lógicamente. Un cliente registrado en varios comercios que utilizan FOVE tiene fichas y saldos totalmente independientes.",
+      "rights": "<strong>Ejercicio de los derechos RGPD:</strong> FOVE proporciona al Comercio herramientas integradas de un clic para exportar la totalidad de los datos de un cliente (portabilidad en JSON) o anonimizar definitivamente su ficha (derecho de supresión), preservando la integridad contable del libro mayor de puntos.",
+      "security": "<strong>Seguridad técnica:</strong> hash criptográfico de contraseñas y tokens de tarjeta, cifrado AES-256-GCM de los secretos de integración, conexiones TLS y copias de seguridad diarias automatizadas."
+    },
+    "availability": {
+      "title": "6. Disponibilidad, API y uso leal",
+      "text": "Dizayna aplica las mejores prácticas del sector para garantizar la alta disponibilidad de FOVE, incluso durante los picos de cobro en tienda. El uso de las claves API y los webhooks está sujeto a límites de frecuencia (rate limiting) destinados a proteger la estabilidad global del servicio."
+    },
+    "termination": {
+      "title": "7. Resolución y reversibilidad",
+      "text": "El Comercio puede cancelar su suscripción en cualquier momento desde su área de gestión. Antes o después de la cancelación, puede exportar la totalidad de su base de clientes y de su historial de operaciones en formato estándar CSV o JSON."
+    },
+    "contact": {
+      "title": "8. Contacto e información legal",
+      "text": "Para cualquier pregunta contractual, solicitud de acompañamiento o ejercicio de sus derechos, contacte con nuestro equipo a través de la página <contact>Contacto y demostración</contact> o consulte nuestra <privacy>Política de privacidad</privacy>."
+    }
+  },
+  "privacy": {
+    "title": "Datos personales",
+    "intro": "Este resumen describe quién hace qué. No sustituye a las condiciones contractuales firmadas con cada comercio.",
+    "controller": {
+      "title": "¿Quién es el responsable?",
+      "text": "Cada comercio es responsable del tratamiento de los datos de sus clientes (fichero de clientes, programa de fidelidad). Dizayna, editor de FOVE, actúa como encargado del tratamiento: FOVE aloja y trata estos datos por cuenta del comercio, según sus instrucciones."
+    },
+    "data": {
+      "title": "¿Qué datos?",
+      "customers": "Clientes finales: nombre, apellidos, teléfono, email opcional, número de tarjeta, historial de puntos y recompensas, consentimientos.",
+      "teams": "Equipos de los comercios: nombre, email, rol, registro de acciones."
+    },
+    "consent": {
+      "title": "Consentimientos",
+      "text": "La adhesión al programa y las comunicaciones de marketing son dos consentimientos distintos. El cliente puede rechazar el marketing y conservar su tarjeta."
+    },
+    "rights": {
+      "title": "Derechos de los clientes",
+      "text": "El comercio puede exportar todos los datos de un cliente y suprimirlos desde su ficha. La supresión anonimiza a la persona: el historial contable de los puntos se conserva sin ningún dato que permita identificarla."
+    },
+    "retention": {
+      "title": "Conservación",
+      "text": "Los datos de un cliente inactivo se conservan 36 meses por defecto, un plazo que el comercio puede ajustar. Las sesiones y los códigos de verificación caducados se eliminan automáticamente."
+    },
+    "security": {
+      "title": "Seguridad",
+      "text": "Aislamiento estricto entre comercios, contraseñas con hash, enlaces secretos de tarjeta nunca almacenados en claro, cifrado de los secretos de integración, registro de auditoría de las acciones sensibles, copias de seguridad diarias de la base de datos."
+    }
+  }
+}

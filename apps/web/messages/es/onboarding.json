@@ -1,0 +1,82 @@
+{
+  "meta": {
+    "title": "Configuración"
+  },
+  "steps": {
+    "business": "Tu negocio",
+    "branding": "Logo y color",
+    "establishment": "Establecimiento",
+    "program": "Programa",
+    "reward": "Recompensa",
+    "qr": "Código QR"
+  },
+  "progress": "Paso {current} de {total}",
+  "continue": "Continuar",
+  "later": "Continuar más tarde",
+  "defaults": {
+    "establishment": "Tienda principal",
+    "stampsProgram": "Tarjeta de sellos",
+    "pointsProgram": "Tarjeta de puntos",
+    "stampsReward": "Producto gratis",
+    "pointsReward": "Vale de descuento",
+    "slug": "tu-negocio",
+    "business": "Tu negocio"
+  },
+  "errors": {
+    "logoTooLarge": "Imagen demasiado pesada (512 KB como máximo)"
+  },
+  "business": {
+    "title": "Hola {name}, presenta tu negocio",
+    "name": "Nombre del negocio",
+    "country": "País",
+    "city": "Ciudad",
+    "currency": "Moneda de tus ventas",
+    "slug": "Dirección de tu página",
+    "submit": "Crear mi negocio"
+  },
+  "branding": {
+    "title": "Tu logo y tu color",
+    "subtitle": "Dan estilo a la tarjeta de tus clientes y a tu página de registro.",
+    "logo": "Logo (opcional)",
+    "logoAlt": "Logo",
+    "change": "Cambiar la imagen",
+    "choose": "Elegir una imagen PNG, JPEG o WebP (512 KB máx.)",
+    "color": "Color principal"
+  },
+  "establishment": {
+    "title": "Tu punto de venta",
+    "subtitle": "Podrás añadir otros más adelante.",
+    "name": "Nombre del establecimiento",
+    "country": "País",
+    "city": "Ciudad"
+  },
+  "program": {
+    "title": "¿Cómo ganan tus clientes?",
+    "stampsLabel": "Sellos",
+    "stampsText": "Una compra = un sello. Sencillo, ideal para una cafetería, un salón o un snack.",
+    "pointsLabel": "Puntos",
+    "pointsText": "Los puntos siguen el importe gastado. Ideal para una tienda o un supermercado.",
+    "spendStep": "Importe para ganar 1 punto ({currency})",
+    "spendStepHint": "Ejemplo: {amount} {currency} gastados = 1 punto.",
+    "stampsTarget": "Sellos para una recompensa",
+    "submit": "Crear el programa"
+  },
+  "reward": {
+    "title": "La recompensa",
+    "stampsText": "Se regala cuando la tarjeta llega a {count, plural, one {# sello} other {# sellos}}.",
+    "pointsText": "Lo que tus clientes obtienen con sus puntos. Podrás añadir otras más adelante.",
+    "name": "Nombre de la recompensa",
+    "cost": "Coste en puntos"
+  },
+  "qr": {
+    "title": "Tu código QR de registro",
+    "subtitle": "Colócalo en el mostrador. Tus clientes lo escanean para crear su tarjeta.",
+    "print": "Imprimir",
+    "customerPage": "Ver la página del cliente",
+    "submit": "Abrir mi panel"
+  },
+  "preview": {
+    "label": "Tarjeta de fidelización",
+    "caption": "Vista previa de la tarjeta que tus clientes verán en su teléfono."
+  }
+}

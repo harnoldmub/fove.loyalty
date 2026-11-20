@@ -4,7 +4,8 @@ import { useState } from "react";
 import { X, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/field";
-import { api } from "@/lib/api";
+import { useTranslations } from "next-intl";
+import { api, useErrorMessage } from "@/lib/api";
 import { formatFinance } from "./finance-utils";
 
 interface RefundModalProps {
@@ -22,6 +23,8 @@ interface RefundModalProps {
 }
 
 export function RefundModal({ open, payment, onClose, onRefunded }: RefundModalProps) {
+  const t = useTranslations("admin.finance.refundModal");
+  const errMsg = useErrorMessage();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -40,18 +43,18 @@ export function RefundModal({ open, payment, onClose, onRefunded }: RefundModalP
     if (amountStr.trim()) {
       const parsed = Number.parseFloat(amountStr.replace(",", "."));
       if (Number.isNaN(parsed) || parsed <= 0) {
-        setError("Montant invalide");
+        setError(t("invalidAmount"));
         return;
       }
       amountCents = Math.round(parsed * 100);
       if (amountCents > refundableCents) {
-        setError(`Le remboursement ne peut pas dépasser ${formatFinance(refundableCents, payment.currency)}`);
+        setError(t("tooHigh", { amount: formatFinance(refundableCents, payment.currency) }));
         return;
       }
     }
 
     if (!reason.trim()) {
-      setError("Un motif de remboursement est obligatoire");
+      setError(t("reasonRequired"));
       return;
     }
 
@@ -63,8 +66,8 @@ export function RefundModal({ open, payment, onClose, onRefunded }: RefundModalP
       });
       onRefunded();
       onClose();
-    } catch (err: any) {
-      setError(err?.message || "Échec du remboursement");
+    } catch (err) {
+      setError(errMsg(err));
     } finally {
       setLoading(false);
     }
@@ -80,13 +83,14 @@ export function RefundModal({ open, payment, onClose, onRefunded }: RefundModalP
               <AlertTriangle className="size-4" />
             </span>
             <div>
-              <h2 className="font-display text-base font-semibold text-ink">Émettre un remboursement</h2>
-              <p className="text-xs text-ink-3">Réf: {payment.reference}</p>
+              <h2 className="font-display text-base font-semibold text-ink">{t("title")}</h2>
+              <p className="text-xs text-ink-3">{t("reference", { reference: payment.reference })}</p>
             </div>
           </div>
           <button
             type="button"
             onClick={onClose}
+            aria-label={t("close")}
             className="grid size-8 place-items-center rounded-lg text-ink-3 hover:bg-surface-2 hover:text-ink"
           >
             <X className="size-4" />
@@ -101,13 +105,13 @@ export function RefundModal({ open, payment, onClose, onRefunded }: RefundModalP
 
         <div className="mt-4 rounded-lg bg-surface-2 p-3 text-xs text-ink-2 space-y-1">
           <p>
-            Client : <strong className="text-ink">{payment.tenantName ?? "Inconnu"}</strong>
+            {t("customer")} <strong className="text-ink">{payment.tenantName ?? t("unknown")}</strong>
           </p>
           <p>
-            Montant total payé : <strong className="text-ink">{formatFinance(payment.amountCents, payment.currency)}</strong>
+            {t("totalPaid")} <strong className="text-ink">{formatFinance(payment.amountCents, payment.currency)}</strong>
           </p>
           <p>
-            Disponible au remboursement :{" "}
+            {t("refundable")}{" "}
             <strong className="text-emerald-500">{formatFinance(refundableCents, payment.currency)}</strong>
           </p>
         </div>
@@ -115,7 +119,7 @@ export function RefundModal({ open, payment, onClose, onRefunded }: RefundModalP
         <form onSubmit={handleSubmit} className="mt-4 space-y-4">
           <div>
             <label className="mb-1 block text-xs font-medium text-ink-2">
-              Montant à rembourser (laisser vide pour remboursement total)
+              {t("amount")}
             </label>
             <Input
               type="number"
@@ -123,16 +127,17 @@ export function RefundModal({ open, payment, onClose, onRefunded }: RefundModalP
               min="0.01"
               max={(refundableCents / 100).toFixed(2)}
               placeholder={(refundableCents / 100).toFixed(2)}
+              dir="ltr"
               value={amountStr}
               onChange={(e) => setAmountStr(e.target.value)}
             />
           </div>
 
           <div>
-            <label className="mb-1 block text-xs font-medium text-ink-2">Motif obligatoire (traçabilité audit) *</label>
+            <label className="mb-1 block text-xs font-medium text-ink-2">{t("reason")}</label>
             <Input
               required
-              placeholder="Ex : Demande client, résiliation durant période d'essai..."
+              placeholder={t("reasonPlaceholder")}
               value={reason}
               onChange={(e) => setReason(e.target.value)}
             />
@@ -140,10 +145,10 @@ export function RefundModal({ open, payment, onClose, onRefunded }: RefundModalP
 
           <div className="mt-6 flex justify-end gap-3 border-t border-line pt-4">
             <Button type="button" variant="ghost" onClick={onClose} disabled={loading}>
-              Annuler
+              {t("cancel")}
             </Button>
             <Button type="submit" variant="danger" disabled={loading}>
-              {loading ? "Traitement..." : "Confirmer le remboursement"}
+              {loading ? t("saving") : t("save")}
             </Button>
           </div>
         </form>

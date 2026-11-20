@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useMarketingCurrency, type MarketingCurrency } from "@/lib/marketing-currency";
 import { cn } from "@/lib/utils";
 
@@ -9,18 +10,19 @@ interface CurrencyToggleProps {
 }
 
 export function CurrencyToggle({ className, showLabel = true }: CurrencyToggleProps) {
+  const t = useTranslations("marketing.currencyToggle");
   const { currency, setCurrency } = useMarketingCurrency();
 
   return (
     <div className={cn("inline-flex items-center gap-2", className)}>
       {showLabel && (
         <span className="text-xs text-ink-3 hidden sm:inline">
-          Devise :
+          {t("label")}
         </span>
       )}
       <div
         role="group"
-        aria-label="Sélectionner la devise des tarifs"
+        aria-label={t("groupLabel")}
         className="inline-flex items-center rounded-full border border-line bg-surface p-0.5 shadow-xs"
       >
         <button
