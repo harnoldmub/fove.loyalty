@@ -33,6 +33,8 @@ Les deux domaines `fove.digital` et `app.fove.digital` pointent sur le même ser
 | `STRIPE_SECRET_KEY` / `STRIPE_WEBHOOK_SECRET` | clés **test** tant que la mise en production n'est pas validée |
 | `STRIPE_ALLOW_LIVE` | `false` (passer à `true` seulement après validation) |
 | `GOOGLE_WALLET_ISSUER_ID` / `GOOGLE_WALLET_SERVICE_ACCOUNT_JSON` | facultatifs : compte émetteur Google Wallet (Google Pay & Wallet Console) et compte de service autorisé ; absents = bouton masqué |
+| `GOOGLE_OAUTH_CLIENT_ID` / `GOOGLE_OAUTH_CLIENT_SECRET` | identifiants OAuth 2.0 « Application Web » du compte client FOVE ; distincts de Google Wallet |
+| `GOOGLE_OAUTH_REDIRECT_URI` | `https://app.fove.digital/api/client-auth/google/callback` — doit correspondre exactement à Google Cloud |
 
 **fove-web**
 
@@ -41,6 +43,16 @@ Les deux domaines `fove.digital` et `app.fove.digital` pointent sur le même ser
 | `API_URL` | URL interne Railway de l'API (`http://fove-api.railway.internal:5291`) |
 | `NEXT_PUBLIC_SITE_URL` | `https://fove.digital` (build arg : icône de partage en URL absolue) |
 | `PORT` | `5290` |
+
+### Identifiant OAuth Google du compte client
+
+Créer un client OAuth 2.0 de type **Application Web**, nommé `FOVE — Compte client` :
+
+- origines JavaScript autorisées : `http://localhost:5290`, `https://fove.digital` et `https://app.fove.digital` ;
+- URI de redirection autorisées : `http://localhost:5290/api/client-auth/google/callback` et `https://app.fove.digital/api/client-auth/google/callback` ;
+- scopes du parcours de connexion : `openid`, `email`, `profile` uniquement.
+
+L'identifiant client peut être communiqué à l'équipe. Le secret client reste exclusivement dans les variables du service API et ne doit jamais être exposé au navigateur ni commité. Cette connexion cible `ClientAccount` et sa session dédiée ; elle ne doit pas réutiliser `User` ou le cookie commerçant.
 
 ## Migrations
 

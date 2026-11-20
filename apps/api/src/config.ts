@@ -13,6 +13,10 @@ const schema = z.object({
   EMAIL_PROVIDER: z.enum(["console", "resend"]).default("console"),
   EMAIL_FROM: z.string().default("FOVE <no-reply@fove.digital>"),
   RESEND_API_KEY: z.string().optional(),
+  /** OAuth Google du compte client (distinct de Google Wallet et des comptes commerçants). */
+  GOOGLE_OAUTH_CLIENT_ID: z.string().optional(),
+  GOOGLE_OAUTH_CLIENT_SECRET: z.string().optional(),
+  GOOGLE_OAUTH_REDIRECT_URI: z.url().optional(),
   STRIPE_SECRET_KEY: z.string().optional(),
   STRIPE_WEBHOOK_SECRET: z.string().optional(),
   /** Garde-fou : les clés Stripe « live » sont refusées tant que ce drapeau n'est pas posé. */

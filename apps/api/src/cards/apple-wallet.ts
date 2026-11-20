@@ -164,6 +164,9 @@ export class AppleWalletProvider {
       teamIdentifier: cfg.APPLE_WALLET_TEAM_ID,
       organizationName: clubName,
       description: clubName,
+      // Reste visible à côté du logo lorsque Wallet affiche plusieurs cartes
+      // FOVE en pile : chaque commerce demeure immédiatement identifiable.
+      logoText: account.tenant.name,
       serialNumber: account.id,
       webServiceURL: `${cfg.API_URL}/api/loyalty/apple-wallet-service`,
       authenticationToken: account.qrToken,
