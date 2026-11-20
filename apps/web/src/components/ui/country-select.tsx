@@ -139,10 +139,10 @@ export function getCountryOption(code: string): CountryOption | undefined {
  * Détecte automatiquement le pays du client en se basant sur :
  * 1. Le fuseau horaire du navigateur (Intl.DateTimeFormat)
  * 2. Les locales déclarées (navigator.languages)
- * 3. Fallback sur "CD" (marché principal)
+ * 3. Repli sur la France
  */
 export function detectClientCountry(): string {
-  if (typeof window === "undefined") return "CD";
+  if (typeof window === "undefined") return "FR";
 
   // 1. Détection via le fuseau horaire
   try {
@@ -204,7 +204,7 @@ export function detectClientCountry(): string {
     // Continuer
   }
 
-  return "CD";
+  return "FR";
 }
 
 /** Convertit un code ISO alpha-2 ("CD") en emoji drapeau ("🇨🇩"). */
@@ -371,7 +371,7 @@ export function CountrySelect({ id, value, onChange, disabled, ...aria }: Countr
       </button>
 
       {open && (
-        <div className="absolute inset-x-0 top-full z-50 mt-1.5 overflow-hidden rounded-[var(--radius)] bg-surface shadow-2 ring-1 ring-line">
+        <div className="absolute inset-x-0 top-full z-[100] mt-1.5 overflow-hidden rounded-[var(--radius)] bg-surface shadow-2 ring-1 ring-line">
           <div className="flex items-center gap-2 border-b border-line px-3">
             <Search className="size-4 shrink-0 text-ink-3" aria-hidden="true" />
             <input
@@ -388,7 +388,7 @@ export function CountrySelect({ id, value, onChange, disabled, ...aria }: Countr
               className="h-10 w-full bg-transparent text-sm text-ink outline-none placeholder:text-ink-3"
             />
           </div>
-          <ul ref={list} id={listId} role="listbox" aria-label="Pays" className="max-h-64 overflow-y-auto overscroll-contain py-1">
+          <ul ref={list} id={listId} role="listbox" aria-label="Pays" className="max-h-[min(16rem,40dvh)] overflow-y-auto overscroll-contain py-1">
             {filtered.length === 0 && <li className="px-3.5 py-3 text-sm text-ink-3">Aucun pays trouvé.</li>}
             {filtered.map((option, index) => (
               <li key={option.code} role="presentation">
@@ -666,7 +666,7 @@ export function CitySelect({
       </button>
 
       {open && (
-        <div className="absolute inset-x-0 top-full z-50 mt-1.5 overflow-hidden rounded-[var(--radius)] bg-surface shadow-2 ring-1 ring-line">
+        <div className="absolute inset-x-0 top-full z-[100] mt-1.5 overflow-hidden rounded-[var(--radius)] bg-surface shadow-2 ring-1 ring-line">
           <div className="flex items-center gap-2 border-b border-line px-3">
             {apiLoading ? (
               <Loader2 className="size-4 shrink-0 animate-spin text-cobalt" aria-hidden="true" />
@@ -684,7 +684,7 @@ export function CitySelect({
               className="h-10 w-full bg-transparent text-sm text-ink outline-none placeholder:text-ink-3"
             />
           </div>
-          <ul ref={list} id={listId} role="listbox" aria-label="Ville" className="max-h-60 overflow-y-auto overscroll-contain py-1">
+          <ul ref={list} id={listId} role="listbox" aria-label="Ville" className="max-h-[min(15rem,40dvh)] overflow-y-auto overscroll-contain py-1">
             {displayedCities.length === 0 && !apiLoading && !trimmedQuery && (
               <li className="px-3.5 py-3 text-sm text-ink-3">Saisissez un nom de ville pour rechercher.</li>
             )}

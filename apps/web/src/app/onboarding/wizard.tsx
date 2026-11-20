@@ -7,7 +7,7 @@ import { QRCodeSVG } from "qrcode.react";
 import { Logo } from "@/components/brand";
 import { Button } from "@/components/ui/button";
 import { defaultCurrencyForCountry, SUPPORTED_CURRENCIES } from "@fove/shared";
-import { CitySelect, CountrySelect, getCountryOption, SUGGESTED_CITIES } from "@/components/ui/country-select";
+import { CitySelect, CountrySelect, detectClientCountry, getCountryOption } from "@/components/ui/country-select";
 import { Field, Input, Select } from "@/components/ui/field";
 import { ErrorNote } from "@/components/ui/misc";
 import { api, errorMessage } from "@/lib/api";
@@ -43,12 +43,12 @@ export function OnboardingWizard({ userName, tenant }: { userName: string; tenan
   const [name, setName] = useState(tenant?.name ?? "");
   const [slug, setSlug] = useState("");
   const [slugTouched, setSlugTouched] = useState(false);
-  const [currency, setCurrency] = useState("CDF");
+  const [currency, setCurrency] = useState("EUR");
   const [color, setColor] = useState(COLORS[0]!);
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [estName, setEstName] = useState("");
-  const [estCountry, setEstCountry] = useState("CD");
-  const [estCity, setEstCity] = useState("Kinshasa");
+  const [estCountry, setEstCountry] = useState("FR");
+  const [estCity, setEstCity] = useState("");
   const [mode, setMode] = useState<"POINTS" | "STAMPS">("STAMPS");
   const [spendStep, setSpendStep] = useState("1000");
   const [stampsTarget, setStampsTarget] = useState("10");
@@ -56,6 +56,19 @@ export function OnboardingWizard({ userName, tenant }: { userName: string; tenan
   const [rewardName, setRewardName] = useState("");
   const [rewardCost, setRewardCost] = useState("100");
   const [joinUrl, setJoinUrl] = useState<string | null>(null);
+
+  // Pour une nouvelle entreprise, utiliser les signaux locaux du navigateur
+  // (fuseau horaire puis langue). La France reste le repli explicite.
+  useEffect(() => {
+    if (tenant) return;
+    const frame = requestAnimationFrame(() => {
+      const detectedCountry = detectClientCountry();
+      setEstCountry(detectedCountry);
+      setCurrency(defaultCurrencyForCountry(detectedCountry));
+      setEstCity("");
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [tenant]);
 
   // Reprise d’un onboarding interrompu
   useEffect(() => {
@@ -70,7 +83,7 @@ export function OnboardingWizard({ userName, tenant }: { userName: string; tenan
         const savedCountry = tenantData?.settings?.country;
         if (savedCountry) {
           setEstCountry(savedCountry);
-          setEstCity(SUGGESTED_CITIES[savedCountry]?.[0] ?? "Kinshasa");
+          setEstCity("");
         }
         if (tenantData?.settings?.currency) {
           setCurrency(tenantData.settings.currency);
@@ -232,7 +245,7 @@ export function OnboardingWizard({ userName, tenant }: { userName: string; tenan
                         value={estCountry}
                         onChange={(code) => {
                           setEstCountry(code);
-                          setEstCity(SUGGESTED_CITIES[code]?.[0] ?? "");
+                          setEstCity("");
                           setCurrency(defaultCurrencyForCountry(code));
                         }}
                       />
@@ -315,7 +328,7 @@ export function OnboardingWizard({ userName, tenant }: { userName: string; tenan
                       value={estCountry}
                       onChange={(code) => {
                         setEstCountry(code);
-                        setEstCity(SUGGESTED_CITIES[code]?.[0] ?? "");
+                        setEstCity("");
                       }}
                     />
                   )}
@@ -417,7 +430,9 @@ export function OnboardingWizard({ userName, tenant }: { userName: string; tenan
           </div>
           <div className="mt-8 grid grid-cols-5 gap-2.5">
             {Array.from({ length: mode === "STAMPS" ? Math.min(Number(stampsTarget) || 10, 15) : 5 }, (_, i) => (
-              <span key={i} className={cn("aspect-square rounded-full border-2 border-dashed border-white/40", i < 3 && "border-solid border-transparent bg-[#f5b82e]")} />
+              <span key={i} className={cn("grid aspect-square place-items-center rounded-full border-2 border-dashed border-white/40", i < 3 && "border-solid border-transparent bg-[#f5b82e]")}>
+                {i < 3 && <Check className="size-4 stroke-[3] text-[#14204a]" aria-hidden="true" />}
+              </span>
             ))}
           </div>
           <p className="mt-8 text-sm text-white/80">Aperçu de la carte que vos clients verront sur leur téléphone.</p>
