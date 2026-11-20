@@ -95,10 +95,19 @@ export class AuthService {
       });
       created = true;
     } else if (!user.emailVerifiedAt) {
+      // Compte jamais confirmé : n'importe qui a pu le créer avec cet email et en connaître le mot de passe.
+      // Google prouve que l'email appartient à cette personne : on invalide ce mot de passe et toutes les
+      // sessions ouvertes avant de lui confier le compte.
       user = await this.prisma.client.user.update({
         where: { id: user.id },
-        data: { emailVerifiedAt: new Date() },
+        data: {
+          emailVerifiedAt: new Date(),
+          passwordHash: await hashPassword(randomToken("google_", 32)),
+          failedLoginCount: 0,
+          lockedUntil: null,
+        },
       });
+      await this.sessions.revokeAllForUser(user.id);
     }
 
     const membership = await this.prisma.client.tenantMembership.findFirst({
