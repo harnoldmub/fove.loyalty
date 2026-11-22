@@ -9,9 +9,9 @@ import { useMarketingCurrency } from "@/lib/marketing-currency";
 import { formatNumber, formatPrice } from "@/lib/utils";
 
 const PLANS = [
-  { plan: "Starter", key: "starter", priceCents: 9900, featured: false, features: ["annual", "net", "tracking"] },
+  { plan: "Essentiel", key: "starter", priceCents: 9900, featured: false, features: ["annual", "net", "tracking"] },
   { plan: "Business", key: "business", priceCents: 19900, featured: true, features: ["annual", "net", "fastPayout"] },
-  { plan: "Premium", key: "premium", priceCents: 39900, featured: false, features: ["annual", "net", "support"] },
+  { plan: "Réseau", key: "premium", priceCents: 39900, featured: false, features: ["annual", "net", "support"] },
 ] as const;
 
 const COMMISSION_RATE = 20;
@@ -26,8 +26,8 @@ export function PartnerCommissions() {
   return (
     <section className="mb-24">
       <div className="text-center max-w-2xl mx-auto mb-10">
-        <div className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-600 dark:text-emerald-400 mb-3">
-          <TrendingUp className="size-3.5" /> {t("badge")}
+        <div className="inline-flex items-center gap-1.5 rounded-full bg-mint-soft px-3 py-1 text-xs font-semibold text-mint-ink mb-3">
+          <TrendingUp className="size-3.5" aria-hidden /> {t("badge")}
         </div>
         <h2 className="font-display text-2xl sm:text-3xl font-bold text-ink mb-3">
           {t("title")}
@@ -46,20 +46,20 @@ export function PartnerCommissions() {
         {PLANS.map((c) => (
           <div
             key={c.plan}
-            className={`rounded-2xl border p-6 shadow-sm flex flex-col justify-between transition-all duration-200 ${
+            className={`rounded-2xl border p-6 shadow-sm flex flex-col justify-between  ${
               c.featured
-                ? "border-[#C7FF3D] bg-surface relative"
+                ? "border-cobalt bg-surface relative ring-1 ring-cobalt"
                 : "border-line bg-surface"
             }`}
           >
             <div>
               {c.featured && (
-                <span className="absolute -top-3 end-6 rounded-full bg-[#C7FF3D] px-3 py-0.5 text-[11px] font-bold text-black">
+                <span className="absolute -top-3 end-6 rounded-full bg-cobalt px-3 py-0.5 text-xs font-semibold text-cobalt-ink">
                   {t("recommended")}
                 </span>
               )}
               <h3 className="font-display text-xl font-bold text-ink">{c.plan}</h3>
-              <p className="text-xs text-ink-3 mb-4">{t(`plans.${c.key}`)}</p>
+              <p className="text-sm text-ink-3 mb-4">{t(`plans.${c.key}`)}</p>
 
               <div className="mb-6 rounded-xl bg-surface-2 p-4">
                 <div className="text-xs text-ink-3">
@@ -67,16 +67,16 @@ export function PartnerCommissions() {
                 </div>
                 <div className="mt-2 flex items-baseline gap-2">
                   <span className="font-display text-3xl font-extrabold text-ink tabular">{formatPrice((c.priceCents * COMMISSION_RATE) / 100, money, locale)}</span>
-                  <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">
+                  <span className="text-xs font-semibold text-mint-ink">
                     {t("rate", { rate })}
                   </span>
                 </div>
               </div>
 
-              <ul className="space-y-2 text-xs text-ink-2">
+              <ul className="space-y-2 text-sm text-ink-2">
                 {c.features.map((f) => (
                   <li key={f} className="flex items-center gap-2">
-                    <Check className="size-3.5 text-emerald-500 shrink-0" />
+                    <Check className="size-3.5 text-mint shrink-0" aria-hidden />
                     <span>{t(`features.${f}`)}</span>
                   </li>
                 ))}
@@ -90,7 +90,7 @@ export function PartnerCommissions() {
         <Button asChild size="lg" className="px-8 font-semibold shadow-md">
           <Link href="/partenaires/rejoindre">
             {t("cta")}
-            <ArrowRight className="size-4 ms-2 rtl-flip" />
+            <ArrowRight className="size-4 ms-2 rtl-flip" aria-hidden />
           </Link>
         </Button>
         <p className="mt-2.5 text-xs text-ink-3">

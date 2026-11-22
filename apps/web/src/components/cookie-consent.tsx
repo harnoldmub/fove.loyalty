@@ -27,13 +27,23 @@ export function CookieSettingsButton({ className }: { className?: string }) {
   );
 }
 
-export function CookieConsent() {
+/** Charge Microsoft Clarity (extrait officiel) une seule fois, uniquement après consentement. */
+function loadClarity(id: string) {
+  if (!/^[a-z0-9]+$/i.test(id) || document.getElementById("clarity-init")) return;
+  const script = document.createElement("script");
+  script.id = "clarity-init";
+  script.textContent = `(function(c,l,a,r,i,t,y){c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);})(window,document,"clarity","script","${id}");clarity("consent");`;
+  document.head.appendChild(script);
+}
+
+export function CookieConsent({ clarityId }: { clarityId?: string }) {
   const t = useTranslations("common.cookies");
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
     try {
       const stored = localStorage.getItem(CONSENT_STORAGE_KEY);
+      if (stored === "granted" && clarityId) loadClarity(clarityId);
       if (!stored) {
         // Apparition discrète et fluide après chargement de la page
         const timer = setTimeout(() => setVisible(true), 600);
@@ -42,7 +52,7 @@ export function CookieConsent() {
     } catch {
       // Si localStorage bloqué ou indisponible
     }
-  }, []);
+  }, [clarityId]);
 
   useEffect(() => {
     const handleOpen = () => setVisible(true);
@@ -59,22 +69,23 @@ export function CookieConsent() {
 
     if (typeof window !== "undefined") {
       const win = window as unknown as {
+        dataLayer?: unknown[];
         gtag?: (...args: unknown[]) => void;
         clarity?: (...args: unknown[]) => void;
       };
 
-      if (typeof win.gtag === "function") {
-        win.gtag("consent", "update", {
-          analytics_storage: status,
-          ad_storage: status,
-          ad_user_data: status,
-          ad_personalization: status,
-        });
-      }
+      // `gtag` est déclaré par le script d'amorçage GTM (layout racine).
+      win.gtag?.("consent", "update", {
+        analytics_storage: status,
+        ad_storage: status,
+        ad_user_data: status,
+        ad_personalization: status,
+      });
+      win.dataLayer = win.dataLayer || [];
+      win.dataLayer.push({ event: "fove_consent_update", consent: status });
 
-      if (typeof win.clarity === "function") {
-        win.clarity("consent", status === "granted");
-      }
+      if (status === "granted" && clarityId) loadClarity(clarityId);
+      else if (typeof win.clarity === "function") win.clarity("consent", false);
     }
 
     setVisible(false);
@@ -111,7 +122,7 @@ export function CookieConsent() {
         <p className="mt-2.5 text-xs text-ink-2 leading-relaxed">
           {t("body")}
           <Link
-            href="/confidentialite"
+            href="/confidentialite#cookies"
             className="ms-1 text-ink underline underline-offset-2 hover:text-cobalt transition-colors"
           >
             {t("learnMore")}

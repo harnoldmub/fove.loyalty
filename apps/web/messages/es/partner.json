@@ -1,7 +1,7 @@
 {
   "landing": {
     "meta": {
-      "title": "Hazte socio comercial de FOVE · Programa de Socios",
+      "title": "Programa de socios: recomienda FOVE a los comercios",
       "description": "Recomienda la solución de tarjetas de fidelidad digitales de FOVE a los comercios y gana comisiones atractivas por cada suscripción."
     },
     "hero": {
@@ -197,6 +197,10 @@
       "commissionValue": "20% neto",
       "home": "Volver al inicio",
       "login": "Ir al inicio de sesión de FOVE"
+    },
+    "meta": {
+      "title": "Hazte socio de FOVE",
+      "description": "Solicita unirte al programa de socios de FOVE: recomienda la tarjeta de fidelidad digital a los comercios y cobra una comisión por cada suscripción. Respuesta en 24 a 48 horas."
     }
   },
   "portal": {
@@ -356,7 +360,7 @@
       "objectionPaper": "«Mis clientes prefieren el papel»",
       "answerPaper": "En realidad, el 70% de los clientes olvida su tarjeta de papel. En cambio, su smartphone siempre está en su bolsillo en el momento de pagar.",
       "objectionPrice": "«Es demasiado caro para mí»",
-      "answerPrice": "El plan Starter cuesta solo 99 $ al año (menos de 9 $ al mes). Un solo cliente fidelizado más por semana amortiza la inversión.",
+      "answerPrice": "El plan Essentiel cuesta solo 99 $ al año (menos de 9 $ al mes). Un solo cliente fidelizado más por semana amortiza la inversión.",
       "objectionTime": "«No tengo tiempo para configurarlo»",
       "answerTime": "La cuenta se configura en solo 5 minutos desde un smartphone o un ordenador, y el cartel con el código QR se genera al instante, listo para imprimir."
     }

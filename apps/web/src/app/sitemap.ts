@@ -3,7 +3,7 @@ import type { MetadataRoute } from "next";
 const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? "https://fove.digital").replace(/\/$/, "");
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const lastModified = new Date("2026-10-30T00:00:00.000Z");
+  const lastModified = new Date("2026-11-22T00:00:00.000Z");
 
   const routes: {
     path: string;
@@ -15,6 +15,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { path: "/tarifs", changeFrequency: "weekly", priority: 0.9 },
     { path: "/contact", changeFrequency: "monthly", priority: 0.8 },
     { path: "/developpeurs", changeFrequency: "monthly", priority: 0.7 },
+    { path: "/partenaires", changeFrequency: "monthly", priority: 0.7 },
+    { path: "/partenaires/rejoindre", changeFrequency: "yearly", priority: 0.5 },
     { path: "/confidentialite", changeFrequency: "yearly", priority: 0.4 },
     { path: "/cgu", changeFrequency: "yearly", priority: 0.4 },
   ];

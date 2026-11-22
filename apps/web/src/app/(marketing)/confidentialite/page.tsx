@@ -1,4 +1,5 @@
 import { getTranslations } from "next-intl/server";
+import { CookieSettingsButton } from "@/components/cookie-consent";
 import { localizedPageMeta } from "@/lib/og";
 
 export async function generateMetadata() {
@@ -23,6 +24,12 @@ export default async function PrivacyPage() {
 
       <h2>{t("consent.title")}</h2>
       <p>{t("consent.text")}</p>
+
+      <h2 id="cookies" className="scroll-mt-24">{t("cookies.title")}</h2>
+      <p>{t("cookies.text")}</p>
+      <p>
+        <CookieSettingsButton className="text-cobalt underline underline-offset-4" />
+      </p>
 
       <h2>{t("rights.title")}</h2>
       <p>{t("rights.text")}</p>

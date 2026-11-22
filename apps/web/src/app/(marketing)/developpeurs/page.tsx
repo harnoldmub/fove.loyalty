@@ -54,6 +54,8 @@ export default async function DevelopersPage() {
           <h1 className="font-display text-4xl font-bold sm:text-5xl">{t("title")}</h1>
           <p className="mt-3 max-w-2xl text-lg text-ink-2">
             {t.rich("intro", {
+              // /api/docs est servi par l'API (réécriture Next) : un vrai chargement de page, pas une route du routeur.
+              // eslint-disable-next-line @next/next/no-html-link-for-pages
               link: (chunks) => <a className="text-cobalt underline underline-offset-4" href="/api/docs">{chunks}</a>,
             })}
           </p>
@@ -158,7 +160,7 @@ if (!ok) return res.status(400).end();`}</Code>
           <p className="max-w-2xl text-ink-2">
             {t.rich("widget.text", { key: literal("fove_pk_"), body: literal("</body>") })}
           </p>
-          <Code label={t("widget.codeLabel")}>{`<script src="https://app.fove.digital/widget/fove-widget.js"
+          <Code label={t("widget.codeLabel")}>{`<script src="https://fove.digital/widget/fove-widget.js"
         data-key="fove_pk_live_…"
         data-position="right" defer></script>`}</Code>
         </section>

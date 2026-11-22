@@ -6,12 +6,28 @@ import { Pricing } from "@/components/marketing/pricing";
 import { Button } from "@/components/ui/button";
 import { getTranslations } from "next-intl/server";
 import { localizedPageMeta, siteUrl } from "@/lib/og";
+import { serverGet } from "@/lib/server-api";
+import type { Plan } from "@/components/marketing/pricing-table";
 
 export async function generateMetadata() {
   return localizedPageMeta("home", "/");
 }
 
-const homeJsonLd = (t: (key: string) => string) => ({
+/** Fourchette de prix annuels lue dans les offres de l'API (jamais codée en dur). */
+function offersFrom(plans: Plan[] | null) {
+  const priced = (plans ?? []).filter((p) => p.kind !== "CUSTOM");
+  if (!priced.length) return undefined;
+  const yearly = priced.map((p) => p.priceYearlyCents / 100);
+  return {
+    "@type": "AggregateOffer",
+    priceCurrency: priced[0].currency || "USD",
+    lowPrice: String(Math.min(...yearly)),
+    highPrice: String(Math.max(...yearly)),
+    offerCount: String(priced.length),
+  };
+}
+
+const homeJsonLd = (t: (key: string) => string, plans: Plan[] | null) => ({
   "@context": "https://schema.org",
   "@graph": [
     {
@@ -46,13 +62,7 @@ const homeJsonLd = (t: (key: string) => string) => ({
       operatingSystem: "Web, iOS (Apple Wallet), Android (Google Wallet)",
       url: siteUrl,
       description: t("jsonLd.application"),
-      offers: {
-        "@type": "AggregateOffer",
-        priceCurrency: "USD",
-        lowPrice: "150",
-        highPrice: "590",
-        offerCount: "3",
-      },
+      offers: offersFrom(plans),
     },
   ],
 });
@@ -70,12 +80,16 @@ const counter = [
 ] as const;
 
 export default async function HomePage() {
-  const [t, tm] = await Promise.all([getTranslations("marketing.home"), getTranslations("marketing")]);
+  const [t, tm, { data: plans }] = await Promise.all([
+    getTranslations("marketing.home"),
+    getTranslations("marketing"),
+    serverGet<Plan[]>("/plans"),
+  ]);
   return (
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(homeJsonLd(tm)) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(homeJsonLd(tm, plans)) }}
       />
       <section className="mx-auto grid max-w-6xl items-center gap-12 px-4 pb-16 pt-12 sm:px-6 md:grid-cols-[1.1fr_1fr] md:pt-20 lg:gap-16">
         <div>

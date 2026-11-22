@@ -54,7 +54,7 @@
     },
     "privacy": {
       "title": "Personal data",
-      "description": "How FOVE processes the data of merchants and their customers."
+      "description": "How FOVE processes data about merchants and their customers: purposes, consent, analytics cookies, retention periods and rights."
     }
   },
   "jsonLd": {
@@ -73,7 +73,8 @@
       "contact": "Contact"
     },
     "login": "Log in",
-    "signup": "Start for free"
+    "signup": "Start for free",
+    "signupShort": "Get started"
   },
   "footer": {
     "tagline": "<strong>FOVE</strong>, short for <strong>FOrce de VEnte</strong>, French for sales force.",
@@ -476,6 +477,10 @@
     "consent": {
       "title": "Consents",
       "text": "Joining the program and receiving marketing communications are two separate consents. Customers can refuse marketing and still keep their card."
+    },
+    "cookies": {
+      "title": "Cookies and analytics",
+      "text": "The fove.digital website uses Google Tag Manager, Google Analytics and Microsoft Clarity to measure traffic and improve its pages. These tools only set cookies once you agree in the banner; without your consent, nothing is measured. You can change your mind at any time with the “Cookie settings” link at the bottom of the page."
     },
     "rights": {
       "title": "Customer rights",

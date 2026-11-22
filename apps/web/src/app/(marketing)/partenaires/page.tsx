@@ -1,4 +1,3 @@
-import type { Metadata } from "next";
 import Link from "next/link";
 import {
   ArrowRight,
@@ -19,10 +18,10 @@ import {
 import { getTranslations } from "next-intl/server";
 import { Button } from "@/components/ui/button";
 import { PartnerCommissions } from "@/components/marketing/partner-commissions";
+import { namespacedPageMeta } from "@/lib/og";
 
-export async function generateMetadata(): Promise<Metadata> {
-  const t = await getTranslations("partner.landing.meta");
-  return { title: t("title"), description: t("description") };
+export async function generateMetadata() {
+  return namespacedPageMeta("partner.landing.meta", "/partenaires");
 }
 
 const STEPS = [
@@ -43,7 +42,7 @@ export default async function PartenairesPage() {
       {/* HERO SECTION */}
       <section className="text-center max-w-3xl mx-auto mb-20 sm:mb-28">
         <div className="inline-flex items-center gap-2 rounded-full border border-line bg-surface px-3 py-1 text-xs font-semibold text-ink-2 shadow-xs mb-6">
-          <span className="size-2 rounded-full bg-[#C7FF3D]" />
+          <span className="size-2 rounded-full bg-stamp" aria-hidden />
           {t("hero.badge")}
         </div>
 
@@ -59,7 +58,7 @@ export default async function PartenairesPage() {
           <Button asChild size="lg" className="w-full sm:w-auto font-semibold shadow-md">
             <Link href="/partenaires/rejoindre">
               {t("hero.cta")}
-              <ArrowRight className="size-4 ms-1.5 rtl-flip" />
+              <ArrowRight className="size-4 ms-1.5 rtl-flip" aria-hidden />
             </Link>
           </Button>
 
@@ -68,15 +67,15 @@ export default async function PartenairesPage() {
           </Button>
         </div>
 
-        <div className="mt-8 flex flex-wrap items-center justify-center gap-6 text-xs text-ink-3">
+        <div className="mt-8 flex flex-wrap items-center justify-center gap-6 text-sm text-ink-3">
           <span className="flex items-center gap-1.5">
-            <Check className="size-4 text-emerald-500" /> {t("hero.perkFree")}
+            <Check className="size-4 text-mint" aria-hidden /> {t("hero.perkFree")}
           </span>
           <span className="flex items-center gap-1.5">
-            <Check className="size-4 text-emerald-500" /> {t("hero.perkCommission")}
+            <Check className="size-4 text-mint" aria-hidden /> {t("hero.perkCommission")}
           </span>
           <span className="flex items-center gap-1.5">
-            <Check className="size-4 text-emerald-500" /> {t("hero.perkPayment")}
+            <Check className="size-4 text-mint" aria-hidden /> {t("hero.perkPayment")}
           </span>
         </div>
       </section>
@@ -97,13 +96,13 @@ export default async function PartenairesPage() {
               className="relative rounded-2xl border border-line bg-surface p-6 shadow-xs flex flex-col justify-between"
             >
               <div>
-                <span className="font-mono text-3xl font-black text-[#C7FF3D] mb-4 block">
+                <span className="font-display text-3xl font-bold text-cobalt mb-4 block tabular">
                   {step.num}
                 </span>
                 <h3 className="font-display text-lg font-semibold text-ink mb-2">
                   {t(`steps.${step.key}.title`)}
                 </h3>
-                <p className="text-xs text-ink-2 leading-relaxed">{t(`steps.${step.key}.desc`)}</p>
+                <p className="text-sm text-ink-2 leading-relaxed">{t(`steps.${step.key}.desc`)}</p>
               </div>
             </div>
           ))}
@@ -128,10 +127,10 @@ export default async function PartenairesPage() {
               className="rounded-xl border border-line bg-surface p-5 hover:border-cobalt/40 transition-colors shadow-xs"
             >
               <h3 className="font-display text-base font-semibold text-ink mb-2 flex items-center gap-2">
-                <span className="size-2 rounded-full bg-[#C7FF3D]" />
+                <span className="size-2 rounded-full bg-stamp" aria-hidden />
                 {t(`profiles.${p}.title`)}
               </h3>
-              <p className="text-xs text-ink-2 leading-relaxed">{t(`profiles.${p}.desc`)}</p>
+              <p className="text-sm text-ink-2 leading-relaxed">{t(`profiles.${p}.desc`)}</p>
             </div>
           ))}
         </div>
@@ -153,61 +152,61 @@ export default async function PartenairesPage() {
 
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           <div className="space-y-2">
-            <span className="grid size-10 place-items-center rounded-lg bg-cobalt/10 text-cobalt">
-              <QrCode className="size-5" />
+            <span className="grid size-10 place-items-center rounded-lg bg-cobalt-soft text-cobalt">
+              <QrCode className="size-5" aria-hidden />
             </span>
             <h3 className="font-display text-sm font-semibold text-ink">{t("tools.qr.title")}</h3>
-            <p className="text-xs text-ink-2">
+            <p className="text-sm text-ink-2">
               {t("tools.qr.desc")}
             </p>
           </div>
 
           <div className="space-y-2">
-            <span className="grid size-10 place-items-center rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
-              <Smartphone className="size-5" />
+            <span className="grid size-10 place-items-center rounded-lg bg-cobalt-soft text-cobalt">
+              <Smartphone className="size-5" aria-hidden />
             </span>
             <h3 className="font-display text-sm font-semibold text-ink">{t("tools.whatsapp.title")}</h3>
-            <p className="text-xs text-ink-2">
+            <p className="text-sm text-ink-2">
               {t("tools.whatsapp.desc")}
             </p>
           </div>
 
           <div className="space-y-2">
-            <span className="grid size-10 place-items-center rounded-lg bg-[#C7FF3D]/20 text-black dark:text-[#C7FF3D]">
-              <TrendingUp className="size-5" />
+            <span className="grid size-10 place-items-center rounded-lg bg-cobalt-soft text-cobalt">
+              <TrendingUp className="size-5" aria-hidden />
             </span>
             <h3 className="font-display text-sm font-semibold text-ink">{t("tools.pipeline.title")}</h3>
-            <p className="text-xs text-ink-2">
+            <p className="text-sm text-ink-2">
               {t("tools.pipeline.desc")}
             </p>
           </div>
 
           <div className="space-y-2">
-            <span className="grid size-10 place-items-center rounded-lg bg-amber-500/10 text-amber-500">
-              <Wallet className="size-5" />
+            <span className="grid size-10 place-items-center rounded-lg bg-cobalt-soft text-cobalt">
+              <Wallet className="size-5" aria-hidden />
             </span>
             <h3 className="font-display text-sm font-semibold text-ink">{t("tools.payouts.title")}</h3>
-            <p className="text-xs text-ink-2">
+            <p className="text-sm text-ink-2">
               {t("tools.payouts.desc")}
             </p>
           </div>
 
           <div className="space-y-2">
-            <span className="grid size-10 place-items-center rounded-lg bg-cobalt/10 text-cobalt">
-              <ShieldCheck className="size-5" />
+            <span className="grid size-10 place-items-center rounded-lg bg-cobalt-soft text-cobalt">
+              <ShieldCheck className="size-5" aria-hidden />
             </span>
             <h3 className="font-display text-sm font-semibold text-ink">{t("tools.attribution.title")}</h3>
-            <p className="text-xs text-ink-2">
+            <p className="text-sm text-ink-2">
               {t("tools.attribution.desc")}
             </p>
           </div>
 
           <div className="space-y-2">
-            <span className="grid size-10 place-items-center rounded-lg bg-rose-500/10 text-rose-500">
-              <Zap className="size-5" />
+            <span className="grid size-10 place-items-center rounded-lg bg-cobalt-soft text-cobalt">
+              <Zap className="size-5" aria-hidden />
             </span>
             <h3 className="font-display text-sm font-semibold text-ink">{t("tools.support.title")}</h3>
-            <p className="text-xs text-ink-2">
+            <p className="text-sm text-ink-2">
               {t("tools.support.desc")}
             </p>
           </div>
@@ -227,27 +226,27 @@ export default async function PartenairesPage() {
           {FAQS.map((faq) => (
             <div key={faq} className="py-4 first:pt-0 last:pb-0">
               <h3 className="font-display text-sm font-semibold text-ink mb-1.5 flex items-start gap-2">
-                <HelpCircle className="size-4 text-cobalt shrink-0 mt-0.5" />
+                <HelpCircle className="size-4 text-cobalt shrink-0 mt-0.5" aria-hidden />
                 <span>{t(`faq.${faq}.q`)}</span>
               </h3>
-              <p className="text-xs text-ink-2 ps-6 leading-relaxed">{t(`faq.${faq}.a`)}</p>
+              <p className="text-sm text-ink-2 ps-6 leading-relaxed">{t(`faq.${faq}.a`)}</p>
             </div>
           ))}
         </div>
       </section>
 
       {/* CTA FINAL */}
-      <section className="rounded-2xl bg-black text-white p-8 sm:p-14 text-center border border-white/10 shadow-2xl">
+      <section className="rounded-[var(--radius-lg)] bg-cobalt text-cobalt-ink p-8 sm:p-14 text-center">
         <h2 className="font-display text-3xl sm:text-4xl font-bold mb-4 tracking-tight">
           {t("finalCta.title")}
         </h2>
-        <p className="text-sm sm:text-base text-neutral-300 max-w-xl mx-auto mb-8 leading-relaxed">
+        <p className="text-sm sm:text-base text-cobalt-ink/85 max-w-xl mx-auto mb-8 leading-relaxed">
           {t("finalCta.subtitle")}
         </p>
-        <Button asChild size="lg" className="bg-[#C7FF3D] text-black hover:bg-[#b8f52e] font-bold text-sm px-8 shadow-lg">
+        <Button asChild variant="stamp" size="lg">
           <Link href="/partenaires/rejoindre">
             {t("finalCta.cta")}
-            <ArrowRight className="size-4 ms-1.5 rtl-flip" />
+            <ArrowRight className="size-4 ms-1.5 rtl-flip" aria-hidden />
           </Link>
         </Button>
       </section>

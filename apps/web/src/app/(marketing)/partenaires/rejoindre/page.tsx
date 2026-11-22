@@ -4,7 +4,8 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, CheckCircle2, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/field";
+import { Field, Input, Select, Textarea } from "@/components/ui/field";
+import { ErrorNote } from "@/components/ui/misc";
 import { CitySelect, CountrySelect, detectClientCountry, getCountryOption } from "@/components/ui/country-select";
 import { PhoneInput } from "@/components/ui/phone-input";
 import { useTranslations } from "next-intl";
@@ -115,17 +116,17 @@ export default function RejoindrePartenairePage() {
       <div className="mb-6">
         <Link
           href="/partenaires"
-          className="inline-flex items-center gap-1.5 text-xs text-ink-3 hover:text-ink transition-colors"
+          className="inline-flex min-h-6 items-center gap-1.5 text-sm text-ink-2 hover:text-ink transition-colors"
         >
-          <ArrowLeft className="size-3.5 rtl-flip" />
+          <ArrowLeft className="size-3.5 rtl-flip" aria-hidden />
           {t("back")}
         </Link>
       </div>
 
       {submitted ? (
         <div className="rounded-2xl border border-line bg-surface p-8 sm:p-12 text-center shadow-lg">
-          <div className="mx-auto grid size-16 place-items-center rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 mb-6">
-            <CheckCircle2 className="size-8" />
+          <div className="mx-auto grid size-16 place-items-center rounded-2xl bg-mint-soft text-mint mb-6">
+            <CheckCircle2 className="size-8" aria-hidden />
           </div>
 
           <h1 className="font-display text-2xl sm:text-3xl font-bold text-ink mb-3">
@@ -145,11 +146,11 @@ export default function RejoindrePartenairePage() {
             </div>
             <div className="flex justify-between items-center">
               <span className="text-ink-3">{t("success.status")}</span>
-              <span className="font-medium text-amber-500">{t("success.statusValue")}</span>
+              <span className="font-medium text-stamp-ink dark:text-stamp">{t("success.statusValue")}</span>
             </div>
             <div className="flex justify-between items-center">
               <span className="text-ink-3">{t("success.commission")}</span>
-              <span className="font-semibold text-emerald-600 dark:text-emerald-400">{t("success.commissionValue")}</span>
+              <span className="font-semibold text-mint-ink">{t("success.commissionValue")}</span>
             </div>
           </div>
 
@@ -165,151 +166,90 @@ export default function RejoindrePartenairePage() {
       ) : (
         <div className="rounded-2xl border border-line bg-surface p-6 sm:p-10 shadow-md">
           <div className="mb-8">
-            <div className="inline-flex items-center gap-1.5 rounded-full bg-[#C7FF3D]/20 px-3 py-1 text-xs font-semibold text-black dark:text-[#C7FF3D] mb-3">
-              <Sparkles className="size-3.5" /> {t("badge")}
+            <div className="inline-flex items-center gap-1.5 rounded-full bg-stamp-soft px-3 py-1 text-xs font-semibold text-stamp-ink mb-3">
+              <Sparkles className="size-3.5" aria-hidden /> {t("badge")}
             </div>
             <h1 className="font-display text-2xl sm:text-3xl font-bold text-ink mb-2">
               {t("title")}
             </h1>
-            <p className="text-xs sm:text-sm text-ink-2 leading-relaxed">
+            <p className="text-sm text-ink-2 leading-relaxed">
               {t("subtitle")}
             </p>
           </div>
 
-          {error && (
-            <div className="mb-6 rounded-lg bg-rose-500/10 border border-rose-500/20 p-3.5 text-xs font-medium text-rose-500">
-              {error}
-            </div>
-          )}
-
           <form onSubmit={handleSubmit} className="space-y-5">
-            {/* Prénom & Nom */}
-            <div>
-              <label className="block text-xs font-medium text-ink-2 mb-1">{t("fields.name")}</label>
-              <Input
-                required
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-              />
+            {error && <ErrorNote>{error}</ErrorNote>}
+
+            <Field label={t("fields.name")}>
+              {(f) => <Input {...f} required autoComplete="name" value={name} onChange={(e) => setName(e.target.value)} />}
+            </Field>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <Field label={t("fields.email")}>
+                {(f) => <Input {...f} required type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} />}
+              </Field>
+              <Field label={t("fields.phone")}>
+                {(f) => <PhoneInput {...f} required value={phone} onChange={setPhone} defaultCountry={countryCode} />}
+              </Field>
             </div>
 
-            {/* Email & Téléphone */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-medium text-ink-2 mb-1">{t("fields.email")}</label>
-                <Input
-                  required
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-ink-2 mb-1">{t("fields.phone")}</label>
-                <PhoneInput
-                  required
-                  value={phone}
-                  onChange={setPhone}
-                  defaultCountry={countryCode}
-                />
-              </div>
+              <Field label={t("fields.company")}>
+                {(f) => <Input {...f} autoComplete="organization" value={company} onChange={(e) => setCompany(e.target.value)} />}
+              </Field>
+              <Field label={t("fields.profile")}>
+                {(f) => (
+                  <Select {...f} value={partnerType} onChange={(e) => setPartnerType(e.target.value)}>
+                    {PARTNER_TYPES.map((type) => (
+                      <option key={type} value={type}>
+                        {t(`types.${type}`)}
+                      </option>
+                    ))}
+                  </Select>
+                )}
+              </Field>
             </div>
 
-            {/* Entreprise & Type de profil */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-medium text-ink-2 mb-1">
-                  {t("fields.company")}
-                </label>
-                <Input
-                  value={company}
-                  onChange={(e) => setCompany(e.target.value)}
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-ink-2 mb-1">{t("fields.profile")}</label>
-                <select
-                  value={partnerType}
-                  onChange={(e) => setPartnerType(e.target.value)}
-                  className="w-full rounded-md border border-line bg-surface px-3 py-2 text-sm text-ink focus-visible:outline-none focus-visible:border-cobalt"
-                >
-                  {PARTNER_TYPES.map((type) => (
-                    <option key={type} value={type}>
-                      {t(`types.${type}`)}
+              <Field label={t("fields.country")}>
+                {(f) => (
+                  <CountrySelect
+                    {...f}
+                    value={countryCode}
+                    onChange={(code) => {
+                      setCountryCode(code);
+                      const opt = getCountryOption(code);
+                      if (opt?.defaultCity) {
+                        setCity(opt.defaultCity);
+                      }
+                    }}
+                  />
+                )}
+              </Field>
+              <Field label={t("fields.city")}>
+                {(f) => <CitySelect {...f} countryCode={countryCode} value={city} onChange={setCity} />}
+              </Field>
+            </div>
+
+            <Field label={t("fields.website")}>
+              {(f) => <Input {...f} type="url" inputMode="url" value={websiteUrl} onChange={(e) => setWebsiteUrl(e.target.value)} />}
+            </Field>
+
+            <Field label={t("fields.strategy")}>
+              {(f) => <Textarea {...f} required rows={3} value={promotionStrategy} onChange={(e) => setPromotionStrategy(e.target.value)} />}
+            </Field>
+
+            <Field label={t("fields.network")}>
+              {(f) => (
+                <Select {...f} value={networkSizeEstimate} onChange={(e) => setNetworkSizeEstimate(e.target.value)}>
+                  {NETWORK_SIZES.map((size) => (
+                    <option key={size.value} value={size.value}>
+                      {t(`network.${size.key}`)}
                     </option>
                   ))}
-                </select>
-              </div>
-            </div>
-
-            {/* Pays (select avec drapeau) & Ville (API) */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-medium text-ink-2 mb-1">{t("fields.country")}</label>
-                <CountrySelect
-                  value={countryCode}
-                  onChange={(code) => {
-                    setCountryCode(code);
-                    const opt = getCountryOption(code);
-                    if (opt?.defaultCity) {
-                      setCity(opt.defaultCity);
-                    }
-                  }}
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-ink-2 mb-1">{t("fields.city")}</label>
-                <CitySelect
-                  countryCode={countryCode}
-                  value={city}
-                  onChange={setCity}
-                />
-              </div>
-            </div>
-
-            {/* Site web ou réseau social */}
-            <div>
-              <label className="block text-xs font-medium text-ink-2 mb-1">
-                {t("fields.website")}
-              </label>
-              <Input
-                type="url"
-                value={websiteUrl}
-                onChange={(e) => setWebsiteUrl(e.target.value)}
-              />
-            </div>
-
-            {/* Stratégie de recommandation */}
-            <div>
-              <label className="block text-xs font-medium text-ink-2 mb-1">
-                {t("fields.strategy")}
-              </label>
-              <textarea
-                required
-                rows={3}
-                className="w-full rounded-md border border-line bg-surface p-3 text-sm text-ink focus-visible:outline-none focus-visible:border-cobalt"
-                value={promotionStrategy}
-                onChange={(e) => setPromotionStrategy(e.target.value)}
-              />
-            </div>
-
-            {/* Réseau estimé */}
-            <div>
-              <label className="block text-xs font-medium text-ink-2 mb-1">
-                {t("fields.network")}
-              </label>
-              <select
-                value={networkSizeEstimate}
-                onChange={(e) => setNetworkSizeEstimate(e.target.value)}
-                className="w-full rounded-md border border-line bg-surface px-3 py-2 text-sm text-ink focus-visible:outline-none focus-visible:border-cobalt"
-              >
-                {NETWORK_SIZES.map((size) => (
-                  <option key={size.value} value={size.value}>
-                    {t(`network.${size.key}`)}
-                  </option>
-                ))}
-              </select>
-            </div>
+                </Select>
+              )}
+            </Field>
 
             {/* Consentement & CGU */}
             <div className="rounded-xl border border-line bg-surface-2 p-4 space-y-2">
@@ -319,12 +259,12 @@ export default function RejoindrePartenairePage() {
                   required
                   checked={acceptTerms}
                   onChange={(e) => setAcceptTerms(e.target.checked)}
-                  className="mt-0.5 rounded border-line"
+                  className="mt-0.5 size-4.5 shrink-0 accent-[var(--cobalt)]"
                 />
-                <span className="text-xs text-ink-2 leading-relaxed">
+                <span className="text-sm text-ink-2 leading-relaxed">
                   {t.rich("terms", {
                     link: (chunks) => (
-                      <Link href="/cgu" className="underline text-ink">
+                      <Link href="/cgu" className="text-cobalt underline underline-offset-4">
                         {chunks}
                       </Link>
                     ),
@@ -333,7 +273,7 @@ export default function RejoindrePartenairePage() {
               </label>
             </div>
 
-            <Button type="submit" size="lg" className="w-full font-semibold" disabled={loading}>
+            <Button type="submit" size="lg" className="w-full font-semibold" loading={loading}>
               {loading ? t("submitting") : t("submit")}
             </Button>
           </form>
