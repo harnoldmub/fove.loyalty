@@ -2,7 +2,7 @@ import { Injectable, Logger } from "@nestjs/common";
 import { PrismaService } from "../../common/prisma.service";
 import type { AuthState } from "../../common/context";
 import { badRequest, notFound, forbidden } from "../../common/errors";
-import { loadConfig } from "../../config";
+import { loadConfig, stripeSecretKey } from "../../config";
 import type {
   ExpenseCreateDto,
   FinanceFilterDto,
@@ -502,10 +502,11 @@ export class FinanceService {
     let providerRefundId: string | null = null;
     if (payment.provider === "STRIPE" && payment.providerPaymentId) {
       const cfg = loadConfig();
-      if (cfg.STRIPE_SECRET_KEY) {
+      const key = stripeSecretKey(cfg);
+      if (key) {
         try {
           const Stripe = (await import("stripe")).default;
-          const stripe = new Stripe(cfg.STRIPE_SECRET_KEY);
+          const stripe = new Stripe(key);
           const refund = await stripe.refunds.create({
             payment_intent: payment.providerPaymentId,
             amount: refundAmount,

@@ -1,7 +1,7 @@
 import { Injectable, Logger } from "@nestjs/common";
 import Stripe from "stripe";
 import { Prisma, type BillingInterval, type Subscription, type SubscriptionPlan, type SubscriptionStatus } from "@fove/database";
-import { loadConfig } from "../config";
+import { loadConfig, stripeSecretKey, stripeWebhookSecret, stripeYearlyPrice } from "../config";
 import { PrismaService } from "../common/prisma.service";
 import { AuditService } from "../common/audit.service";
 import { badRequest, notFound } from "../common/errors";
@@ -30,7 +30,7 @@ export class BillingService {
     private readonly audit: AuditService,
     private readonly partners: PartnersService,
   ) {
-    const key = loadConfig().STRIPE_SECRET_KEY;
+    const key = stripeSecretKey();
     this.stripe = key ? new Stripe(key) : null;
   }
 
@@ -83,7 +83,7 @@ export class BillingService {
       return { url: `${appUrl}/app/billing?checkout=mock`, mode: "mock" as const };
     }
 
-    const price = interval === "YEAR" ? plan.stripePriceYearlyId : plan.stripePriceMonthlyId;
+    const price = interval === "YEAR" ? stripeYearlyPrice(plan.code, plan.stripePriceYearlyId) : plan.stripePriceMonthlyId;
     if (!price) throw badRequest("price_missing", "Tarif Stripe non configuré pour cette offre");
     const tenant = await this.prisma.client.tenant.findUniqueOrThrow({ where: { id: ctx.tenantId } });
     const buyer = ctx.actor.type === "user"
@@ -149,7 +149,7 @@ export class BillingService {
     }
     const upgrade = plan.priceYearlyCents > sub.plan.priceYearlyCents;
     if (this.stripe && sub.stripeSubscriptionId) {
-      const price = plan.stripePriceYearlyId;
+      const price = stripeYearlyPrice(plan.code, plan.stripePriceYearlyId);
       if (!price) throw badRequest("price_missing", "Tarif Stripe non configuré pour cette offre");
       const remote = await this.releaseSchedule(sub.stripeSubscriptionId);
       if (upgrade) {
@@ -290,7 +290,7 @@ export class BillingService {
   // --- Webhooks Stripe -------------------------------------------------------
 
   async handleWebhook(rawBody: Buffer | undefined, signature: string | undefined) {
-    const secret = loadConfig().STRIPE_WEBHOOK_SECRET;
+    const secret = stripeWebhookSecret();
     if (!this.stripe || !secret) throw badRequest("stripe_disabled", "Stripe non configuré");
     if (!rawBody || !signature) throw badRequest("invalid_signature", "Signature manquante");
     let event: Stripe.Event;
@@ -358,9 +358,10 @@ export class BillingService {
     const customerId = typeof remote.customer === "string" ? remote.customer : remote.customer.id;
     const item = remote.items.data[0];
     const priceId = item?.price.id;
-    const plan = priceId
-      ? await this.prisma.client.subscriptionPlan.findFirst({ where: { OR: [{ stripePriceMonthlyId: priceId }, { stripePriceYearlyId: priceId }] } })
-      : null;
+    const plans = priceId ? await this.prisma.client.subscriptionPlan.findMany({ where: { active: true } }) : [];
+    const plan = plans.find((candidate) =>
+      candidate.stripePriceMonthlyId === priceId || stripeYearlyPrice(candidate.code, candidate.stripePriceYearlyId) === priceId,
+    ) ?? null;
     // Abonnement créé depuis le tableau de bord Stripe : pas de métadonnée,
     // on retrouve l'entreprise par son client Stripe.
     const tenantId =
