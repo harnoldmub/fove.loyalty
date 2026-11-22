@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Check, Coffee, ImageUp, Printer, Smartphone, Sparkles } from "lucide-react";
@@ -36,7 +35,9 @@ interface Program {
   stampsTarget: number;
 }
 
-export function OnboardingWizard({ userName, tenant }: { userName: string; tenant: { id: string; name: string } | null }) {
+type TenantRef = { id: string; name: string };
+
+export function OnboardingWizard({ userName, tenant, fallbackTenant }: { userName: string; tenant: TenantRef | null; fallbackTenant: TenantRef | null }) {
   const t = useTranslations("onboarding");
   const [step, setStep] = useState(tenant ? 1 : 0);
   const [error, setError] = useState<string | null>(null);
@@ -113,6 +114,21 @@ export function OnboardingWizard({ userName, tenant }: { userName: string; tenan
     }
   };
 
+  /**
+   * Quitter sans finir : retour au commerce déjà configuré s'il y en a un, sinon déconnexion.
+   * (Le commerce actif est en session : un simple lien vers /login renvoyait ici en boucle.)
+   */
+  const leave = () =>
+    run(async () => {
+      if (fallbackTenant) {
+        await api.post("/auth/switch-tenant", { tenantId: fallbackTenant.id });
+        window.location.assign("/app");
+      } else {
+        await api.post("/auth/logout").catch(() => undefined);
+        window.location.assign("/login");
+      }
+    });
+
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
     if (step === 0)
@@ -151,11 +167,8 @@ export function OnboardingWizard({ userName, tenant }: { userName: string; tenan
       });
     if (step === 2)
       return run(async () => {
-        const timezone = getCountryOption(estCountry)?.timezone ?? "Africa/Kinshasa";
-        await Promise.all([
-          api.patch("/app/tenant", { country: estCountry, timezone }),
-          api.post("/app/establishments", { name: estName, city: estCity || null }),
-        ]);
+        // Pays et fuseau sont déjà enregistrés à la première étape : on ne crée ici que le point de vente.
+        await api.post("/app/establishments", { name: estName, city: estCity || null });
         setStep(3);
       });
     if (step === 3)
@@ -254,29 +267,24 @@ export function OnboardingWizard({ userName, tenant }: { userName: string; tenan
                       />
                     )}
                   </Field>
-                  <Field label={t("business.city")}>
-                    {(p) => <CitySelect {...p} countryCode={estCountry} value={estCity} onChange={setEstCity} />}
-                  </Field>
-                </div>
-                <div className="grid gap-4 sm:grid-cols-2">
                   <Field label={t("business.currency")}>
                     {(p) => (
                       <CurrencySelect {...p} value={currency} onChange={setCurrency} />
                     )}
                   </Field>
-                  <Field label={t("business.slug")} hint={<span dir="ltr">{`app.fove.digital/${slug || t("defaults.slug")}`}</span>}>
-                    {(p) => (
-                      <Input
-                        {...p}
-                        value={slug}
-                        onChange={(e) => {
-                          setSlugTouched(true);
-                          setSlug(slugify(e.target.value));
-                        }}
-                      />
-                    )}
-                  </Field>
                 </div>
+                <Field label={t("business.slug")} hint={<span dir="ltr">{`fove.digital/${slug || t("defaults.slug")}`}</span>}>
+                  {(p) => (
+                    <Input
+                      {...p}
+                      value={slug}
+                      onChange={(e) => {
+                        setSlugTouched(true);
+                        setSlug(slugify(e.target.value));
+                      }}
+                    />
+                  )}
+                </Field>
                 <Button type="submit" loading={busy} disabled={name.trim().length < 2}>{t("business.submit")}</Button>
               </>
             )}
@@ -318,18 +326,6 @@ export function OnboardingWizard({ userName, tenant }: { userName: string; tenan
                 <h1 className="font-display text-3xl font-semibold">{t("establishment.title")}</h1>
                 <p className="-mt-2 text-ink-2">{t("establishment.subtitle")}</p>
                 <Field label={t("establishment.name")}>{(p) => <Input {...p} value={estName} onChange={(e) => setEstName(e.target.value)} />}</Field>
-                <Field label={t("establishment.country")}>
-                  {(p) => (
-                    <CountrySelect
-                      {...p}
-                      value={estCountry}
-                      onChange={(code) => {
-                        setEstCountry(code);
-                        setEstCity("");
-                      }}
-                    />
-                  )}
-                </Field>
                 <Field label={t("establishment.city")}>
                   {(p) => <CitySelect {...p} countryCode={estCountry} value={estCity} onChange={setEstCity} />}
                 </Field>
@@ -408,9 +404,11 @@ export function OnboardingWizard({ userName, tenant }: { userName: string; tenan
               </>
             )}
           </form>
-          {step > 0 && step < 5 && (
+          {step < 5 && (fallbackTenant || step > 0) && (
             <p className="mt-6 text-center text-sm text-ink-3">
-              <Link href="/login" className="hover:text-ink">{t("later")}</Link>
+              <button type="button" onClick={leave} disabled={busy} className="min-h-6 hover:text-ink disabled:opacity-60">
+                {fallbackTenant ? t("backTo", { name: fallbackTenant.name }) : t("later")}
+              </button>
             </p>
           )}
         </div>

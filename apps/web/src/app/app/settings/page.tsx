@@ -49,7 +49,7 @@ export default function SettingsPage() {
     <>
       <PageHeader
         title={t("title")}
-        description={data ? t("pageAddress", { url: `app.fove.digital/${data.slug}` }) : undefined}
+        description={data ? t("pageAddress", { url: `fove.digital/${data.slug}` }) : undefined}
         actions={
           data ? (
             <Button asChild variant="secondary" size="sm">
@@ -232,12 +232,12 @@ function SettingsForm({ data }: { data: Tenant }) {
             <Field label={t("name")}>{(p) => <Input {...p} value={f.name ?? ""} onChange={set("name")} />}</Field>
             <Field
               label={t("slug")}
-              hint={`app.fove.digital/${f.slug || t("slugPlaceholder")}`}
+              hint={`fove.digital/${f.slug || t("slugPlaceholder")}`}
             >
               {(p) => (
                 <div className="flex items-stretch overflow-hidden rounded-[var(--radius)] bg-surface shadow-1 ring-1 ring-line focus-within:ring-2 focus-within:ring-cobalt">
                   <span dir="ltr" className="flex select-none items-center border-e border-line bg-surface-2 px-3.5 text-sm font-medium text-ink-2">
-                    app.fove.digital/
+                    fove.digital/
                   </span>
                   <Input
                     {...p}

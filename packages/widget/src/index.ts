@@ -7,7 +7,7 @@ declare global {
 }
 
 /**
- * <script src="https://app.fove.digital/widget/fove-widget.js" data-key="fove_pk_live_…" defer></script>
+ * <script src="https://fove.digital/widget/fove-widget.js" data-key="fove_pk_live_…" defer></script>
  * Options : data-position="left|right", data-label="Ma fidélité".
  */
 (function boot() {
