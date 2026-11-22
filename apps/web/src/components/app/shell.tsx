@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import * as Menu from "@radix-ui/react-dropdown-menu";
 import {
   BarChart3,
@@ -27,6 +27,7 @@ import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { Logo } from "@/components/brand";
 import { LocaleSwitcher } from "@/components/locale-switcher";
+import { SwitchingOverlay } from "@/components/app/switching-overlay";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { api, useErrorMessage } from "@/lib/api";
@@ -67,17 +68,21 @@ function TenantSwitcher() {
   const t = useTranslations("app.shell");
   const me = useMe();
   const tenant = useActiveTenant();
-  const router = useRouter();
-  const switchTo = async (id: string) => {
+  const [switchingTo, setSwitchingTo] = useState<string | null>(null);
+  const switchTo = async (id: string, name: string) => {
+    setSwitchingTo(name);
     try {
       await api.post("/auth/switch-tenant", { tenantId: id });
-      router.refresh();
+      // Rechargement complet : l'écran d'attente reste affiché jusqu'à la nouvelle page.
       window.location.assign("/app");
     } catch (e) {
+      setSwitchingTo(null);
       toast.error(toErrorMessage(e));
     }
   };
   return (
+    <>
+    {switchingTo && <SwitchingOverlay name={switchingTo} />}
     <Menu.Root>
       <Menu.Trigger className="flex w-full items-center gap-3 rounded-md px-2 py-2 text-start hover:bg-surface-2">
         {tenant?.logoUrl ? (
@@ -96,7 +101,7 @@ function TenantSwitcher() {
       <Menu.Portal>
         <Menu.Content align="start" sideOffset={6} className="z-50 min-w-60 rounded-md bg-surface p-1 shadow-2">
           {me.tenants.map((tn) => (
-            <Menu.Item key={tn.id} onSelect={() => tn.id !== me.activeTenantId && switchTo(tn.id)} className="flex cursor-pointer items-center gap-2 rounded-sm px-2.5 py-2 text-sm outline-none data-[highlighted]:bg-surface-2">
+            <Menu.Item key={tn.id} onSelect={() => tn.id !== me.activeTenantId && switchTo(tn.id, tn.name)} className="flex cursor-pointer items-center gap-2 rounded-sm px-2.5 py-2 text-sm outline-none data-[highlighted]:bg-surface-2">
               {tn.logoUrl ? (
                 <img src={tn.logoUrl} alt="" className="size-5 shrink-0 rounded-full border border-line bg-white object-cover" />
               ) : (
@@ -120,6 +125,7 @@ function TenantSwitcher() {
         </Menu.Content>
       </Menu.Portal>
     </Menu.Root>
+    </>
   );
 }
 

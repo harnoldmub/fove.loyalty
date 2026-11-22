@@ -10,6 +10,7 @@ import { defaultCurrencyForCountry } from "@fove/shared";
 import { CitySelect, CountrySelect, detectClientCountry, getCountryOption } from "@/components/ui/country-select";
 import { Field, Input } from "@/components/ui/field";
 import { ErrorNote } from "@/components/ui/misc";
+import { SwitchingOverlay } from "@/components/app/switching-overlay";
 import { api, errorMessage } from "@/lib/api";
 import { afterAuthPath } from "@/lib/plan-choice";
 import { CurrencySelect } from "@/components/ui/currency-select";
@@ -118,10 +119,17 @@ export function OnboardingWizard({ userName, tenant, fallbackTenant }: { userNam
    * Quitter sans finir : retour au commerce déjà configuré s'il y en a un, sinon déconnexion.
    * (Le commerce actif est en session : un simple lien vers /login renvoyait ici en boucle.)
    */
+  const [switching, setSwitching] = useState(false);
   const leave = () =>
     run(async () => {
       if (fallbackTenant) {
-        await api.post("/auth/switch-tenant", { tenantId: fallbackTenant.id });
+        setSwitching(true);
+        try {
+          await api.post("/auth/switch-tenant", { tenantId: fallbackTenant.id });
+        } catch (e) {
+          setSwitching(false);
+          throw e;
+        }
         window.location.assign("/app");
       } else {
         await api.post("/auth/logout").catch(() => undefined);
@@ -404,6 +412,7 @@ export function OnboardingWizard({ userName, tenant, fallbackTenant }: { userNam
               </>
             )}
           </form>
+          {switching && fallbackTenant && <SwitchingOverlay name={fallbackTenant.name} />}
           {step < 5 && (fallbackTenant || step > 0) && (
             <p className="mt-6 text-center text-sm text-ink-3">
               <button type="button" onClick={leave} disabled={busy} className="min-h-6 hover:text-ink disabled:opacity-60">
