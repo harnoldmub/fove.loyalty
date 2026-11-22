@@ -64,17 +64,26 @@ export const SUPPORTED_LOCALES = ["fr", "en", "ar", "es"] as const;
 export const localeSchema = z.object({ locale: z.enum(SUPPORTED_LOCALES) });
 
 // --- Tenant / onboarding ---------------------------------------------------
-export const createTenantSchema = z.object({
+/** Champs de l'entreprise, sans valeur par défaut (base commune création / modification). */
+const tenantFields = z.object({
   name: z.string().trim().min(2).max(80),
   slug,
+  primaryColor: hexColor,
+  country: z.string().length(2),
+  currency: z.string().length(3),
+  timezone: z.string().max(64),
+  partnerCode: z.string().trim().max(30).optional(),
+  referrerSlug: z.string().trim().max(64).optional(),
+});
+export const createTenantSchema = tenantFields.extend({
   primaryColor: hexColor.default("#1F4FFF"),
   country: z.string().length(2).default("CD"),
   currency: z.string().length(3).default("CDF"),
   timezone: z.string().max(64).default("Africa/Kinshasa"),
-  partnerCode: z.string().trim().max(30).optional(),
-  referrerSlug: z.string().trim().max(64).optional(),
 });
-export const updateTenantSchema = createTenantSchema.partial().extend({
+// Jamais `createTenantSchema.partial()` : avec Zod 4, les valeurs par défaut s'appliquent aussi aux champs
+// optionnels et chaque modification partielle remettait pays, devise, fuseau et couleur à leurs défauts.
+export const updateTenantSchema = tenantFields.partial().extend({
   logoUrl: z.url().max(500).nullable().optional(),
   walletBannerUrl: z.url().max(500).nullable().optional(),
   walletBannerVersion: z.string().max(64).nullable().optional(),
@@ -109,7 +118,25 @@ export const programSchema = z
     enrollmentVerification: z.enum(["NONE", "EMAIL_OTP", "IN_STORE"]).default("NONE"),
     terms: z.string().max(4000).default(""),
   });
-export const updateProgramSchema = programSchema.partial().extend({ active: z.boolean().optional() });
+// Champ par champ, sans les valeurs par défaut : avec Zod 4, `.partial()` les appliquerait aux champs absents
+// et une simple mise en pause (`{ active }`) réinitialisait les règles du programme.
+const programShape = programSchema.shape;
+export const updateProgramSchema = z.object({
+  name: programShape.name.optional(),
+  mode: programShape.mode.optional(),
+  currency: programShape.currency.optional(),
+  spendStep: programShape.spendStep.removeDefault().optional(),
+  pointsPerStep: programShape.pointsPerStep.removeDefault().optional(),
+  stampsPerPurchase: programShape.stampsPerPurchase.removeDefault().optional(),
+  stampsTarget: programShape.stampsTarget.removeDefault().optional(),
+  minPurchaseAmount: programShape.minPurchaseAmount.removeDefault().optional(),
+  maxPerTransaction: programShape.maxPerTransaction.removeDefault().optional(),
+  inactivityExpiryDays: programShape.inactivityExpiryDays.removeDefault().optional(),
+  oneVisitPerDay: programShape.oneVisitPerDay.removeDefault().optional(),
+  enrollmentVerification: programShape.enrollmentVerification.removeDefault().optional(),
+  terms: programShape.terms.removeDefault().optional(),
+  active: z.boolean().optional(),
+});
 
 // --- Récompenses -----------------------------------------------------------
 const rewardFields = z.object({
