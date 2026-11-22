@@ -367,11 +367,11 @@
       "title": "Treasury and bank reconciliation",
       "description": "Available net cash, Stripe balances and entry checks.",
       "cash": "Available net cash",
-      "cashHelp": "Net receipts − costs paid",
+      "cashHelp": "Net receipts − expenses and commissions paid",
       "stripe": "Estimated Stripe balance",
-      "stripeHelp": "Available for bank transfer",
+      "stripeHelp": "Stripe receipts net of fees and refunds (estimate)",
       "collected": "Total net receipts",
-      "collectedHelp": "All sources combined",
+      "collectedHelp": "All sources, net of fees and refunds",
       "spent": "Total outflows",
       "spentHelp": "Expenses + commissions paid",
       "noteTitle": "Strict bank reconciliation:",
@@ -380,13 +380,20 @@
       "empty": "No manual bank entries. The balance reflects automated Stripe and contract flows.",
       "table": {
         "date": "Date",
-        "reference": "Reference",
         "label": "Bank description",
         "amount": "Amount",
         "status": "Reconciliation status"
       },
       "reconciled": "Reconciled ({type})",
-      "unreconciled": "To reconcile"
+      "unreconciled": "To reconcile",
+      "bankSummary": "Statement balance: {balance} · {count, plural, =0 {nothing to reconcile} one {# entry to reconcile} other {# entries to reconcile}}",
+      "error": "Couldn’t load the treasury.",
+      "retry": "Try again",
+      "reconciledTypes": {
+        "PAYMENT": "payment",
+        "EXPENSE": "expense",
+        "PARTNER_PAYOUT": "commission"
+      }
     },
     "common": {
       "notAvailable": "n/a"

@@ -367,11 +367,11 @@
       "title": "Tesorería y conciliación bancaria",
       "description": "Tesorería neta disponible, saldos de Stripe y control de asientos.",
       "cash": "Tesorería neta disponible",
-      "cashHelp": "Cobros netos − gastos pagados",
+      "cashHelp": "Cobros netos − gastos y comisiones pagadas",
       "stripe": "Saldo estimado de Stripe",
-      "stripeHelp": "Disponible para transferencia bancaria",
+      "stripeHelp": "Cobros de Stripe netos de comisiones y reembolsos (estimación)",
       "collected": "Total de cobros netos",
-      "collectedHelp": "Todas las fuentes",
+      "collectedHelp": "Todas las fuentes, netos de comisiones y reembolsos",
       "spent": "Total de pagos",
       "spentHelp": "Gastos + comisiones pagadas",
       "noteTitle": "Conciliación bancaria estricta:",
@@ -380,13 +380,20 @@
       "empty": "No hay asientos bancarios manuales. El saldo corresponde a los flujos automáticos de Stripe y contratos.",
       "table": {
         "date": "Fecha",
-        "reference": "Referencia",
         "label": "Concepto bancario",
         "amount": "Importe",
         "status": "Estado de conciliación"
       },
       "reconciled": "Conciliado ({type})",
-      "unreconciled": "Por conciliar"
+      "unreconciled": "Por conciliar",
+      "bankSummary": "Saldo de extractos: {balance} · {count, plural, =0 {nada por conciliar} one {# asiento por conciliar} other {# asientos por conciliar}}",
+      "error": "No se pudo cargar la tesorería.",
+      "retry": "Reintentar",
+      "reconciledTypes": {
+        "PAYMENT": "pago",
+        "EXPENSE": "gasto",
+        "PARTNER_PAYOUT": "comisión"
+      }
     },
     "common": {
       "notAvailable": "n/d"
