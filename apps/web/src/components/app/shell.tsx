@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import Link, { useLinkStatus } from "next/link";
 import { usePathname } from "next/navigation";
 import * as Menu from "@radix-ui/react-dropdown-menu";
 import {
@@ -28,6 +28,7 @@ import { toast } from "sonner";
 import { Logo } from "@/components/brand";
 import { LocaleSwitcher } from "@/components/locale-switcher";
 import { SwitchingOverlay } from "@/components/app/switching-overlay";
+import { LoaderCircle, type LucideIcon } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { api, useErrorMessage } from "@/lib/api";
@@ -134,6 +135,16 @@ async function logout() {
   window.location.assign("/login");
 }
 
+/** Icône d'un onglet : remplacée par un indicateur de chargement tant que la page demandée n'est pas affichée. */
+function NavIcon({ icon: Icon, className }: { icon: LucideIcon; className?: string }) {
+  const { pending } = useLinkStatus();
+  return pending ? (
+    <LoaderCircle className={cn(className, "animate-spin text-cobalt motion-reduce:animate-none")} aria-hidden />
+  ) : (
+    <Icon className={className} aria-hidden />
+  );
+}
+
 function SideNav({ onNavigate }: { onNavigate?: () => void }) {
   const t = useTranslations("app.nav");
   const pathname = usePathname();
@@ -150,7 +161,7 @@ function SideNav({ onNavigate }: { onNavigate?: () => void }) {
             aria-current={active ? "page" : undefined}
             className={cn("flex items-center gap-3 rounded-md px-3 py-2 text-[0.95rem] text-ink-2 hover:bg-surface-2 hover:text-ink", active && "bg-surface text-ink shadow-1")}
           >
-            <n.icon className={cn("size-[18px]", active ? "text-cobalt" : "text-ink-3")} aria-hidden />
+            <NavIcon icon={n.icon} className={cn("size-[18px]", active ? "text-cobalt" : "text-ink-3")} />
             {t(n.key)}
           </Link>
         );
@@ -279,7 +290,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               const active = isActive(pathname, n.href);
               return (
                 <Link key={n.href} href={n.href} aria-current={active ? "page" : undefined} className={cn("grid justify-items-center gap-0.5 py-2.5 text-[0.7rem] text-ink-3", active && "text-cobalt")}>
-                  <n.icon className="size-5" aria-hidden />
+                  <NavIcon icon={n.icon} className="size-5" />
                   {n.href === "/app" ? tn("home") : tn(n.key)}
                 </Link>
               );
