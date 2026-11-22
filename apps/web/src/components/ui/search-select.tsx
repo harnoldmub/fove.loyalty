@@ -84,6 +84,8 @@ export function SearchSelect({
   const setQuery = (next: string) => (onQueryChange ? onQueryChange(next) : setLocalQuery(next));
   const [active, setActive] = useState(0);
   const [placement, setPlacement] = useState<{ up: boolean; max: number }>({ up: false, max: 320 });
+  // Bord d'ancrage horizontal : la liste (min. 20 rem) doit tenir dans son conteneur défilant (modale…).
+  const [anchor, setAnchor] = useState<"left" | "right" | null>(null);
   const root = useRef<HTMLDivElement>(null);
   const button = useRef<HTMLButtonElement>(null);
   const search = useRef<HTMLInputElement>(null);
@@ -108,11 +110,26 @@ export function SearchSelect({
     const above = rect.top - 12;
     const up = below < 280 && above > below;
     setPlacement({ up, max: Math.max(180, Math.min(360, up ? above : below)) });
+
+    // Ancrer à gauche ou à droite selon la place disponible, sinon la liste déborde
+    // et fait défiler horizontalement la modale qui la contient.
+    let clip: HTMLElement | null = root.current.parentElement;
+    while (clip && clip !== document.body) {
+      const { overflowX, overflowY } = getComputedStyle(clip);
+      if (/(auto|scroll|hidden|clip)/.test(overflowX + overflowY)) break;
+      clip = clip.parentElement;
+    }
+    const bounds = clip && clip !== document.body ? clip.getBoundingClientRect() : { left: 0, right: window.innerWidth };
+    const width = Math.max(rect.width, Math.min(320, window.innerWidth - 32));
+    const fitsFromLeft = rect.left + width <= bounds.right - 8;
+    const fitsFromRight = rect.right - width >= bounds.left + 8;
+    const rtl = getComputedStyle(root.current).direction === "rtl";
+    setAnchor(rtl ? (fitsFromRight ? "right" : "left") : fitsFromLeft ? "left" : "right");
   }, [open]);
 
   useEffect(() => {
     if (!open) return;
-    requestAnimationFrame(() => search.current?.focus());
+    requestAnimationFrame(() => search.current?.focus({ preventScroll: true }));
     const onPointer = (event: PointerEvent) => {
       if (!root.current?.contains(event.target as Node)) close(false);
     };
@@ -213,7 +230,10 @@ export function SearchSelect({
             variant === "field" ? "inset-x-0" : "start-0",
             placement.up ? "bottom-full mb-1.5" : "top-full mt-1.5",
           )}
-          style={{ maxHeight: placement.max }}
+          style={{
+            maxHeight: placement.max,
+            ...(anchor === "left" ? { left: 0, right: "auto" } : anchor === "right" ? { right: 0, left: "auto" } : {}),
+          }}
         >
           <div className="flex shrink-0 items-center gap-2 border-b border-line px-3">
             {loading ? (
