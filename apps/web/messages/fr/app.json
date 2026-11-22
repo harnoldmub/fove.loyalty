@@ -897,5 +897,41 @@
         "outro": "Nous avons hâte de vous accueillir à nouveau."
       }
     }
+  },
+  "upgrade": {
+    "cta": "Voir les offres",
+    "contact": "Nous contacter",
+    "dismiss": "Masquer cette suggestion",
+    "nudgeLabel": "Suggestion d’offre",
+    "nouns": {
+      "customers": "{count, plural, one {client} other {clients}}",
+      "establishments": "{count, plural, one {établissement} other {établissements}}",
+      "staff": "{count, plural, one {collaborateur} other {collaborateurs}}",
+      "programs": "{count, plural, one {programme} other {programmes}}"
+    },
+    "unlock": "L’offre {plan} va jusqu’à {count} {noun}, dès {price} par an.",
+    "unlockUnlimited": "L’offre {plan} lève cette limite, dès {price} par an.",
+    "custom": "Pour aller au-delà de cette limite, nous préparons une offre Sur-mesure.",
+    "askOwner": "Le propriétaire du commerce peut lever cette limite en changeant d’offre depuis Abonnement.",
+    "reached": "Vous avez atteint la limite de {limit} {noun} de l’offre {plan}.",
+    "near": "Vous en êtes à {used} {noun} sur {limit} avec l’offre {plan}.",
+    "card": {
+      "title": "Allez plus loin que l’offre {plan}",
+      "from": "Offres payantes dès {price} par an.",
+      "fromTrial": "Offres payantes dès {price} par an, avec {days} jours d’essai."
+    },
+    "perks": {
+      "quota": "Jusqu’à {count} {noun}",
+      "unlimited": "Sans limite de {noun}",
+      "with": "Avec {plan}",
+      "withQuota": "Avec {plan}, contre {current} aujourd’hui",
+      "features": {
+        "walletCampaigns": "Notifications Wallet à toutes vos cartes",
+        "whatsappAuto": "Messages WhatsApp envoyés automatiquement",
+        "removeBranding": "Carte et widget sans la mention FOVE",
+        "integrations": "Connexion à votre boutique en ligne",
+        "api": "API et webhooks"
+      }
+    }
   }
 }

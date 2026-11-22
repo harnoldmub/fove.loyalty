@@ -12,6 +12,7 @@ import { api } from "@/lib/api";
 import { formatNumber } from "@/lib/utils";
 import { useActiveTenant, useCan } from "./me-context";
 import { TenantWalletBroadcast } from "./card-share";
+import { UpgradeCard } from "./upgrade";
 
 interface Overview {
   periodDays: number;
@@ -295,6 +296,7 @@ export function OverviewView({ mode }: { mode: "home" | "analytics" }) {
           )}
         </div>
       )}
+      {mode === "home" && <UpgradeCard />}
     </>
   );
 }

@@ -16,6 +16,7 @@ import { PhoneInput } from "@/components/ui/phone-input";
 import { EmptyState, ErrorNote, PageHeader, Panel, Skeleton } from "@/components/ui/misc";
 import { api, useErrorMessage } from "@/lib/api";
 import { formatDate, formatNumber } from "@/lib/utils";
+import { QuotaUpgradeHint, useQuotaBlock } from "@/components/app/upgrade";
 
 function useDebounced<T>(value: T, ms = 300) {
   const [v, setV] = useState(value);
@@ -34,12 +35,14 @@ function NewCustomerDialog({ open, onOpenChange, programs }: { open: boolean; on
   // « auto » : premier programme actif ; « none » : pas de carte.
   const [form, setForm] = useState({ firstName: "", lastName: "", phone: "", email: "", programId: "auto", marketingSmsConsent: false });
   const [error, setError] = useState<string | null>(null);
+  const quota = useQuotaBlock("customers");
   const [busy, setBusy] = useState(false);
   const programId = form.programId === "auto" ? (programs[0]?.id ?? "none") : form.programId;
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    quota.clear();
     setBusy(true);
     try {
       const res = await api.post<{ customer: { id: string } }>("/app/customers", {
@@ -56,6 +59,7 @@ function NewCustomerDialog({ open, onOpenChange, programs }: { open: boolean; on
       router.push(`/app/customers/${res.customer.id}`);
     } catch (err) {
       setError(toErrorMessage(err));
+      quota.track(err);
     } finally {
       setBusy(false);
     }
@@ -66,6 +70,7 @@ function NewCustomerDialog({ open, onOpenChange, programs }: { open: boolean; on
       <DialogContent title={t("title")} description={t("description")}>
         <form onSubmit={submit} className="grid gap-4" noValidate>
           {error && <ErrorNote>{error}</ErrorNote>}
+          {quota.hint}
           <div className="grid gap-4 sm:grid-cols-2">
             <Field label={t("firstName")}>{(p) => <Input {...p} required value={form.firstName} onChange={(e) => setForm({ ...form, firstName: e.target.value })} />}</Field>
             <Field label={t("lastName")}>{(p) => <Input {...p} value={form.lastName} onChange={(e) => setForm({ ...form, lastName: e.target.value })} />}</Field>
@@ -119,17 +124,20 @@ function ImportDialog({ open, onOpenChange, programs }: { open: boolean; onOpenC
   const [programId, setProgramId] = useState("");
   const [result, setResult] = useState<{ created: number; duplicates: number; invalid: number; overQuota: number } | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const quota = useQuotaBlock("customers");
   const [busy, setBusy] = useState(false);
 
   const submit = async () => {
     setBusy(true);
     setError(null);
+    quota.clear();
     try {
       const res = await api.post<{ summary: { created: number; duplicates: number; invalid: number; overQuota: number } }>("/app/customers/import", { rows, programId: programId || null });
       setResult(res.summary);
       qc.invalidateQueries({ queryKey: ["customers"] });
     } catch (e) {
       setError(toErrorMessage(e));
+      quota.track(e);
     } finally {
       setBusy(false);
     }
@@ -139,12 +147,14 @@ function ImportDialog({ open, onOpenChange, programs }: { open: boolean; onOpenC
     <DialogRoot open={open} onOpenChange={(o) => { onOpenChange(o); if (!o) { setRows([]); setResult(null); } }}>
       <DialogContent title={t("title")} description={t("description")}>
         {error && <ErrorNote>{error}</ErrorNote>}
+          {quota.hint}
         {result ? (
           <div className="grid gap-2">
             <p>{t.rich("created", { count: result.created, strong: (c) => <strong>{c}</strong> })}</p>
             {result.duplicates > 0 && <p className="text-ink-2">{t("duplicates", { count: result.duplicates })}</p>}
             {result.invalid > 0 && <p className="text-ink-2">{t("invalid", { count: result.invalid })}</p>}
             {result.overQuota > 0 && <p className="text-danger">{t("overQuota", { count: result.overQuota })}</p>}
+            {result.overQuota > 0 && <QuotaUpgradeHint quota="customers" />}
             <Button className="mt-2" onClick={() => onOpenChange(false)}>{t("close")}</Button>
           </div>
         ) : (

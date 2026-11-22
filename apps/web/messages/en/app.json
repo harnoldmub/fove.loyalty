@@ -897,5 +897,41 @@
         "outro": "We look forward to welcoming you again."
       }
     }
+  },
+  "upgrade": {
+    "cta": "See plans",
+    "contact": "Contact us",
+    "dismiss": "Hide this suggestion",
+    "nudgeLabel": "Plan suggestion",
+    "nouns": {
+      "customers": "{count, plural, one {customer} other {customers}}",
+      "establishments": "{count, plural, one {location} other {locations}}",
+      "staff": "{count, plural, one {team member} other {team members}}",
+      "programs": "{count, plural, one {programme} other {programmes}}"
+    },
+    "unlock": "The {plan} plan goes up to {count} {noun}, from {price} a year.",
+    "unlockUnlimited": "The {plan} plan removes this limit, from {price} a year.",
+    "custom": "To go beyond this limit, we can prepare a Custom plan.",
+    "askOwner": "The business owner can lift this limit by changing plans in Billing.",
+    "reached": "You have reached the {plan} plan limit of {limit} {noun}.",
+    "near": "You are at {used} of {limit} {noun} on the {plan} plan.",
+    "card": {
+      "title": "Go further than the {plan} plan",
+      "from": "Paid plans from {price} a year.",
+      "fromTrial": "Paid plans from {price} a year, with a {days}-day trial."
+    },
+    "perks": {
+      "quota": "Up to {count} {noun}",
+      "unlimited": "Unlimited {noun}",
+      "with": "With {plan}",
+      "withQuota": "With {plan}, compared with {current} today",
+      "features": {
+        "walletCampaigns": "Wallet notifications to all your cards",
+        "whatsappAuto": "WhatsApp messages sent automatically",
+        "removeBranding": "Card and widget without the FOVE mention",
+        "integrations": "Connection to your online shop",
+        "api": "API and webhooks"
+      }
+    }
   }
 }
