@@ -367,11 +367,11 @@
       "title": "Trésorerie et rapprochement bancaire",
       "description": "Trésorerie nette disponible, soldes Stripe et contrôle des écritures.",
       "cash": "Trésorerie nette disponible",
-      "cashHelp": "Encaissements nets − charges payées",
+      "cashHelp": "Encaissements nets − dépenses et commissions versées",
       "stripe": "Solde Stripe estimé",
-      "stripeHelp": "Disponible pour un virement bancaire",
+      "stripeHelp": "Encaissements Stripe nets de frais et remboursements (estimation)",
       "collected": "Cumul des encaissements nets",
-      "collectedHelp": "Toutes sources confondues",
+      "collectedHelp": "Toutes sources, nets de frais et remboursements",
       "spent": "Cumul des décaissements",
       "spentHelp": "Dépenses + commissions versées",
       "noteTitle": "Rapprochement bancaire strict :",
@@ -380,13 +380,20 @@
       "empty": "Aucune écriture bancaire manuelle. Le solde correspond aux flux automatisés Stripe et contrats.",
       "table": {
         "date": "Date",
-        "reference": "Référence",
         "label": "Libellé bancaire",
         "amount": "Montant",
         "status": "État du rapprochement"
       },
       "reconciled": "Rapproché ({type})",
-      "unreconciled": "À pointer"
+      "unreconciled": "À pointer",
+      "bankSummary": "Solde des relevés : {balance} · {count, plural, =0 {aucune écriture à pointer} one {# écriture à pointer} other {# écritures à pointer}}",
+      "error": "Impossible de charger la trésorerie.",
+      "retry": "Réessayer",
+      "reconciledTypes": {
+        "PAYMENT": "paiement",
+        "EXPENSE": "dépense",
+        "PARTNER_PAYOUT": "commission"
+      }
     },
     "common": {
       "notAvailable": "n/d"

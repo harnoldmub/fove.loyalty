@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Logo } from "@/components/brand";
 import { getTranslations } from "next-intl/server";
 import { LocaleSwitcher } from "@/components/locale-switcher";
+import { PublicAnalytics } from "@/components/public-analytics";
 
 export default async function AuthLayout({ children }: { children: React.ReactNode }) {
   const t = await getTranslations("auth.layout");
@@ -16,6 +17,7 @@ export default async function AuthLayout({ children }: { children: React.ReactNo
       <main id="contenu" className="mx-auto w-full max-w-md pb-16 pt-6 sm:pt-12">
         {children}
       </main>
+      <PublicAnalytics />
     </div>
   );
 }

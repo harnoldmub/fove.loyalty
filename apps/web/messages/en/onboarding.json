@@ -13,6 +13,7 @@
   "progress": "Step {current} of {total}",
   "continue": "Continue",
   "later": "Finish later",
+  "backTo": "Back to {name}",
   "defaults": {
     "establishment": "Main store",
     "stampsProgram": "Stamp card",
@@ -29,7 +30,6 @@
     "title": "Hello {name}, tell us about your business",
     "name": "Business name",
     "country": "Country",
-    "city": "City",
     "currency": "Sales currency",
     "slug": "Your page address",
     "submit": "Create my business"
@@ -47,7 +47,6 @@
     "title": "Your point of sale",
     "subtitle": "You can add more later.",
     "name": "Location name",
-    "country": "Country",
     "city": "City"
   },
   "program": {

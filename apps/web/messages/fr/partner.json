@@ -1,7 +1,7 @@
 {
   "landing": {
     "meta": {
-      "title": "Devenez partenaire commercial FOVE · Programme Partenaires",
+      "title": "Programme partenaires : recommandez FOVE aux commerçants",
       "description": "Recommandez la solution de cartes de fidélité dématérialisées FOVE aux commerçants et percevez des commissions attractives sur chaque abonnement."
     },
     "hero": {
@@ -197,6 +197,10 @@
       "commissionValue": "20% net",
       "home": "Retour à l’accueil",
       "login": "Accéder à la connexion FOVE"
+    },
+    "meta": {
+      "title": "Devenir partenaire FOVE",
+      "description": "Candidatez au programme partenaires FOVE : recommandez la carte de fidélité numérique aux commerçants et touchez une commission sur chaque abonnement. Réponse sous 24 à 48 heures."
     }
   },
   "portal": {
@@ -356,7 +360,7 @@
       "objectionPaper": "« Mes clients préfèrent le papier »",
       "answerPaper": "En réalité, 70% des clients oublient leur carte papier. Leur smartphone, en revanche, est toujours dans leur poche au moment de régler.",
       "objectionPrice": "« C’est trop cher pour moi »",
-      "answerPrice": "L’offre Starter est à seulement 99 $ par an (moins de 9 $ par mois). Un seul client fidélisé de plus par semaine rentabilise l’investissement.",
+      "answerPrice": "L’offre Essentiel est à seulement 99 $ par an (moins de 9 $ par mois). Un seul client fidélisé de plus par semaine rentabilise l’investissement.",
       "objectionTime": "« Je n’ai pas le temps de configurer »",
       "answerTime": "Le compte se configure en 5 minutes chrono sur smartphone ou ordinateur, et l’affiche QR code est générée immédiatement prête à imprimer."
     }

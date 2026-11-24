@@ -2,7 +2,7 @@ import { Injectable, Logger } from "@nestjs/common";
 import { PrismaService } from "../../common/prisma.service";
 import type { AuthState } from "../../common/context";
 import { badRequest, notFound, forbidden } from "../../common/errors";
-import { loadConfig } from "../../config";
+import { loadConfig, stripeSecretKey } from "../../config";
 import type {
   ExpenseCreateDto,
   FinanceFilterDto,
@@ -502,10 +502,11 @@ export class FinanceService {
     let providerRefundId: string | null = null;
     if (payment.provider === "STRIPE" && payment.providerPaymentId) {
       const cfg = loadConfig();
-      if (cfg.STRIPE_SECRET_KEY) {
+      const key = stripeSecretKey(cfg);
+      if (key) {
         try {
           const Stripe = (await import("stripe")).default;
-          const stripe = new Stripe(cfg.STRIPE_SECRET_KEY);
+          const stripe = new Stripe(key);
           const refund = await stripe.refunds.create({
             payment_intent: payment.providerPaymentId,
             amount: refundAmount,
@@ -883,15 +884,21 @@ export class FinanceService {
    */
   async treasury() {
     const [payments, expenses, payouts, bankEntries] = await Promise.all([
-      this.prisma.client.payment.findMany({ where: { status: "SUCCEEDED" }, select: { amountCents: true, feeCents: true, provider: true } }),
+      // Mêmes règles que la vue d'ensemble : paiements encaissés, y compris partiellement remboursés.
+      this.prisma.client.payment.findMany({
+        where: { status: { in: ["SUCCEEDED", "PARTIALLY_REFUNDED"] } },
+        select: { amountCents: true, feeCents: true, amountRefundedCents: true, provider: true },
+      }),
       this.prisma.client.expense.findMany({ where: { status: "PAID" }, select: { amountCents: true } }),
       this.prisma.client.partnerPayout.findMany({ where: { status: "PAID" }, select: { amountCents: true } }),
       this.prisma.client.bankStatementEntry.findMany({ orderBy: { entryDate: "desc" } }),
     ]);
 
-    const totalCollectedNetCents = payments.reduce((s, p) => s + (p.amountCents - p.feeCents), 0);
-    const stripeHeldCents = payments.filter((p) => p.provider === "STRIPE").reduce((s, p) => s + (p.amountCents - p.feeCents), 0);
-    const manualDirectCents = payments.filter((p) => p.provider !== "STRIPE").reduce((s, p) => s + p.amountCents, 0);
+    // Net encaissé = brut − frais du prestataire − remboursements.
+    const net = (p: (typeof payments)[number]) => p.amountCents - p.feeCents - p.amountRefundedCents;
+    const totalCollectedNetCents = payments.reduce((s, p) => s + net(p), 0);
+    const stripeHeldCents = payments.filter((p) => p.provider === "STRIPE").reduce((s, p) => s + net(p), 0);
+    const manualDirectCents = payments.filter((p) => p.provider !== "STRIPE").reduce((s, p) => s + net(p), 0);
 
     const totalExpensesCents = expenses.reduce((s, e) => s + e.amountCents, 0);
     const totalPayoutsCents = payouts.reduce((s, p) => s + p.amountCents, 0);
@@ -904,12 +911,16 @@ export class FinanceService {
     const unreconciledCount = bankEntries.filter((b) => !b.reconciled).length;
 
     return {
+      // Les prix FOVE sont en USD : les totaux sont exprimés dans cette devise.
+      currency: "USD",
+      totalCollectedNetCents,
       estimatedCashCents,
       stripeHeldCents,
       manualDirectCents,
       totalExpensesCents,
       totalPayoutsCents,
       bankBalanceCents,
+      bankEntryCount: bankEntries.length,
       unreconciledCount,
       bankEntries: bankEntries.slice(0, 50),
     };

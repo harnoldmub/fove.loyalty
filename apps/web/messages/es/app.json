@@ -897,5 +897,41 @@
         "outro": "Tenemos muchas ganas de volver a recibirte."
       }
     }
+  },
+  "upgrade": {
+    "cta": "Ver los planes",
+    "contact": "Contactarnos",
+    "dismiss": "Ocultar esta sugerencia",
+    "nudgeLabel": "Sugerencia de plan",
+    "nouns": {
+      "customers": "{count, plural, one {cliente} other {clientes}}",
+      "establishments": "{count, plural, one {establecimiento} other {establecimientos}}",
+      "staff": "{count, plural, one {colaborador} other {colaboradores}}",
+      "programs": "{count, plural, one {programa} other {programas}}"
+    },
+    "unlock": "El plan {plan} llega hasta {count} {noun}, desde {price} al año.",
+    "unlockUnlimited": "El plan {plan} elimina este límite, desde {price} al año.",
+    "custom": "Para superar este límite, podemos preparar un plan A medida.",
+    "askOwner": "El propietario del negocio puede eliminar este límite cambiando de plan en Suscripción.",
+    "reached": "Has alcanzado el límite de {limit} {noun} del plan {plan}.",
+    "near": "Llevas {used} {noun} de {limit} con el plan {plan}.",
+    "card": {
+      "title": "Ve más allá del plan {plan}",
+      "from": "Planes de pago desde {price} al año.",
+      "fromTrial": "Planes de pago desde {price} al año, con {days} días de prueba."
+    },
+    "perks": {
+      "quota": "Hasta {count} {noun}",
+      "unlimited": "{noun} sin límite",
+      "with": "Con {plan}",
+      "withQuota": "Con {plan}, frente a {current} hoy",
+      "features": {
+        "walletCampaigns": "Notificaciones Wallet a todas tus tarjetas",
+        "whatsappAuto": "Mensajes de WhatsApp enviados automáticamente",
+        "removeBranding": "Tarjeta y widget sin la mención FOVE",
+        "integrations": "Conexión con tu tienda en línea",
+        "api": "API y webhooks"
+      }
+    }
   }
 }

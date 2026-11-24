@@ -13,6 +13,7 @@ import { ConfirmDialog, DialogContent, DialogRoot } from "@/components/ui/dialog
 import { Field, Input } from "@/components/ui/field";
 import { Badge, EmptyState, ErrorNote, PageHeader, Panel } from "@/components/ui/misc";
 import { api, useErrorMessage } from "@/lib/api";
+import { useQuotaBlock } from "@/components/app/upgrade";
 
 function EstablishmentForm({ value, defaultCountry = "CD", onDone }: { value?: Establishment; defaultCountry?: string; onDone: () => void }) {
   const toErrorMessage = useErrorMessage();
@@ -26,6 +27,7 @@ function EstablishmentForm({ value, defaultCountry = "CD", onDone }: { value?: E
     phone: value?.phone ?? "",
   });
   const [error, setError] = useState<string | null>(null);
+  const quota = useQuotaBlock("establishments");
   const [busy, setBusy] = useState(false);
   return (
     <form
@@ -34,6 +36,7 @@ function EstablishmentForm({ value, defaultCountry = "CD", onDone }: { value?: E
         e.preventDefault();
         setBusy(true);
         setError(null);
+    quota.clear();
         const body = { name: f.name, address: f.address || null, city: f.city || null, phone: f.phone || null };
         try {
           if (value) await api.patch(`/app/establishments/${value.id}`, body);
@@ -43,12 +46,14 @@ function EstablishmentForm({ value, defaultCountry = "CD", onDone }: { value?: E
           onDone();
         } catch (err) {
           setError(toErrorMessage(err));
+      quota.track(err);
         } finally {
           setBusy(false);
         }
       }}
     >
       {error && <ErrorNote>{error}</ErrorNote>}
+          {quota.hint}
       <Field label={t("name")}>{(p) => <Input {...p} value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} />}</Field>
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label={t("country")}>

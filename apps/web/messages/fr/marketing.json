@@ -54,7 +54,7 @@
     },
     "privacy": {
       "title": "Données personnelles",
-      "description": "Comment FOVE traite les données des commerçants et de leurs clients."
+      "description": "Comment FOVE traite les données des commerçants et de leurs clients : finalités, consentement, cookies de mesure d’audience, durées de conservation et droits."
     }
   },
   "jsonLd": {
@@ -73,7 +73,8 @@
       "contact": "Contact"
     },
     "login": "Se connecter",
-    "signup": "Commencer gratuitement"
+    "signup": "Commencer gratuitement",
+    "signupShort": "Commencer"
   },
   "footer": {
     "tagline": "<strong>FOVE</strong>, pour <strong>FOrce de VEnte</strong>.",
@@ -476,6 +477,10 @@
     "consent": {
       "title": "Consentements",
       "text": "L’adhésion au programme et les communications marketing sont deux consentements distincts. Le client peut refuser le marketing et garder sa carte."
+    },
+    "cookies": {
+      "title": "Cookies et mesure d’audience",
+      "text": "Le site fove.digital utilise Google Tag Manager, Google Analytics et Microsoft Clarity pour mesurer l’audience et améliorer les pages. Ces outils ne déposent de cookies qu’après votre accord dans la bannière ; sans accord, aucune mesure n’est faite. Vous pouvez changer d’avis à tout moment avec le lien « Gestion des cookies » en bas de page."
     },
     "rights": {
       "title": "Droits des clients",

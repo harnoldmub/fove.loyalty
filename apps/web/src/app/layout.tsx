@@ -1,9 +1,7 @@
 import type { Metadata, Viewport } from "next";
-import Script from "next/script";
 import { Bricolage_Grotesque, Figtree, IBM_Plex_Sans_Arabic } from "next/font/google";
 import { NextIntlClientProvider } from "next-intl";
 import { getMessages, getTranslations } from "next-intl/server";
-import { CookieConsent } from "@/components/cookie-consent";
 import { Providers } from "@/components/providers";
 import { isRtl } from "@/i18n/config";
 import { resolveLocale } from "@/i18n/request";
@@ -79,85 +77,17 @@ export const viewport: Viewport = {
   ],
 };
 
-const GTM_ID = process.env.NEXT_PUBLIC_GTM_ID ?? "GTM-53DS2L3S";
-const CLARITY_ID = process.env.NEXT_PUBLIC_CLARITY_ID ?? "z8rrk6rpqy";
-const GA_ID = process.env.NEXT_PUBLIC_GA_ID;
-
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const locale = await resolveLocale();
   const [messages, t] = await Promise.all([getMessages(), getTranslations("common")]);
   return (
     <html lang={locale} dir={isRtl(locale) ? "rtl" : "ltr"} suppressHydrationWarning className={`${bricolage.variable} ${figtree.variable} ${arabic.variable}`}>
-      <head>
-        {/* Microsoft Clarity */}
-        <script
-          type="text/javascript"
-          dangerouslySetInnerHTML={{
-            __html: `
-              (function(c,l,a,r,i,t,y){
-                  c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
-                  t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
-                  y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
-              })(window, document, "clarity", "script", "${CLARITY_ID}");
-            `,
-          }}
-        />
-      </head>
       <body>
-        {/* Google Tag Manager & Consent Mode v2 */}
-        <Script
-          id="gtm-init"
-          strategy="afterInteractive"
-          dangerouslySetInnerHTML={{
-            __html: `
-              window.dataLayer = window.dataLayer || [];
-              function gtag(){dataLayer.push(arguments);}
-
-              var consentStatus = 'denied';
-              try {
-                if (localStorage.getItem('fove:cookie_consent') === 'granted') {
-                  consentStatus = 'granted';
-                }
-              } catch (e) {}
-
-              gtag('consent', 'default', {
-                'analytics_storage': consentStatus,
-                'ad_storage': consentStatus,
-                'ad_user_data': consentStatus,
-                'ad_personalization': consentStatus
-              });
-
-              gtag('js', new Date());
-              ${GA_ID ? `gtag('config', '${GA_ID}');` : ""}
-            `,
-          }}
-        />
-        <Script
-          id="gtm-script"
-          src={`https://www.googletagmanager.com/gtm.js?id=${GTM_ID}`}
-          strategy="afterInteractive"
-        />
-        {GA_ID && (
-          <Script
-            id="ga-script"
-            src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`}
-            strategy="afterInteractive"
-          />
-        )}
-        <noscript>
-          <iframe
-            src={`https://www.googletagmanager.com/ns.html?id=${GTM_ID}`}
-            height="0"
-            width="0"
-            style={{ display: "none", visibility: "hidden" }}
-          />
-        </noscript>
         <a href="#contenu" className="sr-only focus:not-sr-only focus:fixed focus:start-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-surface focus:px-4 focus:py-2 focus:shadow-2">
           {t("skipToContent")}
         </a>
         <NextIntlClientProvider locale={locale} messages={messages}>
           <Providers>{children}</Providers>
-          <CookieConsent />
         </NextIntlClientProvider>
       </body>
     </html>

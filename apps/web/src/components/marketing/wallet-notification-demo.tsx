@@ -242,7 +242,7 @@ export function WalletNotificationDemo() {
 
               {/* Heure et Date iOS Lock Screen */}
               <div className="mt-4 text-center">
-                <p className="text-[0.8rem] font-medium tracking-wide text-white/75">
+                <p className="text-[0.8rem] font-medium text-white/75">
                   {t("lockDate")}
                 </p>
                 <p className="font-display text-[3.4rem] font-bold leading-none tracking-tight text-white/95 tabular">
@@ -267,7 +267,7 @@ export function WalletNotificationDemo() {
                         <GoogleWalletIcon className="h-3.5 w-4" />
                       </span>
                     )}
-                    <span className="text-[0.7rem] font-semibold tracking-wide text-white/95 uppercase">
+                    <span className="text-[0.75rem] font-semibold text-white/95">
                       {platform === "apple" ? t("appleSource") : "Google Wallet"}
                     </span>
                   </div>
@@ -302,13 +302,13 @@ export function WalletNotificationDemo() {
                       <p className="font-display text-sm font-semibold leading-tight">
                         Café Matonge
                       </p>
-                      <p className="text-[0.62rem] tracking-wider text-white/75 uppercase">
+                      <p className="text-[0.7rem] text-white/75">
                         {t("passLabel")}
                       </p>
                     </div>
                   </div>
                   <div className="text-end">
-                    <p className="text-[0.6rem] tracking-wider text-white/70 uppercase">
+                    <p className="text-[0.7rem] text-white/70">
                       {t("balance")}
                     </p>
                     <p className="font-display text-sm font-bold tabular">
@@ -342,7 +342,7 @@ export function WalletNotificationDemo() {
                 {/* Pied du pass avec titulaire et mini QR */}
                 <div className="mt-2.5 flex items-center justify-between pt-1 text-xs">
                   <div>
-                    <p className="text-[0.62rem] text-white/70 uppercase">
+                    <p className="text-[0.7rem] text-white/70">
                       {t("holder")}
                     </p>
                     <p className="text-[0.72rem] font-medium text-amber-200">
@@ -364,7 +364,7 @@ export function WalletNotificationDemo() {
                   >
                     <Flashlight className="size-4" />
                   </span>
-                  <span className="text-[0.65rem] font-medium tracking-wide text-white/45">
+                  <span className="text-[0.7rem] font-medium text-white/70">
                     {t("unlock")}
                   </span>
                   <span

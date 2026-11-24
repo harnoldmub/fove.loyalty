@@ -16,6 +16,7 @@ import { Checkbox, Field, Input, Select, Textarea } from "@/components/ui/field"
 import { Badge, ErrorNote, PageHeader, Panel, Skeleton } from "@/components/ui/misc";
 import { api, useErrorMessage } from "@/lib/api";
 import { formatNumber } from "@/lib/utils";
+import { useQuotaBlock } from "@/components/app/upgrade";
 
 interface Link {
   id: string;
@@ -49,6 +50,7 @@ function ProgramForm({ program, onDone }: { program?: Program; onDone: () => voi
     terms: program?.terms ?? "",
   });
   const [error, setError] = useState<string | null>(null);
+  const quota = useQuotaBlock("programs");
   const [busy, setBusy] = useState(false);
 
   // Devise de l'entreprise reportée sur un nouveau programme dès qu'elle est connue.
@@ -65,6 +67,7 @@ function ProgramForm({ program, onDone }: { program?: Program; onDone: () => voi
     e.preventDefault();
     setBusy(true);
     setError(null);
+    quota.clear();
     const body = {
       name: f.name,
       mode: f.mode,
@@ -89,6 +92,7 @@ function ProgramForm({ program, onDone }: { program?: Program; onDone: () => voi
       onDone();
     } catch (err) {
       setError(toErrorMessage(err));
+      quota.track(err);
     } finally {
       setBusy(false);
     }
@@ -97,6 +101,7 @@ function ProgramForm({ program, onDone }: { program?: Program; onDone: () => voi
   return (
     <form onSubmit={submit} className="grid gap-4" noValidate>
       {error && <ErrorNote>{error}</ErrorNote>}
+          {quota.hint}
       <Field label={t("name")}>{(p) => <Input {...p} value={f.name} onChange={set("name")} />}</Field>
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label={t("type")} hint={program?._count?.accounts ? t("typeLocked") : undefined}>

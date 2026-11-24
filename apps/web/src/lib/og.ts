@@ -39,11 +39,12 @@ export function pageMeta(
   options: { ogLocale?: string; imageAlt?: string; keywords?: string[] } = {},
 ): Metadata {
   const canonicalUrl = path === "/" ? siteUrl : `${siteUrl}${path}`;
-  const fullTitle = title.startsWith("FOVE") ? title : `${title} · FOVE`;
+  // Un titre qui nomme déjà la marque ne reçoit pas le suffixe « · FOVE ».
+  const branded = /\bFOVE\b/.test(title);
+  const fullTitle = branded ? title : `${title} · FOVE`;
 
   return {
-    // La page d'accueil porte déjà la marque dans son titre : pas de suffixe « · FOVE ».
-    title: title.startsWith("FOVE") ? { absolute: title } : title,
+    title: branded ? { absolute: title } : title,
     description,
     keywords: [...(options.keywords ?? defaultKeywords), ...extraKeywords],
     alternates: {
@@ -91,5 +92,15 @@ export async function localizedPageMeta(page: string, path: string): Promise<Met
     ogLocale: t("ogLocale"),
     imageAlt: t("imageAlt"),
     keywords: asList<string>(t.raw("keywords")),
+  });
+}
+
+/** Variante pour une page dont le titre et la description vivent dans un autre espace (`<ns>.title`, `<ns>.description`). */
+export async function namespacedPageMeta(namespace: string, path: string): Promise<Metadata> {
+  const [t, tm] = await Promise.all([getTranslations(namespace), getTranslations("marketing.meta")]);
+  return pageMeta(t("title"), t("description"), path, [], {
+    ogLocale: tm("ogLocale"),
+    imageAlt: tm("imageAlt"),
+    keywords: asList<string>(tm.raw("keywords")),
   });
 }

@@ -13,6 +13,7 @@
   "progress": "Paso {current} de {total}",
   "continue": "Continuar",
   "later": "Continuar más tarde",
+  "backTo": "Volver a {name}",
   "defaults": {
     "establishment": "Tienda principal",
     "stampsProgram": "Tarjeta de sellos",
@@ -29,7 +30,6 @@
     "title": "Hola {name}, presenta tu negocio",
     "name": "Nombre del negocio",
     "country": "País",
-    "city": "Ciudad",
     "currency": "Moneda de tus ventas",
     "slug": "Dirección de tu página",
     "submit": "Crear mi negocio"
@@ -47,7 +47,6 @@
     "title": "Tu punto de venta",
     "subtitle": "Podrás añadir otros más adelante.",
     "name": "Nombre del establecimiento",
-    "country": "País",
     "city": "Ciudad"
   },
   "program": {

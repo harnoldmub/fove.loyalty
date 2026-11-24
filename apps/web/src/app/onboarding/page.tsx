@@ -12,5 +12,13 @@ export default async function OnboardingPage({ searchParams }: { searchParams: P
   const me = await requireMe("/onboarding");
   const { new: fresh } = await searchParams;
   const active = fresh ? null : me.tenants.find((t) => t.id === me.activeTenantId) ?? null;
-  return <OnboardingWizard userName={me.user.name} tenant={active ? { id: active.id, name: active.name } : null} />;
+  // Un autre commerce déjà configuré : l'utilisateur doit pouvoir y revenir sans finir celui-ci.
+  const fallback = me.tenants.find((t) => t.onboardingCompleted && t.id !== active?.id) ?? null;
+  return (
+    <OnboardingWizard
+      userName={me.user.name}
+      tenant={active ? { id: active.id, name: active.name } : null}
+      fallbackTenant={fallback ? { id: fallback.id, name: fallback.name } : null}
+    />
+  );
 }

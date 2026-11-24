@@ -3,12 +3,13 @@ import { getTranslations } from "next-intl/server";
 import { Logo } from "@/components/brand";
 import { CookieSettingsButton } from "@/components/cookie-consent";
 import { LocaleSwitcher } from "@/components/locale-switcher";
+import { NavLink } from "@/components/marketing/nav-link";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 
 const links = [
   { href: "/fonctionnalites", key: "features" },
-  { href: "/#tarifs", key: "pricing" },
+  { href: "/tarifs", key: "pricing" },
   { href: "/partenaires", key: "partners" },
   { href: "/developpeurs", key: "developers" },
   { href: "/contact", key: "contact" },
@@ -18,33 +19,36 @@ export async function SiteHeader() {
   const t = await getTranslations("marketing.header");
   return (
     <header className="sticky top-0 z-40 border-b border-line/70 bg-paper/85 backdrop-blur">
-      <div className="mx-auto flex h-16 max-w-6xl items-center gap-6 px-4 sm:px-6">
-        <Link href="/" aria-label={t("homeLabel")}>
-          <Logo />
+      <div className="mx-auto flex h-16 max-w-6xl items-center gap-3 px-4 sm:gap-6 sm:px-6">
+        <Link href="/" aria-label={t("homeLabel")} className="shrink-0">
+          <Logo className="[&_img]:w-[112px] sm:[&_img]:w-[140px] xl:[&_img]:w-[156px]" />
         </Link>
-        <nav aria-label={t("mainNav")} className="hidden gap-1 md:flex">
+        <nav aria-label={t("mainNav")} className="hidden gap-1 xl:flex">
           {links.map((l) => (
-            <Link key={l.href} href={l.href} className="rounded-sm px-3 py-2 text-[0.95rem] text-ink-2 hover:text-ink">
+            <NavLink key={l.href} href={l.href} className="rounded-sm px-3 py-2 text-[0.95rem] text-ink-2 transition-colors hover:text-ink" activeClassName="font-medium text-ink">
               {t(`links.${l.key}`)}
-            </Link>
+            </NavLink>
           ))}
         </nav>
         <div className="ms-auto flex items-center gap-2">
-          <LocaleSwitcher className="hidden sm:inline-flex" />
+          <LocaleSwitcher className="hidden xl:inline-flex" />
           <ThemeToggle />
           <Button asChild variant="ghost" size="sm" className="hidden sm:inline-flex">
             <Link href="/login">{t("login")}</Link>
           </Button>
           <Button asChild size="sm">
-            <Link href="/signup">{t("signup")}</Link>
+            <Link href="/signup">
+              <span className="sm:hidden">{t("signupShort")}</span>
+              <span className="hidden sm:inline">{t("signup")}</span>
+            </Link>
           </Button>
         </div>
       </div>
-      <nav aria-label={t("mobileNav")} className="flex gap-1 overflow-x-auto px-3 pb-2 md:hidden">
+      <nav aria-label={t("mobileNav")} className="mx-auto flex max-w-6xl gap-1 overflow-x-auto px-3 pb-2 sm:px-5 xl:hidden">
         {links.map((l) => (
-          <Link key={l.href} href={l.href} className="shrink-0 rounded-full bg-surface px-3 py-1.5 text-sm text-ink-2 shadow-1">
+          <NavLink key={l.href} href={l.href} className="shrink-0 rounded-full bg-surface px-3 py-1.5 text-sm text-ink-2 shadow-1" activeClassName="bg-ink text-paper">
             {t(`links.${l.key}`)}
-          </Link>
+          </NavLink>
         ))}
         <Link href="/login" className="shrink-0 rounded-full px-3 py-1.5 text-sm text-ink-2 sm:hidden">
           {t("login")}
@@ -70,7 +74,7 @@ export async function SiteFooter() {
         <nav aria-label={t("product")} className="grid content-start gap-2 text-sm">
           <p className="font-medium text-ink">{t("product")}</p>
           <Link className="text-ink-2 hover:text-ink transition-colors" href="/fonctionnalites">{t("links.features")}</Link>
-          <Link className="text-ink-2 hover:text-ink transition-colors" href="/#tarifs">{t("links.pricing")}</Link>
+          <Link className="text-ink-2 hover:text-ink transition-colors" href="/tarifs">{t("links.pricing")}</Link>
           <Link className="text-ink-2 hover:text-ink transition-colors" href="/developpeurs">{t("links.api")}</Link>
           <Link className="text-ink-2 hover:text-ink transition-colors" href="/contact">{t("links.contact")}</Link>
         </nav>

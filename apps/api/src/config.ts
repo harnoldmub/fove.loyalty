@@ -19,6 +19,14 @@ const schema = z.object({
   GOOGLE_OAUTH_REDIRECT_URI: z.url().optional(),
   STRIPE_SECRET_KEY: z.string().optional(),
   STRIPE_WEBHOOK_SECRET: z.string().optional(),
+  /** Identifiants sandbox conservés à côté des identifiants live. */
+  SK_KEY_TEST: z.string().optional(),
+  PK_KEY_TEST: z.string().optional(),
+  STRIPE_TEST_WEBHOOK_SECRET: z.string().optional(),
+  TEST_MODE: z.enum(["true", "false"]).default("false"),
+  STRIPE_TEST_PRICE_STARTER_YEARLY_ID: z.string().optional(),
+  STRIPE_TEST_PRICE_BUSINESS_YEARLY_ID: z.string().optional(),
+  STRIPE_TEST_PRICE_PREMIUM_YEARLY_ID: z.string().optional(),
   /** Garde-fou : les clés Stripe « live » sont refusées tant que ce drapeau n'est pas posé. */
   STRIPE_ALLOW_LIVE: z.enum(["true", "false"]).default("false"),
   /** Google Wallet : identifiant d'émetteur et compte de service (JSON). Absents = fonction masquée. */
@@ -57,8 +65,9 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     throw new Error(`Configuration invalide :\n${issues}`);
   }
   const value = parsed.data;
+  const activeStripeKey = value.TEST_MODE === "true" ? value.SK_KEY_TEST : value.STRIPE_SECRET_KEY;
   if (
-    (value.STRIPE_SECRET_KEY?.startsWith("sk_live") || value.STRIPE_SECRET_KEY?.startsWith("rk_live")) &&
+    (activeStripeKey?.startsWith("sk_live") || activeStripeKey?.startsWith("rk_live")) &&
     value.STRIPE_ALLOW_LIVE !== "true"
   ) {
     throw new Error("Clé Stripe live refusée : poser STRIPE_ALLOW_LIVE=true après validation.");
@@ -79,6 +88,24 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     whatsappEnabled: Boolean(value.WHATSAPP_TOKEN && value.WHATSAPP_PHONE_NUMBER_ID),
   };
   return cached;
+}
+
+export function stripeSecretKey(config = loadConfig()): string | undefined {
+  return config.TEST_MODE === "true" ? config.SK_KEY_TEST : config.STRIPE_SECRET_KEY;
+}
+
+export function stripeWebhookSecret(config = loadConfig()): string | undefined {
+  return config.TEST_MODE === "true" ? config.STRIPE_TEST_WEBHOOK_SECRET : config.STRIPE_WEBHOOK_SECRET;
+}
+
+export function stripeYearlyPrice(planCode: string, fallback: string | null, config = loadConfig()): string | null {
+  if (config.TEST_MODE !== "true") return fallback;
+  const testPrices: Record<string, string | undefined> = {
+    starter: config.STRIPE_TEST_PRICE_STARTER_YEARLY_ID,
+    business: config.STRIPE_TEST_PRICE_BUSINESS_YEARLY_ID,
+    premium: config.STRIPE_TEST_PRICE_PREMIUM_YEARLY_ID,
+  };
+  return testPrices[planCode] ?? null;
 }
 
 export function resetConfigCache(): void {

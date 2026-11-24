@@ -13,6 +13,7 @@ import { Checkbox, Field, Input, Select } from "@/components/ui/field";
 import { Badge, ErrorNote, PageHeader, Panel } from "@/components/ui/misc";
 import { api, useErrorMessage } from "@/lib/api";
 import { formatDate } from "@/lib/utils";
+import { useQuotaBlock } from "@/components/app/upgrade";
 
 const ROLES = ["OWNER", "MANAGER", "CASHIER", "VIEWER"] as const;
 type Role = (typeof ROLES)[number];
@@ -30,6 +31,7 @@ function InviteDialog({ open, onOpenChange, establishments }: { open: boolean; o
   const [role, setRole] = useState<Role>("CASHIER");
   const [ests, setEsts] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const quota = useQuotaBlock("staff");
   const [busy, setBusy] = useState(false);
   return (
     <DialogRoot open={open} onOpenChange={onOpenChange}>
@@ -40,6 +42,7 @@ function InviteDialog({ open, onOpenChange, establishments }: { open: boolean; o
             e.preventDefault();
             setBusy(true);
             setError(null);
+    quota.clear();
             try {
               await api.post("/app/team/invitations", { email, role, establishmentIds: ests });
               toast.success(t("invite.sent", { email }));
@@ -48,12 +51,14 @@ function InviteDialog({ open, onOpenChange, establishments }: { open: boolean; o
               setEmail("");
             } catch (err) {
               setError(toErrorMessage(err));
+      quota.track(err);
             } finally {
               setBusy(false);
             }
           }}
         >
           {error && <ErrorNote>{error}</ErrorNote>}
+          {quota.hint}
           <Field label={t("invite.email")}>{(p) => <Input {...p} type="email" value={email} onChange={(e) => setEmail(e.target.value)} />}</Field>
           <Field label={t("invite.role")} hint={t(`roles.${role}.text`)}>
             {(p) => (

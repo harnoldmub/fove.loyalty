@@ -57,7 +57,7 @@ export default async function ContactPage({ searchParams }: { searchParams: Prom
                 <Link href="/signup">{t("selfServe.start")}</Link>
               </Button>
               <Button asChild variant="secondary" size="sm">
-                <Link href="/#tarifs">{t("selfServe.plans")}</Link>
+                <Link href="/tarifs">{t("selfServe.plans")}</Link>
               </Button>
             </div>
           </div>

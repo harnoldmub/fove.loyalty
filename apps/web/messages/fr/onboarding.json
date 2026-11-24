@@ -13,6 +13,7 @@
   "progress": "Étape {current} sur {total}",
   "continue": "Continuer",
   "later": "Reprendre plus tard",
+  "backTo": "Revenir à {name}",
   "defaults": {
     "establishment": "Boutique principale",
     "stampsProgram": "Carte à tampons",
@@ -29,7 +30,6 @@
     "title": "Bonjour {name}, présentez votre commerce",
     "name": "Nom du commerce",
     "country": "Pays",
-    "city": "Ville",
     "currency": "Devise de vos ventes",
     "slug": "Adresse de votre page",
     "submit": "Créer mon commerce"
@@ -47,7 +47,6 @@
     "title": "Votre point de vente",
     "subtitle": "Vous pourrez en ajouter d’autres ensuite.",
     "name": "Nom de l’établissement",
-    "country": "Pays",
     "city": "Ville"
   },
   "program": {

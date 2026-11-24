@@ -897,5 +897,41 @@
         "outro": "نتطلع إلى استقبالك مجددًا."
       }
     }
+  },
+  "upgrade": {
+    "cta": "عرض الباقات",
+    "contact": "تواصل معنا",
+    "dismiss": "إخفاء هذا الاقتراح",
+    "nudgeLabel": "اقتراح باقة",
+    "nouns": {
+      "customers": "{count, plural, one {عميل} two {عميلين} few {عملاء} other {عميل}}",
+      "establishments": "{count, plural, one {فرع} two {فرعين} few {فروع} other {فرع}}",
+      "staff": "{count, plural, one {عضو فريق} two {عضوَي فريق} few {أعضاء فريق} other {عضو فريق}}",
+      "programs": "{count, plural, one {برنامج} two {برنامجين} few {برامج} other {برنامج}}"
+    },
+    "unlock": "تتيح باقة {plan} حتى {count} {noun}، ابتداءً من {price} سنويًا.",
+    "unlockUnlimited": "تلغي باقة {plan} هذا الحد، ابتداءً من {price} سنويًا.",
+    "custom": "لتجاوز هذا الحد، يمكننا إعداد باقة مخصّصة لك.",
+    "askOwner": "يمكن لمالك النشاط رفع هذا الحد بتغيير الباقة من صفحة الاشتراك.",
+    "reached": "لقد بلغت حدّ {limit} {noun} في باقة {plan}.",
+    "near": "وصلت إلى {used} من أصل {limit} {noun} في باقة {plan}.",
+    "card": {
+      "title": "تجاوز حدود باقة {plan}",
+      "from": "باقات مدفوعة ابتداءً من {price} سنويًا.",
+      "fromTrial": "باقات مدفوعة ابتداءً من {price} سنويًا، مع تجربة لمدة {days} يومًا."
+    },
+    "perks": {
+      "quota": "حتى {count} {noun}",
+      "unlimited": "عدد غير محدود من {noun}",
+      "with": "مع {plan}",
+      "withQuota": "مع {plan}، مقابل {current} حاليًا",
+      "features": {
+        "walletCampaigns": "إشعارات Wallet لجميع بطاقاتك",
+        "whatsappAuto": "رسائل واتساب تُرسل تلقائيًا",
+        "removeBranding": "بطاقة وأداة بدون إشارة FOVE",
+        "integrations": "الربط بمتجرك الإلكتروني",
+        "api": "واجهة API وwebhooks"
+      }
+    }
   }
 }

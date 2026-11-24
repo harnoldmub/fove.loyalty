@@ -1,7 +1,7 @@
 {
   "landing": {
     "meta": {
-      "title": "Become a FOVE sales partner · Partner Program",
+      "title": "Partner program: recommend FOVE to merchants",
       "description": "Recommend FOVE’s digital loyalty card solution to merchants and earn attractive commissions on every subscription."
     },
     "hero": {
@@ -197,6 +197,10 @@
       "commissionValue": "20% net",
       "home": "Back to home",
       "login": "Go to FOVE sign-in"
+    },
+    "meta": {
+      "title": "Become a FOVE partner",
+      "description": "Apply to the FOVE partner program: recommend the digital loyalty card to merchants and earn a commission on every subscription. Answer within 24 to 48 hours."
     }
   },
   "portal": {
@@ -356,7 +360,7 @@
       "objectionPaper": "“My customers prefer paper”",
       "answerPaper": "In reality, 70% of customers forget their paper card. Their smartphone, on the other hand, is always in their pocket when it’s time to pay.",
       "objectionPrice": "“It’s too expensive for me”",
-      "answerPrice": "The Starter plan is only $99 a year (less than $9 a month). Just one extra loyal customer a week pays for the investment.",
+      "answerPrice": "The Essentiel plan is only $99 a year (less than $9 a month). Just one extra loyal customer a week pays for the investment.",
       "objectionTime": "“I don’t have time to set it up”",
       "answerTime": "The account takes just 5 minutes to set up on a smartphone or computer, and the QR code poster is generated instantly, ready to print."
     }

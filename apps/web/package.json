@@ -29,7 +29,7 @@
     "clsx": "^2.1.1",
     "flag-icons": "7.6.0",
     "lucide-react": "^1.63.0",
-    "next": "16.4.3",
+    "next": "16.4.6",
     "next-intl": "4.15.3",
     "next-themes": "^0.4.6",
     "qr-scanner": "^1.4.2",
@@ -48,7 +48,7 @@
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "eslint": "^9.39.0",
-    "eslint-config-next": "16.4.3",
+    "eslint-config-next": "16.4.6",
     "sharp": "^0.35.5",
     "tailwindcss": "4.3.3"
   }
