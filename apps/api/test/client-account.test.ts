@@ -183,7 +183,7 @@ describe("compte client FOVE : profil, déconnexion, suppression", () => {
     expect((await c.get("/api/client/me")).status).toBe(401);
     expect(await db.clientAccount.findUnique({ where: { id: accountId } })).toBeNull();
     expect(await db.clientLoginCode.count({ where: { email } })).toBe(0);
-    const kept = await db.customer.findUnique({ where: { id: customer.id } });
+    const kept = await db.customer.findUnique({ where: { id: customer.id }, select: { clientAccountId: true } });
     expect(kept).not.toBeNull();
     expect(kept!.clientAccountId).toBeNull();
 

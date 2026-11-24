@@ -49,6 +49,8 @@ import { ClientSessionService } from "./client-account/client-session.service";
 import { ClientAccountService } from "./client-account/client-account.service";
 import { ClientAccountController } from "./client-account/client-account.controller";
 import { ClientSessionGuard } from "./client-account/client-guard";
+import { ClientEnrollmentService } from "./client-account/client-enrollment.service";
+import { ClientJoinController } from "./client-account/client-join.controller";
 
 /**
  * Monolithe modulaire : un seul déploiement, des modules métier séparés par
@@ -79,6 +81,7 @@ import { ClientSessionGuard } from "./client-account/client-guard";
     MediaController,
     AppleWalletServiceController,
     ClientAccountController,
+    ClientJoinController,
   ],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },
@@ -92,6 +95,7 @@ import { ClientSessionGuard } from "./client-account/client-guard";
     ClientSessionService,
     ClientAccountService,
     ClientSessionGuard,
+    ClientEnrollmentService,
     SessionGuard,
     TenantGuard,
     SuperAdminGuard,

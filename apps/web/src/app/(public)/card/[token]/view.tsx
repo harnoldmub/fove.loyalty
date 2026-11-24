@@ -13,6 +13,7 @@ import { GoogleWalletButton } from "@/components/google-wallet-button";
 import { AppleWalletButton } from "@/components/apple-wallet-button";
 import { Stamps, stampsStatus } from "@/components/stamps";
 import { rememberCard } from "@/lib/remembered-cards";
+import { AccountBanner } from "@/components/client/account-banner";
 import { Field, Input } from "@/components/ui/field";
 import { ErrorNote } from "@/components/ui/misc";
 import { api, errorMessage } from "@/lib/api";
@@ -494,6 +495,9 @@ export function CardView({ token, initial }: { token: string; initial: CardData 
             </div>
           </section>
         )}
+
+        {/* La saisie du code de la carte « code par email » confirme déjà le compte : pas de doublon. */}
+        {!(card.status === "PENDING_VERIFICATION" && data.verification === "EMAIL_OTP") && <AccountBanner onVerified={refresh} />}
 
         {card.status === "PENDING_VERIFICATION" ? (
           data.verification === "EMAIL_OTP" ? (

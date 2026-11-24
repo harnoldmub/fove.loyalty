@@ -62,6 +62,10 @@ Identité unique du client final, commune à tous les commerces (spécification 
 - **Suppression** (RGPD) : le compte, ses sessions et ses codes sont effacés ; les fiches et cartes restent chez chaque commerçant, détachées. Le journal d'audit ne garde que l'identifiant du compte.
 - Le téléphone n'est **jamais** un identifiant : un numéro inactif peut être réattribué.
 - Purge par la tâche planifiée : sessions expirées, codes de plus de 24 h.
+- **Inscription au scan** (`client-enrollment.service.ts`, routes `/api/client/join/<lien>`) : plus d'inscription sans compte par le QR. `GET` donne la situation du visiteur (`anonymous`, `has_card`, `can_join`, `needs_confirmation`) ; `POST` rejoint en étant connecté ; `POST …/signup` crée compte non confirmé et carte d'un coup, ou envoie un code si l'email est déjà connu.
+- Rattachement d'une fiche existante uniquement sur l'email **vérifié** du compte ; un téléphone déjà connu chez le commerce donne une nouvelle fiche sans téléphone (numéros réattribués).
+- Programme « code par email » : carte en attente tant que le compte n'est pas confirmé ; la confirmation (par « Mes cartes », le lien de l'email ou la page de la carte) l'active.
+- `Customer.clientAccountId` est omis par défaut par le client Prisma (`packages/database/src/index.ts`) : le commerçant ne le reçoit jamais. Le module compte client le lit avec un `select` explicite.
 
 ## Wallet
 

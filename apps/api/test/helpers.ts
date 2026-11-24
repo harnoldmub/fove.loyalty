@@ -135,3 +135,13 @@ export async function addMember(app: NestExpressApplication, owner: Client, role
   if (accept.status !== 201) throw new Error(`accept ${accept.status} ${JSON.stringify(accept.body)}`);
   return member;
 }
+
+/**
+ * Inscription d'un client depuis le QR d'un commerce (« Créer ma carte » avec son email),
+ * sur un téléphone neuf. Renvoie la réponse et le client HTTP, connecté au compte FOVE créé.
+ */
+export async function selfEnroll(app: NestExpressApplication, token: string, body: Record<string, unknown>) {
+  const client = agent(app);
+  const res = await client.post(`/api/client/join/${token}/signup`, { email: `${uniq("self")}@test.fove`, ...body });
+  return Object.assign(res, { client });
+}

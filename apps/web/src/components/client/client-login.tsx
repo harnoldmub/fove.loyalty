@@ -24,9 +24,12 @@ export function ClientLogin() {
   const params = useSearchParams();
   const next = safeNext(params.get("next"));
 
-  const [step, setStep] = useState<"email" | "code">("email");
-  const [email, setEmail] = useState("");
-  const [code, setCode] = useState("");
+  // Lien de l'email de bienvenue : `?email=…&code=…` saisit le code à la place du client.
+  const linkEmail = params.get("email") ?? "";
+  const linkCode = /^\d{6}$/.test(params.get("code") ?? "") ? params.get("code")! : "";
+  const [step, setStep] = useState<"email" | "code">(linkEmail && linkCode ? "code" : "email");
+  const [email, setEmail] = useState(linkEmail);
+  const [code, setCode] = useState(linkCode);
   const [fieldError, setFieldError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(params.get("supprime") === "1" ? t("deleted") : null);
@@ -38,6 +41,24 @@ export function ClientLogin() {
     const timer = setTimeout(() => setCooldown((s) => s - 1), 1000);
     return () => clearTimeout(timer);
   }, [cooldown]);
+
+  useEffect(() => {
+    if (!linkEmail || !linkCode) return;
+    let cancelled = false;
+    api
+      .post("/client/auth/verify", { email: linkEmail, code: linkCode })
+      .then(() => {
+        if (cancelled) return;
+        router.replace(next);
+        router.refresh();
+      })
+      .catch((err) => !cancelled && setError(errorMessage(err)));
+    return () => {
+      cancelled = true;
+    };
+    // Une seule tentative automatique, au chargement.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   async function sendCode(resend = false) {
     setError(null);

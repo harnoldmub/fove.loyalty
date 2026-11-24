@@ -251,6 +251,16 @@ export const verifyOtpSchema = z.object({ code: z.string().regex(/^\d{6}$/) });
 // --- Compte client FOVE -------------------------------------------------------
 export const clientCodeRequestSchema = z.object({ email: z.email().max(254) });
 export const clientCodeVerifySchema = z.object({ email: z.email().max(254), code: z.string().trim().regex(/^\d{6}$/) });
+/** Rejoindre un programme en étant connecté : seul le téléphone est à confirmer (pré-rempli). */
+export const clientJoinSchema = z.object({
+  firstName: z.string().trim().max(60).default(""),
+  lastName: z.string().trim().max(60).default(""),
+  phone: z.string().trim().min(6).max(32),
+  acceptTerms: z.literal(true, { error: "Vous devez accepter les conditions du programme" }),
+  marketingConsent: z.boolean().default(false),
+});
+/** « Créer ma carte » sans être connecté : crée le compte FOVE (non confirmé) en même temps que la carte. */
+export const clientJoinSignupSchema = publicEnrollSchema.extend({ email: z.email().max(254) });
 export const clientProfileSchema = z.object({
   firstName: z.string().trim().min(1).max(60),
   lastName: z.string().trim().max(60).default(""),

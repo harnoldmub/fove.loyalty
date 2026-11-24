@@ -8,6 +8,7 @@ import { ConfirmDialog } from "@/components/ui/dialog";
 import { Field, Input } from "@/components/ui/field";
 import { ErrorNote, Panel, Skeleton, SuccessNote } from "@/components/ui/misc";
 import { PhoneInput } from "@/components/ui/phone-input";
+import { CodeStep } from "@/components/client/code-step";
 import { api, ApiError, useErrorMessage } from "@/lib/api";
 
 interface ClientAccount {
@@ -62,6 +63,19 @@ export function ClientHome() {
         <Skeleton className="h-9 w-2/3" />
         <Skeleton className="h-32" />
         <Skeleton className="h-64" />
+      </div>
+    );
+  }
+
+  // « Mes cartes » est réservé aux comptes confirmés (compte créé au scan, sans code).
+  if (!account.emailVerifiedAt) {
+    return (
+      <div className="grid gap-6">
+        <div className="grid gap-2">
+          <h1 className="font-display text-3xl font-semibold">{t("confirmTitle")}</h1>
+          <p className="text-ink-2">{t("confirmBody", { email: account.email })}</p>
+        </div>
+        <CodeStep email={account.email} onVerified={load} />
       </div>
     );
   }

@@ -4,7 +4,7 @@
 >
 > | A1 | A2 | A3 | A4 | A5 |
 > |---|---|---|---|---|
-> | Fait (20 nov.) | À faire | À faire | À faire | À faire |
+> | Fait (20 nov.) | Fait (24 nov.) | À faire | À faire | À faire |
 
 ## 1. Pourquoi
 
@@ -40,6 +40,7 @@ Le lot A crée un **compte client FOVE**. Une seule identité regroupe toutes le
 **Créer ma carte**, sans être connecté :
 - **Continuer avec Google** : prénom, nom et email viennent de Google, déjà vérifiés. Le client complète son téléphone et accepte les conditions. Compte confirmé, carte active.
 - **Avec mon email** : prénom, nom (facultatif), téléphone, email, acceptation des conditions, consentement aux offres (facultatif). Compte créé **non confirmé**, carte active tout de suite (sauf validation en magasin, voir 4.4). Un email part avec un lien et un code de confirmation. Sur la carte : « Confirmez votre email pour retrouver vos cartes partout ».
+  - **Email déjà connu** (compte FOVE existant, ou fiche chez ce commerce avec cet email) : rien n'est créé. Un code part, et une fois saisi, le client est connecté et sa carte est créée dans son compte, ou sa fiche existante est reprise (décision du 24 novembre 2026, voir 4.7).
 
 **J'ai déjà un compte FOVE** : Google, ou email puis code. Après connexion, retour au tableau ci-dessus.
 
@@ -117,7 +118,8 @@ Le client scanne le QR, choisit « J'ai déjà un compte FOVE », se connecte av
 
 - Codes : valables 10 minutes, 5 essais, renvoi après 1 minute, nombre de demandes limité par email et par adresse IP.
 - Connexion Google : le jeton Google est vérifié par le serveur. FOVE ne garde que l'email, le nom et l'identifiant Google.
-- Aucune réponse ne révèle si un email a un compte, ni si une personne a une carte chez un commerce.
+- Aucune réponse ne révèle si un email a un compte, ni si une personne a une carte chez un commerce. **Exception assumée** (24 novembre 2026) : « Créer ma carte » avec un email déjà connu demande le code au lieu de créer la carte, ce qui indique que l'email est inscrit. C'était déjà le cas avec « Vous êtes déjà inscrit(e) », et les demandes sont limitées en nombre.
+- Le commerçant ne reçoit jamais le lien entre sa fiche et le compte FOVE (champ masqué par défaut dans toutes les requêtes) : il ne peut pas reconnaître un même client d'un commerce à l'autre.
 - Les actions sur le compte sont inscrites au journal d'audit : création, confirmation, connexion, rattachement, suppression.
 
 ## 5. Données

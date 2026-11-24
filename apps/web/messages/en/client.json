@@ -23,7 +23,8 @@
     "resent": "New code sent.",
     "changeEmail": "Use another address",
     "checkSpam": "Nothing received? Check your spam folder.",
-    "deleted": "Your FOVE account has been deleted."
+    "deleted": "Your FOVE account has been deleted.",
+    "confirm": "Confirm"
   },
   "home": {
     "title": "My cards",
@@ -52,6 +53,15 @@
     "delete": "Delete my account",
     "deleteConfirmTitle": "Delete your FOVE account?",
     "deleteConsequence": "Your account is permanently deleted and you are signed out. Your cards and points stay with each business. To erase your data at a business, contact that business.",
-    "deleteConfirm": "Delete permanently"
+    "deleteConfirm": "Delete permanently",
+    "confirmTitle": "Confirm your email",
+    "confirmBody": "To open “My cards”, confirm {email} with the code we send you."
+  },
+  "banner": {
+    "title": "Find your cards anywhere",
+    "body": "Confirm your email ({email}) to find your FOVE cards on any phone.",
+    "action": "Confirm my email",
+    "done": "Email confirmed: your cards are in “My cards”.",
+    "myCards": "My cards"
   }
 }

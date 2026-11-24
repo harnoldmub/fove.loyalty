@@ -2,7 +2,7 @@ import { Body, Controller, Get, HttpCode, Param, Post, Query, Req, Res } from "@
 import { ApiTags } from "@nestjs/swagger";
 import { Throttle } from "@nestjs/throttler";
 import type { Request, Response } from "express";
-import { publicEnrollSchema, verifyOtpSchema, contactMessageSchema } from "@fove/shared";
+import { verifyOtpSchema, contactMessageSchema } from "@fove/shared";
 import { z } from "zod";
 import { ZodPipe } from "../common/zod.pipe";
 import { notFound } from "../common/errors";
@@ -27,13 +27,6 @@ export class PublicController {
   join(@Param("token") token: string) {
     if (!tokenPattern.test(token)) return this.notFound();
     return this.service.joinPage(token);
-  }
-
-  @Post("join/:token")
-  @Throttle({ default: { limit: 5, ttl: 60_000 } })
-  enroll(@Param("token") token: string, @Body(new ZodPipe(publicEnrollSchema)) body: z.infer<typeof publicEnrollSchema>, @Req() req: Request) {
-    if (!tokenPattern.test(token)) return this.notFound();
-    return this.service.join(token, body, req.ip ?? null);
   }
 
   @Post("join/:token/recover")
@@ -105,15 +98,20 @@ export class PublicController {
   @Post("cards/:token/verify")
   @HttpCode(200)
   @Throttle({ default: { limit: 10, ttl: 60_000 } })
-  verify(@Param("token") token: string, @Body(new ZodPipe(verifyOtpSchema)) body: z.infer<typeof verifyOtpSchema>) {
-    return this.service.verify(token, body.code);
+  verify(
+    @Param("token") token: string,
+    @Body(new ZodPipe(verifyOtpSchema)) body: z.infer<typeof verifyOtpSchema>,
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    return this.service.verify(token, body.code, req, res);
   }
 
   @Post("cards/:token/resend-code")
   @HttpCode(204)
   @Throttle({ default: { limit: 3, ttl: 60_000 } })
-  async resend(@Param("token") token: string) {
-    await this.service.resendCode(token);
+  async resend(@Param("token") token: string, @Req() req: Request) {
+    await this.service.resendCode(token, req);
   }
 
   /** Formulaire de contact public (site commercial / demande de démo). */

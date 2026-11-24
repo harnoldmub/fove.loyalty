@@ -23,7 +23,8 @@
     "resent": "Nouveau code envoyé.",
     "changeEmail": "Utiliser une autre adresse",
     "checkSpam": "Rien reçu ? Vérifiez vos courriers indésirables.",
-    "deleted": "Votre compte FOVE a été supprimé."
+    "deleted": "Votre compte FOVE a été supprimé.",
+    "confirm": "Confirmer"
   },
   "home": {
     "title": "Mes cartes",
@@ -52,6 +53,15 @@
     "delete": "Supprimer mon compte",
     "deleteConfirmTitle": "Supprimer votre compte FOVE ?",
     "deleteConsequence": "Votre compte est supprimé définitivement et vous êtes déconnecté. Vos cartes et vos points restent chez chaque commerce. Pour effacer vos données chez un commerce, adressez-vous à lui.",
-    "deleteConfirm": "Supprimer définitivement"
+    "deleteConfirm": "Supprimer définitivement",
+    "confirmTitle": "Confirmez votre email",
+    "confirmBody": "Pour ouvrir « Mes cartes », confirmez l'adresse {email} avec le code que nous vous envoyons."
+  },
+  "banner": {
+    "title": "Retrouvez vos cartes partout",
+    "body": "Confirmez votre email ({email}) pour retrouver vos cartes FOVE sur n'importe quel téléphone.",
+    "action": "Confirmer mon email",
+    "done": "Email confirmé : vos cartes sont dans « Mes cartes ».",
+    "myCards": "Mes cartes"
   }
 }

@@ -284,6 +284,51 @@ const CLIENT_ACCOUNT = {
   },
 } satisfies Record<Locale, unknown>;
 
+const CLIENT_CONFIRM = {
+  fr: {
+    subject: "Confirmez votre email — FOVE",
+    heading: "Votre carte est prête",
+    body: "Confirmez votre adresse email pour retrouver toutes vos cartes FOVE, même sur un autre téléphone.",
+    code: (code: string) => `Votre code de confirmation : ${code} (valable 10 minutes).`,
+    button: "Confirmer mon email",
+    footer: "Si vous n'avez pas créé de carte de fidélité, ignorez cet email : rien ne sera rattaché à votre adresse sans ce code.",
+  },
+  en: {
+    subject: "Confirm your email — FOVE",
+    heading: "Your card is ready",
+    body: "Confirm your email address to find all your FOVE cards, even on another phone.",
+    code: (code: string) => `Your confirmation code: ${code} (valid for 10 minutes).`,
+    button: "Confirm my email",
+    footer: "If you didn't create a loyalty card, ignore this email: nothing will be linked to your address without this code.",
+  },
+  ar: {
+    subject: "أكّد بريدك الإلكتروني — FOVE",
+    heading: "بطاقتك جاهزة",
+    body: "أكّد عنوان بريدك الإلكتروني لتجد جميع بطاقاتك في FOVE، حتى على هاتف آخر.",
+    code: (code: string) => `رمز التأكيد: ${code} (صالح لمدة 10 دقائق).`,
+    button: "تأكيد بريدي الإلكتروني",
+    footer: "إذا لم تُنشئ بطاقة ولاء، فتجاهل هذه الرسالة: لن يُربط أي شيء بعنوانك بدون هذا الرمز.",
+  },
+  es: {
+    subject: "Confirma tu correo — FOVE",
+    heading: "Tu tarjeta está lista",
+    body: "Confirma tu dirección de correo para encontrar todas tus tarjetas FOVE, incluso en otro teléfono.",
+    code: (code: string) => `Tu código de confirmación: ${code} (válido durante 10 minutos).`,
+    button: "Confirmar mi correo",
+    footer: "Si no has creado ninguna tarjeta de fidelidad, ignora este correo: no se vinculará nada a tu dirección sin este código.",
+  },
+} satisfies Record<Locale, unknown>;
+
+/** Bienvenue après une inscription au scan : code à saisir, ou bouton qui le saisit à la place du client. */
+export function clientConfirmMessage(locale: Locale, code: string, link: string): Content {
+  const t = CLIENT_CONFIRM[locale];
+  return {
+    subject: t.subject,
+    text: `${t.heading}\n\n${t.body}\n${t.code(code)}\n\n${link}\n\n${t.footer}`,
+    html: emailHtml(locale, { title: t.subject, heading: t.heading, paragraphs: [t.body, t.code(code)], button: { label: t.button, url: link }, footer: t.footer }),
+  };
+}
+
 export function clientLoginCodeMessage(locale: Locale, code: string): Content {
   const t = CLIENT_ACCOUNT[locale];
   return { subject: t.subject, text: t.text(code) };

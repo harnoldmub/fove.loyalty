@@ -150,5 +150,18 @@
     "scan": "امسح الرمز بكاميرا هاتفك",
     "stampsOffer": "{count, plural, zero {# زيارة} one {زيارة واحدة} two {زيارتان} few {# زيارات} many {# زيارة} other {# زيارة}} = {reward}",
     "print": "طباعة الملصق"
+  },
+  "account": {
+    "haveAccount": "لدي حساب FOVE بالفعل",
+    "joinTitle": "الانضمام إلى {tenant}",
+    "signedInAs": "متصل باسم {email}",
+    "notYou": "لست أنت؟",
+    "logout": "تسجيل الخروج",
+    "emailHint": "يجمع حسابك في FOVE بطاقاتك: تجدها على أي هاتف.",
+    "confirmTitle": "أكّد بريدك الإلكتروني",
+    "confirmText": "لإضافة بطاقة لدى {tenant}، أكّد أولًا عنوان حسابك في FOVE: {email}.",
+    "knownTitle": "لديك حساب FOVE بالفعل",
+    "knownText": "أُرسل للتو رمز إلى {email}. أدخله لإضافة هذه البطاقة إلى حسابك.",
+    "loadError": "تعذّر تحميل هذه الصفحة. تحقق من اتصالك."
   }
 }

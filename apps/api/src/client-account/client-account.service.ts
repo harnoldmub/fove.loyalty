@@ -6,7 +6,8 @@ import { AppError, badRequest } from "../common/errors";
 import { PrismaService } from "../common/prisma.service";
 import { AuditService } from "../common/audit.service";
 import { EmailService } from "../notifications/email.service";
-import { clientLoginCodeMessage } from "../i18n/emails";
+import { clientConfirmMessage, clientLoginCodeMessage } from "../i18n/emails";
+import { loadConfig } from "../config";
 import { normalizeLocale, requestLocale, requestLocaleOrNull } from "../i18n/locale";
 import { ClientSessionService, type ClientAccountView } from "./client-session.service";
 
@@ -34,8 +35,11 @@ export class ClientAccountService {
     private readonly audit: AuditService,
   ) {}
 
-  /** Envoie un code de connexion. Même réponse que l'email ait un compte ou non. */
-  async requestCode(emailRaw: string, req: Request): Promise<void> {
+  /**
+   * Envoie un code à 6 chiffres. Même réponse que l'email ait un compte ou non.
+   * `confirm` : email de bienvenue après une inscription au scan, avec un lien qui saisit le code.
+   */
+  async requestCode(emailRaw: string, req: Request, kind: "login" | "confirm" = "login"): Promise<void> {
     const email = normalizeEmail(emailRaw);
     const ip = req.ip ?? null;
     const db = this.prisma.client;
@@ -58,7 +62,11 @@ export class ClientAccountService {
     await db.clientLoginCode.create({ data: { email, codeHash: codeHash(email, code), ip, expiresAt: new Date(now + CODE_TTL_MS) } });
     const account = await db.clientAccount.findUnique({ where: { email }, select: { locale: true } });
     const locale = normalizeLocale(account?.locale) ?? requestLocale(req);
-    await this.email.send({ to: email, ...clientLoginCodeMessage(locale, code) });
+    const message =
+      kind === "confirm"
+        ? clientConfirmMessage(locale, code, `${loadConfig().APP_URL}/mes-cartes/connexion?${new URLSearchParams({ email, code })}`)
+        : clientLoginCodeMessage(locale, code);
+    await this.email.send({ to: email, ...message });
   }
 
   /**
@@ -91,11 +99,31 @@ export class ClientAccountService {
       // Le vrai titulaire reprend la main, les sessions ouvertes jusqu'ici sont fermées.
       account = await db.clientAccount.update({ where: { id: account.id }, data: { emailVerifiedAt: new Date() } });
       await this.sessions.revokeAll(account.id);
+      await this.afterEmailVerified(account.id, email);
     }
 
     await this.sessions.create(account.id, req, res);
     await this.audit.log({ action: created ? "client.signup" : "client.login", targetType: "ClientAccount", targetId: account.id, metadata: { method: "email_code" }, ip: req.ip });
     return { created, account: view(account) };
+  }
+
+  /**
+   * Email prouvé : les cartes en attente d'un programme « code par email » rattachées au compte
+   * s'activent (le code du compte remplace celui de la carte), et l'email des fiches est marqué vérifié.
+   */
+  private async afterEmailVerified(accountId: string, email: string) {
+    const db = this.prisma.client;
+    const fiches = await db.customer.findMany({ where: { clientAccountId: accountId }, select: { id: true, tenantId: true } });
+    if (fiches.length === 0) return;
+    const customerIds = fiches.map((f) => f.id);
+    await db.$transaction([
+      db.loyaltyAccount.updateMany({
+        where: { customerId: { in: customerIds }, status: "PENDING_VERIFICATION", program: { enrollmentVerification: "EMAIL_OTP" } },
+        data: { status: "ACTIVE" },
+      }),
+      db.customerIdentity.updateMany({ where: { customerId: { in: customerIds }, kind: "EMAIL", value: email, verifiedAt: null }, data: { verifiedAt: new Date() } }),
+    ]);
+    await this.audit.log({ action: "client.email_verified", targetType: "ClientAccount", targetId: accountId });
   }
 
   async updateProfile(accountId: string, input: { firstName: string; lastName: string; phone: string | null }): Promise<ClientAccountView> {

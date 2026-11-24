@@ -1,19 +1,16 @@
 import { Injectable } from "@nestjs/common";
 import QRCode from "qrcode";
-import { contactMessageSchema, normalizeEmail, normalizePhone, publicEnrollSchema } from "@fove/shared";
+import type { Request, Response } from "express";
+import { ClientAccountService } from "../client-account/client-account.service";
+import { contactMessageSchema, normalizeEmail, normalizePhone } from "@fove/shared";
 import type { z } from "zod";
 import { PrismaService } from "../common/prisma.service";
 import { AuditService } from "../common/audit.service";
 import { randomDigits, sha256 } from "../common/crypto";
-import { AppError, badRequest, conflict, isUniqueViolation, notFound } from "../common/errors";
-import type { TenantContext } from "../common/context";
+import { badRequest, notFound } from "../common/errors";
 import { PlanService } from "../billing/plan.service";
-import { QuotaAlertService } from "../billing/quota-alert.service";
 import { EmailService } from "../notifications/email.service";
 import { WhatsAppService } from "../notifications/whatsapp.service";
-import { WebhooksService } from "../notifications/webhooks.service";
-import { CustomersService, buildIdentities, findByIdentities } from "../customers/customers.service";
-import { createCard } from "../loyalty/cards";
 import { CardsService, cardUrl } from "../cards/cards.service";
 import { tenantLocale, type Locale } from "../i18n/locale";
 import { recoverCardMessage } from "../i18n/notifications";
@@ -22,29 +19,25 @@ import { cardLinkSubject, otpMessage } from "../i18n/emails";
 const OTP_TTL_MS = 10 * 60_000;
 const OTP_MAX_ATTEMPTS = 5;
 
-function publicCtx(tenantId: string): TenantContext {
-  return { tenantId, readOnly: false, actor: { type: "system", label: "public-enrollment" } };
-}
-
 /**
- * Parcours publics sans compte : page d'inscription (QR du commerce) et carte
- * numérique (lien secret). Aucune de ces routes ne peut créditer de points.
+ * Parcours publics : page d'inscription (QR du commerce) et carte numérique
+ * (lien secret). L'inscription elle-même passe par le compte client FOVE
+ * (`client-account/client-enrollment.service.ts`). Aucune de ces routes ne peut créditer de points.
  */
 @Injectable()
 export class PublicService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly customers: CustomersService,
     private readonly plans: PlanService,
     private readonly email: EmailService,
     private readonly whatsapp: WhatsAppService,
     private readonly audit: AuditService,
-    private readonly webhooks: WebhooksService,
     private readonly cards: CardsService,
-    private readonly quotaAlerts: QuotaAlertService,
+    private readonly clientAccounts: ClientAccountService,
   ) { }
 
-  private async link(tokenOrSlug: string) {
+  /** Lien d'inscription d'un commerce, par jeton de QR ou par adresse publique. */
+  async link(tokenOrSlug: string) {
     const include = {
       program: { include: { rewards: { where: { active: true, archivedAt: null }, orderBy: { cost: "asc" as const }, take: 6 } } },
       establishment: { select: { name: true } },
@@ -113,65 +106,6 @@ export class PublicService {
     };
   }
 
-  async join(token: string, input: z.infer<typeof publicEnrollSchema>, ip: string | null) {
-    if (input.website) throw badRequest("rejected", "Inscription refusée");
-    const link = await this.link(token);
-    const program = link.program;
-    const tenantId = link.tenantId;
-    const ctx = publicCtx(tenantId);
-    if (program.enrollmentVerification === "EMAIL_OTP" && !input.email) {
-      throw badRequest("email_required", "Une adresse email est nécessaire pour valider votre carte");
-    }
-
-    const country = link.tenant.settings?.country ?? "CD";
-    const { identities } = buildIdentities({ phone: input.phone, email: input.email }, country);
-    const existing = await findByIdentities(this.prisma.client, tenantId, identities);
-    if (existing) {
-      // Ne jamais révéler la carte d'un client existant à quelqu'un qui tape son numéro.
-      throw conflict("already_enrolled", "Vous êtes déjà inscrit(e). Utilisez « Retrouver ma carte » ou demandez au commerçant.");
-    }
-
-    const status = program.enrollmentVerification === "NONE" ? "ACTIVE" : "PENDING_VERIFICATION";
-    try {
-      const { card, customerId } = await this.prisma.client.$transaction(async (tx) => {
-        const customer = await this.customers.createInTx(
-          tx,
-          ctx,
-          {
-            firstName: input.firstName,
-            lastName: input.lastName,
-            phone: input.phone,
-            email: input.email,
-            externalRef: null,
-            marketingEmailConsent: input.marketingConsent && Boolean(input.email),
-            marketingSmsConsent: input.marketingConsent,
-            termsAcceptedAt: new Date(),
-          },
-          "QR_ENROLLMENT",
-        );
-        const card = await createCard(tx, { tenantId, programId: program.id, customerId: customer.id, status }, link.tenant.name);
-        await tx.enrollmentLink.update({ where: { id: link.id }, data: { enrollCount: { increment: 1 } } });
-        return { card, customerId: customer.id };
-      });
-      if (status === "PENDING_VERIFICATION" && program.enrollmentVerification === "EMAIL_OTP" && input.email) {
-        await this.sendOtp(tenantId, card.accountId, normalizeEmail(input.email), link.tenant.name, tenantLocale(link.tenant.settings));
-      }
-      await this.audit.log({ tenantId, action: "customer.self_enrolled", targetType: "account", targetId: card.accountId, ip });
-      await this.webhooks.emit(tenantId, "customer.created", { id: customerId, externalRef: null });
-      await this.webhooks.emit(tenantId, "loyalty_account.created", { id: card.accountId, customerId, programId: program.id });
-      await this.quotaAlerts.afterCustomerCreated(tenantId);
-      return { cardUrl: cardUrl(card.accessToken), cardToken: card.accessToken, status };
-    } catch (error) {
-      if (isUniqueViolation(error)) throw conflict("already_enrolled", "Vous êtes déjà inscrit(e).");
-      if (error instanceof AppError && error.code === "quota_exceeded") {
-        // Le client ne voit pas l'offre du commerçant ; le commerçant est prévenu.
-        await this.quotaAlerts.customerBlocked(tenantId);
-        throw conflict("enrollment_closed", "Les inscriptions sont momentanément fermées. Demandez votre carte directement au commerçant.");
-      }
-      throw error;
-    }
-  }
-
   /**
    * « Retrouver ma carte » par email ou téléphone. Le lien part uniquement vers
    * l'email enregistré sur la fiche, jamais affiché à l'écran, et n'est pas
@@ -217,7 +151,7 @@ export class PublicService {
     const account = await this.prisma.client.loyaltyAccount.findUnique({
       where: { accessTokenHash: sha256(accessToken) },
       include: {
-        customer: { select: { firstName: true, lastName: true, email: true } },
+        customer: { select: { firstName: true, lastName: true, email: true, clientAccount: { select: { email: true } } } },
         program: true,
         tenant: { include: { settings: true } },
       },
@@ -292,19 +226,26 @@ export class PublicService {
     await this.email.send({ to: email, ...otpMessage(locale, tenantName, code) });
   }
 
-  async resendCode(accessToken: string) {
+  async resendCode(accessToken: string, req: Request) {
     const account = await this.account(accessToken);
     if (account.status !== "PENDING_VERIFICATION" || account.program.enrollmentVerification !== "EMAIL_OTP" || !account.customer.email) {
       throw badRequest("not_pending", "Aucune validation en attente");
     }
+    // Carte rattachée à un compte FOVE : c'est la confirmation du compte qui l'active.
+    if (account.customer.clientAccount) return this.clientAccounts.requestCode(account.customer.clientAccount.email, req, "confirm");
     const recent = await this.prisma.client.otpChallenge.count({ where: { accountId: account.id, createdAt: { gt: new Date(Date.now() - 60_000) } } });
     if (recent > 0) throw badRequest("too_soon", "Patientez une minute avant de redemander un code");
     await this.sendOtp(account.tenantId, account.id, account.customer.email, account.tenant.name, tenantLocale(account.tenant.settings));
   }
 
-  async verify(accessToken: string, code: string) {
+  async verify(accessToken: string, code: string, req: Request, res: Response) {
     const account = await this.account(accessToken);
     if (account.status !== "PENDING_VERIFICATION") return { status: account.status };
+    if (account.customer.clientAccount) {
+      await this.clientAccounts.verifyCode(account.customer.clientAccount.email, code, req, res);
+      const after = await this.prisma.client.loyaltyAccount.findUniqueOrThrow({ where: { id: account.id }, select: { status: true } });
+      return { status: after.status };
+    }
     const challenge = await this.prisma.client.otpChallenge.findFirst({
       where: { accountId: account.id, consumedAt: null, expiresAt: { gt: new Date() } },
       orderBy: { createdAt: "desc" },
