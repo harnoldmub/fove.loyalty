@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { Download } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
@@ -121,6 +122,20 @@ export function ClientHome() {
         <Button variant="secondary" onClick={logout}>
           {t("logout")}
         </Button>
+        <div className="grid gap-2">
+          <h2 className="font-semibold">{t("dataTitle")}</h2>
+          <p className="text-sm text-ink-2">{t("dataBody")}</p>
+          <div>
+            {/* Téléchargement direct (GET avec le cookie de session) : le fichier arrive en pièce jointe. */}
+            <Button asChild variant="secondary">
+              <a href="/api/client/me/export" download>
+                <Download aria-hidden />
+                {t("export")}
+              </a>
+            </Button>
+          </div>
+          <p className="text-xs text-ink-3">{t("inactivity")}</p>
+        </div>
         <div className="grid gap-2">
           <h2 className="font-semibold">{t("dangerTitle")}</h2>
           <p className="text-sm text-ink-2">{t("dangerBody")}</p>

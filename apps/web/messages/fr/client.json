@@ -56,6 +56,10 @@
     "deleteConfirmTitle": "Supprimer votre compte FOVE ?",
     "deleteConsequence": "Votre compte est supprimé définitivement et vous êtes déconnecté. Vos cartes et vos points restent chez chaque commerce. Pour effacer vos données chez un commerce, adressez-vous à lui.",
     "deleteConfirm": "Supprimer définitivement",
+    "dataTitle": "Mes données",
+    "dataBody": "Téléchargez un fichier avec toutes les données de votre compte FOVE : profil, appareils connectés, cartes rattachées et historique de sécurité.",
+    "export": "Télécharger mes données",
+    "inactivity": "Sans connexion ni passage en caisse avec l'une de vos cartes pendant 3 ans, votre compte est supprimé, après un email de prévenance 30 jours avant. Vos cartes restent chez les commerces.",
     "confirmTitle": "Confirmez votre email",
     "confirmBody": "Pour ouvrir « Mes cartes », confirmez l'adresse {email} avec le code que nous vous envoyons.",
     "linkableTitle": "Ces cartes vous appartiennent ?",
@@ -154,6 +158,7 @@
           "title": "7. Suppression du compte",
           "items": [
             "Vous pouvez supprimer votre compte à tout moment depuis « Mes cartes ». La suppression est immédiate et définitive.",
+            "Un compte resté 3 ans sans activité (ni connexion, ni passage en caisse avec l'une de vos cartes) est supprimé automatiquement, après un email de prévenance envoyé 30 jours avant. [Durée : à valider]",
             "Vos cartes ne sont pas supprimées : elles restent chez chaque commerce, avec vos points, et leurs liens continuent de fonctionner. Pour effacer vos données chez un commerce, adressez-vous à lui.",
             "Nous pouvons suspendre ou supprimer un compte utilisé de façon frauduleuse ou contraire à ces conditions. [Modalités et préavis : à valider]"
           ]
@@ -242,7 +247,7 @@
         {
           "title": "6. Durées de conservation",
           "items": [
-            "Votre compte : jusqu'à ce que vous le supprimiez. [À décider : suppression après une durée d'inactivité, par exemple 3 ans — non automatisée à ce jour]",
+            "Votre compte : jusqu'à ce que vous le supprimiez, ou jusqu'à 3 ans sans activité (ni connexion, ni passage en caisse avec l'une de vos cartes). Vous êtes prévenu par email 30 jours avant ; il suffit de vous connecter pour garder votre compte. [Durée : à valider]",
             "Vos sessions : 180 jours après leur dernière utilisation, puis supprimées.",
             "Les codes de connexion : supprimés 24 heures après leur envoi.",
             "Les cartes refusées (« Ce n'est pas moi ») : jusqu'à la suppression du compte.",
@@ -253,7 +258,7 @@
           "title": "7. Vos droits",
           "items": [
             "Vous pouvez accéder à vos données, les corriger et les effacer : votre profil se modifie et votre compte se supprime directement dans « Mes cartes ».",
-            "Vous pouvez aussi demander la limitation du traitement, vous y opposer pour des raisons tenant à votre situation, et recevoir vos données dans un format lisible (portabilité) en nous contactant. [Export en libre-service : à prévoir]",
+            "Vous pouvez télécharger toutes les données de votre compte dans un fichier lisible par machine (JSON) depuis « Mes cartes », rubrique « Mes données » (portabilité). Vous pouvez aussi demander la limitation du traitement ou vous y opposer pour des raisons tenant à votre situation, en nous contactant.",
             "Pour vos données chez un commerce (fiche, carte, historique), adressez-vous à ce commerce.",
             "Vous pouvez introduire une réclamation auprès de l'autorité de protection des données compétente (en France, la CNIL). [Autorités des autres pays concernés : à compléter]"
           ]

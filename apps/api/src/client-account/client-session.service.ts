@@ -46,7 +46,13 @@ export class ClientSessionService {
         expiresAt: new Date(Date.now() + SESSION_MS),
       },
     });
+    await this.markActive(clientAccountId);
     this.setCookie(res, token);
+  }
+
+  /** Activité du compte : repousse sa suppression pour inactivité et annule une prévenance envoyée. */
+  private async markActive(clientAccountId: string) {
+    await this.prisma.client.clientAccount.updateMany({ where: { id: clientAccountId }, data: { lastActiveAt: new Date(), inactivityWarnedAt: null } });
   }
 
   /** Résout la session et la prolonge (base et cookie) au plus toutes les 5 minutes. */
@@ -63,6 +69,7 @@ export class ClientSessionService {
         where: { id: session.id },
         data: { lastSeenAt: new Date(), expiresAt: new Date(Date.now() + SESSION_MS) },
       });
+      await this.markActive(session.clientAccountId);
       this.setCookie(res, token);
     }
     return { sessionId: session.id, account: session.clientAccount };

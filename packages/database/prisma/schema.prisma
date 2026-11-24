@@ -1370,12 +1370,19 @@ model ClientAccount {
   /// Dernière acceptation des conditions du compte client FOVE (création ou connexion), et leur version.
   termsAcceptedAt DateTime?
   termsVersion    String?
+  /// Dernière connexion ou visite avec la session client. Avec l'activité des cartes rattachées,
+  /// elle décide de la suppression des comptes inactifs (CLIENT_ACCOUNT_INACTIVE_MONTHS).
+  lastActiveAt       DateTime  @default(now())
+  /// Email « votre compte sera supprimé » envoyé ; remis à zéro à la prochaine activité.
+  inactivityWarnedAt DateTime?
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 
   sessions           ClientSession[]
   customers          Customer[]
   dismissedCustomers ClientDismissedCustomer[]
+
+  @@index([lastActiveAt])
 }
 
 /// Session d'un client sur un appareil (cookie distinct de celui des commerçants).

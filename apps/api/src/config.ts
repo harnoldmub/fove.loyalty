@@ -19,6 +19,8 @@ const schema = z.object({
   GOOGLE_OAUTH_REDIRECT_URI: z.url().optional(),
   /** Adresse de retour de la connexion Google des clients FOVE (même identifiant OAuth que les commerçants). */
   GOOGLE_OAUTH_CLIENT_REDIRECT_URI: z.url().optional(),
+  /** Compte client FOVE supprimé après ce nombre de mois sans activité (prévenu 30 jours avant). 0 : jamais. */
+  CLIENT_ACCOUNT_INACTIVE_MONTHS: z.coerce.number().int().min(0).max(240).default(36),
   STRIPE_SECRET_KEY: z.string().optional(),
   STRIPE_WEBHOOK_SECRET: z.string().optional(),
   /** Identifiants sandbox conservés à côté des identifiants live. */

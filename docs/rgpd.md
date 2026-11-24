@@ -15,7 +15,7 @@
 | Consentement marketing email / SMS | Consentement, **distinct** de l'adhésion, horodaté (`consentUpdatedAt`) | Jusqu'au retrait |
 | Journal d'audit, opérations | Intérêt légitime (sécurité, preuve) | Durée du contrat |
 | Sessions, codes de vérification | Sécurité | Supprimés automatiquement à expiration |
-| Compte client FOVE : email, nom, téléphone, identifiant Google, lien vers les fiches, refus (« Ce n'est pas moi ») | Exécution des conditions du compte (Dizayna responsable) | Jusqu'à suppression par le client ; durée d'inactivité **à décider** |
+| Compte client FOVE : email, nom, téléphone, identifiant Google, lien vers les fiches, refus (« Ce n'est pas moi ») | Exécution des conditions du compte (Dizayna responsable) | Jusqu'à suppression par le client, ou 36 mois sans activité (connexion ou carte rattachée utilisée en caisse), après un email 30 jours avant (`CLIENT_ACCOUNT_INACTIVE_MONTHS`) |
 | Sessions et codes du compte client | Sécurité (intérêt légitime) | Sessions : 180 jours après dernière utilisation ; codes : 24 h |
 | Acceptation des textes du compte client (date, version) | Preuve (intérêt légitime) | Durée du compte |
 
@@ -25,7 +25,7 @@
 - **Effacement** : anonymisation irréversible (nom, téléphone, email, identifiants effacés, cartes fermées). L'historique comptable des points est conservé sans donnée identifiante. Audité.
 - **Rectification** : modification de la fiche ; les doublons sont empêchés par identifiant (téléphone, email, référence), jamais par fusion sur le nom.
 - **Retrait du consentement marketing** : modifiable sur la fiche, sans effet sur la carte.
-- **Compte client FOVE** : le client corrige son profil et supprime son compte lui-même dans « Mes cartes ». La suppression détache ses fiches (qui restent au commerçant) ; le journal ne garde que l'identifiant du compte. Une fiche anonymisée par le commerçant est détachée du compte. Pas d'export en libre-service (à prévoir).
+- **Compte client FOVE** : le client corrige son profil et supprime son compte lui-même dans « Mes cartes ». La suppression détache ses fiches (qui restent au commerçant) ; le journal ne garde que l'identifiant du compte. Une fiche anonymisée par le commerçant est détachée du compte. Export JSON en libre-service (« Mes données »), audité.
 
 ## Sécurité et localisation
 

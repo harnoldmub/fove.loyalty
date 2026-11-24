@@ -24,7 +24,8 @@ Pour que la relecture porte sur le fonctionnement réel :
 | Email déjà inscrit | Si quelqu'un tape un email déjà connu, un code est envoyé au lieu de créer la carte. La personne qui tape l'email apprend donc qu'il est inscrit (choix produit assumé). |
 | Rattachement des cartes | Uniquement sur l'email **confirmé** du compte. Le client accepte, ou refuse (« Ce n'est pas moi »), les cartes qu'un commerce a enregistrées avec son email. |
 | Acceptation des textes | Mention « En continuant, vous acceptez… » sous chaque bouton qui crée le compte ou y connecte. La date et la version acceptées sont enregistrées en base à la création et à chaque connexion. Il n'y a pas de case à cocher dédiée. |
-| Suppression | Immédiate, par le client, dans « Mes cartes ». Les cartes restent chez les commerces, détachées. Le journal ne garde que l'identifiant technique du compte. |
+| Suppression | Immédiate, par le client, dans « Mes cartes ». Automatique après 36 mois d'inactivité, avec un email 30 jours avant. Les cartes restent chez les commerces, détachées. Le journal ne garde que l'identifiant technique du compte. |
+| Export | « Télécharger mes données » dans « Mes cartes » : fichier JSON du compte. |
 | Cookies | Cookie de session strictement nécessaire (180 jours glissants), cookie temporaire de 10 minutes pendant la connexion Google, cookie de langue. |
 | Prestataires | Railway (hébergement), Neon (base de données, région de Francfort), Resend (emails), Google (connexion, si choisie). |
 
@@ -40,9 +41,9 @@ Pour que la relecture porte sur le fonctionnement réel :
 8. **Droit applicable, juridiction, médiation de la consommation**, compte tenu des pays visés : la France, la RDC (Code du numérique de 2023) et l'Afrique francophone.
 9. **Transferts hors de l'Union européenne** (Railway, Resend et Google sont américains) : garanties à citer (clauses contractuelles types, cadre UE–États-Unis) et région d'hébergement Railway à confirmer.
 10. **Durées de conservation** :
-    - comptes inactifs : à décider (par exemple 3 ans), car aucune suppression automatique n'existe aujourd'hui ;
-    - journal de sécurité.
-11. **Portabilité** : il n'y a pas d'export en libre-service, le client passe par le contact. Ce délai est-il acceptable ?
+    - comptes inactifs : **36 mois** sans connexion ni passage en caisse avec une carte rattachée, avec un email de prévenance 30 jours avant. La durée est réglable (`CLIENT_ACCOUNT_INACTIVE_MONTHS`) : est-elle proportionnée ?
+    - journal de sécurité : durée à fixer.
+11. **Portabilité** : l'export JSON en libre-service est en place (« Mes cartes » > « Mes données »). Il contient le compte, les appareils, les cartes rattachées (commerce, programme, numéro, solde), les refus et le journal de sécurité, mais pas les données détenues par les commerces. Ce périmètre convient-il ?
 12. **Autorités de contrôle** à citer en dehors de la CNIL.
 
 ## 4. Effets sur les textes existants

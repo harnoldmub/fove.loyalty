@@ -123,6 +123,17 @@ export class ClientAccountController {
     await this.myCards.dismiss(client.account.id, customerId);
   }
 
+  /** « Télécharger mes données » (accès et portabilité). */
+  @Get("me/export")
+  @ClientRoute()
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
+  async export(@Client() client: ClientAuthState, @Req() req: Request, @Res({ passthrough: true }) res: Response) {
+    const data = await this.accounts.exportData(client.account.id, req);
+    res.setHeader("Content-Disposition", `attachment; filename="fove-mes-donnees-${new Date().toISOString().slice(0, 10)}.json"`);
+    res.setHeader("Cache-Control", "no-store");
+    return data;
+  }
+
   @Delete("me")
   @HttpCode(204)
   @ClientRoute()

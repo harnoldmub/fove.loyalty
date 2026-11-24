@@ -162,9 +162,11 @@ La page de la carte affiche :
   - les cartes du compte, aux couleurs et au logo de chaque commerce, avec le solde, la plus récemment utilisée en premier ; un appui ouvre la carte ;
   - « **Ces cartes vous appartiennent ?** » : les fiches avec une carte enregistrées avec son email confirmé (caisse, import, boutique en ligne), avec « Ajouter à mon compte » ou « Ce n'est pas moi » (refus définitif pour ce compte) ;
   - profil (prénom, nom, téléphone ; l'email ne change pas), déconnexion de l'appareil, suppression du compte ;
+  - **« Télécharger mes données »** : fichier JSON du compte (profil, appareils, cartes rattachées, refus, journal de sécurité), sans les données détenues par les commerces ;
   - installable sur l'écran d'accueil.
 - **Sur la page d'une carte**, un compte non confirmé voit « Retrouvez vos cartes partout » pour confirmer son email.
 - **Acceptation des textes** : la date et la version acceptées sont enregistrées à la création et à chaque connexion.
+- **Compte inactif** : sans connexion ni passage en caisse avec une carte rattachée pendant 36 mois (réglable), le client reçoit un email 30 jours avant la suppression ; se connecter garde le compte. La suppression détache les cartes, qui restent chez les commerces.
 
 ---
 
@@ -653,8 +655,9 @@ Sur l'ensemble du site :
   - expiration des soldes inactifs ;
   - fin des contrats et des abonnements arrivés à échéance ;
   - relance de confirmation d'email ;
+  - prévenance puis suppression des comptes clients FOVE inactifs ;
   - nettoyage des sessions et codes expirés.
-- **Emails envoyés par la plateforme** : code de connexion et email de bienvenue du compte client FOVE, confirmation d'email et relance, mot de passe oublié, invitation d'équipe, code de validation de carte, lien de carte, alertes de quota, candidature partenaire (accusé, validation, refus), commission et virement partenaire, alertes internes à l'équipe FOVE (contact, candidature, demande de virement) ⚠.
+- **Emails envoyés par la plateforme** : code de connexion, email de bienvenue et prévenance avant suppression pour inactivité du compte client FOVE, confirmation d'email et relance, mot de passe oublié, invitation d'équipe, code de validation de carte, lien de carte, alertes de quota, candidature partenaire (accusé, validation, refus), commission et virement partenaire, alertes internes à l'équipe FOVE (contact, candidature, demande de virement) ⚠.
 
 ---
 
@@ -680,8 +683,6 @@ Cette section liste ce qui **existe dans l'application mais n'est pas garanti à
 | **Accès associé et responsable financier** | Code incomplet | Aucun écran ne permet d'attribuer ces rôles : il faut modifier la base de données. Le rôle « support » existe mais ne donne aucun accès. |
 | **Connexion Google des clients** | Configuration | Ajouter l'adresse de retour `…/api/client/auth/google/callback` (local et production) sur l'identifiant OAuth Google. Testé avec des réponses de Google simulées, jamais avec un vrai compte Google. |
 | **Textes du compte client FOVE** (conditions, confidentialité) | Code incomplet | Premier jet en français, marqué « projet », à faire relire par un juriste ([juridique-compte-client.md](juridique-compte-client.md)) ; identité légale de Dizayna à compléter. En anglais, arabe et espagnol, le texte s'affiche en français avec une mention, en attendant la traduction de la version validée. |
-| **Export des données du compte FOVE** | Code incomplet | Pas d'export en libre-service : le client passe par le contact. |
-| **Comptes FOVE inactifs** | Code incomplet | Aucune suppression automatique après inactivité : durée à décider. |
 | **Effacement des données d'un client (RGPD)** | Non testé | Aucun test automatisé de l'anonymisation. |
 | **Téléversement du logo** | Non testé | Aucun test automatisé. |
 | **Affichage des prix en euros** sur la page tarifs | Incohérence | La bascule affiche les mêmes montants avec le symbole € (« 199 € ») et la mention « payé en euros », alors que le paiement se fait en dollars US. |

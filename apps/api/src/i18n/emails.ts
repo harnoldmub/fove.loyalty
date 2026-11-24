@@ -329,6 +329,52 @@ export function clientConfirmMessage(locale: Locale, code: string, link: string)
   };
 }
 
+const CLIENT_INACTIVE = {
+  fr: {
+    subject: "Votre compte FOVE sera supprimé dans 30 jours",
+    heading: "Vous voulez garder votre compte FOVE ?",
+    body: (date: string) =>
+      `Votre compte FOVE n'a pas été utilisé depuis longtemps : il sera supprimé le ${date}. Pour le garder, il suffit de vous connecter avant cette date.`,
+    cards: "Vos cartes de fidélité ne seront pas supprimées : elles restent chez chaque commerce, avec vos points.",
+    button: "Garder mon compte",
+    footer: "Vous pouvez aussi ignorer cet email : votre compte sera alors supprimé automatiquement.",
+  },
+  en: {
+    subject: "Your FOVE account will be deleted in 30 days",
+    heading: "Do you want to keep your FOVE account?",
+    body: (date: string) => `Your FOVE account hasn't been used for a long time: it will be deleted on ${date}. To keep it, just sign in before that date.`,
+    cards: "Your loyalty cards will not be deleted: they stay with each business, with your points.",
+    button: "Keep my account",
+    footer: "You can also ignore this email: your account will then be deleted automatically.",
+  },
+  ar: {
+    subject: "سيُحذف حسابك في FOVE خلال 30 يومًا",
+    heading: "هل تريد الاحتفاظ بحسابك في FOVE؟",
+    body: (date: string) => `لم يُستخدم حسابك في FOVE منذ مدة طويلة: سيُحذف بتاريخ ${date}. للاحتفاظ به، يكفي أن تسجّل الدخول قبل هذا التاريخ.`,
+    cards: "لن تُحذف بطاقات الولاء الخاصة بك: تبقى لدى كل متجر مع نقاطك.",
+    button: "الاحتفاظ بحسابي",
+    footer: "يمكنك أيضًا تجاهل هذه الرسالة: سيُحذف حسابك عندها تلقائيًا.",
+  },
+  es: {
+    subject: "Tu cuenta FOVE se eliminará dentro de 30 días",
+    heading: "¿Quieres conservar tu cuenta FOVE?",
+    body: (date: string) => `Tu cuenta FOVE lleva mucho tiempo sin usarse: se eliminará el ${date}. Para conservarla, basta con que inicies sesión antes de esa fecha.`,
+    cards: "Tus tarjetas de fidelidad no se eliminarán: siguen en cada comercio, con tus puntos.",
+    button: "Conservar mi cuenta",
+    footer: "También puedes ignorar este correo: tu cuenta se eliminará automáticamente.",
+  },
+} satisfies Record<Locale, unknown>;
+
+/** Prévenance avant suppression d'un compte client inactif. `date` est déjà formatée dans la langue. */
+export function clientInactivityMessage(locale: Locale, date: string, link: string): Content {
+  const t = CLIENT_INACTIVE[locale];
+  return {
+    subject: t.subject,
+    text: `${t.heading}\n\n${t.body(date)}\n${t.cards}\n\n${link}\n\n${t.footer}`,
+    html: emailHtml(locale, { title: t.subject, heading: t.heading, paragraphs: [t.body(date), t.cards], button: { label: t.button, url: link }, footer: t.footer }),
+  };
+}
+
 export function clientLoginCodeMessage(locale: Locale, code: string): Content {
   const t = CLIENT_ACCOUNT[locale];
   return { subject: t.subject, text: t.text(code) };

@@ -6,11 +6,22 @@ import { AppError, badRequest } from "../common/errors";
 import { PrismaService } from "../common/prisma.service";
 import { AuditService } from "../common/audit.service";
 import { EmailService } from "../notifications/email.service";
-import { clientConfirmMessage, clientLoginCodeMessage } from "../i18n/emails";
+import { clientConfirmMessage, clientInactivityMessage, clientLoginCodeMessage } from "../i18n/emails";
 import { loadConfig } from "../config";
 import type { GoogleProfile } from "../auth/google-oauth";
-import { normalizeLocale, requestLocale, requestLocaleOrNull } from "../i18n/locale";
+import { DEFAULT_LOCALE, INTL_LOCALE, normalizeLocale, requestLocale, requestLocaleOrNull, type Locale } from "../i18n/locale";
 import { ClientSessionService, type ClientAccountView } from "./client-session.service";
+
+/** Prévenance avant suppression d'un compte inactif, et taille des lots de la tâche planifiée. */
+const INACTIVITY_NOTICE_MS = 30 * 86_400_000;
+const PURGE_BATCH = 200;
+
+const EXPORT_NOTICE: Record<Locale, string> = {
+  fr: "Ce fichier contient les données de votre compte FOVE. Les données de vos cartes chez chaque commerce (fiche, historique des passages) sont détenues par ce commerce : adressez-vous à lui pour les obtenir.",
+  en: "This file contains your FOVE account data. The data of your cards at each business (customer record, visit history) is held by that business: contact it to obtain it.",
+  ar: "يحتوي هذا الملف على بيانات حسابك في FOVE. أما بيانات بطاقاتك لدى كل متجر (الملف، سجل الزيارات) فيحتفظ بها ذلك المتجر: تواصل معه للحصول عليها.",
+  es: "Este archivo contiene los datos de tu cuenta FOVE. Los datos de tus tarjetas en cada comercio (ficha, historial de visitas) los conserva ese comercio: ponte en contacto con él para obtenerlos.",
+};
 
 const CODE_TTL_MS = 10 * 60_000;
 const CODE_MAX_ATTEMPTS = 5;
@@ -214,6 +225,113 @@ export class ClientAccountService {
     this.sessions.clearCookie(res);
     // Pas d'email dans le journal : le compte supprimé n'y laisse que son identifiant.
     await this.audit.log({ action: "client.account_deleted", targetType: "ClientAccount", targetId: accountId, ip: req.ip });
+  }
+
+  /**
+   * Droits d'accès et de portabilité : tout ce que Dizayna détient sur le compte, en JSON.
+   * Les fiches chez chaque commerce relèvent du commerçant : seul ce que « Mes cartes » montre
+   * déjà y figure (commerce, programme, numéro de carte, solde).
+   */
+  async exportData(accountId: string, req: Request) {
+    const db = this.prisma.client;
+    const account = await db.clientAccount.findUniqueOrThrow({ where: { id: accountId } });
+    const [sessions, fiches, dismissed, journal] = await Promise.all([
+      db.clientSession.findMany({
+        where: { clientAccountId: accountId },
+        orderBy: { createdAt: "desc" },
+        select: { userAgent: true, ip: true, createdAt: true, lastSeenAt: true, expiresAt: true },
+      }),
+      db.customer.findMany({
+        where: { clientAccountId: accountId },
+        select: {
+          tenant: { select: { name: true } },
+          accounts: { where: { status: { not: "CLOSED" } }, select: { cardNumber: true, balance: true, status: true, createdAt: true, program: { select: { name: true } } } },
+        },
+      }),
+      db.clientDismissedCustomer.findMany({ where: { clientAccountId: accountId }, select: { createdAt: true, customer: { select: { tenant: { select: { name: true } } } } } }),
+      db.auditLog.findMany({
+        where: { targetType: "ClientAccount", targetId: accountId },
+        orderBy: { createdAt: "asc" },
+        select: { action: true, createdAt: true, ip: true, metadata: true },
+      }),
+    ]);
+    await this.audit.log({ action: "client.data_exported", targetType: "ClientAccount", targetId: accountId, ip: req.ip });
+    return {
+      exportedAt: new Date().toISOString(),
+      controller: "Dizayna (FOVE)",
+      notice: EXPORT_NOTICE[requestLocale(req)],
+      account: {
+        email: account.email,
+        emailVerifiedAt: account.emailVerifiedAt,
+        firstName: account.firstName,
+        lastName: account.lastName,
+        phone: account.phone,
+        locale: account.locale,
+        googleId: account.googleSub,
+        createdAt: account.createdAt,
+        updatedAt: account.updatedAt,
+        lastActiveAt: account.lastActiveAt,
+        termsAcceptedAt: account.termsAcceptedAt,
+        termsVersion: account.termsVersion,
+      },
+      sessions,
+      businesses: fiches.map((f) => f.tenant.name),
+      cards: fiches.flatMap((f) =>
+        f.accounts.map((a) => ({ business: f.tenant.name, program: a.program.name, cardNumber: a.cardNumber, balance: a.balance, status: a.status, since: a.createdAt })),
+      ),
+      dismissedCards: dismissed.map((d) => ({ business: d.customer.tenant.name, at: d.createdAt })),
+      securityLog: journal,
+    };
+  }
+
+  /**
+   * Comptes inactifs (tâche planifiée) : ni connexion, ni carte rattachée utilisée en caisse depuis
+   * CLIENT_ACCOUNT_INACTIVE_MONTHS mois. Le client est prévenu par email 30 jours avant ; se connecter
+   * annule la suppression. La suppression détache les cartes, qui restent chez les commerces.
+   */
+  async purgeInactive(now = new Date()): Promise<{ warned: number; deleted: number }> {
+    const months = loadConfig().CLIENT_ACCOUNT_INACTIVE_MONTHS;
+    if (months === 0) return { warned: 0, deleted: 0 };
+    const db = this.prisma.client;
+    const cutoff = new Date(now);
+    cutoff.setMonth(cutoff.getMonth() - months);
+    const warnCutoff = new Date(cutoff.getTime() + INACTIVITY_NOTICE_MS);
+    const inactiveSince = (date: Date) => ({
+      lastActiveAt: { lt: date },
+      customers: { none: { accounts: { some: { lastActivityAt: { gte: date } } } } },
+    });
+
+    // 1. Prévenance, 30 jours avant. Une prévenance plus ancienne que la période d'inactivité ne compte plus.
+    const toWarn = await db.clientAccount.findMany({
+      where: { ...inactiveSince(warnCutoff), OR: [{ inactivityWarnedAt: null }, { inactivityWarnedAt: { lt: warnCutoff } }] },
+      select: { id: true, email: true, locale: true },
+      take: PURGE_BATCH,
+    });
+    const deletionDate = new Date(now.getTime() + INACTIVITY_NOTICE_MS);
+    for (const account of toWarn) {
+      const locale = normalizeLocale(account.locale) ?? DEFAULT_LOCALE;
+      const date = new Intl.DateTimeFormat(INTL_LOCALE[locale], { dateStyle: "long" }).format(deletionDate);
+      const link = `${loadConfig().APP_URL}/mes-cartes/connexion?${new URLSearchParams({ email: account.email })}`;
+      await db.clientAccount.update({ where: { id: account.id }, data: { inactivityWarnedAt: now } });
+      await this.email.send({ to: account.email, ...clientInactivityMessage(locale, date, link) });
+      await this.audit.log({ action: "client.inactivity_warned", targetType: "ClientAccount", targetId: account.id });
+    }
+
+    // 2. Suppression : inactif depuis la limite, prévenu il y a au moins 30 jours, et après sa dernière activité.
+    const toDelete = await db.clientAccount.findMany({
+      where: { ...inactiveSince(cutoff), inactivityWarnedAt: { lte: new Date(now.getTime() - INACTIVITY_NOTICE_MS), gte: cutoff } },
+      select: { id: true, email: true },
+      take: PURGE_BATCH,
+    });
+    for (const account of toDelete) {
+      await db.$transaction([
+        db.customer.updateMany({ where: { clientAccountId: account.id }, data: { clientAccountId: null } }),
+        db.clientLoginCode.deleteMany({ where: { email: account.email } }),
+        db.clientAccount.delete({ where: { id: account.id } }),
+      ]);
+      await this.audit.log({ action: "client.account_deleted_inactive", targetType: "ClientAccount", targetId: account.id });
+    }
+    return { warned: toWarn.length, deleted: toDelete.length };
   }
 }
 
