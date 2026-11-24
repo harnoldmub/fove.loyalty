@@ -150,5 +150,18 @@
     "scan": "Scannez avec l’appareil photo de votre téléphone",
     "stampsOffer": "{count, plural, one {# passage} other {# passages}} = {reward}",
     "print": "Imprimer l’affiche"
+  },
+  "account": {
+    "haveAccount": "J'ai déjà un compte FOVE",
+    "joinTitle": "Rejoindre {tenant}",
+    "signedInAs": "Connecté avec {email}",
+    "notYou": "Ce n'est pas vous ?",
+    "logout": "Se déconnecter",
+    "emailHint": "Votre compte FOVE regroupe vos cartes : vous les retrouvez sur n'importe quel téléphone.",
+    "confirmTitle": "Confirmez votre email",
+    "confirmText": "Pour ajouter une carte chez {tenant}, confirmez d'abord l'adresse de votre compte FOVE : {email}.",
+    "knownTitle": "Vous avez déjà un compte FOVE",
+    "knownText": "Un code vient d'être envoyé à {email}. Saisissez-le pour ajouter cette carte à votre compte.",
+    "loadError": "Impossible de charger cette page. Vérifiez votre connexion."
   }
 }

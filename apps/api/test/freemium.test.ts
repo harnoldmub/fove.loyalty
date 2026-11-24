@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { NestExpressApplication } from "@nestjs/platform-express";
 import request from "supertest";
-import { agent, createPointsProgram, db, ownerWithTenant, randomPhone, resetDatabase, setPlan, startApp, type Client } from "./helpers";
+import { agent, createPointsProgram, db, ownerWithTenant, randomPhone, resetDatabase, selfEnroll, setPlan, startApp, type Client } from "./helpers";
 import { hashPassword } from "../src/common/crypto";
 import { PlanService } from "../src/billing/plan.service";
 
@@ -57,9 +57,9 @@ describe("offre Gratuite : quotas sur chaque chemin de création de client", () 
     const program = await createPointsProgram(client);
     const token = ((await client.get("/api/app/enrollment-links")).body as { token: string; programId: string }[]).find((l) => l.programId === program.id)!.token;
     for (let i = 0; i < 3; i++) {
-      expect((await http().post(`/api/public/join/${token}`).send({ firstName: `Q${i}`, phone: randomPhone(), acceptTerms: true })).status).toBe(201);
+      expect((await selfEnroll(app, token, { firstName: `Q${i}`, phone: randomPhone(), acceptTerms: true })).status).toBe(200);
     }
-    const over = await http().post(`/api/public/join/${token}`).send({ firstName: "Trop", phone: randomPhone(), acceptTerms: true });
+    const over = await selfEnroll(app, token, { firstName: "Trop", phone: randomPhone(), acceptTerms: true });
     expect(over.status).toBe(409);
     expect(over.body.error.code).toBe("enrollment_closed");
     // Le client ne voit jamais l'offre ni la limite du commerçant.
@@ -97,7 +97,7 @@ describe("offre Gratuite : quotas sur chaque chemin de création de client", () 
     const token = ((await client.get("/api/app/enrollment-links")).body as { token: string; programId: string }[]).find((l) => l.programId === program.id)!.token;
     // Le contact du commerce est aussi l'adresse du propriétaire (email de vérification) : on ne garde que les alertes.
     const alerts = async () => (await db.emailOutbox.findMany({ where: { to: contact }, orderBy: { createdAt: "asc" } })).filter((m) => /atteint|rejoindre/.test(m.subject));
-    const join = () => http().post(`/api/public/join/${token}`).send({ firstName: "Q", phone: randomPhone(), acceptTerms: true });
+    const join = () => selfEnroll(app, token, { firstName: "Q", phone: randomPhone(), acceptTerms: true });
     for (let i = 0; i < 3; i++) await join();
     expect((await alerts()).map((m) => m.subject)).toEqual([expect.stringMatching(/a atteint 3 clients/)]);
     await join();

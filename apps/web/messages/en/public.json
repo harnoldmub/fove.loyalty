@@ -150,5 +150,18 @@
     "scan": "Scan with your phone’s camera",
     "stampsOffer": "{count, plural, one {# visit} other {# visits}} = {reward}",
     "print": "Print the poster"
+  },
+  "account": {
+    "haveAccount": "I already have a FOVE account",
+    "joinTitle": "Join {tenant}",
+    "signedInAs": "Signed in as {email}",
+    "notYou": "Not you?",
+    "logout": "Sign out",
+    "emailHint": "Your FOVE account groups your cards: you can find them on any phone.",
+    "confirmTitle": "Confirm your email",
+    "confirmText": "To add a card at {tenant}, first confirm your FOVE account address: {email}.",
+    "knownTitle": "You already have a FOVE account",
+    "knownText": "A code has just been sent to {email}. Enter it to add this card to your account.",
+    "loadError": "This page couldn't be loaded. Check your connection."
   }
 }

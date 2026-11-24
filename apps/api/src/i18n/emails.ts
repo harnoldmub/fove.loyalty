@@ -259,6 +259,127 @@ export function otpMessage(locale: Locale, tenantName: string, code: string): Co
   return { subject: t.otpSubject(tenantName), text: t.otp(code) };
 }
 
+// --- Compte client FOVE -------------------------------------------------------
+
+const CLIENT_ACCOUNT = {
+  fr: {
+    subject: "Votre code de connexion FOVE",
+    text: (code: string) =>
+      `Votre code de connexion à votre compte FOVE : ${code}\nIl expire dans 10 minutes.\n\nSi vous n'avez pas demandé ce code, ignorez cet email : personne ne peut se connecter sans lui.`,
+  },
+  en: {
+    subject: "Your FOVE sign-in code",
+    text: (code: string) =>
+      `Your FOVE account sign-in code: ${code}\nIt expires in 10 minutes.\n\nIf you didn't request this code, ignore this email: nobody can sign in without it.`,
+  },
+  ar: {
+    subject: "رمز تسجيل الدخول إلى FOVE",
+    text: (code: string) =>
+      `رمز تسجيل الدخول إلى حسابك في FOVE: ${code}\nتنتهي صلاحيته خلال 10 دقائق.\n\nإذا لم تطلب هذا الرمز، فتجاهل هذه الرسالة: لا يمكن لأحد تسجيل الدخول بدونه.`,
+  },
+  es: {
+    subject: "Tu código de acceso a FOVE",
+    text: (code: string) =>
+      `Tu código de acceso a tu cuenta FOVE: ${code}\nCaduca en 10 minutos.\n\nSi no has pedido este código, ignora este correo: nadie puede iniciar sesión sin él.`,
+  },
+} satisfies Record<Locale, unknown>;
+
+const CLIENT_CONFIRM = {
+  fr: {
+    subject: "Confirmez votre email — FOVE",
+    heading: "Votre carte est prête",
+    body: "Confirmez votre adresse email pour retrouver toutes vos cartes FOVE, même sur un autre téléphone.",
+    code: (code: string) => `Votre code de confirmation : ${code} (valable 10 minutes).`,
+    button: "Confirmer mon email",
+    footer: "Si vous n'avez pas créé de carte de fidélité, ignorez cet email : rien ne sera rattaché à votre adresse sans ce code.",
+  },
+  en: {
+    subject: "Confirm your email — FOVE",
+    heading: "Your card is ready",
+    body: "Confirm your email address to find all your FOVE cards, even on another phone.",
+    code: (code: string) => `Your confirmation code: ${code} (valid for 10 minutes).`,
+    button: "Confirm my email",
+    footer: "If you didn't create a loyalty card, ignore this email: nothing will be linked to your address without this code.",
+  },
+  ar: {
+    subject: "أكّد بريدك الإلكتروني — FOVE",
+    heading: "بطاقتك جاهزة",
+    body: "أكّد عنوان بريدك الإلكتروني لتجد جميع بطاقاتك في FOVE، حتى على هاتف آخر.",
+    code: (code: string) => `رمز التأكيد: ${code} (صالح لمدة 10 دقائق).`,
+    button: "تأكيد بريدي الإلكتروني",
+    footer: "إذا لم تُنشئ بطاقة ولاء، فتجاهل هذه الرسالة: لن يُربط أي شيء بعنوانك بدون هذا الرمز.",
+  },
+  es: {
+    subject: "Confirma tu correo — FOVE",
+    heading: "Tu tarjeta está lista",
+    body: "Confirma tu dirección de correo para encontrar todas tus tarjetas FOVE, incluso en otro teléfono.",
+    code: (code: string) => `Tu código de confirmación: ${code} (válido durante 10 minutos).`,
+    button: "Confirmar mi correo",
+    footer: "Si no has creado ninguna tarjeta de fidelidad, ignora este correo: no se vinculará nada a tu dirección sin este código.",
+  },
+} satisfies Record<Locale, unknown>;
+
+/** Bienvenue après une inscription au scan : code à saisir, ou bouton qui le saisit à la place du client. */
+export function clientConfirmMessage(locale: Locale, code: string, link: string): Content {
+  const t = CLIENT_CONFIRM[locale];
+  return {
+    subject: t.subject,
+    text: `${t.heading}\n\n${t.body}\n${t.code(code)}\n\n${link}\n\n${t.footer}`,
+    html: emailHtml(locale, { title: t.subject, heading: t.heading, paragraphs: [t.body, t.code(code)], button: { label: t.button, url: link }, footer: t.footer }),
+  };
+}
+
+const CLIENT_INACTIVE = {
+  fr: {
+    subject: "Votre compte FOVE sera supprimé dans 30 jours",
+    heading: "Vous voulez garder votre compte FOVE ?",
+    body: (date: string) =>
+      `Votre compte FOVE n'a pas été utilisé depuis longtemps : il sera supprimé le ${date}. Pour le garder, il suffit de vous connecter avant cette date.`,
+    cards: "Vos cartes de fidélité ne seront pas supprimées : elles restent chez chaque commerce, avec vos points.",
+    button: "Garder mon compte",
+    footer: "Vous pouvez aussi ignorer cet email : votre compte sera alors supprimé automatiquement.",
+  },
+  en: {
+    subject: "Your FOVE account will be deleted in 30 days",
+    heading: "Do you want to keep your FOVE account?",
+    body: (date: string) => `Your FOVE account hasn't been used for a long time: it will be deleted on ${date}. To keep it, just sign in before that date.`,
+    cards: "Your loyalty cards will not be deleted: they stay with each business, with your points.",
+    button: "Keep my account",
+    footer: "You can also ignore this email: your account will then be deleted automatically.",
+  },
+  ar: {
+    subject: "سيُحذف حسابك في FOVE خلال 30 يومًا",
+    heading: "هل تريد الاحتفاظ بحسابك في FOVE؟",
+    body: (date: string) => `لم يُستخدم حسابك في FOVE منذ مدة طويلة: سيُحذف بتاريخ ${date}. للاحتفاظ به، يكفي أن تسجّل الدخول قبل هذا التاريخ.`,
+    cards: "لن تُحذف بطاقات الولاء الخاصة بك: تبقى لدى كل متجر مع نقاطك.",
+    button: "الاحتفاظ بحسابي",
+    footer: "يمكنك أيضًا تجاهل هذه الرسالة: سيُحذف حسابك عندها تلقائيًا.",
+  },
+  es: {
+    subject: "Tu cuenta FOVE se eliminará dentro de 30 días",
+    heading: "¿Quieres conservar tu cuenta FOVE?",
+    body: (date: string) => `Tu cuenta FOVE lleva mucho tiempo sin usarse: se eliminará el ${date}. Para conservarla, basta con que inicies sesión antes de esa fecha.`,
+    cards: "Tus tarjetas de fidelidad no se eliminarán: siguen en cada comercio, con tus puntos.",
+    button: "Conservar mi cuenta",
+    footer: "También puedes ignorar este correo: tu cuenta se eliminará automáticamente.",
+  },
+} satisfies Record<Locale, unknown>;
+
+/** Prévenance avant suppression d'un compte client inactif. `date` est déjà formatée dans la langue. */
+export function clientInactivityMessage(locale: Locale, date: string, link: string): Content {
+  const t = CLIENT_INACTIVE[locale];
+  return {
+    subject: t.subject,
+    text: `${t.heading}\n\n${t.body(date)}\n${t.cards}\n\n${link}\n\n${t.footer}`,
+    html: emailHtml(locale, { title: t.subject, heading: t.heading, paragraphs: [t.body(date), t.cards], button: { label: t.button, url: link }, footer: t.footer }),
+  };
+}
+
+export function clientLoginCodeMessage(locale: Locale, code: string): Content {
+  const t = CLIENT_ACCOUNT[locale];
+  return { subject: t.subject, text: t.text(code) };
+}
+
 // --- Offre et quotas (propriétaire du commerce) -------------------------------
 
 const QUOTA = {

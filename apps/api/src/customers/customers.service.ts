@@ -382,6 +382,8 @@ export class CustomersService {
           marketingEmailConsent: false,
           marketingSmsConsent: false,
           anonymizedAt: new Date(),
+          // Détachée du compte client FOVE : le client ne la retrouve plus dans « Mes cartes ».
+          clientAccountId: null,
         },
       });
       await tx.loyaltyAccount.updateMany({ where: { tenantId: ctx.tenantId, customerId: id }, data: { status: "CLOSED" } });

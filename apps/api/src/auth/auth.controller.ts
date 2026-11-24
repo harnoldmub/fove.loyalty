@@ -22,19 +22,14 @@ import { SessionService, sessionCookieName } from "./session.service";
 import { UserRoute } from "./guards";
 import { TeamService } from "../tenants/team.service";
 import { loadConfig } from "../config";
-import { randomToken, safeEqual, sha256 } from "../common/crypto";
 import { requestLocaleOrNull } from "../i18n/locale";
+import { finishGoogleOAuth, safeNext, startGoogleOAuth } from "./google-oauth";
 
 const strict = { default: { limit: 10, ttl: 60_000 } };
-const GOOGLE_STATE_COOKIE = "fove_google_oauth";
-
-function safeNext(value: unknown): string {
-  return typeof value === "string" && value.startsWith("/") && !value.startsWith("//") ? value.slice(0, 500) : "/app";
-}
-
-function googleRedirectUri() {
+/** Connexion Google des commerçants : cookie d'état et adresse de retour propres à l'espace commerçant. */
+function googleFlow() {
   const config = loadConfig();
-  return config.GOOGLE_OAUTH_REDIRECT_URI ?? `${config.APP_URL}/api/auth/google/callback`;
+  return { cookie: "fove_google_oauth", redirectUri: config.GOOGLE_OAUTH_REDIRECT_URI ?? `${config.APP_URL}/api/auth/google/callback` };
 }
 
 function requireCsrf(req: Request) {
@@ -60,29 +55,7 @@ export class AuthController {
   google(@Query("next") next: string | undefined, @Res() res: Response) {
     const config = loadConfig();
     if (!config.googleOAuthEnabled) return res.redirect(303, `${config.APP_URL}/login?oauth_error=unavailable`);
-
-    const state = randomToken("", 24);
-    const verifier = randomToken("", 48);
-    const payload = Buffer.from(JSON.stringify({ state, verifier, next: safeNext(next), at: Date.now() })).toString("base64url");
-    res.cookie(GOOGLE_STATE_COOKIE, payload, {
-      httpOnly: true,
-      secure: config.isProd,
-      sameSite: "lax",
-      path: "/",
-      maxAge: 10 * 60_000,
-    });
-
-    const params = new URLSearchParams({
-      client_id: config.GOOGLE_OAUTH_CLIENT_ID!,
-      redirect_uri: googleRedirectUri(),
-      response_type: "code",
-      scope: "openid email profile",
-      state,
-      code_challenge: Buffer.from(sha256(verifier), "hex").toString("base64url"),
-      code_challenge_method: "S256",
-      prompt: "select_account",
-    });
-    return res.redirect(303, `https://accounts.google.com/o/oauth2/v2/auth?${params}`);
+    return res.redirect(303, startGoogleOAuth(res, googleFlow(), safeNext(next, "/app")));
   }
 
   @Get("google/callback")
@@ -95,48 +68,10 @@ export class AuthController {
     @Res() res: Response,
   ) {
     const config = loadConfig();
-    const fail = () => res.redirect(303, `${config.APP_URL}/login?oauth_error=failed`);
-    const raw = req.cookies?.[GOOGLE_STATE_COOKIE];
-    res.clearCookie(GOOGLE_STATE_COOKIE, { httpOnly: true, secure: config.isProd, sameSite: "lax", path: "/" });
-    if (oauthError || !code || !state || typeof raw !== "string" || raw.length > 2_000 || !config.googleOAuthEnabled) return fail();
-
-    try {
-      const saved = JSON.parse(Buffer.from(raw, "base64url").toString("utf8")) as {
-        state?: string;
-        verifier?: string;
-        next?: string;
-        at?: number;
-      };
-      if (!saved.state || !saved.verifier || !safeEqual(state, saved.state) || !saved.at || Date.now() - saved.at > 10 * 60_000) return fail();
-
-      const tokenResponse = await fetch("https://oauth2.googleapis.com/token", {
-        method: "POST",
-        headers: { "content-type": "application/x-www-form-urlencoded" },
-        body: new URLSearchParams({
-          code,
-          client_id: config.GOOGLE_OAUTH_CLIENT_ID!,
-          client_secret: config.GOOGLE_OAUTH_CLIENT_SECRET!,
-          redirect_uri: googleRedirectUri(),
-          grant_type: "authorization_code",
-          code_verifier: saved.verifier,
-        }),
-      });
-      if (!tokenResponse.ok) return fail();
-      const tokens = (await tokenResponse.json()) as { access_token?: string };
-      if (!tokens.access_token) return fail();
-
-      const profileResponse = await fetch("https://openidconnect.googleapis.com/v1/userinfo", {
-        headers: { authorization: `Bearer ${tokens.access_token}` },
-      });
-      if (!profileResponse.ok) return fail();
-      const profile = (await profileResponse.json()) as { email?: string; email_verified?: boolean; name?: string };
-      if (!profile.email || profile.email_verified !== true) return fail();
-
-      await this.auth.loginWithGoogle({ email: profile.email, name: profile.name ?? "" }, req, res);
-      return res.redirect(303, `${config.APP_URL}${safeNext(saved.next)}`);
-    } catch {
-      return fail();
-    }
+    const result = await finishGoogleOAuth(req, res, googleFlow(), { code, state, error: oauthError });
+    if (!result) return res.redirect(303, `${config.APP_URL}/login?oauth_error=failed`);
+    await this.auth.loginWithGoogle({ email: result.profile.email, name: result.profile.name }, req, res);
+    return res.redirect(303, `${config.APP_URL}${safeNext(result.next, "/app")}`);
   }
 
   @Post("signup")

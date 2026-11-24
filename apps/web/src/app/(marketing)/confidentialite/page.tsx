@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { CookieSettingsButton } from "@/components/cookie-consent";
 import { localizedPageMeta } from "@/lib/og";
@@ -15,6 +16,17 @@ export default async function PrivacyPage() {
 
       <h2>{t("controller.title")}</h2>
       <p>{t("controller.text")}</p>
+
+      <h2>{t("clientAccount.title")}</h2>
+      <p>
+        {t.rich("clientAccount.text", {
+          link: (chunks) => (
+            <Link href="/compte/confidentialite" className="text-cobalt underline underline-offset-4">
+              {chunks}
+            </Link>
+          ),
+        })}
+      </p>
 
       <h2>{t("data.title")}</h2>
       <ul>

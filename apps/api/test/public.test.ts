@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { NestExpressApplication } from "@nestjs/platform-express";
 import request from "supertest";
-import { createPointsProgram, db, earn, lastEmail, ownerWithTenant, randomPhone, resetDatabase, startApp, type Client } from "./helpers";
+import { createCustomerWithCard, createPointsProgram, db, earn, lastEmail, ownerWithTenant, randomPhone, resetDatabase, selfEnroll, startApp, type Client } from "./helpers";
 
 let app: NestExpressApplication;
 let owner: Client;
@@ -19,8 +19,8 @@ beforeAll(async () => {
 });
 afterAll(() => app.close());
 
-function cardToken(url: string) {
-  return url.split("/card/")[1]!;
+function cardToken(path: string) {
+  return path.split("/card/")[1]!;
 }
 
 describe("inscription par QR et carte numérique", () => {
@@ -32,35 +32,38 @@ describe("inscription par QR et carte numérique", () => {
   });
 
   it("un client s'inscrit depuis son téléphone et obtient sa carte", async () => {
-    const res = await http().post(`/api/public/join/${joinToken}`).send({ firstName: "Nadia", lastName: "K", phone: randomPhone(), acceptTerms: true });
-    expect(res.status).toBe(201);
+    const res = await selfEnroll(app, joinToken, { firstName: "Nadia", lastName: "K", phone: randomPhone(), acceptTerms: true });
+    expect(res.status).toBe(200);
     expect(res.body.status).toBe("ACTIVE");
-    const card = await http().get(`/api/public/cards/${cardToken(res.body.cardUrl)}`);
+    const card = await http().get(`/api/public/cards/${cardToken(res.body.cardPath)}`);
     expect(card.status).toBe(200);
     expect(card.body.customer.firstName).toBe("Nadia");
     expect(card.body.card.number).toMatch(/^[A-Z0-9]{2}-[A-Z0-9]{4}-[A-Z0-9]{4}$/);
     expect(card.body.card.balance).toBe(0);
     expect(card.headers["cache-control"]).toBe("no-store");
-    const svg = await http().get(`/api/public/cards/${cardToken(res.body.cardUrl)}/qr.svg`);
+    const svg = await http().get(`/api/public/cards/${cardToken(res.body.cardPath)}/qr.svg`);
     expect(svg.headers["content-type"]).toMatch(/svg/);
   });
 
   it("une seconde inscription avec le même numéro ne révèle pas la carte existante", async () => {
     const phone = randomPhone();
-    await http().post(`/api/public/join/${joinToken}`).send({ firstName: "A", phone, acceptTerms: true });
-    const again = await http().post(`/api/public/join/${joinToken}`).send({ firstName: "Imposteur", phone, acceptTerms: true });
-    expect(again.status).toBe(409);
-    expect(JSON.stringify(again.body)).not.toMatch(/card|fvc_/);
+    const first = await selfEnroll(app, joinToken, { firstName: "A", phone, acceptTerms: true });
+    const again = await selfEnroll(app, joinToken, { firstName: "Imposteur", phone, acceptTerms: true });
+    // Le numéro a pu changer de titulaire : nouvelle fiche, sans le téléphone, et une autre carte.
+    expect(again.status).toBe(200);
+    expect(cardToken(again.body.cardPath)).not.toBe(cardToken(first.body.cardPath));
+    const card = await http().get(`/api/public/cards/${cardToken(again.body.cardPath)}`);
+    expect(card.body.customer.firstName).toBe("Imposteur");
   });
 
   it("refuse le robot (champ piège) et l'absence de consentement", async () => {
-    expect((await http().post(`/api/public/join/${joinToken}`).send({ firstName: "Bot", phone: randomPhone(), acceptTerms: true, website: "spam" })).status).toBe(400);
-    expect((await http().post(`/api/public/join/${joinToken}`).send({ firstName: "Sans", phone: randomPhone(), acceptTerms: false })).status).toBe(400);
+    expect((await selfEnroll(app, joinToken, { firstName: "Bot", phone: randomPhone(), acceptTerms: true, website: "spam" })).status).toBe(400);
+    expect((await selfEnroll(app, joinToken, { firstName: "Sans", phone: randomPhone(), acceptTerms: false })).status).toBe(400);
   });
 
   it("le QR personnel ne donne aucun droit : aucune route publique ne crédite", async () => {
-    const res = await http().post(`/api/public/join/${joinToken}`).send({ firstName: "Q", phone: randomPhone(), acceptTerms: true });
-    const card = await http().get(`/api/public/cards/${cardToken(res.body.cardUrl)}`);
+    const res = await selfEnroll(app, joinToken, { firstName: "Q", phone: randomPhone(), acceptTerms: true });
+    const card = await http().get(`/api/public/cards/${cardToken(res.body.cardPath)}`);
     const qr = card.body.card.qr as string;
     expect((await http().post("/api/app/transactions/earn").set("x-fove-csrf", "1").send({ accountId: qr, amount: "1000", idempotencyKey: "abcdefgh" })).status).toBe(401);
     expect((await http().get(`/api/public/cards/${qr}`)).status).toBe(404);
@@ -68,7 +71,7 @@ describe("inscription par QR et carte numérique", () => {
     const lookup = await owner.post("/api/app/scanner/lookup", { code: qr });
     expect(lookup.status).toBe(200);
     expect((await earn(owner, lookup.body.id, "4000")).body.transaction.delta).toBe(4);
-    expect((await http().get(`/api/public/cards/${cardToken(res.body.cardUrl)}`)).body.card.balance).toBe(4);
+    expect((await http().get(`/api/public/cards/${cardToken(res.body.cardPath)}`)).body.card.balance).toBe(4);
   });
 
   it("un jeton de carte inconnu renvoie 404", async () => {
@@ -79,21 +82,21 @@ describe("inscription par QR et carte numérique", () => {
     const res = await owner.post("/api/app/programs", { name: "Validé", mode: "STAMPS", currency: "CDF", enrollmentVerification: "EMAIL_OTP" });
     const links = (await owner.get("/api/app/enrollment-links")).body as { token: string; programId: string }[];
     const token = links.find((l) => l.programId === res.body.id)!.token;
-    expect((await http().post(`/api/public/join/${token}`).send({ firstName: "Sans", phone: randomPhone(), acceptTerms: true })).status).toBe(400);
     const email = `client${Date.now()}@test.fove`;
-    const join = await http().post(`/api/public/join/${token}`).send({ firstName: "Mail", phone: randomPhone(), email, acceptTerms: true });
+    const join = await selfEnroll(app, token, { firstName: "Mail", phone: randomPhone(), email, acceptTerms: true });
     expect(join.body.status).toBe("PENDING_VERIFICATION");
-    const t = cardToken(join.body.cardUrl);
-    expect((await http().post(`/api/public/cards/${t}/verify`).send({ code: "000000" })).status).toBe(400);
-    const code = /(\d{6})/.exec((await lastEmail(email))!.text)![1];
-    expect((await http().post(`/api/public/cards/${t}/verify`).send({ code })).body.status).toBe("ACTIVE");
+    const t = cardToken(join.body.cardPath);
+    // Le code de confirmation du compte FOVE active la carte.
+    const code = /: (\d{6})/.exec((await lastEmail(email))!.text)![1];
+    expect((await join.client.post("/api/client/auth/verify", { email, code })).status).toBe(200);
+    expect((await http().get(`/api/public/cards/${t}`)).body.card.status).toBe("ACTIVE");
   });
 
   it("« retrouver ma carte » renvoie le même lien, par email ou téléphone, sans le révoquer", async () => {
     const email = `recover${Date.now()}@test.fove`;
     const phone = randomPhone();
-    const join = await http().post(`/api/public/join/${joinToken}`).send({ firstName: "R", phone, email, acceptTerms: true });
-    const token = cardToken(join.body.cardUrl);
+    const join = await selfEnroll(app, joinToken, { firstName: "R", phone, email, acceptTerms: true });
+    const token = cardToken(join.body.cardPath);
     expect((await http().post(`/api/public/join/${joinToken}/recover`).send({ identifier: email })).status).toBe(204);
     expect(/card\/(fvc_[A-Za-z0-9_-]+)/.exec((await lastEmail(email))!.text)![1]).toBe(token);
     // Téléphone saisi au format local avec espaces : le lien part vers l'email de la fiche.
@@ -108,7 +111,8 @@ describe("inscription par QR et carte numérique", () => {
 
   it("une carte sans email n'est jamais renvoyée à l'écran", async () => {
     const phone = randomPhone();
-    await http().post(`/api/public/join/${joinToken}`).send({ firstName: "SansMail", phone, acceptTerms: true });
+    // Carte créée en caisse, sans email.
+    await createCustomerWithCard(owner, programId, phone);
     const before = await db.emailOutbox.count();
     const res = await http().post(`/api/public/join/${joinToken}/recover`).send({ identifier: phone });
     expect(res.status).toBe(204);
@@ -117,8 +121,8 @@ describe("inscription par QR et carte numérique", () => {
   });
 
   it("télécharge la carte en image et en PDF avec le lien cliquable", async () => {
-    const join = await http().post(`/api/public/join/${joinToken}`).send({ firstName: "Image", lastName: "Test", phone: randomPhone(), acceptTerms: true });
-    const token = cardToken(join.body.cardUrl);
+    const join = await selfEnroll(app, joinToken, { firstName: "Image", lastName: "Test", phone: randomPhone(), acceptTerms: true });
+    const token = cardToken(join.body.cardPath);
     const png = await http().get(`/api/public/cards/${token}/carte.png`).buffer(true).parse((res, cb) => { const chunks: Buffer[] = []; res.on("data", (c: Buffer) => chunks.push(c)); res.on("end", () => cb(null, Buffer.concat(chunks))); });
     expect(png.status).toBe(200);
     expect(png.headers["content-type"]).toBe("image/png");
@@ -133,8 +137,8 @@ describe("inscription par QR et carte numérique", () => {
   });
 
   it("Google Wallet reste masqué tant qu'il n'est pas configuré", async () => {
-    const join = await http().post(`/api/public/join/${joinToken}`).send({ firstName: "W", phone: randomPhone(), acceptTerms: true });
-    const token = cardToken(join.body.cardUrl);
+    const join = await selfEnroll(app, joinToken, { firstName: "W", phone: randomPhone(), acceptTerms: true });
+    const token = cardToken(join.body.cardPath);
     expect((await http().get(`/api/public/cards/${token}`)).body.googleWallet).toBe(false);
     expect((await http().get(`/api/public/cards/${token}/google-wallet`)).status).toBe(404);
   });

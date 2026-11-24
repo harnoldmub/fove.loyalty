@@ -100,6 +100,11 @@ const EXACT: Record<string, Tr> = {
   "Aucune validation en attente": ["No verification pending", "لا يوجد تحقق معلّق", "No hay ninguna validación pendiente"],
   "Code expiré : demandez-en un nouveau": ["Code expired: request a new one", "انتهت صلاحية الرمز: اطلب رمزًا جديدًا", "Código caducado: pide uno nuevo"],
   "Code incorrect": ["Incorrect code", "رمز غير صحيح", "Código incorrecto"],
+  "Confirmez votre email pour ouvrir « Mes cartes »": ["Confirm your email to open “My cards”", "أكّد بريدك الإلكتروني لفتح «بطاقاتي»", "Confirma tu correo para abrir «Mis tarjetas»"],
+  "Vous avez déjà une carte rattachée chez ce commerce": ["You already have a card linked at this business", "لديك بالفعل بطاقة مرتبطة لدى هذا المتجر", "Ya tienes una tarjeta vinculada en este comercio"],
+  "Confirmez votre email pour ajouter cette carte": ["Confirm your email to add this card", "أكّد بريدك الإلكتروني لإضافة هذه البطاقة", "Confirma tu correo para añadir esta tarjeta"],
+  "Indiquez votre prénom": ["Enter your first name", "أدخل اسمك", "Indica tu nombre"],
+  "Trop de codes demandés : réessayez dans une heure": ["Too many codes requested: try again in an hour", "طلبت رموزًا كثيرة جدًا: أعد المحاولة بعد ساعة", "Demasiados códigos solicitados: inténtalo de nuevo dentro de una hora"],
   "Format accepté : PNG, JPEG ou WebP": ["Accepted formats: PNG, JPEG or WebP", "الصيغ المقبولة: PNG أو JPEG أو WebP", "Formatos aceptados: PNG, JPEG o WebP"],
   "Image trop lourde (512 Ko maximum)": ["Image too large (512 KB maximum)", "الصورة كبيرة جدًا (512 كيلوبايت كحد أقصى)", "Imagen demasiado pesada (512 KB como máximo)"],
   // Programmes, points, récompenses

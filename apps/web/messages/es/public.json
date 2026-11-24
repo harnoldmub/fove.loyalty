@@ -150,5 +150,18 @@
     "scan": "Escanea con la cámara de tu teléfono",
     "stampsOffer": "{count, plural, one {# visita} other {# visitas}} = {reward}",
     "print": "Imprimir el cartel"
+  },
+  "account": {
+    "haveAccount": "Ya tengo una cuenta FOVE",
+    "joinTitle": "Unirme a {tenant}",
+    "signedInAs": "Sesión iniciada con {email}",
+    "notYou": "¿No eres tú?",
+    "logout": "Cerrar sesión",
+    "emailHint": "Tu cuenta FOVE agrupa tus tarjetas: las encuentras en cualquier teléfono.",
+    "confirmTitle": "Confirma tu correo",
+    "confirmText": "Para añadir una tarjeta en {tenant}, confirma primero la dirección de tu cuenta FOVE: {email}.",
+    "knownTitle": "Ya tienes una cuenta FOVE",
+    "knownText": "Acabamos de enviar un código a {email}. Introdúcelo para añadir esta tarjeta a tu cuenta.",
+    "loadError": "No se ha podido cargar esta página. Comprueba tu conexión."
   }
 }
