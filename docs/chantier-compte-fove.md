@@ -4,7 +4,7 @@
 >
 > | A1 | A2 | A3 | A4 | A5 |
 > |---|---|---|---|---|
-> | Fait (20 nov.) | Fait (24 nov.) | Fait (24 nov.) | Fait (24 nov.) | À faire |
+> | Fait (20 nov.) | Fait (24 nov.) | Fait (24 nov.) | Fait (24 nov.) | Premier jet (24 nov.), relecture juridique à faire |
 
 ## 1. Pourquoi
 

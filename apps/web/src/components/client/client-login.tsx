@@ -8,6 +8,7 @@ import { Field, Input } from "@/components/ui/field";
 import { ErrorNote, SuccessNote } from "@/components/ui/misc";
 import { api, useErrorMessage } from "@/lib/api";
 import { ClientGoogleButton } from "@/components/client/client-google-button";
+import { ClientTermsNotice } from "@/components/client/client-terms-notice";
 
 const RESEND_SECONDS = 60;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -113,7 +114,7 @@ export function ClientLogin() {
           {info && <SuccessNote>{info}</SuccessNote>}
           {oauthError && <ErrorNote>{tGoogle(oauthError === "unavailable" ? "unavailable" : "failed")}</ErrorNote>}
           {error && <ErrorNote>{error}</ErrorNote>}
-          <ClientGoogleButton next={next} />
+          <ClientGoogleButton next={next} notice={false} />
           <Field label={t("email")} hint={t("noPassword")} error={fieldError ?? undefined}>
             {(p) => (
               <Input {...p} type="email" autoComplete="email" inputMode="email" value={email} onChange={(e) => setEmail(e.target.value)} />
@@ -122,6 +123,7 @@ export function ClientLogin() {
           <Button type="submit" loading={busy}>
             {t("sendCode")}
           </Button>
+          <ClientTermsNotice />
         </form>
       ) : (
         <form onSubmit={onCode} className="grid gap-5" noValidate>
@@ -145,6 +147,7 @@ export function ClientLogin() {
           <Button type="submit" loading={busy}>
             {t("verify")}
           </Button>
+          <ClientTermsNotice />
           <div className="flex flex-wrap items-center justify-between gap-3 text-sm">
             <Button type="button" variant="link" disabled={cooldown > 0 || busy} onClick={() => sendCode(true)}>
               {cooldown > 0 ? t("resendIn", { seconds: cooldown }) : t("resend")}

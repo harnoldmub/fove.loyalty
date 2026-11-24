@@ -1367,6 +1367,9 @@ model ClientAccount {
   /// Identifiant Google (« sub »), renseigné à la première connexion Google.
   googleSub       String?   @unique
   locale          String?
+  /// Dernière acceptation des conditions du compte client FOVE (création ou connexion), et leur version.
+  termsAcceptedAt DateTime?
+  termsVersion    String?
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 

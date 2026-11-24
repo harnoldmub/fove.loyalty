@@ -43,6 +43,11 @@ describe("compte client FOVE : connexion par code email", () => {
     expect(me.status).toBe(200);
     expect(me.body.email).toBe(email);
 
+    // Acceptation des conditions du compte client gardée en preuve.
+    const stored = await db.clientAccount.findUniqueOrThrow({ where: { email } });
+    expect(stored.termsVersion).toBe("2026-11-24");
+    expect(stored.termsAcceptedAt).not.toBeNull();
+
     // Session distincte de l'espace commerçant.
     expect((await c.get("/api/auth/me")).status).toBe(401);
   });

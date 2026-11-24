@@ -7,6 +7,7 @@ import { Field, Input } from "@/components/ui/field";
 import { ErrorNote, SuccessNote } from "@/components/ui/misc";
 import { api, useErrorMessage } from "@/lib/api";
 import { ClientGoogleButton } from "@/components/client/client-google-button";
+import { ClientTermsNotice } from "@/components/client/client-terms-notice";
 
 const RESEND_SECONDS = 60;
 
@@ -76,7 +77,8 @@ export function CodeStep({
     }
   }
 
-  const google = withGoogle && <ClientGoogleButton />;
+  // Une seule mention des conditions par écran : celle du bas, qui vaut pour Google comme pour le code.
+  const google = withGoogle && <ClientGoogleButton notice={false} />;
 
   if (!sent) {
     return (
@@ -86,6 +88,7 @@ export function CodeStep({
         <Button size="lg" loading={busy} onClick={send} style={brandStyle}>
           {t("sendCode")}
         </Button>
+        <ClientTermsNotice />
       </div>
     );
   }
@@ -116,6 +119,7 @@ export function CodeStep({
       <Button type="button" variant="link" disabled={cooldown > 0 || busy} onClick={send} className="justify-self-start text-sm">
         {cooldown > 0 ? t("resendIn", { seconds: cooldown }) : t("resend")}
       </Button>
+      <ClientTermsNotice />
     </form>
   );
 }

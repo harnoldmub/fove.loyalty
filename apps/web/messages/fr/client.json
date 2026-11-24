@@ -85,5 +85,201 @@
     "orEmail": "ou avec votre email",
     "failed": "La connexion avec Google n'a pas abouti. Réessayez, ou recevez un code par email.",
     "unavailable": "La connexion avec Google n'est pas disponible pour le moment : recevez un code par email."
+  },
+  "legal": {
+    "draft": "Projet en cours de relecture juridique : ce texte peut encore évoluer.",
+    "frenchOnly": "",
+    "continue": "En continuant, vous acceptez les <terms>conditions d'utilisation</terms> et la <privacy>politique de confidentialité</privacy> du compte FOVE.",
+    "create": "En créant votre carte, vous créez aussi votre compte FOVE et acceptez ses <terms>conditions d'utilisation</terms> et sa <privacy>politique de confidentialité</privacy>.",
+    "termsLink": "Conditions du compte FOVE",
+    "privacyLink": "Confidentialité",
+    "terms": {
+      "title": "Conditions d'utilisation du compte client FOVE",
+      "updated": "Version du 24 novembre 2026",
+      "intro": [
+        "Le compte client FOVE vous permet de retrouver, sur n'importe quel téléphone, toutes vos cartes de fidélité des commerces qui utilisent FOVE. Il est édité par Dizayna [forme sociale, siège social et numéro d'immatriculation : à compléter] (« FOVE », « nous »).",
+        "Ces conditions s'appliquent à toute personne qui crée ou utilise un compte client FOVE (« vous »). Elles s'ajoutent aux conditions du programme de fidélité de chaque commerce, que vous acceptez séparément quand vous le rejoignez."
+      ],
+      "sections": [
+        {
+          "title": "1. Ce que fait le compte FOVE",
+          "items": [
+            "Il regroupe sous une seule identité vos cartes de fidélité des commerces qui utilisent FOVE.",
+            "Chaque carte reste celle de son commerce : ses couleurs, ses règles et ses récompenses.",
+            "Le compte est gratuit."
+          ]
+        },
+        {
+          "title": "2. Le rôle de chaque commerce",
+          "items": [
+            "Chaque commerce fixe librement les règles de son programme (points ou tampons, récompenses, durée de validité) et est seul responsable de leur application, notamment de l'attribution des points et de la remise des récompenses. FOVE fournit l'outil technique ; il n'est pas partie aux programmes de fidélité.",
+            "Les points et tampons n'ont pas de valeur monétaire : ils ne sont ni remboursables, ni échangeables contre de l'argent, ni transférables d'un commerce à un autre. [À valider]",
+            "Un commerce peut modifier ou arrêter son programme, ou cesser d'utiliser FOVE : reportez-vous aux conditions de son programme."
+          ]
+        },
+        {
+          "title": "3. Création du compte et connexion",
+          "items": [
+            "Vous créez votre compte et vous vous connectez avec votre compte Google, ou avec votre adresse email en saisissant un code à 6 chiffres reçu par email. Il n'y a pas de mot de passe.",
+            "Si vous créez votre carte en scannant le QR code d'un commerce, votre compte est créé en même temps. Vous confirmez ensuite votre adresse email, avec le code reçu ou avec Google. Tant que votre email n'est pas confirmé, votre compte ne fonctionne que sur le téléphone où il a été créé et ne permet pas d'ajouter une carte dans un autre commerce.",
+            "Votre numéro de téléphone ne sert jamais à vous connecter : c'est seulement un moyen de contact pour les commerces que vous rejoignez.",
+            "Un compte par personne. Vous vous engagez à utiliser une adresse email dont vous êtes titulaire et à fournir des informations exactes.",
+            "Âge minimum : [à valider — par exemple 15 ans, ou accord d'un parent en dessous]."
+          ]
+        },
+        {
+          "title": "4. Sécurité de votre compte",
+          "items": [
+            "Les codes envoyés par email sont personnels et valables 10 minutes. Ne les communiquez à personne, y compris à un commerçant ou à une personne qui se présente comme FOVE.",
+            "Vous restez connecté sur un téléphone pendant 180 jours, prolongés à chaque utilisation. Sur un appareil partagé, déconnectez-vous depuis « Mes cartes ».",
+            "Prévenez-nous sans attendre si vous constatez une utilisation de votre compte que vous n'avez pas autorisée."
+          ]
+        },
+        {
+          "title": "5. Rattachement des cartes",
+          "items": [
+            "Une carte est ajoutée à votre compte quand vous la créez en étant connecté, ou quand vous acceptez, dans « Mes cartes », une carte qu'un commerce a enregistrée avec votre adresse email confirmée (en caisse, par import ou depuis sa boutique en ligne).",
+            "Si une carte proposée n'est pas la vôtre, choisissez « Ce n'est pas moi » : elle ne vous sera plus proposée.",
+            "Une carte n'est jamais rattachée à votre compte sur la base d'un numéro de téléphone."
+          ]
+        },
+        {
+          "title": "6. Ce que voient les commerces",
+          "items": [
+            "Chaque commerce voit uniquement sa propre fiche client et sa carte : les informations que vous lui donnez en rejoignant son programme (prénom, nom, téléphone, email) et l'historique de vos passages chez lui.",
+            "Un commerce ne voit ni votre compte FOVE, ni les autres commerces où vous avez une carte."
+          ]
+        },
+        {
+          "title": "7. Suppression du compte",
+          "items": [
+            "Vous pouvez supprimer votre compte à tout moment depuis « Mes cartes ». La suppression est immédiate et définitive.",
+            "Vos cartes ne sont pas supprimées : elles restent chez chaque commerce, avec vos points, et leurs liens continuent de fonctionner. Pour effacer vos données chez un commerce, adressez-vous à lui.",
+            "Nous pouvons suspendre ou supprimer un compte utilisé de façon frauduleuse ou contraire à ces conditions. [Modalités et préavis : à valider]"
+          ]
+        },
+        {
+          "title": "8. Disponibilité et responsabilité",
+          "items": [
+            "Nous faisons nos meilleurs efforts pour que le service soit disponible, sans pouvoir garantir une disponibilité permanente (maintenance, incidents techniques).",
+            "FOVE n'est pas responsable des programmes de fidélité des commerces (règles, récompenses, litiges avec un commerce), ni du fonctionnement des services de Google ou de votre messagerie. [Limitation de responsabilité : à valider]"
+          ]
+        },
+        {
+          "title": "9. Données personnelles",
+          "paragraphs": [
+            "Le traitement de vos données pour le compte FOVE est décrit dans la politique de confidentialité du compte client FOVE."
+          ]
+        },
+        {
+          "title": "10. Modification des conditions",
+          "paragraphs": [
+            "Nous pouvons faire évoluer ces conditions. La version en vigueur est datée en haut de cette page. En cas de changement important, vous en serez informé lors de votre prochaine connexion. [Modalités d'acceptation des nouvelles versions : à valider]"
+          ]
+        },
+        {
+          "title": "11. Droit applicable et litiges",
+          "paragraphs": [
+            "[À compléter par le conseil juridique : droit applicable, juridiction compétente et, le cas échéant, médiateur de la consommation, compte tenu des pays où FOVE est proposé.]"
+          ]
+        },
+        {
+          "title": "12. Contact",
+          "paragraphs": [
+            "Pour toute question sur votre compte : page Contact du site FOVE. [Adresse email dédiée : à compléter]"
+          ]
+        }
+      ]
+    },
+    "privacy": {
+      "title": "Politique de confidentialité du compte client FOVE",
+      "updated": "Version du 24 novembre 2026",
+      "intro": [
+        "Cette politique explique comment Dizayna, éditeur de FOVE, traite vos données personnelles pour votre compte client FOVE. Elle ne couvre pas les données de vos cartes chez chaque commerce, qui relèvent de la politique de confidentialité de ce commerce."
+      ],
+      "sections": [
+        {
+          "title": "1. Qui est responsable ?",
+          "items": [
+            "Pour votre compte FOVE : Dizayna [forme sociale, siège social et numéro d'immatriculation : à compléter] est responsable du traitement.",
+            "Pour votre fiche et votre carte chez chaque commerce : le commerce est responsable du traitement, et FOVE agit pour son compte comme sous-traitant. Sa politique de confidentialité est indiquée sur sa page d'inscription."
+          ]
+        },
+        {
+          "title": "2. Les données de votre compte",
+          "items": [
+            "Identité et contact : adresse email, prénom, nom et, si vous le donnez, numéro de téléphone. Ils viennent de vous ou, si vous l'utilisez, de votre compte Google.",
+            "Connexion avec Google : votre identifiant Google, votre nom et votre adresse email. FOVE n'a accès à rien d'autre (ni contacts, ni agenda, ni messages).",
+            "Connexion et sécurité : les codes de connexion (conservés uniquement sous forme d'empreinte), vos sessions (navigateur et adresse IP de l'appareil), la date de confirmation de votre email et la date d'acceptation de ces textes.",
+            "Lien avec vos cartes : la liste des fiches clients de commerces rattachées à votre compte, et celles que vous avez refusées (« Ce n'est pas moi »).",
+            "Journal de sécurité : création du compte, connexions, confirmation de l'email, rattachements de cartes, suppression.",
+            "Votre langue d'affichage."
+          ]
+        },
+        {
+          "title": "3. Pourquoi et sur quelle base",
+          "items": [
+            "Vous fournir le compte : connexion, regroupement de vos cartes, pré-remplissage de vos informations quand vous rejoignez un programme, proposition des cartes enregistrées avec votre email. Base légale : l'exécution des conditions d'utilisation du compte.",
+            "Vous envoyer les emails nécessaires au compte (codes de connexion, confirmation de votre adresse). Base légale : l'exécution des conditions d'utilisation.",
+            "Protéger les comptes et prévenir la fraude, garder la preuve des actions sensibles. Base légale : notre intérêt légitime à assurer la sécurité du service.",
+            "FOVE ne vous envoie pas de publicité, ne fait pas de publicité ciblée et ne vend pas vos données."
+          ]
+        },
+        {
+          "title": "4. Qui reçoit vos données",
+          "items": [
+            "Les commerces ne reçoivent aucune donnée de votre compte FOVE. Quand vous rejoignez un programme, vous transmettez à ce commerce votre prénom, votre nom, votre téléphone et votre email : il en devient alors responsable.",
+            "Nos prestataires techniques, qui agissent sur nos instructions : hébergement de l'application (Railway) [région : à confirmer], base de données (Neon, région de Francfort), envoi des emails (Resend) et, si vous choisissez cette connexion, Google.",
+            "Les autorités, uniquement sur demande légale."
+          ]
+        },
+        {
+          "title": "5. Transferts hors de l'Union européenne",
+          "paragraphs": [
+            "[À valider : certains prestataires sont des sociétés établies aux États-Unis (Railway, Resend, Google). Préciser les garanties applicables, par exemple les clauses contractuelles types de la Commission européenne ou le cadre de protection des données UE–États-Unis.]"
+          ]
+        },
+        {
+          "title": "6. Durées de conservation",
+          "items": [
+            "Votre compte : jusqu'à ce que vous le supprimiez. [À décider : suppression après une durée d'inactivité, par exemple 3 ans — non automatisée à ce jour]",
+            "Vos sessions : 180 jours après leur dernière utilisation, puis supprimées.",
+            "Les codes de connexion : supprimés 24 heures après leur envoi.",
+            "Les cartes refusées (« Ce n'est pas moi ») : jusqu'à la suppression du compte.",
+            "Le journal de sécurité : [durée à valider]. Après la suppression du compte, il ne contient plus que l'identifiant technique du compte, sans votre email."
+          ]
+        },
+        {
+          "title": "7. Vos droits",
+          "items": [
+            "Vous pouvez accéder à vos données, les corriger et les effacer : votre profil se modifie et votre compte se supprime directement dans « Mes cartes ».",
+            "Vous pouvez aussi demander la limitation du traitement, vous y opposer pour des raisons tenant à votre situation, et recevoir vos données dans un format lisible (portabilité) en nous contactant. [Export en libre-service : à prévoir]",
+            "Pour vos données chez un commerce (fiche, carte, historique), adressez-vous à ce commerce.",
+            "Vous pouvez introduire une réclamation auprès de l'autorité de protection des données compétente (en France, la CNIL). [Autorités des autres pays concernés : à compléter]"
+          ]
+        },
+        {
+          "title": "8. Sécurité",
+          "paragraphs": [
+            "Connexion sans mot de passe, codes à usage unique et limités dans le temps et en nombre d'essais, empreintes plutôt que valeurs en clair, sessions séparées de celles des commerçants, chiffrement des échanges (HTTPS), journal des actions sensibles et sauvegardes quotidiennes."
+          ]
+        },
+        {
+          "title": "9. Cookies",
+          "items": [
+            "Un cookie de session, strictement nécessaire, vous garde connecté à votre compte (180 jours au plus).",
+            "Pendant une connexion avec Google, un cookie temporaire (10 minutes) protège l'échange avec Google.",
+            "Un cookie mémorise la langue que vous choisissez.",
+            "Ces cookies ne servent pas à la mesure d'audience ni à la publicité. La mesure d'audience du site FOVE est décrite dans sa page « Données personnelles » et n'a lieu qu'avec votre accord."
+          ]
+        },
+        {
+          "title": "10. Modifications et contact",
+          "paragraphs": [
+            "La version en vigueur est datée en haut de cette page. Pour exercer vos droits ou pour toute question : page Contact du site FOVE. [Adresse email dédiée aux données personnelles : à compléter]"
+          ]
+        }
+      ]
+    }
   }
 }

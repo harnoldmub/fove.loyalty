@@ -68,6 +68,7 @@ describe("parcours au scan : situations", () => {
 
     const account = await db.clientAccount.findUniqueOrThrow({ where: { email } });
     expect(account.emailVerifiedAt).toBeNull();
+    expect(account.termsVersion).toBe("2026-11-24");
     expect(account.firstName).toBe("Amina");
     expect(account.phone).toMatch(/^\+243/);
     const fiche = await db.customer.findFirstOrThrow({ where: { tenantId, clientAccountId: account.id } });

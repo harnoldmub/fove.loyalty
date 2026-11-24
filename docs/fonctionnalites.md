@@ -2,7 +2,7 @@
 
 Ce document décrit **tout ce que l'application permet de faire**, pour chaque type d'utilisateur, avec les règles métier qui s'appliquent. Il se lit sans ouvrir le code ni l'application.
 
-- **État décrit** : branche `main` au commit `483f3bc` (10 novembre 2026). Tests automatisés de l'API : 112 sur 112 au vert.
+- **État décrit** : branche `main` au commit `483f3bc` (10 novembre 2026), complétée le 24 novembre 2026 par le **compte client FOVE** (branche `feat/compte-fove` : sections 1, 2, 8 et 9). Tests automatisés de l'API : 181 sur 181 au vert sur cette branche.
 - **Ce qui est décrit** : les fonctions présentes dans le code et accessibles dans l'application. Quand une fonction dépend d'une configuration externe, n'a pas de test automatisé ou est incomplète, elle porte le repère **⚠** et le détail est donné en [section 9](#9-partiel-ou-pas-encore-disponible).
 - **Ce qui n'est pas décrit** : l'architecture technique ([architecture.md](architecture.md)), la sécurité ([securite.md](securite.md)), le RGPD ([rgpd.md](rgpd.md)) et la recette de paiement ([recette-facturation.md](recette-facturation.md)).
 
@@ -30,7 +30,7 @@ FOVE est une plateforme de **cartes de fidélité dématérialisées** pour les 
 
 | Acteur | Ce qu'il fait | Où |
 |---|---|---|
-| **Client final** | Crée sa carte, la garde sur son téléphone, cumule et utilise ses avantages | Page d'inscription du commerce, page de sa carte, Wallet |
+| **Client final** | Crée son compte FOVE et ses cartes, les garde sur son téléphone, cumule et utilise ses avantages | Page d'inscription du commerce, page de sa carte, « Mes cartes » (`/mes-cartes`), Wallet |
 | **Commerçant** | Configure son programme, enregistre les achats, gère ses clients et son équipe | Espace `/app` |
 | **Collaborateur du commerçant** | Agit selon son rôle : caisse, gestion, lecture | Espace `/app` |
 | **Partenaire commercial** | Recommande FOVE à des commerces et touche une commission | Espace `/partner` |
@@ -50,13 +50,14 @@ FOVE est une plateforme de **cartes de fidélité dématérialisées** pour les 
 | **QR d'inscription** | Le QR affiché au comptoir. Il ne sert qu'à **créer** une carte, et il est différent du QR personnel de chaque carte. |
 | **Récompense** | Ce que le client obtient avec ses points ou tampons : un cadeau, une réduction en pourcentage ou une réduction d'un montant fixe. |
 | **Opération** | Toute variation de solde : gain, ajustement, utilisation de récompense, annulation, expiration. Aucune opération ne s'efface. |
+| **Compte FOVE** | L'identité du client final, commune à tous les commerces : elle regroupe ses cartes, chacune restant aux couleurs et aux règles de son commerce. Le commerçant ne la voit pas. |
 | **Segment** | Le statut relationnel calculé pour chaque client : Nouveau, VIP, Régulier, En risque, Dormant. |
 
 ---
 
 ## 2. Le client final
 
-Le client n'a **ni compte ni mot de passe**. Sa carte est un lien secret personnel.
+Le client a un **compte FOVE**, sans mot de passe : il se connecte avec **Google** (le chemin mis en avant) ou avec un **code à 6 chiffres reçu par email**. Le compte regroupe ses cartes de tous les commerces ; chaque carte garde ses couleurs, ses règles et son lien secret personnel, qui continue de fonctionner sans connexion. Le téléphone n'est **jamais** un identifiant : un numéro inactif peut être réattribué à quelqu'un d'autre.
 
 ### 2.1 Obtenir sa carte
 
@@ -74,27 +75,40 @@ Sur la page d'inscription, le client voit :
 - les conditions du programme ;
 - le lien vers la politique de confidentialité du commerçant.
 
-Le formulaire demande :
+**Ce que voit le client en scannant le QR**, selon sa situation :
+
+| Situation | Ce qui se passe |
+|---|---|
+| Connecté, et déjà une carte dans ce programme | Sa carte s'ouvre directement. |
+| Connecté avec un compte confirmé, sans carte ici | « Rejoindre <commerce> » : téléphone pré-rempli, acceptation des conditions du programme, un bouton. |
+| Connecté sans avoir confirmé son email, et une carte dans un autre commerce | « Confirmez votre email » (Google ou code), puis inscription. Un nouveau passage chez le **même** commerce n'est jamais bloqué. |
+| Pas connecté | **Continuer avec Google** (en premier), **J'ai déjà un compte FOVE** (code par email), ou **Créer ma carte** avec son email. L'onglet « Retrouver ma carte » reste disponible ([2.3](#23-retrouver-sa-carte)). |
+
+**Créer ma carte** sans être connecté demande :
 
 | Champ | Règle |
 |---|---|
 | Prénom | Obligatoire |
 | Nom | Facultatif |
-| Téléphone | Obligatoire |
-| Email | Facultatif ; obligatoire si le programme valide les inscriptions par code email |
-| Conditions du programme | Acceptation obligatoire |
-| Offres commerciales | Consentement facultatif. Il couvre les offres par email (si un email est saisi) et par SMS ou WhatsApp. |
+| Téléphone | Obligatoire (contact pour le commerce, jamais identifiant) |
+| Email | Obligatoire : c'est l'identifiant du compte FOVE |
+| Conditions du programme | Acceptation obligatoire ; la mention sous le bouton vaut acceptation des conditions et de la politique de confidentialité du compte FOVE |
+| Offres commerciales | Consentement facultatif. Il couvre les offres par email et par SMS ou WhatsApp. |
+
+- **Email nouveau** : le compte est créé (non confirmé) en même temps que la carte, utilisable tout de suite. Un email de bienvenue contient le code de confirmation et un bouton qui le saisit à la place du client.
+- **Email déjà connu** (compte FOVE existant, ou fiche chez ce commerce avec cet email) : rien n'est créé ; un code est envoyé. Une fois le code saisi, le client est connecté et sa carte est créée dans son compte, ou sa fiche existante est reprise sans doublon. Ce cas indique que l'email est déjà inscrit : choix assumé le 24 novembre 2026.
 
 **Règles**
-- **Pas de doublon.** Si le téléphone ou l'email est déjà connu du commerce, l'inscription est refusée avec « Vous êtes déjà inscrit(e) ». La carte existante n'est jamais révélée : le client est orienté vers « Retrouver ma carte ».
+- **Inscription sans compte** : elle n'existe plus par le QR ou la page du commerce. Les cartes créées en caisse, par import ou par la boutique en ligne restent possibles sans compte ; elles se rattachent plus tard ([2.6](#26-le-compte-fove-et--mes-cartes-)).
+- **Reprise d'une fiche existante** : uniquement sur l'**email confirmé** du compte. Un téléphone déjà connu du commerce sous un autre email donne une **nouvelle fiche sans téléphone** (le numéro a pu changer de titulaire) ; le commerçant voit alors deux fiches.
 - **Validation de l'inscription**, réglée par le commerçant sur chaque programme :
   - *Immédiate* : la carte est active tout de suite.
-  - *Code par email* : un code à 6 chiffres est envoyé. Il est valable 10 minutes, avec un nombre d'essais limité, et peut être renvoyé après 1 minute.
+  - *Code par email* : un compte confirmé est exigé. Avec Google, la carte est active tout de suite ; avec un email non confirmé, la carte attend, et la confirmation du compte (code ou Google, depuis la carte, « Mes cartes » ou le lien de l'email) l'active.
   - *En magasin* : la carte est activée par un employé au prochain passage.
 
   Tant qu'elle n'est pas validée, la carte est « en attente » et ne peut pas être ajoutée au Wallet.
 - **Inscriptions fermées.** Si l'entreprise a atteint son nombre maximum de clients, le client lit « Les inscriptions sont momentanément fermées. Demandez votre carte directement au commerçant ». Il ne voit jamais l'offre du commerçant ; le commerçant, lui, est prévenu par email.
-- **Protection contre les abus** : champ piège anti-robots, nombre de tentatives limité par minute.
+- **Protection contre les abus** : champ piège anti-robots, nombre de tentatives limité par minute, codes limités par email et par adresse IP.
 
 ### 2.2 Sa carte
 
@@ -118,7 +132,8 @@ La page de la carte affiche :
 
 ### 2.3 Retrouver sa carte
 
-Sur la page d'inscription, l'onglet « Retrouver ma carte » demande l'email ou le téléphone utilisé à l'inscription.
+- **Avec son compte FOVE** (nouveau téléphone, autre navigateur) : « J'ai déjà un compte FOVE » ou « Continuer avec Google » sur la page du commerce, puis la carte s'ouvre ; toutes les autres sont dans « Mes cartes ». Aucune aide du caissier.
+- **Sans compte** (carte créée en caisse, par exemple) : l'onglet « Retrouver ma carte » demande l'email ou le téléphone utilisé à l'inscription.
 - Le lien de la carte est envoyé **à l'email enregistré sur la fiche**. Il n'est jamais affiché à l'écran.
 - Il est aussi envoyé par **WhatsApp** si le commerçant est sur une offre payante et que l'envoi WhatsApp automatique est configuré ⚠.
 - La réponse est la même, que la carte existe ou non : on ne peut pas savoir qui est inscrit.
@@ -134,7 +149,22 @@ Sur la page d'inscription, l'onglet « Retrouver ma carte » demande l'email ou 
 
 ### 2.5 Ses données
 
-Le commerçant est responsable des données de ses clients. Le client lui demande l'export ou l'effacement de ses données ([3.5](#35-clients)). L'équipe FOVE n'a pas accès aux fiches des clients des commerces.
+- **Sa fiche et sa carte chez un commerce** : le commerçant en est responsable. Le client lui demande l'export ou l'effacement ([3.5](#35-clients)). L'équipe FOVE n'a pas accès aux fiches des clients des commerces.
+- **Son compte FOVE** : Dizayna en est responsable. Le client modifie son profil et supprime son compte dans « Mes cartes » ; ses cartes restent alors chez chaque commerce, détachées. Textes : `/compte/conditions` et `/compte/confidentialite` (projets, voir [section 9](#9-partiel-ou-pas-encore-disponible)).
+- **Le commerçant ne voit rien du compte** : ni son existence, ni les autres commerces du client.
+
+### 2.6 Le compte FOVE et « Mes cartes »
+
+- **Connexion** (`/mes-cartes/connexion`) : Google, ou email puis code à 6 chiffres (valable 10 minutes, 5 essais, renvoi après 1 minute, 5 codes par heure et par email). La réponse est la même que l'email ait un compte ou non ; un premier code juste crée le compte. Session de 180 jours, prolongée à chaque visite, distincte de celle des commerçants.
+- **Google** : le compte est retrouvé par l'identifiant Google, sinon par l'email, sinon créé avec le prénom et le nom de Google. Il est toujours confirmé ⚠.
+- **Confirmation de l'email** : exigée pour « Mes cartes », pour ajouter une carte dans un 2e commerce et pour se connecter sur un autre appareil. Quand le titulaire de l'email confirme un compte créé sans preuve, les autres sessions de ce compte sont fermées.
+- **« Mes cartes »** (`/mes-cartes`, comptes confirmés) :
+  - les cartes du compte, aux couleurs et au logo de chaque commerce, avec le solde, la plus récemment utilisée en premier ; un appui ouvre la carte ;
+  - « **Ces cartes vous appartiennent ?** » : les fiches avec une carte enregistrées avec son email confirmé (caisse, import, boutique en ligne), avec « Ajouter à mon compte » ou « Ce n'est pas moi » (refus définitif pour ce compte) ;
+  - profil (prénom, nom, téléphone ; l'email ne change pas), déconnexion de l'appareil, suppression du compte ;
+  - installable sur l'écran d'accueil.
+- **Sur la page d'une carte**, un compte non confirmé voit « Retrouvez vos cartes partout » pour confirmer son email.
+- **Acceptation des textes** : la date et la version acceptées sont enregistrées à la création et à chaque connexion.
 
 ---
 
@@ -624,7 +654,7 @@ Sur l'ensemble du site :
   - fin des contrats et des abonnements arrivés à échéance ;
   - relance de confirmation d'email ;
   - nettoyage des sessions et codes expirés.
-- **Emails envoyés par la plateforme** : confirmation d'email et relance, mot de passe oublié, invitation d'équipe, code de validation de carte, lien de carte, alertes de quota, candidature partenaire (accusé, validation, refus), commission et virement partenaire, alertes internes à l'équipe FOVE (contact, candidature, demande de virement) ⚠.
+- **Emails envoyés par la plateforme** : code de connexion et email de bienvenue du compte client FOVE, confirmation d'email et relance, mot de passe oublié, invitation d'équipe, code de validation de carte, lien de carte, alertes de quota, candidature partenaire (accusé, validation, refus), commission et virement partenaire, alertes internes à l'équipe FOVE (contact, candidature, demande de virement) ⚠.
 
 ---
 
@@ -648,6 +678,10 @@ Cette section liste ce qui **existe dans l'application mais n'est pas garanti à
 | **Centre financier** | Non testé | Aucun test automatisé. Les ventes, paiements et factures viennent uniquement de Stripe : un virement ou un paiement hors ligne ne peut pas être saisi (seules les dépenses se saisissent à la main). |
 | **Réglages partenaires « durée du cookie » et « fenêtre de conversion »** | Code incomplet | Modifiables dans l'admin, mais lus nulle part : le cookie du lien partenaire est fixé à 30 jours dans le code, et aucune fenêtre de conversion n'est appliquée. |
 | **Accès associé et responsable financier** | Code incomplet | Aucun écran ne permet d'attribuer ces rôles : il faut modifier la base de données. Le rôle « support » existe mais ne donne aucun accès. |
+| **Connexion Google des clients** | Configuration | Ajouter l'adresse de retour `…/api/client/auth/google/callback` (local et production) sur l'identifiant OAuth Google. Testé avec des réponses de Google simulées, jamais avec un vrai compte Google. |
+| **Textes du compte client FOVE** (conditions, confidentialité) | Code incomplet | Premier jet en français, marqué « projet », à faire relire par un juriste ([juridique-compte-client.md](juridique-compte-client.md)) ; identité légale de Dizayna à compléter. En anglais, arabe et espagnol, le texte s'affiche en français avec une mention, en attendant la traduction de la version validée. |
+| **Export des données du compte FOVE** | Code incomplet | Pas d'export en libre-service : le client passe par le contact. |
+| **Comptes FOVE inactifs** | Code incomplet | Aucune suppression automatique après inactivité : durée à décider. |
 | **Effacement des données d'un client (RGPD)** | Non testé | Aucun test automatisé de l'anonymisation. |
 | **Téléversement du logo** | Non testé | Aucun test automatisé. |
 | **Affichage des prix en euros** sur la page tarifs | Incohérence | La bascule affiche les mêmes montants avec le symbole € (« 199 € ») et la mention « payé en euros », alors que le paiement se fait en dollars US. |

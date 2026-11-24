@@ -469,6 +469,10 @@
       "title": "Who is responsible?",
       "text": "Each merchant is the controller of their customers’ data (customer database, loyalty program). Dizayna, the publisher of FOVE, acts as a processor: FOVE hosts and processes this data on the merchant’s behalf, according to their instructions."
     },
+    "clientAccount": {
+      "title": "FOVE customer account",
+      "text": "If you create a FOVE customer account to group your cards, Dizayna is the controller of that account’s data (email, name, phone, sign-in, list of businesses where you have a card). Businesses have no access to it. Details in the <link>customer account privacy policy</link>."
+    },
     "data": {
       "title": "What data?",
       "customers": "End customers: first name, last name, phone number, optional email, card number, points and rewards history, consents.",

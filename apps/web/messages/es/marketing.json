@@ -469,6 +469,10 @@
       "title": "¿Quién es el responsable?",
       "text": "Cada comercio es responsable del tratamiento de los datos de sus clientes (fichero de clientes, programa de fidelidad). Dizayna, editor de FOVE, actúa como encargado del tratamiento: FOVE aloja y trata estos datos por cuenta del comercio, según sus instrucciones."
     },
+    "clientAccount": {
+      "title": "Cuenta de cliente FOVE",
+      "text": "Si creas una cuenta de cliente FOVE para agrupar tus tarjetas, Dizayna es la responsable del tratamiento de los datos de esa cuenta (correo, nombre, teléfono, inicio de sesión, lista de comercios donde tienes una tarjeta). Los comercios no tienen acceso a ellos. Más detalles en la <link>política de privacidad de la cuenta de cliente</link>."
+    },
     "data": {
       "title": "¿Qué datos?",
       "customers": "Clientes finales: nombre, apellidos, teléfono, email opcional, número de tarjeta, historial de puntos y recompensas, consentimientos.",

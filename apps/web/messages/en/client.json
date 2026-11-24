@@ -85,5 +85,13 @@
     "orEmail": "or with your email",
     "failed": "Signing in with Google didn't work. Try again, or get a code by email.",
     "unavailable": "Signing in with Google isn't available right now: get a code by email."
+  },
+  "legal": {
+    "draft": "Draft under legal review: this text may still change.",
+    "frenchOnly": "This document is currently available in French only.",
+    "continue": "By continuing, you accept the FOVE account <terms>terms of use</terms> and <privacy>privacy policy</privacy>.",
+    "create": "By creating your card, you also create your FOVE account and accept its <terms>terms of use</terms> and <privacy>privacy policy</privacy>.",
+    "termsLink": "FOVE account terms",
+    "privacyLink": "Privacy"
   }
 }

@@ -11,6 +11,7 @@ import { ErrorNote, Skeleton } from "@/components/ui/misc";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CodeStep } from "@/components/client/code-step";
 import { ClientGoogleButton } from "@/components/client/client-google-button";
+import { ClientTermsNotice } from "@/components/client/client-terms-notice";
 import { api, ApiError, errorMessage } from "@/lib/api";
 import { formatNumber } from "@/lib/utils";
 import { readRememberedCards } from "@/lib/remembered-cards";
@@ -372,6 +373,7 @@ function AnonymousJoin({ token, data, rule, onJoined }: { token: string; data: J
             <Button type="submit" size="lg" loading={busy} disabled={!f.firstName || !f.phone || !f.email || !f.acceptTerms} style={{ background: "var(--brand)", color: "#fff" }}>
               {t("join.submit")}
             </Button>
+            <ClientTermsNotice variant="create" />
           </form>
         </TabsContent>
         <TabsContent value="recover">

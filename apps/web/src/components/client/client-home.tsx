@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
@@ -26,6 +27,7 @@ const LOGIN = "/mes-cartes/connexion";
 /** Espace « Mes cartes » du compte client FOVE. Les cartes elles-mêmes arrivent au sous-lot A3. */
 export function ClientHome() {
   const t = useTranslations("client.home");
+  const tLegal = useTranslations("client.legal");
   const errorMessage = useErrorMessage();
   const router = useRouter();
   const [account, setAccount] = useState<ClientAccount | null>(null);
@@ -136,6 +138,14 @@ export function ClientHome() {
             />
           </div>
         </div>
+        <p className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-ink-3">
+          <Link href="/compte/conditions" className="underline underline-offset-2 hover:text-ink">
+            {tLegal("termsLink")}
+          </Link>
+          <Link href="/compte/confidentialite" className="underline underline-offset-2 hover:text-ink">
+            {tLegal("privacyLink")}
+          </Link>
+        </p>
       </div>
     </div>
   );

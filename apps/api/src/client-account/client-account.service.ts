@@ -23,6 +23,15 @@ const MAX_CODES_PER_IP_HOUR = 60;
 const codeHash = (email: string, code: string) => sha256(`client:${email}:${code}`);
 
 /**
+ * Version des conditions d'utilisation et de la politique de confidentialité du compte client
+ * (pages /compte/conditions et /compte/confidentialite). À changer à chaque nouvelle version publiée.
+ */
+export const CLIENT_TERMS_VERSION = "2026-11-24";
+
+/** Les écrans de création et de connexion affichent « En continuant, vous acceptez… » : on en garde la trace. */
+export const termsAccepted = () => ({ termsAcceptedAt: new Date(), termsVersion: CLIENT_TERMS_VERSION });
+
+/**
  * Compte client FOVE : identité unique du client final, commune à tous les commerces.
  * Connexion sans mot de passe, par code à 6 chiffres envoyé par email (Google : sous-lot A4).
  * Aucune réponse ne révèle si un email a un compte.
@@ -93,9 +102,12 @@ export class ClientAccountService {
     let account = await db.clientAccount.findUnique({ where: { email } });
     let created = false;
     if (!account) {
-      account = await db.clientAccount.create({ data: { email, emailVerifiedAt: new Date(), locale: requestLocaleOrNull(req) } });
+      account = await db.clientAccount.create({ data: { email, emailVerifiedAt: new Date(), locale: requestLocaleOrNull(req), ...termsAccepted() } });
       created = true;
-    } else if (!account.emailVerifiedAt) {
+    } else {
+      account = await db.clientAccount.update({ where: { id: account.id }, data: termsAccepted() });
+    }
+    if (!created && !account.emailVerifiedAt) {
       // Compte créé sans preuve de l'email (parcours au scan) : quelqu'un d'autre a pu le créer.
       // Le vrai titulaire reprend la main, les sessions ouvertes jusqu'ici sont fermées.
       account = await db.clientAccount.update({ where: { id: account.id }, data: { emailVerifiedAt: new Date() } });
@@ -127,6 +139,7 @@ export class ClientAccountService {
           firstName: (profile.givenName || profile.name).slice(0, 60),
           lastName: profile.familyName.slice(0, 60),
           locale: requestLocaleOrNull(req),
+          ...termsAccepted(),
         },
       });
       created = true;
@@ -139,6 +152,7 @@ export class ClientAccountService {
           emailVerifiedAt: account.emailVerifiedAt ?? new Date(),
           firstName: account.firstName || (profile.givenName || profile.name).slice(0, 60),
           lastName: account.lastName || profile.familyName.slice(0, 60),
+          ...termsAccepted(),
         },
       });
       if (wasUnverified) {

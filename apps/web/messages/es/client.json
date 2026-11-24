@@ -85,5 +85,13 @@
     "orEmail": "o con tu correo",
     "failed": "No se ha podido iniciar sesión con Google. Inténtalo de nuevo o recibe un código por correo.",
     "unavailable": "El inicio de sesión con Google no está disponible ahora mismo: recibe un código por correo."
+  },
+  "legal": {
+    "draft": "Borrador en revisión jurídica: este texto aún puede cambiar.",
+    "frenchOnly": "Por ahora, este documento solo está disponible en francés.",
+    "continue": "Al continuar, aceptas las <terms>condiciones de uso</terms> y la <privacy>política de privacidad</privacy> de la cuenta FOVE.",
+    "create": "Al crear tu tarjeta, también creas tu cuenta FOVE y aceptas sus <terms>condiciones de uso</terms> y su <privacy>política de privacidad</privacy>.",
+    "termsLink": "Condiciones de la cuenta FOVE",
+    "privacyLink": "Privacidad"
   }
 }

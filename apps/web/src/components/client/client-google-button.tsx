@@ -5,12 +5,13 @@ import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { GoogleIcon } from "@/components/google-icon";
 import { api } from "@/lib/api";
+import { ClientTermsNotice } from "@/components/client/client-terms-notice";
 
 /**
  * « Continuer avec Google » pour le compte client FOVE : le chemin principal, avant le code email.
  * Revient sur `next` (par défaut la page courante). Masqué si Google n'est pas configuré.
  */
-export function ClientGoogleButton({ next, divider = true }: { next?: string; divider?: boolean }) {
+export function ClientGoogleButton({ next, divider = true, notice = true }: { next?: string; divider?: boolean; notice?: boolean }) {
   const t = useTranslations("client.google");
   const pathname = usePathname();
   const [enabled, setEnabled] = useState(false);
@@ -35,6 +36,7 @@ export function ClientGoogleButton({ next, divider = true }: { next?: string; di
         <GoogleIcon />
         {t("continue")}
       </a>
+      {notice && <ClientTermsNotice className="-mt-2 text-center" />}
       {divider && (
         <div className="flex items-center gap-3 text-xs text-ink-3" aria-hidden="true">
           <span className="h-px flex-1 bg-line" />

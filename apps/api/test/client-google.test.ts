@@ -53,7 +53,7 @@ describe("compte client FOVE : continuer avec Google", () => {
     const me = await c.get("/api/client/me");
     expect(me.body).toMatchObject({ email, firstName: "Amina", lastName: "Diallo" });
     expect(me.body.emailVerifiedAt).not.toBeNull();
-    expect((await db.clientAccount.findUniqueOrThrow({ where: { email } })).googleSub).toBe(`sub-${email}`);
+    expect(await db.clientAccount.findUniqueOrThrow({ where: { email } })).toMatchObject({ googleSub: `sub-${email}`, termsVersion: "2026-11-24" });
 
     // De retour sur la page du commerce : un geste pour rejoindre, même pour un 2e commerce.
     expect((await c.get(`/api/client/join/${token}`)).body).toMatchObject({ state: "can_join", verified: true });

@@ -14,7 +14,7 @@ import { QuotaAlertService } from "../billing/quota-alert.service";
 import { WebhooksService } from "../notifications/webhooks.service";
 import { PublicService } from "../public/public.service";
 import { requestLocaleOrNull } from "../i18n/locale";
-import { ClientAccountService } from "./client-account.service";
+import { ClientAccountService, termsAccepted } from "./client-account.service";
 import { ClientSessionService } from "./client-session.service";
 
 type Link = Awaited<ReturnType<PublicService["link"]>>;
@@ -119,7 +119,7 @@ export class ClientEnrollmentService {
     try {
       ({ account, enrolled } = await this.run(link, async (tx) => {
         const created = await tx.clientAccount.create({
-          data: { email, firstName: input.firstName, lastName: input.lastName, locale: requestLocaleOrNull(req) },
+          data: { email, firstName: input.firstName, lastName: input.lastName, locale: requestLocaleOrNull(req), ...termsAccepted() },
           select: ACCOUNT_SELECT,
         });
         await this.audit.log({ action: "client.signup", targetType: "ClientAccount", targetId: created.id, metadata: { method: "enrollment" }, ip: req.ip }, tx);
