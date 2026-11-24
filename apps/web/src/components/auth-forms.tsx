@@ -83,6 +83,7 @@ function GoogleIcon() {
 
 function GoogleLogin({ next }: { next: string }) {
   const t = useTranslations("auth.google");
+  const tAuth = useTranslations("auth");
   const [enabled, setEnabled] = useState(false);
   useEffect(() => {
     api.get<{ google: boolean }>("/auth/providers").then((providers) => setEnabled(providers.google)).catch(() => undefined);
@@ -98,6 +99,8 @@ function GoogleLogin({ next }: { next: string }) {
         <GoogleIcon />
         {t("continue")}
       </a>
+      {/* Google peut créer un compte depuis la connexion comme depuis l'inscription : la mention suit le bouton. */}
+      <p className="-mt-3 text-xs leading-5 text-ink-3">{tAuth.rich("signup.googleTerms", { terms: () => <TermsDialog />, privacy: () => <PrivacyDialog /> })}</p>
       <div className="flex items-center gap-3 text-xs text-ink-3" aria-hidden="true">
         <span className="h-px flex-1 bg-line" />
         {t("orEmail")}
@@ -223,7 +226,6 @@ export function SignupForm() {
         </div>
         <Button type="submit" loading={form.formState.isSubmitting || leaving}>{leaving ? t("signup.leaving") : t("signup.submit")}</Button>
       </form>
-      <p className="mt-4 text-xs leading-5 text-ink-3">{t.rich("signup.googleTerms", { terms: () => <TermsDialog />, privacy: () => <PrivacyDialog /> })}</p>
       <p className="mt-6 text-sm text-ink-2">
         {t("signup.alreadyRegistered")} <Link href={withPlanChoice("/login", offre)} className="text-cobalt hover:underline">{t("actions.login")}</Link>
       </p>
