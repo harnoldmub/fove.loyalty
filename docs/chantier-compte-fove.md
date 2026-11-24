@@ -4,7 +4,7 @@
 >
 > | A1 | A2 | A3 | A4 | A5 |
 > |---|---|---|---|---|
-> | Fait (20 nov.) | Fait (24 nov.) | À faire | À faire | À faire |
+> | Fait (20 nov.) | Fait (24 nov.) | À faire | Fait (24 nov.) | À faire |
 
 ## 1. Pourquoi
 
@@ -151,7 +151,7 @@ Chaque sous-lot a sa branche et ses tests, et il est validé avant le suivant.
 
 ### Prérequis à lancer dès maintenant (hors code)
 
-1. **Google Cloud** : l'identifiant OAuth existe déjà (connexion Google des commerçants). Il faudra y ajouter l'adresse de retour du compte client, en local et en production, au moment du sous-lot A4.
+1. **Google Cloud** : sur l'identifiant OAuth existant (connexion Google des commerçants), ajouter les URI de redirection du compte client : `http://localhost:5290/api/client/auth/google/callback` et `https://<domaine de production>/api/client/auth/google/callback`. Sans cela, Google refuse la connexion des clients. La variable `GOOGLE_OAUTH_CLIENT_REDIRECT_URI` n'est utile que si l'adresse diffère de `APP_URL`.
 2. **Resend** : vérifier que l'envoi est actif en production, avec le domaine d'envoi vérifié.
 3. **Juridique** : prévoir la relecture des CGU et de la politique de confidentialité côté clients (A5).
 

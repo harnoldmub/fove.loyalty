@@ -15,7 +15,7 @@ function mockGoogle(profile: { email: string; email_verified?: boolean; name?: s
   vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
     const url = String(input instanceof Request ? input.url : input);
     if (url.startsWith("https://oauth2.googleapis.com/token")) return Response.json({ access_token: "tok" });
-    if (url.startsWith("https://openidconnect.googleapis.com/v1/userinfo")) return Response.json({ email_verified: true, name: "Amy", ...profile });
+    if (url.startsWith("https://openidconnect.googleapis.com/v1/userinfo")) return Response.json({ sub: `google-${profile.email}`, email_verified: true, name: "Amy", ...profile });
     throw new Error(`fetch inattendu : ${url}`);
   });
 }

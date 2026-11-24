@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Field, Input } from "@/components/ui/field";
 import { ErrorNote, SuccessNote } from "@/components/ui/misc";
 import { api, useErrorMessage } from "@/lib/api";
+import { ClientGoogleButton } from "@/components/client/client-google-button";
 
 const RESEND_SECONDS = 60;
 
@@ -17,6 +18,7 @@ export function CodeStep({
   email,
   alreadySent = false,
   brand,
+  withGoogle = false,
   onVerified,
 }: {
   email: string;
@@ -24,6 +26,8 @@ export function CodeStep({
   alreadySent?: boolean;
   /** Couleur du commerce pour le bouton principal. */
   brand?: boolean;
+  /** Propose d'abord « Continuer avec Google », qui confirme l'email sans code. */
+  withGoogle?: boolean;
   onVerified: () => Promise<void> | void;
 }) {
   const t = useTranslations("client.login");
@@ -72,9 +76,12 @@ export function CodeStep({
     }
   }
 
+  const google = withGoogle && <ClientGoogleButton />;
+
   if (!sent) {
     return (
       <div className="grid gap-4">
+        {google}
         {error && <ErrorNote>{error}</ErrorNote>}
         <Button size="lg" loading={busy} onClick={send} style={brandStyle}>
           {t("sendCode")}
@@ -85,6 +92,7 @@ export function CodeStep({
 
   return (
     <form onSubmit={verify} className="grid gap-4" noValidate>
+      {google}
       {info && <SuccessNote>{info}</SuccessNote>}
       {error && <ErrorNote>{error}</ErrorNote>}
       <Field label={t("code")} hint={t("checkSpam")}>

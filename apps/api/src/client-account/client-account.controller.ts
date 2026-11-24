@@ -1,16 +1,28 @@
-import { Body, Controller, Delete, Get, HttpCode, Patch, Post, Req, Res } from "@nestjs/common";
+import { Body, Controller, Delete, Get, HttpCode, Patch, Post, Query, Req, Res } from "@nestjs/common";
 import { ApiTags } from "@nestjs/swagger";
 import { Throttle } from "@nestjs/throttler";
 import type { Request, Response } from "express";
 import { clientCodeRequestSchema, clientCodeVerifySchema, clientProfileSchema } from "@fove/shared";
 import type { z } from "zod";
 import { ZodPipe } from "../common/zod.pipe";
+import { loadConfig } from "../config";
+import { finishGoogleOAuth, safeNext, startGoogleOAuth } from "../auth/google-oauth";
 import { forbidden } from "../common/errors";
 import { ClientAccountService } from "./client-account.service";
 import { ClientSessionService, type ClientAuthState } from "./client-session.service";
 import { Client, ClientRoute } from "./client-guard";
 
 const strict = { default: { limit: 10, ttl: 60_000 } };
+
+/** Connexion Google des clients : cookie d'état et adresse de retour distincts de ceux des commerçants. */
+function googleFlow() {
+  const config = loadConfig();
+  return { cookie: "fove_client_google_oauth", redirectUri: config.GOOGLE_OAUTH_CLIENT_REDIRECT_URI ?? `${config.APP_URL}/api/client/auth/google/callback` };
+}
+
+function loginPage(next: string, error: string) {
+  return `/mes-cartes/connexion?${new URLSearchParams({ next, oauth_error: error })}`;
+}
 
 function requireCsrf(req: Request) {
   if (req.headers["x-fove-csrf"] !== "1") throw forbidden("En-tête anti-CSRF manquant");
@@ -39,6 +51,32 @@ export class ClientAccountController {
   verify(@Body(new ZodPipe(clientCodeVerifySchema)) body: z.infer<typeof clientCodeVerifySchema>, @Req() req: Request, @Res({ passthrough: true }) res: Response) {
     requireCsrf(req);
     return this.accounts.verifyCode(body.email, body.code, req, res);
+  }
+
+  /** « Continuer avec Google » : départ vers Google, retour sur `next` (page du commerce, « Mes cartes »). */
+  @Get("auth/google")
+  @Throttle(strict)
+  google(@Query("next") next: string | undefined, @Res() res: Response) {
+    const config = loadConfig();
+    const back = safeNext(next, "/mes-cartes");
+    if (!config.googleOAuthEnabled) return res.redirect(303, `${config.APP_URL}${loginPage(back, "unavailable")}`);
+    return res.redirect(303, startGoogleOAuth(res, googleFlow(), back));
+  }
+
+  @Get("auth/google/callback")
+  @Throttle(strict)
+  async googleCallback(
+    @Query("code") code: string | undefined,
+    @Query("state") state: string | undefined,
+    @Query("error") oauthError: string | undefined,
+    @Req() req: Request,
+    @Res() res: Response,
+  ) {
+    const config = loadConfig();
+    const result = await finishGoogleOAuth(req, res, googleFlow(), { code, state, error: oauthError });
+    if (!result) return res.redirect(303, `${config.APP_URL}${loginPage("/mes-cartes", "failed")}`);
+    await this.accounts.loginWithGoogle(result.profile, req, res);
+    return res.redirect(303, `${config.APP_URL}${safeNext(result.next, "/mes-cartes")}`);
   }
 
   @Post("auth/logout")

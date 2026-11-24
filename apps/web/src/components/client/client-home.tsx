@@ -75,7 +75,7 @@ export function ClientHome() {
           <h1 className="font-display text-3xl font-semibold">{t("confirmTitle")}</h1>
           <p className="text-ink-2">{t("confirmBody", { email: account.email })}</p>
         </div>
-        <CodeStep email={account.email} onVerified={load} />
+        <CodeStep email={account.email} withGoogle onVerified={load} />
       </div>
     );
   }

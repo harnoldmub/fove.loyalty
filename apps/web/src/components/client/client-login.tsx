@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Field, Input } from "@/components/ui/field";
 import { ErrorNote, SuccessNote } from "@/components/ui/misc";
 import { api, useErrorMessage } from "@/lib/api";
+import { ClientGoogleButton } from "@/components/client/client-google-button";
 
 const RESEND_SECONDS = 60;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -19,10 +20,12 @@ function safeNext(next: string | null): string {
 /** Connexion au compte client FOVE : email, puis code à 6 chiffres. Aucun mot de passe. */
 export function ClientLogin() {
   const t = useTranslations("client.login");
+  const tGoogle = useTranslations("client.google");
   const errorMessage = useErrorMessage();
   const router = useRouter();
   const params = useSearchParams();
   const next = safeNext(params.get("next"));
+  const oauthError = params.get("oauth_error");
 
   // Lien de l'email de bienvenue : `?email=…&code=…` saisit le code à la place du client.
   const linkEmail = params.get("email") ?? "";
@@ -108,10 +111,12 @@ export function ClientLogin() {
       {step === "email" ? (
         <form onSubmit={onEmail} className="grid gap-5" noValidate>
           {info && <SuccessNote>{info}</SuccessNote>}
+          {oauthError && <ErrorNote>{tGoogle(oauthError === "unavailable" ? "unavailable" : "failed")}</ErrorNote>}
           {error && <ErrorNote>{error}</ErrorNote>}
+          <ClientGoogleButton next={next} />
           <Field label={t("email")} hint={t("noPassword")} error={fieldError ?? undefined}>
             {(p) => (
-              <Input {...p} type="email" autoComplete="email" inputMode="email" autoFocus value={email} onChange={(e) => setEmail(e.target.value)} />
+              <Input {...p} type="email" autoComplete="email" inputMode="email" value={email} onChange={(e) => setEmail(e.target.value)} />
             )}
           </Field>
           <Button type="submit" loading={busy}>

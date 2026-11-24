@@ -63,5 +63,11 @@
     "action": "Confirmer mon email",
     "done": "Email confirmé : vos cartes sont dans « Mes cartes ».",
     "myCards": "Mes cartes"
+  },
+  "google": {
+    "continue": "Continuer avec Google",
+    "orEmail": "ou avec votre email",
+    "failed": "La connexion avec Google n'a pas abouti. Réessayez, ou recevez un code par email.",
+    "unavailable": "La connexion avec Google n'est pas disponible pour le moment : recevez un code par email."
   }
 }

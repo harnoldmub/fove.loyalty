@@ -63,5 +63,11 @@
     "action": "Confirmar mi correo",
     "done": "Correo confirmado: tus tarjetas están en «Mis tarjetas».",
     "myCards": "Mis tarjetas"
+  },
+  "google": {
+    "continue": "Continuar con Google",
+    "orEmail": "o con tu correo",
+    "failed": "No se ha podido iniciar sesión con Google. Inténtalo de nuevo o recibe un código por correo.",
+    "unavailable": "El inicio de sesión con Google no está disponible ahora mismo: recibe un código por correo."
   }
 }

@@ -10,6 +10,7 @@ import { PhoneInput } from "@/components/ui/phone-input";
 import { ErrorNote, Skeleton } from "@/components/ui/misc";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CodeStep } from "@/components/client/code-step";
+import { ClientGoogleButton } from "@/components/client/client-google-button";
 import { api, ApiError, errorMessage } from "@/lib/api";
 import { formatNumber } from "@/lib/utils";
 import { readRememberedCards } from "@/lib/remembered-cards";
@@ -150,7 +151,7 @@ function ConfirmFirst({ email, tenantName, onVerified }: { email: string; tenant
         <h2 className="font-display text-xl font-semibold">{t("confirmTitle")}</h2>
         <p className="text-sm text-ink-2">{t("confirmText", { tenant: tenantName, email })}</p>
       </div>
-      <CodeStep email={email} brand onVerified={onVerified} />
+      <CodeStep email={email} brand withGoogle onVerified={onVerified} />
     </div>
   );
 }
@@ -295,7 +296,7 @@ function AnonymousJoin({ token, data, rule, onJoined }: { token: string; data: J
           <h2 className="font-display text-xl font-semibold">{t("account.knownTitle")}</h2>
           <p className="text-sm text-ink-2">{t("account.knownText", { email: knownEmail })}</p>
         </div>
-        <CodeStep email={knownEmail} alreadySent brand onVerified={joinAfterCode} />
+        <CodeStep email={knownEmail} alreadySent brand withGoogle onVerified={joinAfterCode} />
       </div>
     );
   }
@@ -335,9 +336,13 @@ function AnonymousJoin({ token, data, rule, onJoined }: { token: string; data: J
           </button>
         </div>
       )}
-      <Button asChild variant="secondary" size="lg" className="mb-5 w-full">
-        <a href={loginHref}>{t("account.haveAccount")}</a>
-      </Button>
+      {/* Chemin principal : Google crée (ou retrouve) le compte FOVE, déjà confirmé, et revient ici. */}
+      <div className="mb-5 grid gap-3">
+        <ClientGoogleButton />
+        <Button asChild variant="secondary" className="w-full">
+          <a href={loginHref}>{t("account.haveAccount")}</a>
+        </Button>
+      </div>
       <Tabs value={tab ?? (wantsRecover ? "recover" : "join")} onValueChange={setTab}>
         <TabsList className="mb-5 grid w-full grid-cols-2">
           <TabsTrigger value="join">{t("join.tabJoin")}</TabsTrigger>

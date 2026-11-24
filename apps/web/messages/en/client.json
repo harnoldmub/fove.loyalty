@@ -63,5 +63,11 @@
     "action": "Confirm my email",
     "done": "Email confirmed: your cards are in “My cards”.",
     "myCards": "My cards"
+  },
+  "google": {
+    "continue": "Continue with Google",
+    "orEmail": "or with your email",
+    "failed": "Signing in with Google didn't work. Try again, or get a code by email.",
+    "unavailable": "Signing in with Google isn't available right now: get a code by email."
   }
 }

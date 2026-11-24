@@ -50,6 +50,7 @@ export function AccountBanner({ onVerified }: { onVerified?: () => Promise<void>
       {open ? (
         <CodeStep
           email={email}
+          withGoogle
           onVerified={async () => {
             setDone(true);
             await onVerified?.();

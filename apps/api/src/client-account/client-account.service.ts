@@ -8,6 +8,7 @@ import { AuditService } from "../common/audit.service";
 import { EmailService } from "../notifications/email.service";
 import { clientConfirmMessage, clientLoginCodeMessage } from "../i18n/emails";
 import { loadConfig } from "../config";
+import type { GoogleProfile } from "../auth/google-oauth";
 import { normalizeLocale, requestLocale, requestLocaleOrNull } from "../i18n/locale";
 import { ClientSessionService, type ClientAccountView } from "./client-session.service";
 
@@ -105,6 +106,51 @@ export class ClientAccountService {
     await this.sessions.create(account.id, req, res);
     await this.audit.log({ action: created ? "client.signup" : "client.login", targetType: "ClientAccount", targetId: account.id, metadata: { method: "email_code" }, ip: req.ip });
     return { created, account: view(account) };
+  }
+
+  /**
+   * « Continuer avec Google ». Google garantit l'email (email_verified) : le compte est retrouvé
+   * par l'identifiant Google, sinon par l'email, sinon créé, et il est confirmé dans tous les cas.
+   */
+  async loginWithGoogle(profile: GoogleProfile, req: Request, res: Response): Promise<{ created: boolean }> {
+    const email = normalizeEmail(profile.email);
+    const db = this.prisma.client;
+    let account = (await db.clientAccount.findUnique({ where: { googleSub: profile.sub } })) ?? (await db.clientAccount.findUnique({ where: { email } }));
+    let created = false;
+
+    if (!account) {
+      account = await db.clientAccount.create({
+        data: {
+          email,
+          emailVerifiedAt: new Date(),
+          googleSub: profile.sub,
+          firstName: (profile.givenName || profile.name).slice(0, 60),
+          lastName: profile.familyName.slice(0, 60),
+          locale: requestLocaleOrNull(req),
+        },
+      });
+      created = true;
+    } else {
+      const wasUnverified = !account.emailVerifiedAt;
+      account = await db.clientAccount.update({
+        where: { id: account.id },
+        data: {
+          googleSub: profile.sub,
+          emailVerifiedAt: account.emailVerifiedAt ?? new Date(),
+          firstName: account.firstName || (profile.givenName || profile.name).slice(0, 60),
+          lastName: account.lastName || profile.familyName.slice(0, 60),
+        },
+      });
+      if (wasUnverified) {
+        // Même règle que le code : le titulaire de l'email reprend la main sur un compte créé sans preuve.
+        await this.sessions.revokeAll(account.id);
+        await this.afterEmailVerified(account.id, account.email);
+      }
+    }
+
+    await this.sessions.create(account.id, req, res);
+    await this.audit.log({ action: created ? "client.signup" : "client.login", targetType: "ClientAccount", targetId: account.id, metadata: { method: "google" }, ip: req.ip });
+    return { created };
   }
 
   /**

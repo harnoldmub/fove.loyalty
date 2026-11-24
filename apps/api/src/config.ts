@@ -17,6 +17,8 @@ const schema = z.object({
   GOOGLE_OAUTH_CLIENT_ID: z.string().optional(),
   GOOGLE_OAUTH_CLIENT_SECRET: z.string().optional(),
   GOOGLE_OAUTH_REDIRECT_URI: z.url().optional(),
+  /** Adresse de retour de la connexion Google des clients FOVE (même identifiant OAuth que les commerçants). */
+  GOOGLE_OAUTH_CLIENT_REDIRECT_URI: z.url().optional(),
   STRIPE_SECRET_KEY: z.string().optional(),
   STRIPE_WEBHOOK_SECRET: z.string().optional(),
   /** Identifiants sandbox conservés à côté des identifiants live. */
