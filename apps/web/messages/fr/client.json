@@ -4,7 +4,9 @@
   },
   "meta": {
     "login": "Connexion à mon compte FOVE",
-    "home": "Mes cartes"
+    "home": "Mes cartes",
+    "manifestName": "Mes cartes FOVE",
+    "manifestShort": "Mes cartes"
   },
   "login": {
     "title": "Mon compte FOVE",
@@ -55,7 +57,21 @@
     "deleteConsequence": "Votre compte est supprimé définitivement et vous êtes déconnecté. Vos cartes et vos points restent chez chaque commerce. Pour effacer vos données chez un commerce, adressez-vous à lui.",
     "deleteConfirm": "Supprimer définitivement",
     "confirmTitle": "Confirmez votre email",
-    "confirmBody": "Pour ouvrir « Mes cartes », confirmez l'adresse {email} avec le code que nous vous envoyons."
+    "confirmBody": "Pour ouvrir « Mes cartes », confirmez l'adresse {email} avec le code que nous vous envoyons.",
+    "linkableTitle": "Ces cartes vous appartiennent ?",
+    "linkableBody": "Des commerces ont enregistré une carte avec votre email {email}. Ajoutez-les à votre compte pour les retrouver ici.",
+    "linkableOwner": "Au nom de {name}",
+    "accept": "Ajouter à mon compte",
+    "dismiss": "Ce n'est pas moi",
+    "accepted": "Carte ajoutée à votre compte.",
+    "stamps": "{count} / {target} tampons",
+    "statusPending": "En attente de validation",
+    "statusBlocked": "Bloquée",
+    "cardsEmptyHint": "Scannez le QR code d'un commerce partenaire FOVE pour créer votre première carte.",
+    "openCard": "Ouvrir la carte {tenant}",
+    "installDescription": "Retrouvez toutes vos cartes FOVE en un geste depuis votre écran d'accueil.",
+    "installDone": "« Mes cartes » s'ouvre en un geste, comme une application.",
+    "cardsLoadError": "Impossible de charger vos cartes."
   },
   "banner": {
     "title": "Retrouvez vos cartes partout",

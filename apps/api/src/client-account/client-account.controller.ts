@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, HttpCode, Patch, Post, Query, Req, Res } from "@nestjs/common";
+import { Body, Controller, Delete, Get, HttpCode, Param, ParseUUIDPipe, Patch, Post, Query, Req, Res } from "@nestjs/common";
 import { ApiTags } from "@nestjs/swagger";
 import { Throttle } from "@nestjs/throttler";
 import type { Request, Response } from "express";
@@ -9,6 +9,7 @@ import { loadConfig } from "../config";
 import { finishGoogleOAuth, safeNext, startGoogleOAuth } from "../auth/google-oauth";
 import { forbidden } from "../common/errors";
 import { ClientAccountService } from "./client-account.service";
+import { ClientCardsService } from "./client-cards.service";
 import { ClientSessionService, type ClientAuthState } from "./client-session.service";
 import { Client, ClientRoute } from "./client-guard";
 
@@ -35,6 +36,7 @@ export class ClientAccountController {
   constructor(
     private readonly accounts: ClientAccountService,
     private readonly sessions: ClientSessionService,
+    private readonly myCards: ClientCardsService,
   ) {}
 
   @Post("auth/code")
@@ -97,6 +99,28 @@ export class ClientAccountController {
   @ClientRoute()
   updateProfile(@Client() client: ClientAuthState, @Body(new ZodPipe(clientProfileSchema)) body: z.infer<typeof clientProfileSchema>) {
     return this.accounts.updateProfile(client.account.id, body);
+  }
+
+  /** « Mes cartes » : cartes du compte et fiches à rattacher (compte confirmé). */
+  @Get("me/cards")
+  @ClientRoute()
+  cards(@Client() client: ClientAuthState) {
+    return this.myCards.list(client.account.id);
+  }
+
+  @Post("me/linkable/:customerId")
+  @HttpCode(204)
+  @ClientRoute()
+  async accept(@Client() client: ClientAuthState, @Param("customerId", ParseUUIDPipe) customerId: string) {
+    await this.myCards.accept(client.account.id, customerId);
+  }
+
+  /** « Ce n'est pas moi ». */
+  @Delete("me/linkable/:customerId")
+  @HttpCode(204)
+  @ClientRoute()
+  async dismiss(@Client() client: ClientAuthState, @Param("customerId", ParseUUIDPipe) customerId: string) {
+    await this.myCards.dismiss(client.account.id, customerId);
   }
 
   @Delete("me")

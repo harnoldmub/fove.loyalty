@@ -4,7 +4,7 @@ import { ClientHome } from "@/components/client/client-home";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("client.meta");
-  return { title: t("home"), robots: { index: false } };
+  return { title: t("home"), robots: { index: false }, manifest: "/mes-cartes/manifest.webmanifest" };
 }
 
 export default function Page() {

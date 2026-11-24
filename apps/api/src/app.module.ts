@@ -50,6 +50,7 @@ import { ClientAccountService } from "./client-account/client-account.service";
 import { ClientAccountController } from "./client-account/client-account.controller";
 import { ClientSessionGuard } from "./client-account/client-guard";
 import { ClientEnrollmentService } from "./client-account/client-enrollment.service";
+import { ClientCardsService } from "./client-account/client-cards.service";
 import { ClientJoinController } from "./client-account/client-join.controller";
 
 /**
@@ -96,6 +97,7 @@ import { ClientJoinController } from "./client-account/client-join.controller";
     ClientAccountService,
     ClientSessionGuard,
     ClientEnrollmentService,
+    ClientCardsService,
     SessionGuard,
     TenantGuard,
     SuperAdminGuard,

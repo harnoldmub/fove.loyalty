@@ -9,6 +9,7 @@ import { Field, Input } from "@/components/ui/field";
 import { ErrorNote, Panel, Skeleton, SuccessNote } from "@/components/ui/misc";
 import { PhoneInput } from "@/components/ui/phone-input";
 import { CodeStep } from "@/components/client/code-step";
+import { MyCards } from "@/components/client/my-cards";
 import { api, ApiError, useErrorMessage } from "@/lib/api";
 
 interface ClientAccount {
@@ -94,29 +95,24 @@ export function ClientHome() {
         <p className="text-sm text-ink-3">{t("signedInAs", { email: account.email })}</p>
       </div>
 
-      {isNew ? (
+      {isNew && (
         <Panel className="grid gap-4 p-5">
           <p className="text-ink-2">{t("welcomeBody")}</p>
           <ProfileForm account={account} onSaved={setAccount} errorMessage={errorMessage} />
         </Panel>
-      ) : (
-        <>
-          <section className="grid gap-3" aria-labelledby="cartes">
-            <h2 id="cartes" className="font-display text-xl font-semibold">
-              {t("cardsTitle")}
-            </h2>
-            <Panel className="p-5 text-sm text-ink-2">{t("cardsEmpty")}</Panel>
-          </section>
+      )}
 
-          <section className="grid gap-3" aria-labelledby="profil">
-            <h2 id="profil" className="font-display text-xl font-semibold">
-              {t("profileTitle")}
-            </h2>
-            <Panel className="p-5">
-              <ProfileForm account={account} onSaved={setAccount} errorMessage={errorMessage} />
-            </Panel>
-          </section>
-        </>
+      <MyCards email={account.email} />
+
+      {!isNew && (
+        <section className="grid gap-3" aria-labelledby="profil">
+          <h2 id="profil" className="font-display text-xl font-semibold">
+            {t("profileTitle")}
+          </h2>
+          <Panel className="p-5">
+            <ProfileForm account={account} onSaved={setAccount} errorMessage={errorMessage} />
+          </Panel>
+        </section>
       )}
 
       <div className="grid gap-6 border-t border-line pt-6">

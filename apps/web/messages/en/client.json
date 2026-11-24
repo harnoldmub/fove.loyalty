@@ -4,7 +4,9 @@
   },
   "meta": {
     "login": "Sign in to my FOVE account",
-    "home": "My cards"
+    "home": "My cards",
+    "manifestName": "My FOVE cards",
+    "manifestShort": "My cards"
   },
   "login": {
     "title": "My FOVE account",
@@ -55,7 +57,21 @@
     "deleteConsequence": "Your account is permanently deleted and you are signed out. Your cards and points stay with each business. To erase your data at a business, contact that business.",
     "deleteConfirm": "Delete permanently",
     "confirmTitle": "Confirm your email",
-    "confirmBody": "To open “My cards”, confirm {email} with the code we send you."
+    "confirmBody": "To open “My cards”, confirm {email} with the code we send you.",
+    "linkableTitle": "Are these cards yours?",
+    "linkableBody": "Some businesses have registered a card with your email {email}. Add them to your account to find them here.",
+    "linkableOwner": "In the name of {name}",
+    "accept": "Add to my account",
+    "dismiss": "That's not me",
+    "accepted": "Card added to your account.",
+    "stamps": "{count} / {target} stamps",
+    "statusPending": "Awaiting validation",
+    "statusBlocked": "Blocked",
+    "cardsEmptyHint": "Scan the QR code of a FOVE partner business to create your first card.",
+    "openCard": "Open the {tenant} card",
+    "installDescription": "Open all your FOVE cards in one tap from your home screen.",
+    "installDone": "“My cards” opens in one tap, like an app.",
+    "cardsLoadError": "Your cards couldn't be loaded."
   },
   "banner": {
     "title": "Find your cards anywhere",

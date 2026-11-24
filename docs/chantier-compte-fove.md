@@ -4,7 +4,7 @@
 >
 > | A1 | A2 | A3 | A4 | A5 |
 > |---|---|---|---|---|
-> | Fait (20 nov.) | Fait (24 nov.) | À faire | Fait (24 nov.) | À faire |
+> | Fait (20 nov.) | Fait (24 nov.) | Fait (24 nov.) | Fait (24 nov.) | À faire |
 
 ## 1. Pourquoi
 
@@ -54,7 +54,7 @@ Le lot A crée un **compte client FOVE**. Une seule identité regroupe toutes le
 
 *Réservé aux comptes confirmés.*
 - La liste de ses cartes, chacune avec le logo, la couleur, le nom du commerce et du programme, et le solde. Un appui ouvre la carte : c'est la page de carte actuelle, inchangée.
-- **Cartes à rattacher** : les cartes créées en caisse, par import ou par la boutique en ligne **avec son email**. Message : « Ces cartes vous appartiennent ? » → **Ajouter à mon compte** ou **Ce n'est pas moi**.
+- **Cartes à rattacher** : les cartes créées en caisse, par import ou par la boutique en ligne **avec son email**. Message : « Ces cartes vous appartiennent ? » → **Ajouter à mon compte** ou **Ce n'est pas moi**. Seules les fiches qui ont une carte sont proposées ; une fiche sans carte est reprise au scan du QR du commerce. Un refus est définitif pour ce compte.
 - **Mon profil** : prénom, nom, téléphone. L'email ne change pas dans le lot A.
 - **Déconnexion** de cet appareil.
 - **Supprimer mon compte** : voir 4.6.
