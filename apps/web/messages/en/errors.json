@@ -51,6 +51,7 @@
     "same_plan": "You are already on this plan",
     "self": "You cannot change your own access",
     "too_large": "Image too large (512 KB maximum)",
-    "visit_already_counted": "Today’s visit has already been counted for this customer."
+    "visit_already_counted": "Today’s visit has already been counted for this customer.",
+    "email_not_verified": "Please confirm your email address first: open the link we sent you."
   }
 }

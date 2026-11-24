@@ -40,6 +40,21 @@ export const partnerLeadSchema = z.object({
 
 export type PartnerLeadDto = z.infer<typeof partnerLeadSchema>;
 
+/** Mise à jour d'un prospect : uniquement ces champs, tous facultatifs. Tout autre champ est écarté. */
+export const partnerLeadUpdateSchema = z.object({
+  businessName: z.string().trim().min(2, "Nom de l'entreprise requis").max(100).optional(),
+  contactName: z.string().trim().max(100).optional().or(z.literal("")),
+  email: z.string().trim().email("Email invalide").toLowerCase().optional().or(z.literal("")),
+  phone: z.string().trim().max(30).optional().or(z.literal("")),
+  city: z.string().trim().max(60).optional().or(z.literal("")),
+  country: z.string().trim().max(60).optional().or(z.literal("")),
+  sector: z.string().trim().max(60).optional().or(z.literal("")),
+  notes: z.string().trim().max(1000).optional().or(z.literal("")),
+  status: z.enum(["NEW", "CONTACTED", "INTERESTED", "REGISTERED", "CONVERTED", "LOST"]).optional(),
+});
+
+export type PartnerLeadUpdateDto = z.infer<typeof partnerLeadUpdateSchema>;
+
 export const partnerPayoutRequestSchema = z.object({
   amountCents: z.number().int().positive().min(5000, "Le seuil minimum de retrait est de 50.00 USD/EUR"),
   method: z.enum(["BANK_TRANSFER", "MOBILE_MONEY", "OTHER"]).default("BANK_TRANSFER"),

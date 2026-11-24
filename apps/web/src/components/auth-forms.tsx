@@ -7,6 +7,7 @@ import { useTranslations } from "next-intl";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { safeInternalPath } from "@fove/shared";
 import { Button } from "@/components/ui/button";
 import { Checkbox, Field, Input } from "@/components/ui/field";
 import { ErrorNote, SuccessNote } from "@/components/ui/misc";
@@ -122,7 +123,7 @@ export function LoginForm() {
     try {
       await api.post("/auth/login", values);
       setLeaving(true);
-      router.replace(next?.startsWith("/") && !next.startsWith("//") ? next : afterAuthPath());
+      router.replace(safeInternalPath(next, afterAuthPath()));
       router.refresh();
     } catch (e) {
       setError(errorMessage(e));
@@ -134,7 +135,7 @@ export function LoginForm() {
       <Heading title={t("login.title")}>
         {planName ? t("login.subtitleWithPlan", { plan: planName }) : t("login.subtitle")}
       </Heading>
-      <GoogleLogin next={next?.startsWith("/") && !next.startsWith("//") ? next : afterAuthPath()} />
+      <GoogleLogin next={safeInternalPath(next, afterAuthPath())} />
       <form onSubmit={onSubmit} className="grid gap-5" noValidate>
         {isResetSuccess && (
           <SuccessNote>{t("login.resetSuccess")}</SuccessNote>

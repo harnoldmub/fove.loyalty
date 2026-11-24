@@ -3,6 +3,7 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
+import { safeInternalPath } from "@fove/shared";
 import { Button } from "@/components/ui/button";
 import { Field, Input } from "@/components/ui/field";
 import { ErrorNote, SuccessNote } from "@/components/ui/misc";
@@ -15,7 +16,7 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 /** Page interne vers laquelle revenir après connexion (jamais un autre site). */
 function safeNext(next: string | null): string {
-  return next?.startsWith("/") && !next.startsWith("//") ? next : "/mes-cartes";
+  return safeInternalPath(next, "/mes-cartes");
 }
 
 /** Connexion au compte client FOVE : email, puis code à 6 chiffres. Aucun mot de passe. */

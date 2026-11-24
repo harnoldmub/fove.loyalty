@@ -1,5 +1,6 @@
 import type { Request, Response } from "express";
 import { loadConfig } from "../config";
+import { safeInternalPath } from "@fove/shared";
 import { randomToken, safeEqual, sha256 } from "../common/crypto";
 
 /**
@@ -26,7 +27,7 @@ const MAX_AGE_MS = 10 * 60_000;
 
 /** Page interne de retour (jamais un autre site). */
 export function safeNext(value: unknown, fallback: string): string {
-  return typeof value === "string" && value.startsWith("/") && !value.startsWith("//") ? value.slice(0, 500) : fallback;
+  return safeInternalPath(value, fallback);
 }
 
 /** Prépare l'aller vers Google et renvoie l'adresse où rediriger le navigateur. */
