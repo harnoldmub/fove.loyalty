@@ -33,13 +33,13 @@ Le lot A crée un **compte client FOVE**. Une seule identité regroupe toutes le
 | Situation | Ce qui se passe |
 |---|---|
 | **Connecté, et déjà une carte** dans ce programme | Sa carte s'ouvre directement |
-| **Connecté et confirmé, pas de carte ici** | « Rejoindre Café D ? » : présentation du programme et des récompenses, téléphone pré-rempli, case d'acceptation des conditions de D, bouton **Créer ma carte**. Rien d'autre à saisir. |
+| **Connecté et confirmé, pas de carte ici** | « Rejoindre Café D ? » : présentation du programme et des récompenses, téléphone facultatif pré-rempli s'il est connu, case d'acceptation des conditions de D, bouton **Créer ma carte**. Rien d'autre à saisir. |
 | **Connecté mais pas confirmé, et il a déjà une carte dans un autre commerce** | « Confirmez votre email pour ajouter une carte ». Code envoyé, puis retour au parcours précédent. |
 | **Pas connecté** | Deux choix : **Créer ma carte** ou **J'ai déjà un compte FOVE** |
 
 **Créer ma carte**, sans être connecté :
-- **Continuer avec Google** : prénom, nom et email viennent de Google, déjà vérifiés. Le client complète son téléphone et accepte les conditions. Compte confirmé, carte active.
-- **Avec mon email** : prénom, nom (facultatif), téléphone, email, acceptation des conditions, consentement aux offres (facultatif). Compte créé **non confirmé**, carte active tout de suite (sauf validation en magasin, voir 4.4). Un email part avec un lien et un code de confirmation. Sur la carte : « Confirmez votre email pour retrouver vos cartes partout ».
+- **Continuer avec Google** : prénom, nom et email viennent de Google, déjà vérifiés. Le client accepte les conditions ; le téléphone est facultatif. Compte confirmé, carte active.
+- **Avec mon email** : prénom, nom (facultatif), téléphone (facultatif), email (obligatoire), acceptation des conditions, consentement aux offres (facultatif). Compte créé **non confirmé**, carte active tout de suite (sauf validation en magasin, voir 4.4). Un email part avec un lien et un code de confirmation. Sur la carte : « Confirmez votre email pour retrouver vos cartes partout ».
   - **Email déjà connu** (compte FOVE existant, ou fiche chez ce commerce avec cet email) : rien n'est créé. Un code part, et une fois saisi, le client est connecté et sa carte est créée dans son compte, ou sa fiche existante est reprise (décision du 24 novembre 2026, voir 4.7).
 
 **J'ai déjà un compte FOVE** : Google, ou email puis code. Après connexion, retour au tableau ci-dessus.
@@ -90,7 +90,8 @@ Le client scanne le QR, choisit « J'ai déjà un compte FOVE », se connecte av
 
 ### 4.3 Téléphone
 
-- Il reste **obligatoire pour créer une carte**, comme aujourd'hui : il sert au commerçant pour le contact et WhatsApp.
+- Il est **facultatif** (décision du 25 novembre 2026, qui remplace « obligatoire ») : l'**email** est la donnée obligatoire, avec ou sans Google. Le commerçant n'a donc pas toujours de téléphone pour le contact, WhatsApp ou la recherche en caisse (le QR, le nom et l'email restent possibles).
+- S'il est saisi, il doit être valide pour le pays du commerce.
 - Il est enregistré sur le compte et **pré-rempli** lors des inscriptions suivantes.
 - Il n'est jamais utilisé pour se connecter ni pour rattacher une carte.
 

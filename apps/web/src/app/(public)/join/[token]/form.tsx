@@ -208,12 +208,12 @@ function ConnectedJoin({
           <Field label={t("join.lastName")}>{(p) => <Input {...p} autoComplete="family-name" value={f.lastName} onChange={(e) => setF({ ...f, lastName: e.target.value })} />}</Field>
         </div>
       )}
-      <Field label={t("join.phone")}>
+      <Field label={t("join.phoneOptional")}>
         {(p) => <PhoneInput {...p} defaultCountry={data.tenant.country} value={f.phone} onChange={(phone) => setF({ ...f, phone })} />}
       </Field>
       <TermsCheckbox data={data} checked={f.acceptTerms} onChange={(acceptTerms) => setF({ ...f, acceptTerms })} />
       <Checkbox checked={f.marketingConsent} onChange={(e) => setF({ ...f, marketingConsent: e.target.checked })} label={t("join.marketingConsent", { tenant: data.tenant.name })} />
-      <Button type="submit" size="lg" loading={busy} disabled={!f.phone || !f.acceptTerms || (needsName && !f.firstName)} style={{ background: "var(--brand)", color: "#fff" }}>
+      <Button type="submit" size="lg" loading={busy} disabled={!f.acceptTerms || (needsName && !f.firstName)} style={{ background: "var(--brand)", color: "#fff" }}>
         {t("join.submit")}
       </Button>
       <p className="text-center text-xs text-ink-3">
@@ -357,7 +357,7 @@ function AnonymousJoin({ token, data, rule, onJoined }: { token: string; data: J
               <Field label={t("join.firstName")}>{(p) => <Input {...p} autoComplete="given-name" value={f.firstName} onChange={(e) => setF({ ...f, firstName: e.target.value })} />}</Field>
               <Field label={t("join.lastName")}>{(p) => <Input {...p} autoComplete="family-name" value={f.lastName} onChange={(e) => setF({ ...f, lastName: e.target.value })} />}</Field>
             </div>
-            <Field label={t("join.phone")}>
+            <Field label={t("join.phoneOptional")}>
               {(p) => <PhoneInput {...p} defaultCountry={tenant.country} value={f.phone} onChange={(phone) => setF({ ...f, phone })} />}
             </Field>
             <Field label={t("join.email")} hint={t("account.emailHint")}>
@@ -370,7 +370,7 @@ function AnonymousJoin({ token, data, rule, onJoined }: { token: string; data: J
             </div>
             <TermsCheckbox data={data} checked={f.acceptTerms} onChange={(acceptTerms) => setF({ ...f, acceptTerms })} />
             <Checkbox checked={f.marketingConsent} onChange={(e) => setF({ ...f, marketingConsent: e.target.checked })} label={t("join.marketingConsent", { tenant: tenant.name })} />
-            <Button type="submit" size="lg" loading={busy} disabled={!f.firstName || !f.phone || !f.email || !f.acceptTerms} style={{ background: "var(--brand)", color: "#fff" }}>
+            <Button type="submit" size="lg" loading={busy} disabled={!f.firstName || !f.email || !f.acceptTerms} style={{ background: "var(--brand)", color: "#fff" }}>
               {t("join.submit")}
             </Button>
             <ClientTermsNotice variant="create" />
