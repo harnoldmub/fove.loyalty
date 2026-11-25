@@ -1,8 +1,8 @@
-import { Injectable } from "@nestjs/common";
+import { HttpStatus, Injectable } from "@nestjs/common";
 import { DEFAULT_PLANS, PAST_DUE_GRACE_DAYS, resolveFeatures, resolveLimits, type PlanFeatures, type PlanLimits, type QuotaKey } from "@fove/shared";
 import type { Prisma, Subscription, SubscriptionPlan } from "@fove/database";
 import { PrismaService } from "../common/prisma.service";
-import { paymentRequired } from "../common/errors";
+import { AppError, paymentRequired } from "../common/errors";
 
 export type { PlanFeatures, PlanLimits, QuotaKey };
 
@@ -20,6 +20,17 @@ const QUOTA_LABEL: Record<QuotaKey, string> = {
  * (résilié, essai expiré, paiement jamais abouti), les droits sont ceux de
  * l'offre Gratuite.
  */
+/** Nombre de clients qu'un commerce peut inscrire tant qu'aucun propriétaire n'a confirmé son email. */
+export const UNVERIFIED_CUSTOMER_LIMIT = 50;
+
+/** Au moins un propriétaire actif du commerce a confirmé son email (inscription seul, Google ou invitation). */
+export async function hasVerifiedOwner(db: Pick<Prisma.TransactionClient, "tenantMembership">, tenantId: string): Promise<boolean> {
+  const count = await db.tenantMembership.count({
+    where: { tenantId, status: "ACTIVE", role: { key: "OWNER" }, user: { emailVerifiedAt: { not: null } } },
+  });
+  return count > 0;
+}
+
 @Injectable()
 export class PlanService {
   constructor(private readonly prisma: PrismaService) {}
@@ -95,11 +106,19 @@ export class PlanService {
    */
   async assertCustomerQuotaInTx(tx: Prisma.TransactionClient, tenantId: string): Promise<void> {
     const limit = (await this.limits(tenantId)).customers;
-    if (limit === null) return;
-    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${`quota:customers:${tenantId}`}, 0))`;
-    const used = await tx.customer.count({ where: { tenantId, anonymizedAt: null } });
-    if (used + 1 > limit) {
-      throw paymentRequired("quota_exceeded", `Limite de ${limit} ${QUOTA_LABEL.customers} atteinte pour votre offre`);
+    let used: number | null = null;
+    if (limit !== null) {
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${`quota:customers:${tenantId}`}, 0))`;
+      used = await tx.customer.count({ where: { tenantId, anonymizedAt: null } });
+      if (used + 1 > limit) {
+        throw paymentRequired("quota_exceeded", `Limite de ${limit} ${QUOTA_LABEL.customers} atteinte pour votre offre`);
+      }
+    }
+    // Limite douce (docs/chantier-email-non-confirme.md) : sans propriétaire à l'email confirmé,
+    // le fichier clients ne dépasse pas UNVERIFIED_CUSTOMER_LIMIT. Crédits et récompenses restent libres.
+    used ??= await tx.customer.count({ where: { tenantId, anonymizedAt: null } });
+    if (used + 1 > UNVERIFIED_CUSTOMER_LIMIT && !(await hasVerifiedOwner(tx, tenantId))) {
+      throw new AppError(HttpStatus.FORBIDDEN, "email_not_verified", `Confirmez votre email pour inscrire plus de ${UNVERIFIED_CUSTOMER_LIMIT} clients`);
     }
   }
 

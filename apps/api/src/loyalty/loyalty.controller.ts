@@ -16,7 +16,7 @@ import {
 import { z } from "zod";
 import { loadConfig } from "../config";
 import { ZodPipe } from "../common/zod.pipe";
-import { RequirePermission, Tenant } from "../common/decorators";
+import { RequirePermission, RequireVerified, Tenant } from "../common/decorators";
 import type { TenantContext } from "../common/context";
 import { notFound } from "../common/errors";
 import { PrismaService } from "../common/prisma.service";
@@ -148,6 +148,7 @@ export class LoyaltyController {
 
   /** Notification à toutes les cartes Google Wallet du programme (envoi groupé, confirmé côté interface). */
   @Post("programs/:id/wallet-broadcast")
+  @RequireVerified()
   @HttpCode(204)
   @RequirePermission("programs.write")
   async walletBroadcast(@Tenant() ctx: TenantContext, @Param("id", ParseUUIDPipe) id: string, @Body(new ZodPipe(walletMessageSchema)) body: z.infer<typeof walletMessageSchema>) {
@@ -156,6 +157,7 @@ export class LoyaltyController {
 
   /** Notification à tous les clients Wallet de l'entreprise. */
   @Post("wallet-broadcast")
+  @RequireVerified()
   @HttpCode(204)
   @RequirePermission("programs.write")
   async walletBroadcastTenant(@Tenant() ctx: TenantContext, @Body(new ZodPipe(walletMessageSchema)) body: z.infer<typeof walletMessageSchema>) {

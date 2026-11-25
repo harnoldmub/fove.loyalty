@@ -166,6 +166,7 @@ La page de la carte affiche :
   - installable sur l'écran d'accueil.
 - **Sur la page d'une carte**, un compte non confirmé voit « Retrouvez vos cartes partout » pour confirmer son email.
 - **Acceptation des textes** : la date et la version acceptées sont enregistrées à la création et à chaque connexion.
+- **Relances de confirmation** d'un compte créé au scan : J3 et J10, avec un bouton vers la connexion (Google ou nouveau code).
 - **Compte inactif** : sans connexion ni passage en caisse avec une carte rattachée pendant 36 mois (réglable), le client reçoit un email 30 jours avant la suppression ; se connecter garde le compte. La suppression détache les cartes, qui restent chez les commerces.
 
 ---
@@ -175,7 +176,12 @@ La page de la carte affiche :
 ### 3.1 Créer son compte et démarrer
 
 1. **Inscription** : nom, email, mot de passe (10 caractères minimum), acceptation des CGU.
-   - Un email de confirmation est envoyé (lien valable 2 jours), avec une **relance unique 24 h après**. Ne pas confirmer son email ne bloque rien, sauf la création de clés API et de webhooks.
+   - Un email de confirmation est envoyé (lien valable 2 jours), avec des **relances à J1, J3 et J7**. Un bandeau et la fenêtre « Confirmez d'abord votre adresse email » rappellent ce que la confirmation débloque.
+   - **Sans email confirmé** ([chantier-email-non-confirme.md](chantier-email-non-confirme.md)), l'usage simple reste libre : programmes, caisse, crédits, récompenses, paramètres, paiement d'un abonnement. Sont réservés aux comptes confirmés :
+     - inviter ou gérer l'équipe, exporter les données d'un client, importer un fichier, envois groupés Wallet ;
+     - clés API, webhooks, connecteur boutique, espace partenaire ;
+     - **au-delà de 50 clients**, toute nouvelle inscription (caisse, import, QR, boutique, API) tant qu'aucun propriétaire n'a confirmé son email. Au QR, le client lit « inscriptions momentanément fermées » et le commerçant reçoit un email. Crédits et récompenses ne sont jamais bloqués.
+   - Les collaborateurs invités et les connexions Google ont d'office un email confirmé.
    - Si la personne avait choisi une offre sur la page tarifs, ce choix est retenu jusqu'au paiement ([4.3](#43-règles-dabonnement)).
 2. **Assistant de création du commerce**, que l'on peut interrompre et reprendre plus tard :
    - nom du commerce, adresse de sa page publique, pays (la devise se règle selon le pays) ;
@@ -654,7 +660,7 @@ Sur l'ensemble du site :
   - nouvel essai des webhooks en échec ;
   - expiration des soldes inactifs ;
   - fin des contrats et des abonnements arrivés à échéance ;
-  - relance de confirmation d'email ;
+  - relances de confirmation de l'email (commerçants J1/J3/J7, clients J3/J10) ;
   - prévenance puis suppression des comptes clients FOVE inactifs ;
   - nettoyage des sessions et codes expirés.
 - **Emails envoyés par la plateforme** : code de connexion, email de bienvenue et prévenance avant suppression pour inactivité du compte client FOVE, confirmation d'email et relance, mot de passe oublié, invitation d'équipe, code de validation de carte, lien de carte, alertes de quota, candidature partenaire (accusé, validation, refus), commission et virement partenaire, alertes internes à l'équipe FOVE (contact, candidature, demande de virement) ⚠.

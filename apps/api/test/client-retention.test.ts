@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { NestExpressApplication } from "@nestjs/platform-express";
 import request from "supertest";
-import { agent, createPointsProgram, db, earn, lastEmail, ownerWithTenant, randomPhone, resetDatabase, startApp, uniq } from "./helpers";
+import { agent, createPointsProgram, db, earn, lastEmail, ownerWithTenant, randomPhone, resetDatabase, selfEnroll, startApp, uniq } from "./helpers";
 import { ClientAccountService } from "../src/client-account/client-account.service";
 
 let app: NestExpressApplication;
@@ -150,5 +150,38 @@ describe("compte client FOVE : suppression des comptes inactifs", () => {
     await accounts.purgeInactive(new Date());
     expect((await lastEmail(email))!.subject).toBe("Tu cuenta FOVE se eliminará dentro de 30 días");
     await db.clientAccount.delete({ where: { id: account.id } });
+  });
+});
+
+describe("compte client FOVE : relances de confirmation", () => {
+  it("relance à J3 et J10 un compte non confirmé, avec un lien vers la connexion, puis plus rien", async () => {
+    const s = await shop();
+    const email = newEmail();
+    await selfEnroll(app, s.token, { firstName: "Relance", email, acceptTerms: true });
+    const id = (await db.clientAccount.findUniqueOrThrow({ where: { email } })).id;
+    const reminders = () => db.emailOutbox.findMany({ where: { to: email, subject: { contains: "garder vos cartes partout" } } });
+    const ageTo = (days: number) => db.clientAccount.update({ where: { id }, data: { createdAt: new Date(Date.now() - days * DAY - 3_600_000) } });
+
+    await accounts.sendConfirmationReminders(new Date());
+    expect(await reminders()).toHaveLength(0);
+    await ageTo(3);
+    await accounts.sendConfirmationReminders(new Date());
+    await accounts.sendConfirmationReminders(new Date());
+    const first = await reminders();
+    expect(first).toHaveLength(1);
+    expect(first[0]!.text).toContain(`/mes-cartes/connexion?email=${encodeURIComponent(email)}`);
+    expect(first[0]!.text).not.toMatch(/\b\d{6}\b/);
+    await ageTo(10);
+    await accounts.sendConfirmationReminders(new Date());
+    await ageTo(10.9);
+    await accounts.sendConfirmationReminders(new Date());
+    expect(await reminders()).toHaveLength(2);
+  });
+
+  it("ne relance pas un compte confirmé", async () => {
+    const { email, id } = await verifiedClient();
+    await db.clientAccount.update({ where: { id }, data: { createdAt: new Date(Date.now() - 3 * DAY - 3_600_000) } });
+    await accounts.sendConfirmationReminders(new Date());
+    expect(await db.emailOutbox.count({ where: { to: email, subject: { contains: "garder vos cartes partout" } } })).toBe(0);
   });
 });

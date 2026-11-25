@@ -247,9 +247,10 @@ export class ClientEnrollmentService {
     try {
       return await this.prisma.client.$transaction(fn);
     } catch (error) {
-      if (error instanceof AppError && error.code === "quota_exceeded") {
-        // Le client ne voit pas l'offre du commerçant ; le commerçant est prévenu.
-        await this.quotaAlerts.customerBlocked(link.tenantId);
+      if (error instanceof AppError && (error.code === "quota_exceeded" || error.code === "email_not_verified")) {
+        // Le client ne voit ni l'offre ni le compte du commerçant ; le commerçant est prévenu.
+        if (error.code === "quota_exceeded") await this.quotaAlerts.customerBlocked(link.tenantId);
+        else await this.quotaAlerts.unverifiedBlocked(link.tenantId);
         throw conflict("enrollment_closed", "Les inscriptions sont momentanément fermées. Demandez votre carte directement au commerçant.");
       }
       if (error instanceof AppError && error.code === "customer_exists") {

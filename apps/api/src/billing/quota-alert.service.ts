@@ -3,9 +3,9 @@ import { loadConfig } from "../config";
 import { PrismaService } from "../common/prisma.service";
 import { AuditService } from "../common/audit.service";
 import { EmailService } from "../notifications/email.service";
-import { PlanService } from "./plan.service";
+import { PlanService, UNVERIFIED_CUSTOMER_LIMIT } from "./plan.service";
 import { tenantLocale } from "../i18n/locale";
-import { quotaAlertMessage } from "../i18n/emails";
+import { quotaAlertMessage, unverifiedLimitMessage } from "../i18n/emails";
 
 type Reason = "reached" | "blocked";
 
@@ -40,6 +40,26 @@ export class QuotaAlertService {
   async customerBlocked(tenantId: string): Promise<void> {
     const limit = (await this.plans.limits(tenantId)).customers;
     if (limit !== null) await this.notify(tenantId, "blocked", limit);
+  }
+
+  /** Un client s'est vu refuser l'inscription par la limite douce (aucun propriétaire à l'email confirmé). */
+  async unverifiedBlocked(tenantId: string): Promise<void> {
+    try {
+      const recent = await this.prisma.client.auditLog.findFirst({
+        where: { tenantId, action: "billing.unverified_limit_alert", createdAt: { gte: new Date(Date.now() - REPEAT_AFTER_MS) } },
+      });
+      if (recent) return;
+      const tenant = await this.prisma.client.tenant.findUnique({ where: { id: tenantId }, include: { settings: true } });
+      const to = tenant?.settings?.contactEmail;
+      if (!tenant || !to) return;
+      await this.email.send({
+        to,
+        ...unverifiedLimitMessage(tenantLocale(tenant.settings), { tenantName: tenant.name, limit: UNVERIFIED_CUSTOMER_LIMIT, appUrl: `${loadConfig().APP_URL}/app` }),
+      });
+      await this.audit.log({ tenantId, action: "billing.unverified_limit_alert", metadata: { limit: UNVERIFIED_CUSTOMER_LIMIT } });
+    } catch (error) {
+      this.logger.warn(`Alerte de limite non envoyée pour ${tenantId} : ${(error as Error).message}`);
+    }
   }
 
   private async notify(tenantId: string, reason: Reason, limit: number): Promise<void> {

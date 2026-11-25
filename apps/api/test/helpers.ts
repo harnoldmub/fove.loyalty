@@ -79,11 +79,13 @@ export function uniq(prefix: string) {
  * l'offre Gratuite ; par défaut on la passe en Business pour tester les
  * fonctions sans se heurter aux quotas.
  */
-export async function ownerWithTenant(app: NestExpressApplication, opts: { slug?: string; plan?: string } = {}) {
+export async function ownerWithTenant(app: NestExpressApplication, opts: { slug?: string; plan?: string; verified?: boolean } = {}) {
   const client = agent(app);
   const email = `${uniq("owner")}@test.fove`;
   const signup = await client.post("/api/auth/signup", { name: "Owner Test", email, password: "motdepasse123", acceptTerms: true });
   if (signup.status !== 201) throw new Error(`signup ${signup.status} ${JSON.stringify(signup.body)}`);
+  // Propriétaire à l'email confirmé par défaut (cas courant) ; `verified: false` pour tester les limites.
+  if (opts.verified !== false) await db.user.update({ where: { email }, data: { emailVerifiedAt: new Date() } });
   const slug = opts.slug ?? uniq("shop-");
   const tenant = await client.post("/api/app/tenants", { name: `Commerce ${slug}`, slug });
   if (tenant.status !== 201) throw new Error(`tenant ${tenant.status} ${JSON.stringify(tenant.body)}`);

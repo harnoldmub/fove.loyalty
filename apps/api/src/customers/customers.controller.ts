@@ -10,7 +10,7 @@ import {
 } from "@fove/shared";
 import { z } from "zod";
 import { ZodPipe } from "../common/zod.pipe";
-import { RequirePermission, Tenant } from "../common/decorators";
+import { RequirePermission, RequireVerified, Tenant } from "../common/decorators";
 import type { TenantContext } from "../common/context";
 import { TenantRoute } from "../auth/guards";
 import { PlanService } from "../billing/plan.service";
@@ -44,6 +44,7 @@ export class CustomersController {
   }
 
   @Post("import")
+  @RequireVerified()
   @RequirePermission("customers.import")
   import(@Tenant() ctx: TenantContext, @Body(new ZodPipe(importCustomersSchema)) body: z.infer<typeof importCustomersSchema>) {
     return this.customers.import(ctx, body);
@@ -91,6 +92,7 @@ export class CustomersController {
   }
 
   @Get(":id/export")
+  @RequireVerified()
   @RequirePermission("customers.export")
   async export(@Tenant() ctx: TenantContext, @Param("id", ParseUUIDPipe) id: string) {
     await this.plans.assertFeature(ctx.tenantId, "exports");

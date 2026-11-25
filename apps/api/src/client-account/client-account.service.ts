@@ -6,7 +6,7 @@ import { AppError, badRequest } from "../common/errors";
 import { PrismaService } from "../common/prisma.service";
 import { AuditService } from "../common/audit.service";
 import { EmailService } from "../notifications/email.service";
-import { clientConfirmMessage, clientInactivityMessage, clientLoginCodeMessage } from "../i18n/emails";
+import { clientConfirmMessage, clientConfirmReminderMessage, clientInactivityMessage, clientLoginCodeMessage } from "../i18n/emails";
 import { loadConfig } from "../config";
 import type { GoogleProfile } from "../auth/google-oauth";
 import { DEFAULT_LOCALE, INTL_LOCALE, normalizeLocale, requestLocale, requestLocaleOrNull, type Locale } from "../i18n/locale";
@@ -15,6 +15,8 @@ import { ClientSessionService, type ClientAccountView } from "./client-session.s
 /** Prévenance avant suppression d'un compte inactif, et taille des lots de la tâche planifiée. */
 const INACTIVITY_NOTICE_MS = 30 * 86_400_000;
 const PURGE_BATCH = 200;
+/** Jours après la création où l'on relance un compte client non confirmé. */
+const CONFIRM_REMINDER_DAYS = [3, 10];
 
 const EXPORT_NOTICE: Record<Locale, string> = {
   fr: "Ce fichier contient les données de votre compte FOVE. Les données de vos cartes chez chaque commerce (fiche, historique des passages) sont détenues par ce commerce : adressez-vous à lui pour les obtenir.",
@@ -282,6 +284,35 @@ export class ClientAccountService {
       dismissedCards: dismissed.map((d) => ({ business: d.customer.tenant.name, at: d.createdAt })),
       securityLog: journal,
     };
+  }
+
+  /**
+   * Relances des comptes non confirmés (tâche planifiée) : J3 et J10 après la création, puis plus rien.
+   * Pas de code dans l'email (il ne vivrait que 10 minutes) : un bouton vers la connexion, email pré-rempli.
+   */
+  async sendConfirmationReminders(now = new Date()): Promise<number> {
+    const DAY = 86_400_000;
+    const db = this.prisma.client;
+    const accounts = await db.clientAccount.findMany({
+      where: {
+        emailVerifiedAt: null,
+        createdAt: { lt: new Date(now.getTime() - CONFIRM_REMINDER_DAYS[0]! * DAY), gt: new Date(now.getTime() - (CONFIRM_REMINDER_DAYS.at(-1)! + 1) * DAY) },
+      },
+      select: { id: true, email: true, locale: true, createdAt: true },
+      take: PURGE_BATCH,
+    });
+    let sent = 0;
+    for (const account of accounts) {
+      const already = await db.auditLog.count({ where: { action: "client.confirmation_reminder", targetType: "ClientAccount", targetId: account.id } });
+      const dueDay = CONFIRM_REMINDER_DAYS[already];
+      if (dueDay === undefined || now.getTime() - account.createdAt.getTime() < dueDay * DAY) continue;
+      const locale = normalizeLocale(account.locale) ?? DEFAULT_LOCALE;
+      const link = `${loadConfig().APP_URL}/mes-cartes/connexion?${new URLSearchParams({ email: account.email })}`;
+      await this.email.send({ to: account.email, ...clientConfirmReminderMessage(locale, link) });
+      await this.audit.log({ action: "client.confirmation_reminder", targetType: "ClientAccount", targetId: account.id });
+      sent += 1;
+    }
+    return sent;
   }
 
   /**

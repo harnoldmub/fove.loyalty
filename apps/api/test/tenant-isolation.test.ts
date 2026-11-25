@@ -70,10 +70,7 @@ describe("isolation multi-tenant", () => {
   });
 
   it("une clé API de B n'accède pas aux données de A", async () => {
-    const key = await B.client.post("/api/app/integrations/keys", { name: "Clé B", kind: "SECRET", scopes: ["customers:read", "loyalty:read", "loyalty:write"] });
-    // L'email de B n'est pas vérifié : la création de clé est refusée.
-    expect(key.status).toBe(403);
-    await db.user.update({ where: { email: B.email }, data: { emailVerifiedAt: new Date() } });
+    // (B a confirmé son email : la création de clé lui est ouverte.)
     const ok = await B.client.post("/api/app/integrations/keys", { name: "Clé B", kind: "SECRET", scopes: ["customers:read", "loyalty:read", "loyalty:write"] });
     expect(ok.status, JSON.stringify(ok.body)).toBe(201);
     const http = request(app.getHttpServer());
