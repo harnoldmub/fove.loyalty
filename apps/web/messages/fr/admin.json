@@ -436,6 +436,25 @@
         "confirm": "Valider le paiement",
         "done": "Paiement validé : l’abonnement est actif."
       },
+      "statements": {
+        "title": "Relevés des partenaires",
+        "help": "Chaque mois, les encaissements des partenaires sont compensés avec leurs commissions et frais. Solde positif : le partenaire le verse sous 15 jours avec la référence du relevé ; solde négatif : un versement lui est créé.",
+        "issue": "Émettre les relevés en attente",
+        "issued": "{count, plural, =0 {Aucun relevé à émettre} one {# relevé émis} other {# relevés émis}}",
+        "empty": "Aucun relevé.",
+        "detail": "{period} · encaissé {collected} · commissions et frais {deducted}",
+        "owes": "Reste dû par le partenaire : {amount} (avant le {due})",
+        "credit": "En faveur du partenaire : {amount} (versement créé)",
+        "status": {
+          "ISSUED": "À régler",
+          "PAID": "Réglé",
+          "SETTLED": "Soldé"
+        },
+        "overdue": "Impayé : encaissements bloqués",
+        "amount": "Montant reçu ({currency})",
+        "markPaid": "Paiement reçu",
+        "paid": "Paiement du relevé enregistré."
+      },
       "accounts": {
         "title": "Coordonnées bancaires par pays",
         "help": "Affichées au commerçant et dans l’email d’instructions selon son pays ; « * » = coordonnées par défaut. Algérie : compte local.",

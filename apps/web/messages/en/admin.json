@@ -436,6 +436,25 @@
         "confirm": "Validate payment",
         "done": "Payment validated: the subscription is active."
       },
+      "statements": {
+        "title": "Partner statements",
+        "help": "Each month, partners' collections are netted against their commissions and fees. Positive balance: the partner pays it within 15 days with the statement reference; negative balance: a payout is created for them.",
+        "issue": "Issue pending statements",
+        "issued": "{count, plural, =0 {No statement to issue} one {# statement issued} other {# statements issued}}",
+        "empty": "No statements.",
+        "detail": "{period} · collected {collected} · commissions and fees {deducted}",
+        "owes": "Still owed by the partner: {amount} (before {due})",
+        "credit": "In the partner's favour: {amount} (payout created)",
+        "status": {
+          "ISSUED": "To pay",
+          "PAID": "Paid",
+          "SETTLED": "Settled"
+        },
+        "overdue": "Unpaid: collections blocked",
+        "amount": "Amount received ({currency})",
+        "markPaid": "Payment received",
+        "paid": "Statement payment recorded."
+      },
       "accounts": {
         "title": "Bank details by country",
         "help": "Shown to the merchant and in the instructions email based on their country; \"*\" = default details. Algeria: local account.",

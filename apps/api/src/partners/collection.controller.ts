@@ -8,6 +8,7 @@ import type { AuthState } from "../common/context";
 import { UserRoute } from "../auth/guards";
 import { CollectionService } from "./collection.service";
 import { PartnersService } from "./partners.service";
+import { StatementService } from "./statement.service";
 
 const referenceSchema = z.object({ reference: z.string().trim().min(8).max(30) });
 const collectSchema = referenceSchema.extend({
@@ -24,6 +25,7 @@ export class CollectionController {
   constructor(
     private readonly collection: CollectionService,
     private readonly partners: PartnersService,
+    private readonly statements: StatementService,
   ) {}
 
   /** Plafond, encours, blocage éventuel et historique des encaissements. */
@@ -32,8 +34,8 @@ export class CollectionController {
   @RequireVerified()
   async overview(@Auth() auth: AuthState) {
     const partner = await this.partners.getPartnerByUserId(auth.user.id);
-    const [status, history] = await Promise.all([this.collection.status(partner.id), this.collection.history(auth.user.id)]);
-    return { status, history };
+    const [status, history, statements] = await Promise.all([this.collection.status(partner.id), this.collection.history(auth.user.id), this.statements.forPartner(partner.id)]);
+    return { status, history, statements };
   }
 
   @Get("partner/collection/clients")

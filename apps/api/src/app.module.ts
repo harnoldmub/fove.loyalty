@@ -15,6 +15,7 @@ import { PricingService } from "./billing/pricing.service";
 import { OfflineBillingService } from "./billing/offline.service";
 import { ReconciliationService } from "./admin/finance/reconciliation.service";
 import { CollectionService } from "./partners/collection.service";
+import { StatementService } from "./partners/statement.service";
 import { CollectionController } from "./partners/collection.controller";
 import { QuotaAlertService } from "./billing/quota-alert.service";
 import { BillingService } from "./billing/billing.service";
@@ -120,6 +121,7 @@ import { ClientJoinController } from "./client-account/client-join.controller";
     OfflineBillingService,
     ReconciliationService,
     CollectionService,
+    StatementService,
     QuotaAlertService,
     BillingService,
     TenantsService,

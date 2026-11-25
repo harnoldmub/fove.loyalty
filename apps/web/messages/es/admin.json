@@ -436,6 +436,25 @@
         "confirm": "Validar el pago",
         "done": "Pago validado: la suscripción está activa."
       },
+      "statements": {
+        "title": "Extractos de los socios",
+        "help": "Cada mes, los cobros de los socios se compensan con sus comisiones y gastos. Saldo positivo: el socio lo paga en 15 días con la referencia del extracto; saldo negativo: se le crea un pago.",
+        "issue": "Emitir los extractos pendientes",
+        "issued": "{count, plural, =0 {Ningún extracto que emitir} one {# extracto emitido} other {# extractos emitidos}}",
+        "empty": "No hay extractos.",
+        "detail": "{period} · cobrado {collected} · comisiones y gastos {deducted}",
+        "owes": "Pendiente del socio: {amount} (antes del {due})",
+        "credit": "A favor del socio: {amount} (pago creado)",
+        "status": {
+          "ISSUED": "Por pagar",
+          "PAID": "Pagado",
+          "SETTLED": "Saldado"
+        },
+        "overdue": "Impagado: cobros bloqueados",
+        "amount": "Importe recibido ({currency})",
+        "markPaid": "Pago recibido",
+        "paid": "Pago del extracto registrado."
+      },
       "accounts": {
         "title": "Datos bancarios por país",
         "help": "Se muestran al comercio y en el correo de instrucciones según su país; «*» = datos por defecto. Argelia: cuenta local.",
