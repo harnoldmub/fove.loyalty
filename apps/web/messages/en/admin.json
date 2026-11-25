@@ -473,6 +473,28 @@
       "save": "Save rates"
     },
     "treasury": {
+      "suggestion": "Suggested: {reference} ({name})",
+      "mismatch": "Expected amount: {expected}",
+      "confirmMatch": "Confirm",
+      "confirmTitle": "Match with {reference}?",
+      "confirmBody": "The {amount} payment will be recorded and the line matched.",
+      "confirmMismatch": "Amount received {amount} instead of {expected}: it will be recorded as is and the line matched.",
+      "matched": "Payment recorded, line matched.",
+      "import": {
+        "title": "Bank statement",
+        "help": "Import the bank's CSV export (date, label, amount or credit / debit) or enter a line: FV-… references in the label are recognised and the matching document is suggested.",
+        "currency": "Currency",
+        "currencyHint": "If the file has no currency column.",
+        "file": "Import a CSV",
+        "importing": "Importing…",
+        "rematch": "Search references again",
+        "date": "Date",
+        "label": "Label",
+        "amount": "Amount ({currency})",
+        "add": "Add line",
+        "invalid": "Label and non-zero amount required.",
+        "done": "{imported} line(s) imported, {matched} reference(s) recognised, {duplicates} duplicate(s), {skipped} skipped."
+      },
       "title": "Treasury and bank reconciliation",
       "description": "Available net cash, Stripe balances and entry checks.",
       "cash": "Available net cash",
@@ -499,6 +521,7 @@
       "error": "Couldn’t load the treasury.",
       "retry": "Try again",
       "reconciledTypes": {
+        "PARTNER_STATEMENT": "Partner statement",
         "PAYMENT": "payment",
         "EXPENSE": "expense",
         "PARTNER_PAYOUT": "commission"

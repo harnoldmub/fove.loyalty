@@ -473,6 +473,28 @@
       "save": "Guardar los tipos"
     },
     "treasury": {
+      "suggestion": "Propuesto: {reference} ({name})",
+      "mismatch": "Importe esperado: {expected}",
+      "confirmMatch": "Confirmar",
+      "confirmTitle": "¿Conciliar con {reference}?",
+      "confirmBody": "Se registrará el pago de {amount} y la línea quedará conciliada.",
+      "confirmMismatch": "Importe recibido {amount} en lugar de {expected}: se registrará tal cual y la línea quedará conciliada.",
+      "matched": "Pago registrado, línea conciliada.",
+      "import": {
+        "title": "Extracto bancario",
+        "help": "Importa el CSV del banco (fecha, concepto, importe o crédito / débito) o introduce una línea: se reconocen las referencias FV-… del concepto y se propone el documento correspondiente.",
+        "currency": "Moneda",
+        "currencyHint": "Si el archivo no tiene columna de moneda.",
+        "file": "Importar un CSV",
+        "importing": "Importando…",
+        "rematch": "Buscar de nuevo las referencias",
+        "date": "Fecha",
+        "label": "Concepto",
+        "amount": "Importe ({currency})",
+        "add": "Añadir la línea",
+        "invalid": "Se requieren concepto e importe no nulo.",
+        "done": "{imported} línea(s) importada(s), {matched} referencia(s) reconocida(s), {duplicates} duplicado(s), {skipped} ignorada(s)."
+      },
       "title": "Tesorería y conciliación bancaria",
       "description": "Tesorería neta disponible, saldos de Stripe y control de asientos.",
       "cash": "Tesorería neta disponible",
@@ -499,6 +521,7 @@
       "error": "No se pudo cargar la tesorería.",
       "retry": "Reintentar",
       "reconciledTypes": {
+        "PARTNER_STATEMENT": "Extracto de socio",
         "PAYMENT": "pago",
         "EXPENSE": "gasto",
         "PARTNER_PAYOUT": "comisión"

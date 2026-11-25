@@ -955,8 +955,25 @@ export class FinanceService {
       bankBalanceCents,
       bankEntryCount: bankEntries.length,
       unreconciledCount,
-      bankEntries: bankEntries.slice(0, 50),
+      bankEntries: await this.withSuggestions(bankEntries.slice(0, 100)),
     };
+  }
+
+  /** Pièce proposée pour chaque ligne non rapprochée : référence, commerce ou partenaire, montant attendu. */
+  private async withSuggestions<T extends { suggestedType: string | null; suggestedId: string | null; reconciled: boolean }>(entries: T[]) {
+    const ids = (type: string) => entries.filter((e) => !e.reconciled && e.suggestedType === type && e.suggestedId).map((e) => e.suggestedId!);
+    const [invoices, statements] = await Promise.all([
+      this.prisma.client.invoice.findMany({ where: { id: { in: ids("INVOICE") } }, include: { tenant: { select: { name: true } } } }),
+      this.prisma.client.partnerStatement.findMany({ where: { id: { in: ids("STATEMENT") } }, include: { partner: { select: { name: true, code: true } } } }),
+    ]);
+    return entries.map((e) => {
+      if (e.reconciled || !e.suggestedId) return { ...e, suggestion: null };
+      const invoice = invoices.find((i) => i.id === e.suggestedId);
+      if (invoice) return { ...e, suggestion: { type: "INVOICE", reference: invoice.paymentReference, name: invoice.tenant.name, expectedCents: invoice.amountDueCents, currency: invoice.currency } };
+      const statement = statements.find((st) => st.id === e.suggestedId);
+      if (statement) return { ...e, suggestion: { type: "STATEMENT", reference: statement.reference, name: `${statement.partner.name} (${statement.partner.code})`, expectedCents: statement.balanceCents - statement.paidCents, currency: statement.currency } };
+      return { ...e, suggestion: null };
+    });
   }
 
   async reconcileEntry(auth: AuthState, entryId: string, dto: ReconcileDto) {

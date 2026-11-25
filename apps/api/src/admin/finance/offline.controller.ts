@@ -7,6 +7,21 @@ import { Auth } from "../../common/decorators";
 import type { AuthState } from "../../common/context";
 import { FinanceRoute } from "../../auth/guards";
 import { OFFLINE_METHODS, OfflineBillingService, type OfflineMethod } from "../../billing/offline.service";
+import { ReconciliationService } from "./reconciliation.service";
+
+const importSchema = z.object({
+  csv: z.string().min(10).max(2_000_000),
+  /** Monnaie des lignes sans colonne « devise ». */
+  currency: z.enum(BILLING_CURRENCIES),
+});
+
+const entrySchema = z.object({
+  entryDate: z.iso.date(),
+  label: z.string().trim().min(2).max(500),
+  amountCents: z.int().refine((v) => v !== 0, "Montant non nul"),
+  currency: z.enum(BILLING_CURRENCIES),
+  notes: z.string().trim().max(500).optional(),
+});
 
 const validateSchema = z.object({
   method: z.enum(Object.keys(OFFLINE_METHODS) as [OfflineMethod, ...OfflineMethod[]]),
@@ -52,7 +67,32 @@ const clean = (b: BankAccountDto) => ({
 @Controller("admin/finance")
 @FinanceRoute()
 export class OfflineFinanceController {
-  constructor(private readonly offline: OfflineBillingService) {}
+  constructor(
+    private readonly offline: OfflineBillingService,
+    private readonly reconciliation: ReconciliationService,
+  ) {}
+
+  /** Import d'un relevé bancaire CSV : références FV-… détectées et pièces proposées. */
+  @Post("treasury/import")
+  importCsv(@Auth() auth: AuthState, @Body(new ZodPipe(importSchema)) body: z.infer<typeof importSchema>) {
+    return this.reconciliation.importCsv(auth, body.csv, body.currency);
+  }
+
+  @Post("treasury/entries")
+  createEntry(@Auth() auth: AuthState, @Body(new ZodPipe(entrySchema)) body: z.infer<typeof entrySchema>) {
+    return this.reconciliation.createEntry(auth, { ...body, entryDate: new Date(`${body.entryDate}T00:00:00Z`) });
+  }
+
+  @Post("treasury/rematch")
+  rematch() {
+    return this.reconciliation.rematch();
+  }
+
+  /** Validation en un clic de la pièce proposée pour une ligne de relevé. */
+  @Post("treasury/entries/:id/confirm")
+  confirm(@Auth() auth: AuthState, @Param("id", ParseUUIDPipe) id: string) {
+    return this.reconciliation.confirm(auth, id);
+  }
 
   @Get("offline-invoices")
   list(@Query("status") status?: string, @Query("q") q?: string) {

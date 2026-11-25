@@ -13,6 +13,7 @@ import { ApiKeyGuard, FinanceAccessGuard, PartnerGuard, PublishableKeyGuard, Ses
 import { PlanService } from "./billing/plan.service";
 import { PricingService } from "./billing/pricing.service";
 import { OfflineBillingService } from "./billing/offline.service";
+import { ReconciliationService } from "./admin/finance/reconciliation.service";
 import { QuotaAlertService } from "./billing/quota-alert.service";
 import { BillingService } from "./billing/billing.service";
 import { BillingController } from "./billing/billing.controller";
@@ -114,6 +115,7 @@ import { ClientJoinController } from "./client-account/client-join.controller";
     PlanService,
     PricingService,
     OfflineBillingService,
+    ReconciliationService,
     QuotaAlertService,
     BillingService,
     TenantsService,

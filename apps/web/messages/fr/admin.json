@@ -473,6 +473,28 @@
       "save": "Enregistrer les taux"
     },
     "treasury": {
+      "suggestion": "Proposé : {reference} ({name})",
+      "mismatch": "Montant attendu : {expected}",
+      "confirmMatch": "Confirmer",
+      "confirmTitle": "Rapprocher avec {reference} ?",
+      "confirmBody": "Le paiement de {amount} sera enregistré et la ligne rapprochée.",
+      "confirmMismatch": "Montant reçu {amount} au lieu de {expected} : il sera enregistré tel quel et la ligne rapprochée.",
+      "matched": "Paiement enregistré, ligne rapprochée.",
+      "import": {
+        "title": "Relevé bancaire",
+        "help": "Importez l’export CSV de la banque (date, libellé, montant ou crédit / débit) ou saisissez une ligne : les références FV-… du libellé sont reconnues et la pièce correspondante est proposée.",
+        "currency": "Monnaie",
+        "currencyHint": "Si le fichier n’a pas de colonne devise.",
+        "file": "Importer un CSV",
+        "importing": "Import…",
+        "rematch": "Rechercher à nouveau les références",
+        "date": "Date",
+        "label": "Libellé",
+        "amount": "Montant ({currency})",
+        "add": "Ajouter la ligne",
+        "invalid": "Libellé et montant non nul requis.",
+        "done": "{imported} ligne(s) importée(s), {matched} référence(s) reconnue(s), {duplicates} doublon(s), {skipped} ignorée(s)."
+      },
       "title": "Trésorerie et rapprochement bancaire",
       "description": "Trésorerie nette disponible, soldes Stripe et contrôle des écritures.",
       "cash": "Trésorerie nette disponible",
@@ -499,6 +521,7 @@
       "error": "Impossible de charger la trésorerie.",
       "retry": "Réessayer",
       "reconciledTypes": {
+        "PARTNER_STATEMENT": "Relevé partenaire",
         "PAYMENT": "paiement",
         "EXPENSE": "dépense",
         "PARTNER_PAYOUT": "commission"

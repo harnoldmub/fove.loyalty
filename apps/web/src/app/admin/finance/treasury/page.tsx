@@ -5,7 +5,12 @@ import { useTranslations } from "next-intl";
 import { Landmark, ArrowUpRight, ArrowDownRight, CheckCircle2, ShieldCheck } from "lucide-react";
 import { Badge, ErrorNote, PageHeader, Panel } from "@/components/ui/misc";
 import { Button } from "@/components/ui/button";
-import { api } from "@/lib/api";
+import { useState } from "react";
+import { toast } from "sonner";
+import { BILLING_CURRENCIES } from "@fove/shared";
+import { ConfirmDialog } from "@/components/ui/dialog";
+import { Field, Input, Select } from "@/components/ui/field";
+import { api, useErrorMessage } from "@/lib/api";
 import { formatDate } from "@/lib/utils";
 import { FinanceNav } from "@/components/admin/finance/finance-nav";
 import { formatFinance } from "@/components/admin/finance/finance-utils";
@@ -30,19 +35,89 @@ interface TreasuryResponse {
     currency: string;
     reconciled: boolean;
     reconciledType: string | null;
+    amountMismatch: boolean;
+    /** Pièce proposée d'après la référence trouvée dans le libellé. */
+    suggestion: { type: "INVOICE" | "STATEMENT"; reference: string; name: string; expectedCents: number; currency: string } | null;
   }[];
 }
 
-const RECONCILED_TYPES = ["PAYMENT", "EXPENSE", "PARTNER_PAYOUT"] as const;
+const RECONCILED_TYPES = ["PAYMENT", "EXPENSE", "PARTNER_PAYOUT", "PARTNER_STATEMENT"] as const;
+
+/** Import d'un relevé CSV et saisie d'une ligne (références FV-… détectées automatiquement). */
+function BankImport({ onDone }: { onDone: () => void }) {
+  const t = useTranslations("admin.finance.treasury.import");
+  const errMsg = useErrorMessage();
+  const [currency, setCurrency] = useState<string>("EUR");
+  const [busy, setBusy] = useState(false);
+  const [entry, setEntry] = useState({ entryDate: new Date().toISOString().slice(0, 10), label: "", amount: "" });
+
+  const importFile = async (file: File) => {
+    setBusy(true);
+    try {
+      const res = await api.post<{ imported: number; duplicates: number; matched: number; skipped: number[] }>("/admin/finance/treasury/import", { csv: await file.text(), currency });
+      toast.success(t("done", { imported: res.imported, matched: res.matched, duplicates: res.duplicates, skipped: res.skipped.length }));
+      onDone();
+    } catch (e) {
+      toast.error(errMsg(e));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const addEntry = async () => {
+    const cents = Math.round(Number(entry.amount.replace(/\s/g, "").replace(",", ".")) * 100);
+    if (!Number.isFinite(cents) || cents === 0 || !entry.label.trim()) return toast.error(t("invalid"));
+    setBusy(true);
+    try {
+      await api.post("/admin/finance/treasury/entries", { entryDate: entry.entryDate, label: entry.label, amountCents: cents, currency });
+      setEntry({ ...entry, label: "", amount: "" });
+      onDone();
+    } catch (e) {
+      toast.error(errMsg(e));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <Panel className="mb-6 grid gap-4 p-5">
+      <div>
+        <h2 className="font-display text-base font-semibold">{t("title")}</h2>
+        <p className="text-xs text-ink-3">{t("help")}</p>
+      </div>
+      <div className="flex flex-wrap items-end gap-3">
+        <Field label={t("currency")} hint={t("currencyHint")}>
+          {(f) => (
+            <Select {...f} value={currency} onChange={(e) => setCurrency(e.target.value)} className="w-28">
+              {BILLING_CURRENCIES.map((c) => <option key={c} value={c}>{c}</option>)}
+            </Select>
+          )}
+        </Field>
+        <label className="inline-flex cursor-pointer items-center gap-2 rounded-[var(--radius)] border border-line bg-surface px-3 py-2 text-sm font-medium hover:bg-surface-2">
+          {busy ? t("importing") : t("file")}
+          <input type="file" accept=".csv,text/csv,text/plain" className="sr-only" disabled={busy} onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ""; if (f) void importFile(f); }} />
+        </label>
+        <Button variant="ghost" size="sm" disabled={busy} onClick={async () => { await api.post("/admin/finance/treasury/rematch"); onDone(); }}>{t("rematch")}</Button>
+      </div>
+      <div className="grid gap-2 sm:grid-cols-[9rem_1fr_9rem_auto] sm:items-end">
+        <Field label={t("date")}>{(f) => <Input {...f} type="date" value={entry.entryDate} onChange={(e) => setEntry({ ...entry, entryDate: e.target.value })} />}</Field>
+        <Field label={t("label")}>{(f) => <Input {...f} value={entry.label} placeholder="VIR FV-7KQ4M2-X" onChange={(e) => setEntry({ ...entry, label: e.target.value })} />}</Field>
+        <Field label={t("amount", { currency })}>{(f) => <Input {...f} inputMode="decimal" dir="ltr" value={entry.amount} onChange={(e) => setEntry({ ...entry, amount: e.target.value })} />}</Field>
+        <Button variant="secondary" loading={busy} onClick={addEntry}>{t("add")}</Button>
+      </div>
+    </Panel>
+  );
+}
 
 export default function TreasuryPage() {
   const t = useTranslations("admin.finance.treasury");
+  const errMsg = useErrorMessage();
   const { data, isLoading, isError, refetch, isRefetching } = useQuery({
     queryKey: ["admin-finance-treasury"],
     queryFn: () => api.get<TreasuryResponse>("/admin/finance/treasury"),
   });
 
-  const currency = data?.currency ?? "USD";
+  const currency = data?.currency ?? "EUR";
   const entries = data?.bankEntries ?? [];
   const cash = data?.estimatedCashCents ?? 0;
   const reconciledLabel = (type: string | null) =>
@@ -122,6 +197,8 @@ export default function TreasuryPage() {
             </div>
           </div>
 
+          <BankImport onDone={() => void refetch()} />
+
           {isLoading ? (
             <div className="py-20 text-center text-sm text-ink-3">{t("loading")}</div>
           ) : entries.length === 0 ? (
@@ -148,6 +225,33 @@ export default function TreasuryPage() {
                       <td className="px-4 py-3.5">
                         {entry.reconciled ? (
                           <Badge tone="mint">{t("reconciled", { type: reconciledLabel(entry.reconciledType) })}</Badge>
+                        ) : entry.suggestion ? (
+                          <div className="grid gap-1.5">
+                            <p className="text-xs text-ink-2">
+                              {t("suggestion", { reference: entry.suggestion.reference, name: entry.suggestion.name })}
+                            </p>
+                            {entry.amountMismatch && (
+                              <p className="text-xs font-medium text-danger">
+                                {t("mismatch", { expected: formatFinance(entry.suggestion.expectedCents, entry.suggestion.currency) })}
+                              </p>
+                            )}
+                            <ConfirmDialog
+                              trigger={<Button size="sm" className="justify-self-start">{t("confirmMatch")}</Button>}
+                              title={t("confirmTitle", { reference: entry.suggestion.reference })}
+                              consequence={entry.amountMismatch ? t("confirmMismatch", { amount: formatFinance(entry.amountCents, entry.currency), expected: formatFinance(entry.suggestion.expectedCents, entry.suggestion.currency) }) : t("confirmBody", { amount: formatFinance(entry.amountCents, entry.currency) })}
+                              confirmLabel={t("confirmMatch")}
+                              onConfirm={async () => {
+                                try {
+                                  await api.post(`/admin/finance/treasury/entries/${entry.id}/confirm`);
+                                  toast.success(t("matched"));
+                                  await refetch();
+                                } catch (e) {
+                                  toast.error(errMsg(e));
+                                  throw e;
+                                }
+                              }}
+                            />
+                          </div>
                         ) : (
                           <Badge tone="stamp">{t("unreconciled")}</Badge>
                         )}
