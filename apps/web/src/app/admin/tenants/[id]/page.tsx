@@ -13,6 +13,7 @@ import Link from "next/link";
 import { Badge, ErrorNote, Panel, Skeleton } from "@/components/ui/misc";
 import { api, useErrorMessage } from "@/lib/api";
 import { formatDate, formatNumber, formatPrice } from "@/lib/utils";
+import { BILLING_CURRENCIES, type BillingCurrency } from "@fove/shared";
 
 type QuotaKey = "customers" | "establishments" | "staff" | "programs";
 const QUOTAS: QuotaKey[] = ["customers", "establishments", "staff", "programs"];
@@ -30,6 +31,8 @@ interface Detail {
     walletBannerUrl?: string | null;
     country: string;
     currency: string;
+    /** Monnaie de facturation choisie (vide = celle du pays). */
+    billingCurrency?: string | null;
     timezone: string;
     legalName?: string | null;
     contactEmail?: string | null;
@@ -43,8 +46,11 @@ interface Detail {
     currentPeriodEnd: string | null;
     limitsOverride: Partial<Record<QuotaKey, number | null>> | null;
     contractPriceYearlyCents: number | null;
+    currency: string;
     plan: { code: string; name: string };
   } | null;
+  /** Monnaie de facturation effective (choix du commerce, sinon celle du pays). */
+  billingCurrency: BillingCurrency;
   memberships: { id: string; user: { email: string; name: string }; role: { key: string } }[];
   integrations: { id: string; name: string; provider: string; lastSyncAt: string | null; lastError: string | null }[];
   _count: { customers: number; accounts: number; transactions: number; programs: number; establishments: number };
@@ -154,9 +160,10 @@ export default function AdminTenant() {
               : t("subscription.none")}
             {data.subscription?.trialEndsAt && t("subscription.trialUntil", { date: formatDate(data.subscription.trialEndsAt) })}
             {data.subscription?.currentPeriodEnd && t("subscription.until", { date: formatDate(data.subscription.currentPeriodEnd) })}
-            {data.subscription?.contractPriceYearlyCents ? t("subscription.contract", { price: formatPrice(data.subscription.contractPriceYearlyCents, "USD") }) : ""}
+            {data.subscription?.contractPriceYearlyCents ? t("subscription.contract", { price: formatPrice(data.subscription.contractPriceYearlyCents, data.subscription.currency) }) : ""}
           </p>
-          <SubscriptionForm tenantId={id} current={data.subscription} />
+          <BillingCurrencyField tenantId={id} chosen={data.settings?.billingCurrency ?? null} effective={data.billingCurrency} subscriptionCurrency={data.subscription?.status !== "CANCELED" ? (data.subscription?.currency ?? null) : null} />
+          <SubscriptionForm tenantId={id} current={data.subscription} defaultCurrency={data.billingCurrency} />
         </Panel>
         <Panel className="p-5">
           <h2 className="mb-3 font-display text-lg font-semibold">{t("team.title")}</h2>
@@ -355,7 +362,37 @@ export default function AdminTenant() {
  * négociés, fin de contrat, prix facturé hors Stripe). Chaque envoi redéfinit
  * tout le contrat.
  */
-function SubscriptionForm({ tenantId, current }: { tenantId: string; current: Detail["subscription"] }) {
+/** Monnaie de facturation du commerce : prix affichés, contrats et règlements hors ligne. */
+function BillingCurrencyField({ tenantId, chosen, effective, subscriptionCurrency }: { tenantId: string; chosen: string | null; effective: BillingCurrency; subscriptionCurrency: string | null }) {
+  const t = useTranslations("admin.tenant.billingCurrency");
+  const errMsg = useErrorMessage();
+  const qc = useQueryClient();
+  const save = async (value: string) => {
+    try {
+      await api.post(`/admin/tenants/${tenantId}/billing-currency`, { currency: value === "" ? null : value });
+      await qc.invalidateQueries({ queryKey: ["admin-tenant", tenantId] });
+      toast.success(t("saved"));
+    } catch (e) {
+      toast.error(errMsg(e));
+    }
+  };
+  return (
+    <div className="grid gap-1">
+      <Field label={t("label")} hint={subscriptionCurrency && subscriptionCurrency !== effective ? t("pending", { current: subscriptionCurrency, next: effective }) : t("hint")}>
+        {(f) => (
+          <Select {...f} value={chosen ?? ""} onChange={(e) => void save(e.target.value)}>
+            <option value="">{chosen ? t("country") : t("countryWith", { currency: effective })}</option>
+            {BILLING_CURRENCIES.map((c) => (
+              <option key={c} value={c}>{c}</option>
+            ))}
+          </Select>
+        )}
+      </Field>
+    </div>
+  );
+}
+
+function SubscriptionForm({ tenantId, current, defaultCurrency }: { tenantId: string; current: Detail["subscription"]; defaultCurrency: BillingCurrency }) {
   const t = useTranslations("admin.tenant.form");
   const errMsg = useErrorMessage();
   const unlimited = t("unlimited");
@@ -365,6 +402,7 @@ function SubscriptionForm({ tenantId, current }: { tenantId: string; current: De
   const [status, setStatus] = useState<"ACTIVE" | "TRIALING" | "CANCELED">("ACTIVE");
   const [end, setEnd] = useState(current?.currentPeriodEnd?.slice(0, 10) ?? "");
   const [price, setPrice] = useState(current?.contractPriceYearlyCents ? String(current.contractPriceYearlyCents / 100) : "");
+  const [currency, setCurrency] = useState<string>(current?.provider === "MANUAL" && current.status !== "CANCELED" ? current.currency : defaultCurrency);
   const [limits, setLimits] = useState<Record<QuotaKey, string>>(() => {
     const o = current?.limitsOverride ?? {};
     const show = (k: QuotaKey) => (k in o ? (o[k] === null ? unlimited : String(o[k])) : "");
@@ -389,6 +427,7 @@ function SubscriptionForm({ tenantId, current }: { tenantId: string; current: De
       currentPeriodEnd: end ? new Date(`${end}T23:59:59`).toISOString() : null,
       limitsOverride: Object.keys(limitsOverride).length ? limitsOverride : null,
       contractPriceYearlyCents: price.trim() && Number.isFinite(yearly) ? Math.round(yearly * 100) : null,
+      currency,
     });
     qc.invalidateQueries({ queryKey: ["admin-tenant", tenantId] });
     toast.success(t("saved"));
@@ -431,9 +470,20 @@ function SubscriptionForm({ tenantId, current }: { tenantId: string; current: De
         <Field label={t("end")} hint={t("endHint")}>
           {(f) => <Input {...f} type="date" value={end} onChange={(e) => setEnd(e.target.value)} />}
         </Field>
-        <Field label={t("price")} hint={t("priceHint")}>
-          {(f) => <Input {...f} inputMode="decimal" placeholder="—" dir="ltr" value={price} onChange={(e) => setPrice(e.target.value)} />}
-        </Field>
+        <div className="grid grid-cols-[1fr_6.5rem] gap-2">
+          <Field label={t("price")} hint={t("priceHint")}>
+            {(f) => <Input {...f} inputMode="decimal" placeholder="—" dir="ltr" value={price} onChange={(e) => setPrice(e.target.value)} />}
+          </Field>
+          <Field label={t("currency")}>
+            {(f) => (
+              <Select {...f} value={currency} onChange={(e) => setCurrency(e.target.value)}>
+                {BILLING_CURRENCIES.map((c) => (
+                  <option key={c} value={c}>{c}</option>
+                ))}
+              </Select>
+            )}
+          </Field>
+        </div>
       </div>
       {custom && (
         <fieldset className="grid gap-2 sm:grid-cols-2">

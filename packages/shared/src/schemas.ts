@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { BILLING_CURRENCIES } from "./billing";
 import { TENANT_ROLES, API_SCOPES } from "./permissions";
 
 const amount = z
@@ -352,6 +353,10 @@ export const commerceRefundSchema = z.object({
 export const checkoutSchema = z.object({
   planCode: z.string().min(2).max(40),
   interval: z.literal("YEAR"),
+});
+
+export const billingCurrencySchema = z.object({
+  currency: z.enum(BILLING_CURRENCIES),
 });
 
 export const paginationSchema = z.object({

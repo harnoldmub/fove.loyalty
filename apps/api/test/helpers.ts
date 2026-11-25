@@ -21,13 +21,13 @@ export const db = createPrismaClient(process.env.TEST_DATABASE_URL);
 
 const PAID = { exports: true, widget: true, walletCampaigns: true, whatsappAuto: true, removeBranding: true, referral: true };
 const NONE = { customers: null, establishments: null, staff: null, programs: null };
-/** Quotas réduits pour tester les limites sans créer des centaines de clients. */
+/** Quotas réduits pour tester les limites sans créer des centaines de clients. Prix annuels par monnaie (pas de DZD ni CDF : prix manquant). */
 export const PLANS = [
-  { code: "free", kind: "FREE" as const, name: "Gratuit", priceMonthlyCents: 0, priceYearlyCents: 0, trialDays: 0, features: { api: false, widget: true, integrations: false, exports: true, walletCampaigns: false, whatsappAuto: false, removeBranding: false, referral: false }, limits: { customers: 3, establishments: 1, staff: 1, programs: 1 }, sortOrder: 0 },
-  { code: "starter", name: "Starter", priceMonthlyCents: 1290, priceYearlyCents: 12900, features: { ...PAID, api: false, integrations: false }, limits: { customers: 3, establishments: 1, staff: 3, programs: 1 }, sortOrder: 1 },
-  { code: "business", name: "Business", priceMonthlyCents: 2490, priceYearlyCents: 24900, features: { ...PAID, api: true, integrations: true }, limits: { customers: 5000, establishments: 5, staff: 15, programs: 3 }, sortOrder: 2, stripePriceMonthlyId: "price_business_m" },
-  { code: "premium", name: "Premium", priceMonthlyCents: 4990, priceYearlyCents: 49900, features: { ...PAID, api: true, integrations: true }, limits: NONE, sortOrder: 3 },
-  { code: "custom", kind: "CUSTOM" as const, name: "Sur-mesure", priceMonthlyCents: 0, priceYearlyCents: 0, trialDays: 0, features: { ...PAID, api: true, integrations: true }, limits: NONE, sortOrder: 4 },
+  { code: "free", kind: "FREE" as const, name: "Gratuit", trialDays: 0, features: { api: false, widget: true, integrations: false, exports: true, walletCampaigns: false, whatsappAuto: false, removeBranding: false, referral: false }, limits: { customers: 3, establishments: 1, staff: 1, programs: 1 }, sortOrder: 0 },
+  { code: "starter", name: "Starter", prices: { USD: 12900, EUR: 11900, MAD: 129000 }, features: { ...PAID, api: false, integrations: false }, limits: { customers: 3, establishments: 1, staff: 3, programs: 1 }, sortOrder: 1 },
+  { code: "business", name: "Business", prices: { USD: 24900, EUR: 22900, MAD: 249000 }, features: { ...PAID, api: true, integrations: true }, limits: { customers: 5000, establishments: 5, staff: 15, programs: 3 }, sortOrder: 2 },
+  { code: "premium", name: "Premium", prices: { USD: 49900, EUR: 45900, MAD: 499000 }, features: { ...PAID, api: true, integrations: true }, limits: NONE, sortOrder: 3 },
+  { code: "custom", kind: "CUSTOM" as const, name: "Sur-mesure", trialDays: 0, features: { ...PAID, api: true, integrations: true }, limits: NONE, sortOrder: 4 },
 ];
 
 export async function resetDatabase() {
@@ -39,7 +39,11 @@ export async function resetDatabase() {
     const id = `${h.slice(0, 8)}-${h.slice(8, 12)}-4${h.slice(13, 16)}-a${h.slice(17, 20)}-${h.slice(20, 32)}`;
     await db.role.create({ data: { id, key, name: key, permissions: [...ROLE_PERMISSIONS[key]], isSystem: true } });
   }
-  for (const plan of PLANS) await db.subscriptionPlan.create({ data: plan });
+  for (const { prices, ...plan } of PLANS as (Omit<(typeof PLANS)[number], "prices"> & { prices?: Record<string, number> })[]) {
+    await db.subscriptionPlan.create({
+      data: { ...plan, prices: { create: Object.entries(prices ?? {}).map(([currency, yearlyCents]) => ({ currency, yearlyCents })) } },
+    });
+  }
 }
 
 export async function startApp(env: Record<string, string | undefined> = {}): Promise<NestExpressApplication> {
@@ -63,6 +67,7 @@ export function agent(app: NestExpressApplication) {
     get: (url: string) => a.get(url),
     post: (url: string, body?: object) => a.post(url).set("x-fove-csrf", "1").send(body ?? {}),
     patch: (url: string, body?: object) => a.patch(url).set("x-fove-csrf", "1").send(body ?? {}),
+    put: (url: string, body?: object) => a.put(url).set("x-fove-csrf", "1").send(body ?? {}),
     delete: (url: string) => a.delete(url).set("x-fove-csrf", "1"),
   };
 }

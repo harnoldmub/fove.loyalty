@@ -1,5 +1,6 @@
 "use client";
 
+import { BILLING_CURRENCIES } from "@fove/shared";
 import { Calendar } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
@@ -15,7 +16,7 @@ interface FinanceFilterProps {
 
 const PERIODS: PeriodKey[] = ["today", "yesterday", "7d", "30d", "month", "last_month", "quarter", "year", "all"];
 
-export function FinanceFilter({ period, onPeriodChange, currency = "USD", onCurrencyChange }: FinanceFilterProps) {
+export function FinanceFilter({ period, onPeriodChange, currency = "EUR", onCurrencyChange }: FinanceFilterProps) {
   const t = useTranslations("admin.finance.filter");
   return (
     <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-line bg-surface p-2 shadow-xs">
@@ -48,7 +49,7 @@ export function FinanceFilter({ period, onPeriodChange, currency = "USD", onCurr
       {onCurrencyChange && (
         <div className="flex items-center gap-1 border-s border-line ps-2 text-xs">
           <span className="text-ink-3">{t("currency")}</span>
-          {(["USD", "EUR", "CDF"] as const).map((curr) => (
+          {BILLING_CURRENCIES.map((curr) => (
             <button
               key={curr}
               type="button"

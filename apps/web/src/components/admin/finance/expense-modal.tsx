@@ -1,5 +1,6 @@
 "use client";
 
+import { BILLING_CURRENCIES } from "@fove/shared";
 import { useState } from "react";
 import { X, ArrowDownRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -40,7 +41,7 @@ export function ExpenseModal({ open, onClose, onCreated }: ExpenseModalProps) {
   const [supplier, setSupplier] = useState("");
   const [category, setCategory] = useState("HOSTING");
   const [amountStr, setAmountStr] = useState("");
-  const [currency, setCurrency] = useState("USD");
+  const [currency, setCurrency] = useState("EUR");
   const [expenseDate, setExpenseDate] = useState(new Date().toISOString().slice(0, 10));
   const [paymentMethod, setPaymentMethod] = useState("");
   const [isRecurring, setIsRecurring] = useState(false);
@@ -157,9 +158,9 @@ export function ExpenseModal({ open, onClose, onCreated }: ExpenseModalProps) {
                 value={currency}
                 onChange={(e) => setCurrency(e.target.value)}
               >
-                <option value="USD">USD ($)</option>
-                <option value="EUR">EUR (€)</option>
-                <option value="CDF">CDF (FC)</option>
+                {BILLING_CURRENCIES.map((c) => (
+                  <option key={c} value={c}>{c}</option>
+                ))}
               </select>
             </div>
           </div>

@@ -22,35 +22,37 @@ describe("trésorerie de la plateforme", () => {
   it("calcule les soldes nets de frais et de remboursements et liste les écritures bancaires", async () => {
     const admin = await superAdmin();
     const { tenantId } = await ownerWithTenant(app);
-    const payment = (data: { provider: "STRIPE" | "MANUAL"; status: "SUCCEEDED" | "PARTIALLY_REFUNDED" | "FAILED"; amountCents: number; feeCents: number; amountRefundedCents?: number }) =>
-      db.payment.create({ data: { reference: uniq("PAY-"), tenantId, netCents: data.amountCents - data.feeCents, ...data } });
+    const payment = (data: { provider: "STRIPE" | "MANUAL"; status: "SUCCEEDED" | "PARTIALLY_REFUNDED" | "FAILED"; amountCents: number; feeCents: number; amountRefundedCents?: number; currency?: string }) =>
+      db.payment.create({ data: { reference: uniq("PAY-"), tenantId, netCents: data.amountCents - data.feeCents, currency: "EUR", ...data } });
     await payment({ provider: "STRIPE", status: "SUCCEEDED", amountCents: 10_000, feeCents: 320 });
     await payment({ provider: "MANUAL", status: "PARTIALLY_REFUNDED", amountCents: 5_000, feeCents: 0, amountRefundedCents: 1_000 });
     await payment({ provider: "STRIPE", status: "FAILED", amountCents: 9_999, feeCents: 0 });
-    await db.expense.create({ data: { reference: uniq("EXP-"), title: "Serveurs", supplier: "Railway", category: "HOSTING", amountCents: 2_000, expenseDate: new Date() } });
+    // 11,20 $ au taux comptable par défaut (1 € = 1,12 $) : 10 € consolidés.
+    await payment({ provider: "STRIPE", status: "SUCCEEDED", amountCents: 1_120, feeCents: 0, currency: "USD" });
+    await db.expense.create({ data: { reference: uniq("EXP-"), title: "Serveurs", supplier: "Railway", category: "HOSTING", amountCents: 2_000, currency: "EUR", expenseDate: new Date() } });
     await db.bankStatementEntry.createMany({
       data: [
-        { entryDate: new Date("2026-11-02"), label: "Virement Stripe", amountCents: 9_680, reconciled: true, reconciledType: "PAYMENT" },
-        { entryDate: new Date("2026-11-05"), label: "Prélèvement Railway", amountCents: -2_000 },
+        { entryDate: new Date("2026-11-02"), label: "Virement Stripe", amountCents: 9_680, currency: "EUR", reconciled: true, reconciledType: "PAYMENT" },
+        { entryDate: new Date("2026-11-05"), label: "Prélèvement Railway", amountCents: -2_000, currency: "EUR" },
       ],
     });
 
     const res = await admin.get("/api/admin/finance/treasury");
     expect(res.status).toBe(200);
     expect(res.body).toMatchObject({
-      currency: "USD",
-      totalCollectedNetCents: 9_680 + 4_000,
-      stripeHeldCents: 9_680,
+      currency: "EUR",
+      totalCollectedNetCents: 9_680 + 4_000 + 1_000,
+      stripeHeldCents: 9_680 + 1_000,
       manualDirectCents: 4_000,
       totalExpensesCents: 2_000,
       totalPayoutsCents: 0,
-      estimatedCashCents: 9_680 + 4_000 - 2_000,
+      estimatedCashCents: 9_680 + 4_000 + 1_000 - 2_000,
       bankBalanceCents: 7_680,
       bankEntryCount: 2,
       unreconciledCount: 1,
     });
     // La page lit ces champs : un renommage côté API doit faire échouer ce test.
-    expect(res.body.bankEntries[0]).toMatchObject({ label: "Prélèvement Railway", amountCents: -2_000, currency: "USD", reconciled: false });
+    expect(res.body.bankEntries[0]).toMatchObject({ label: "Prélèvement Railway", amountCents: -2_000, currency: "EUR", reconciled: false });
     expect(Object.keys(res.body.bankEntries[0])).toEqual(expect.arrayContaining(["id", "entryDate", "label", "amountCents", "currency", "reconciled", "reconciledType"]));
   });
 

@@ -59,7 +59,16 @@
     "cancelConsequence": "Sigue activa hasta el final del periodo pagado y puedes cambiar de opinión hasta entonces. Después, tu cuenta pasa al plan Gratuito. No se borra ninguna tarjeta.",
     "usage": "Uso",
     "changePlan": "Cambiar de plan",
-    "annual": "Suscripción anual, pagada por adelantado en dólares estadounidenses.",
+    "annual": "Suscripción anual, pagada por adelantado.",
+    "currency": {
+      "label": "Moneda de facturación",
+      "names": { "EUR": "Euro (€)", "USD": "Dólar estadounidense ($)", "MAD": "Dírham marroquí (MAD)", "DZD": "Dinar argelino (DZD)", "CDF": "Franco congoleño (CDF)" },
+      "saved": "Moneda de facturación guardada.",
+      "savedRenewal": "Guardado: la nueva moneda se aplicará en la renovación, el {date}.",
+      "pending": "Su suscripción actual sigue en {current}; pasará a {next} en la renovación, el {date}.",
+      "localNote": "Precios en {currency} para pagar por transferencia, en efectivo o con dinero móvil. El pago en línea con tarjeta se hace en {online}.",
+      "online": "En línea: {price}"
+    },
     "plan": {
       "current": "Plan actual",
       "scheduled": "Previsto el {date}",

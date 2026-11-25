@@ -59,7 +59,16 @@
     "cancelConsequence": "It stays active until the end of the paid period, and you can change your mind until then. After that, your account moves to the Free plan. No cards are deleted.",
     "usage": "Usage",
     "changePlan": "Change plan",
-    "annual": "Annual subscription, paid upfront in US dollars.",
+    "annual": "Annual subscription, paid upfront.",
+    "currency": {
+      "label": "Billing currency",
+      "names": { "EUR": "Euro (€)", "USD": "US dollar ($)", "MAD": "Moroccan dirham (MAD)", "DZD": "Algerian dinar (DZD)", "CDF": "Congolese franc (CDF)" },
+      "saved": "Billing currency saved.",
+      "savedRenewal": "Saved: the new currency will apply at renewal, on {date}.",
+      "pending": "Your current subscription stays in {current}; it will switch to {next} at renewal, on {date}.",
+      "localNote": "Prices in {currency} for payment by bank transfer, in cash or by mobile money. Online card payment is made in {online}.",
+      "online": "Online: {price}"
+    },
     "plan": {
       "current": "Current plan",
       "scheduled": "Scheduled for {date}",

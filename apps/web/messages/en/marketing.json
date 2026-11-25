@@ -220,7 +220,8 @@
   },
   "currencyToggle": {
     "label": "Currency:",
-    "groupLabel": "Select the pricing currency"
+    "groupLabel": "Select the pricing currency",
+    "names": { "EUR": "Euro", "USD": "US dollar", "MAD": "Moroccan dirham", "DZD": "Algerian dinar", "CDF": "Congolese franc" }
   },
   "pricing": {
     "unavailable": "Pricing is temporarily unavailable. Please try again in a moment.",
@@ -254,6 +255,8 @@
     "noteCustom": "Contract tailored to your network",
     "noteEur": "Paid in advance, in euros (€)",
     "noteUsd": "Paid in advance, in US dollars ($)",
+    "noteLocal": "Paid in advance, in cash, by bank transfer or mobile money, or online ({price})",
+    "noteLocalOnly": "Paid in advance, in cash, by bank transfer or mobile money",
     "recommended": "Recommended",
     "notIncludedSuffix": ": not included",
     "caption": "FOVE plan comparison: capacity and included features",
@@ -275,7 +278,7 @@
       { "q": "What if I cancel?", "a": "Your plan stays active until the end of the paid period, and you can change your mind until then. After that, your account moves to the Free plan: nothing is deleted." },
       { "q": "Do I need more than the Network plan?", "a": "The Custom plan adapts to your volumes: number of customers, locations and team members, with support and a contract on quote. Get in touch." },
       { "q": "Do my customers pay anything?", "a": "No. The card is free for them and opens in their phone’s browser." },
-      { "q": "How do I pay?", "a": "In US dollars ($) or euros (€) depending on your region, paid once a year in advance. Invoices are available in your account." }
+      { "q": "How do I pay?", "a": "Once a year, in advance. Online by card, in euros (€) or US dollars ($). In Morocco, Algeria and the DRC, you can also pay in your currency by bank transfer, in cash or by mobile money, directly to FOVE or to a FOVE partner. Invoices are available in your account." }
     ]
   },
   "features": {

@@ -139,6 +139,9 @@
     },
     "overview": {
       "title": "Centro financiero y socios",
+      "byCurrency": { "title": "Cobros por moneda", "help": "Importes netos, antes de la conversión a {currency}.", "count": "{count, plural, one {# pago} other {# pagos}}" },
+      "missingRates": "Falta el tipo contable de {currencies}: estos importes cuentan como 0 en los totales.",
+      "ratesLink": "Indicar los tipos",
       "description": "Visión consolidada y transparente de la actividad económica real de FOVE.",
       "addExpense": "Añadir gasto",
       "newPartner": "Nuevo socio",
@@ -380,6 +383,18 @@
         "CANCELED": "Cancelada"
       }
     },
+    "rates": {
+      "title": "Tipos de cambio contables",
+      "description": "Unidades de cada moneda por 1 €. Sirven para consolidar las finanzas en euros y convertir las comisiones de los socios; nunca para el precio que paga un comercio.",
+      "help": "Revíselos con regularidad (por ejemplo cada trimestre). Un cambio se aplica a los cálculos siguientes; las comisiones ya convertidas conservan su tipo.",
+      "label": "1 € = … {currency}",
+      "updated": "Modificado el {date} por {by}",
+      "system": "la configuración inicial",
+      "default": "Valor inicial, nunca modificado",
+      "invalid": "Cada tipo debe ser un número positivo.",
+      "saved": "Tipos guardados.",
+      "save": "Guardar los tipos"
+    },
     "treasury": {
       "title": "Tesorería y conciliación bancaria",
       "description": "Tesorería neta disponible, saldos de Stripe y control de asientos.",
@@ -427,6 +442,7 @@
         "commissions": "Socios",
         "expenses": "Gastos",
         "treasury": "Tesorería",
+        "rates": "Tipos contables",
         "reports": "Informes de socios",
         "audit": "Auditoría"
       }
@@ -630,6 +646,14 @@
       "title": "Registro de auditoría",
       "empty": "No hay acciones registradas."
     },
+    "billingCurrency": {
+      "label": "Moneda de facturación",
+      "hint": "Precios mostrados al comercio, contratos y pagos fuera de línea. Pago en línea: en euros o dólares.",
+      "pending": "Suscripción actual en {current}; pasa a {next} en la renovación.",
+      "country": "Según el país",
+      "countryWith": "Según el país ({currency})",
+      "saved": "Moneda de facturación guardada."
+    },
     "form": {
       "unlimited": "ilimitado",
       "saved": "Suscripción actualizada",
@@ -643,7 +667,8 @@
       },
       "end": "Fin del contrato",
       "endHint": "Vacío = sin vencimiento. En esa fecha, la empresa vuelve al plan Gratuito.",
-      "price": "Precio anual del contrato (USD)",
+      "price": "Precio anual del contrato",
+      "currency": "Moneda",
       "priceHint": "Facturado fuera de Stripe, contabilizado en los ingresos.",
       "quotas": "Cuotas negociadas (vacío = las del plan, se acepta «{unlimited}»)",
       "quota": {
@@ -847,6 +872,7 @@
       "partners": "Programa de socios",
       "expenses": "Gastos y cargas",
       "treasury": "Tesorería y banco",
+      "rates": "Tipos contables",
       "reports": "Informes para socios",
       "audit": "Registro de auditoría",
       "tenants": "Empresas",
@@ -882,8 +908,11 @@
     "name": "Nombre",
     "descriptionLabel": "Descripción",
     "yearlyPrice": "Precio anual ({currency})",
-    "yearlyPriceHint": "Para las nuevas suscripciones.",
-    "stripePriceId": "ID del precio de Stripe",
+    "yearlyPrices": "Precios anuales por moneda",
+    "yearlyPriceHint": "Para nuevas suscripciones y renovaciones. Vacío = plan no ofrecido en esta moneda.",
+    "stripePriceId": "Precio de Stripe ({currency})",
+    "offlineOnly": "Pago fuera de línea: sin precio de Stripe.",
+    "invalidPrice": "Precio no válido en {currency}.",
     "trialDays": "Días de prueba",
     "trialDaysHint": "Duración por defecto de una prueba concedida desde la ficha de la empresa.",
     "quotas": "Cuotas (vacío = ilimitado)",

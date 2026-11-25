@@ -1,20 +1,22 @@
 import { Injectable, Logger } from "@nestjs/common";
 import Stripe from "stripe";
 import { Prisma, type BillingInterval, type Subscription, type SubscriptionPlan, type SubscriptionStatus } from "@fove/database";
-import { loadConfig, stripeSecretKey, stripeWebhookSecret, stripeYearlyPrice } from "../config";
+import { isBillingCurrency, onlineCurrencyFor, referralRewardCents, type BillingCurrency } from "@fove/shared";
+import { loadConfig, stripeSecretKey, stripeWebhookSecret } from "../config";
 import { PrismaService } from "../common/prisma.service";
 import { AuditService } from "../common/audit.service";
 import { badRequest, notFound } from "../common/errors";
 import { randomToken } from "../common/crypto";
 import type { TenantContext } from "../common/context";
 import { PlanService } from "./plan.service";
+import { PricingService, type PlanWithPrices } from "./pricing.service";
 import { PartnersService } from "../partners/partners.service";
 import { ReferralService } from "../referrals/referral.service";
 
 /** Un abonnement payé remplace un éventuel contrat sur-mesure et ses dérogations. */
 const NO_CONTRACT = { limitsOverride: Prisma.DbNull, featuresOverride: Prisma.DbNull, contractPriceYearlyCents: null };
 
-type SubscriptionWithPlan = Subscription & { plan: SubscriptionPlan };
+type SubscriptionWithPlan = Subscription & { plan: PlanWithPrices };
 
 /**
  * Facturation. Sans STRIPE_SECRET_KEY, le fournisseur simulé (MOCK) applique
@@ -32,6 +34,7 @@ export class BillingService {
     private readonly audit: AuditService,
     private readonly partners: PartnersService,
     private readonly referrals: ReferralService,
+    private readonly pricing: PricingService,
   ) {
     const key = stripeSecretKey();
     this.stripe = key ? new Stripe(key) : null;
@@ -41,25 +44,70 @@ export class BillingService {
     return this.stripe ? "stripe" : loadConfig().isProd ? "unavailable" : "mock";
   }
 
-  listPlans() {
-    return this.prisma.client.subscriptionPlan.findMany({ where: { active: true }, orderBy: { sortOrder: "asc" } });
+  /** Offres actives avec leur prix dans chaque monnaie (vitrine, page Abonnement). */
+  async listPlans() {
+    const plans = await this.prisma.client.subscriptionPlan.findMany({ where: { active: true }, orderBy: { sortOrder: "asc" }, include: { prices: true } });
+    return plans.map(({ prices, ...plan }) => ({
+      ...plan,
+      prices: Object.fromEntries(prices.map((p) => [p.currency, p.yearlyCents])) as Partial<Record<BillingCurrency, number>>,
+    }));
   }
 
   async overview(ctx: TenantContext) {
-    const [subscription, plans, usage, limits, current] = await Promise.all([
+    const [subscription, plans, usage, limits, current, billingCurrency] = await Promise.all([
       this.prisma.client.subscription.findUnique({ where: { tenantId: ctx.tenantId }, include: { plan: true, scheduledPlan: { select: { code: true, name: true } } } }),
       this.listPlans(),
       this.plans.usage(ctx.tenantId),
       this.plans.limits(ctx.tenantId),
       this.plans.currentPlan(ctx.tenantId),
+      this.pricing.tenantCurrency(ctx.tenantId),
     ]);
     const currentPlan = { code: current.code, name: current.name, kind: current.kind };
-    return { mode: this.mode, subscription, currentPlan, plans, usage, limits };
+    const running = subscription ? await this.runningPaid(subscription) : false;
+    return {
+      mode: this.mode,
+      subscription,
+      currentPlan,
+      plans,
+      usage,
+      limits,
+      currency: {
+        /** Monnaie choisie (ou celle du pays) : prix affichés et règlement hors ligne. */
+        billing: billingCurrency,
+        /** Monnaie d'un paiement en ligne (USD ou EUR). */
+        online: onlineCurrencyFor(billingCurrency),
+        /** Monnaie de l'abonnement en cours, fixe jusqu'au renouvellement. */
+        subscription: running ? subscription!.currency : null,
+      },
+    };
+  }
+
+  /**
+   * Monnaie de facturation choisie par le commerçant. Elle s'applique tout de suite s'il
+   * n'a pas d'abonnement payant en cours, sinon au renouvellement (l'abonnement garde la sienne).
+   */
+  async setCurrency(ctx: TenantContext, currency: string) {
+    if (!isBillingCurrency(currency)) throw badRequest("invalid_currency", "Monnaie non proposée");
+    await this.prisma.client.tenantSettings.upsert({
+      where: { tenantId: ctx.tenantId },
+      update: { billingCurrency: currency },
+      create: { tenantId: ctx.tenantId, billingCurrency: currency },
+    });
+    const sub = await this.prisma.client.subscription.findUnique({ where: { tenantId: ctx.tenantId }, include: { plan: true } });
+    const effective = sub && (await this.runningPaid(sub)) ? ("renewal" as const) : ("now" as const);
+    await this.audit.forTenant(ctx, "billing.currency_changed", undefined, { currency, effective });
+    return { currency, effective };
+  }
+
+  /** Abonnement payant en vigueur (quel que soit le fournisseur) : sa monnaie ne change pas avant le renouvellement. */
+  private async runningPaid(sub: Subscription & { plan: SubscriptionPlan }) {
+    if (sub.plan.kind === "FREE" || sub.status === "CANCELED" || sub.status === "INCOMPLETE") return false;
+    return !sub.currentPeriodEnd || sub.currentPeriodEnd > new Date() || sub.provider === "STRIPE";
   }
 
   /** Offre achetable en ligne : le Gratuit s'obtient en résiliant, le Sur-mesure sur devis. */
-  private async plan(code: string) {
-    const plan = await this.prisma.client.subscriptionPlan.findFirst({ where: { code, active: true } });
+  private async plan(code: string): Promise<PlanWithPrices> {
+    const plan = await this.prisma.client.subscriptionPlan.findFirst({ where: { code, active: true }, include: { prices: true } });
     if (!plan) throw notFound("Offre");
     if (plan.kind !== "PAID") throw badRequest("plan_not_purchasable", "Cette offre ne s'achète pas en ligne");
     return plan;
@@ -69,28 +117,33 @@ export class BillingService {
     if (interval !== "YEAR") throw badRequest("annual_only", "Les nouvelles souscriptions sont annuelles.");
     const plan = await this.plan(planCode);
     const appUrl = loadConfig().APP_URL;
-    const current = await this.prisma.client.subscription.findUnique({ where: { tenantId: ctx.tenantId }, include: { plan: true } });
+    const current = await this.prisma.client.subscription.findUnique({ where: { tenantId: ctx.tenantId }, include: { plan: { include: { prices: true } } } });
 
     // Abonnement payant en cours : changement d'offre, sans nouvelle période.
     if (current && this.isRunningPaid(current)) return this.changePlan(ctx, current, plan);
 
+    // Paiement en ligne : dollars ou euros (MAD et DZD paient le prix en euros, CDF le prix en dollars).
+    const currency = onlineCurrencyFor(await this.pricing.tenantCurrency(ctx.tenantId));
+    const amount = this.pricing.yearlyCents(plan, currency);
+    if (amount === null) throw badRequest("price_missing", "Prix non configuré pour cette offre dans cette monnaie");
+
     if (!this.stripe) {
       if (loadConfig().isProd) throw badRequest("stripe_disabled", "Le paiement n’est pas encore disponible. Contactez FOVE.");
-      const data = { planId: plan.id, status: "ACTIVE" as const, interval, provider: "MOCK" as const, cancelAtPeriodEnd: false, scheduledPlanId: null, currentPeriodEnd: periodEnd(interval) };
+      const data = { planId: plan.id, status: "ACTIVE" as const, interval, currency, provider: "MOCK" as const, cancelAtPeriodEnd: false, scheduledPlanId: null, currentPeriodEnd: periodEnd(interval) };
       await this.prisma.client.subscription.upsert({
         where: { tenantId: ctx.tenantId },
         update: { ...data, ...NO_CONTRACT },
         create: { tenantId: ctx.tenantId, ...data },
       });
       // Paiement simulé enregistré comme un vrai : remise du filleul et crédit de parrainage déduits.
-      const discount = await this.referrals.refereeDiscount(ctx.tenantId);
-      await this.recordMockPayment(ctx.tenantId, plan.priceYearlyCents, discount);
-      if (discount > 0) await this.referrals.markRefereeDiscountUsed(ctx.tenantId);
-      await this.audit.forTenant(ctx, "billing.mock_checkout", undefined, { plan: plan.code, interval });
+      const discount = await this.referrals.refereeDiscount(ctx.tenantId, currency);
+      await this.recordMockPayment(ctx.tenantId, amount, currency, discount);
+      if (discount > 0) await this.referrals.markRefereeDiscountUsed(ctx.tenantId, Math.min(discount, amount));
+      await this.audit.forTenant(ctx, "billing.mock_checkout", undefined, { plan: plan.code, interval, currency });
       return { url: `${appUrl}/app/billing?checkout=mock`, mode: "mock" as const };
     }
 
-    const price = interval === "YEAR" ? stripeYearlyPrice(plan.code, plan.stripePriceYearlyId) : plan.stripePriceMonthlyId;
+    const price = this.pricing.stripePrice(plan, currency);
     if (!price) throw badRequest("price_missing", "Tarif Stripe non configuré pour cette offre");
     const tenant = await this.prisma.client.tenant.findUniqueOrThrow({ where: { id: ctx.tenantId } });
     const buyer = ctx.actor.type === "user"
@@ -112,7 +165,7 @@ export class BillingService {
 
     // Remise du filleul (parrainage) : coupon Stripe s'il est configuré (incompatible avec la saisie d'un code promo).
     const referralCoupon = loadConfig().REFERRAL_STRIPE_COUPON_ID;
-    const refereeDiscount = referralCoupon ? await this.referrals.refereeDiscount(tenant.id) : 0;
+    const refereeDiscount = referralCoupon ? await this.referrals.refereeDiscount(tenant.id, currency) : 0;
     const session = await this.stripe.checkout.sessions.create({
       mode: "subscription",
       ...(customerId ? { customer: customerId } : customerEmail ? { customer_email: customerEmail } : {}),
@@ -131,7 +184,7 @@ export class BillingService {
     await this.prisma.client.subscription.upsert({
       where: { tenantId: tenant.id },
       update: {},
-      create: { tenantId: tenant.id, planId: plan.id, status: "INCOMPLETE", interval, provider: "STRIPE", stripeCustomerId: customerId },
+      create: { tenantId: tenant.id, planId: plan.id, status: "INCOMPLETE", interval, currency, provider: "STRIPE", stripeCustomerId: customerId },
     });
     return { url: session.url!, mode: "stripe" as const };
   }
@@ -150,16 +203,19 @@ export class BillingService {
    * Un nouveau choix remplace un changement déjà programmé ; reprendre l'offre
    * actuelle l'annule.
    */
-  private async changePlan(ctx: TenantContext, sub: SubscriptionWithPlan, plan: SubscriptionPlan) {
+  private async changePlan(ctx: TenantContext, sub: SubscriptionWithPlan, plan: PlanWithPrices) {
     const appUrl = loadConfig().APP_URL;
     if (plan.id === sub.plan.id) {
       if (!sub.scheduledPlanId) throw badRequest("same_plan", "Vous êtes déjà sur cette offre");
       await this.cancelScheduledChange(ctx);
       return { url: `${appUrl}/app/billing?checkout=updated`, mode: this.mode, effective: "now" as const };
     }
-    const upgrade = plan.priceYearlyCents > sub.plan.priceYearlyCents;
+    // Comparaison dans la monnaie de l'abonnement, qui reste la même jusqu'au renouvellement.
+    const newPrice = this.pricing.yearlyCents(plan, sub.currency);
+    if (newPrice === null) throw badRequest("price_missing", "Prix non configuré pour cette offre dans cette monnaie");
+    const upgrade = newPrice > (this.pricing.yearlyCents(sub.plan, sub.currency) ?? 0);
     if (this.stripe && sub.stripeSubscriptionId) {
-      const price = stripeYearlyPrice(plan.code, plan.stripePriceYearlyId);
+      const price = this.pricing.stripePrice(plan, sub.currency);
       if (!price) throw badRequest("price_missing", "Tarif Stripe non configuré pour cette offre");
       const remote = await this.releaseSchedule(sub.stripeSubscriptionId);
       if (upgrade) {
@@ -281,15 +337,17 @@ export class BillingService {
     const due = await db.subscription.findMany({
       where: { provider: { in: ["MANUAL", "MOCK"] }, status: { in: ["ACTIVE", "TRIALING", "PAST_DUE"] }, currentPeriodEnd: { lt: now } },
     });
+    // Renouvellement simulé : la monnaie choisie entre-temps par le commerçant s'applique (paiement en ligne : USD ou EUR).
     let ended = 0;
     let renewed = 0;
     for (const sub of due) {
       if (sub.provider === "MOCK" && !sub.cancelAtPeriodEnd) {
         const next = sub.scheduledPlanId ? { planId: sub.scheduledPlanId, scheduledPlanId: null } : {};
-        await db.subscription.update({ where: { id: sub.id }, data: { currentPeriodEnd: periodEnd(sub.interval), ...next } });
-        const plan = await db.subscriptionPlan.findUniqueOrThrow({ where: { id: sub.scheduledPlanId ?? sub.planId } });
-        const price = sub.contractPriceYearlyCents ?? (sub.interval === "YEAR" ? plan.priceYearlyCents : plan.priceMonthlyCents);
-        if (price > 0) await this.recordMockPayment(sub.tenantId, price, 0);
+        const currency = onlineCurrencyFor(await this.pricing.tenantCurrency(sub.tenantId));
+        await db.subscription.update({ where: { id: sub.id }, data: { currentPeriodEnd: periodEnd(sub.interval), currency, ...next } });
+        const plan = await db.subscriptionPlan.findUniqueOrThrow({ where: { id: sub.scheduledPlanId ?? sub.planId }, include: { prices: true } });
+        const price = this.pricing.yearlyCents(plan, currency) ?? 0;
+        if (price > 0) await this.recordMockPayment(sub.tenantId, price, currency, 0);
         renewed += 1;
         continue;
       }
@@ -371,10 +429,9 @@ export class BillingService {
     const customerId = typeof remote.customer === "string" ? remote.customer : remote.customer.id;
     const item = remote.items.data[0];
     const priceId = item?.price.id;
-    const plans = priceId ? await this.prisma.client.subscriptionPlan.findMany({ where: { active: true } }) : [];
-    const plan = plans.find((candidate) =>
-      candidate.stripePriceMonthlyId === priceId || stripeYearlyPrice(candidate.code, candidate.stripePriceYearlyId) === priceId,
-    ) ?? null;
+    const match = priceId ? await this.pricing.planByStripePrice(priceId) : null;
+    const plan = match?.plan ?? null;
+    const currency = (item?.price.currency ?? match?.currency ?? "usd").toUpperCase();
     // Abonnement créé depuis le tableau de bord Stripe : pas de métadonnée,
     // on retrouve l'entreprise par son client Stripe.
     const tenantId =
@@ -398,6 +455,7 @@ export class BillingService {
     const data = {
       planId: plan.id,
       status,
+      currency,
       provider: "STRIPE" as const,
       interval: item?.price.recurring?.interval === "year" ? ("YEAR" as const) : ("MONTH" as const),
       stripeSubscriptionId: remote.id,
@@ -510,9 +568,9 @@ export class BillingService {
    * Paiement en mode simulé : enregistré comme un paiement réel (finance, commissions, parrainage).
    * La remise du filleul puis le crédit de parrainage disponible sont déduits du prix.
    */
-  private async recordMockPayment(tenantId: string, priceCents: number, discountCents: number) {
+  private async recordMockPayment(tenantId: string, priceCents: number, currency: string, discountCents: number) {
     const afterDiscount = Math.max(0, priceCents - discountCents);
-    const credit = Math.min(await this.referrals.availableCredit(tenantId), afterDiscount);
+    const credit = Math.min(await this.referrals.availableCredit(tenantId, currency), afterDiscount);
     const amount = afterDiscount - credit;
     const payment = await this.prisma.client.payment.create({
       data: {
@@ -521,13 +579,13 @@ export class BillingService {
         provider: "MOCK",
         amountCents: amount,
         netCents: amount,
-        currency: "USD",
+        currency,
         status: "SUCCEEDED",
         method: "mock",
         confirmedAt: new Date(),
       },
     });
-    if (credit > 0) await this.referrals.consumeCredit(tenantId, credit, payment.id);
+    if (credit > 0) await this.referrals.consumeCredit(tenantId, credit, currency, payment.id);
     await this.referrals.onPaymentConfirmed(payment);
     if (amount > 0) {
       try {
@@ -543,7 +601,7 @@ export class BillingService {
    * Facture Stripe payée, côté parrainage : empreinte de la carte (anti-abus), attente du crédit du
    * parrain, remise du filleul consommée, et suivi du crédit déduit par Stripe du solde client.
    */
-  private async onStripeInvoicePaidForReferral(invoice: Stripe.Invoice, payment: { id: string; tenantId: string; confirmedAt: Date | null }, paymentIntentId?: string) {
+  private async onStripeInvoicePaidForReferral(invoice: Stripe.Invoice, payment: { id: string; tenantId: string; currency: string; confirmedAt: Date | null }, paymentIntentId?: string) {
     let cardFingerprint: string | null = null;
     if (this.stripe && paymentIntentId) {
       try {
@@ -559,11 +617,11 @@ export class BillingService {
 
     const coupon = loadConfig().REFERRAL_STRIPE_COUPON_ID;
     const discounts = (invoice as unknown as { discounts?: (string | { coupon?: { id?: string } | string })[] }).discounts ?? [];
-    if (coupon && discounts.length > 0) await this.referrals.markRefereeDiscountUsed(payment.tenantId);
+    if (coupon && discounts.length > 0) await this.referrals.markRefereeDiscountUsed(payment.tenantId, referralRewardCents(payment.currency));
 
     // Solde client négatif = crédit ; ce que Stripe a déduit sur cette facture.
     const applied = (invoice.ending_balance ?? 0) - (invoice.starting_balance ?? 0);
-    if (applied > 0) await this.referrals.consumeCredit(payment.tenantId, applied, payment.id);
+    if (applied > 0) await this.referrals.consumeCredit(payment.tenantId, applied, payment.currency, payment.id);
   }
 }
 

@@ -23,6 +23,7 @@ import {
   Users,
   WalletCards,
   X,
+  Coins,
 } from "lucide-react";
 import { Logo } from "@/components/brand";
 import { LocaleSwitcher } from "@/components/locale-switcher";
@@ -33,7 +34,7 @@ import { cn } from "@/lib/utils";
 type NavGroupKey = "finance" | "businesses" | "sales" | "configuration";
 type NavItemKey =
   | "overview" | "sales" | "payments" | "subscriptions" | "customers" | "invoices" | "partners"
-  | "expenses" | "treasury" | "reports" | "audit" | "tenants" | "messages" | "plans" | "system";
+  | "expenses" | "treasury" | "rates" | "reports" | "audit" | "tenants" | "messages" | "plans" | "system";
 
 interface AdminShellProps {
   user: {
@@ -100,6 +101,12 @@ const NAV_GROUPS: { title: NavGroupKey; items: { href: string; label: NavItemKey
         href: "/admin/finance/treasury",
         label: "treasury",
         icon: Landmark,
+        exact: false,
+      },
+      {
+        href: "/admin/finance/rates",
+        label: "rates",
+        icon: Coins,
         exact: false,
       },
       {

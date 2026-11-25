@@ -139,6 +139,9 @@
     },
     "overview": {
       "title": "Finance and partners hub",
+      "byCurrency": { "title": "Collections by currency", "help": "Net amounts, before conversion to {currency}.", "count": "{count, plural, one {# payment} other {# payments}}" },
+      "missingRates": "Missing accounting rate for {currencies}: these amounts count as 0 in the totals.",
+      "ratesLink": "Set the rates",
       "description": "A consolidated, transparent view of FOVE's actual business activity.",
       "addExpense": "Add expense",
       "newPartner": "New partner",
@@ -380,6 +383,18 @@
         "CANCELED": "Cancelled"
       }
     },
+    "rates": {
+      "title": "Accounting rates",
+      "description": "Units of each currency for €1. Used to consolidate Finance in euros and convert partner commissions; never for the price a merchant pays.",
+      "help": "Review them regularly (for example every quarter). A change applies to later calculations; commissions already converted keep their rate.",
+      "label": "€1 = … {currency}",
+      "updated": "Changed on {date} by {by}",
+      "system": "initial setup",
+      "default": "Initial value, never changed",
+      "invalid": "Each rate must be a positive number.",
+      "saved": "Rates saved.",
+      "save": "Save rates"
+    },
     "treasury": {
       "title": "Treasury and bank reconciliation",
       "description": "Available net cash, Stripe balances and entry checks.",
@@ -427,6 +442,7 @@
         "commissions": "Partners",
         "expenses": "Expenses",
         "treasury": "Treasury",
+        "rates": "Accounting rates",
         "reports": "Partner reports",
         "audit": "Audit"
       }
@@ -630,6 +646,14 @@
       "title": "Audit log",
       "empty": "No actions recorded."
     },
+    "billingCurrency": {
+      "label": "Billing currency",
+      "hint": "Prices shown to the merchant, contracts and offline payments. Online payment: in euros or dollars.",
+      "pending": "Current subscription in {current}; switches to {next} at renewal.",
+      "country": "Based on country",
+      "countryWith": "Based on country ({currency})",
+      "saved": "Billing currency saved."
+    },
     "form": {
       "unlimited": "unlimited",
       "saved": "Subscription updated",
@@ -643,7 +667,8 @@
       },
       "end": "Contract end",
       "endHint": "Empty = no end date. On that date the business moves back to the Free plan.",
-      "price": "Annual contract price (USD)",
+      "price": "Yearly contract price",
+      "currency": "Currency",
       "priceHint": "Billed outside Stripe, counted in revenue.",
       "quotas": "Negotiated quotas (empty = plan defaults, “{unlimited}” allowed)",
       "quota": {
@@ -847,6 +872,7 @@
       "partners": "Partner program",
       "expenses": "Expenses & Costs",
       "treasury": "Treasury & Bank",
+      "rates": "Accounting rates",
       "reports": "Partner reports",
       "audit": "Audit log",
       "tenants": "Businesses",
@@ -882,8 +908,11 @@
     "name": "Name",
     "descriptionLabel": "Description",
     "yearlyPrice": "Yearly price ({currency})",
-    "yearlyPriceHint": "For new subscriptions.",
-    "stripePriceId": "Stripe price ID",
+    "yearlyPrices": "Yearly prices by currency",
+    "yearlyPriceHint": "For new subscriptions and renewals. Empty = plan not offered in this currency.",
+    "stripePriceId": "Stripe price ({currency})",
+    "offlineOnly": "Paid offline: no Stripe price.",
+    "invalidPrice": "Invalid price in {currency}.",
     "trialDays": "Trial days",
     "trialDaysHint": "Default length of a trial granted from the business page.",
     "quotas": "Quotas (empty = unlimited)",

@@ -19,6 +19,8 @@ import { getTranslations } from "next-intl/server";
 import { Button } from "@/components/ui/button";
 import { PartnerCommissions } from "@/components/marketing/partner-commissions";
 import { namespacedPageMeta } from "@/lib/og";
+import { serverGet } from "@/lib/server-api";
+import type { Plan } from "@/components/marketing/pricing-table";
 
 export async function generateMetadata() {
   return namespacedPageMeta("partner.landing.meta", "/partenaires");
@@ -36,7 +38,7 @@ const PROFILES = ["agencies", "developers", "freelancers", "consultants", "entre
 const FAQS = ["who", "attribution", "base", "withdraw", "fees", "both"] as const;
 
 export default async function PartenairesPage() {
-  const t = await getTranslations("partner.landing");
+  const [t, { data: plans }] = await Promise.all([getTranslations("partner.landing"), serverGet<Plan[]>("/plans")]);
   return (
     <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:py-16">
       {/* HERO SECTION */}
@@ -137,7 +139,7 @@ export default async function PartenairesPage() {
       </section>
 
       {/* SECTION : GRILLE DES COMMISSIONS */}
-      <PartnerCommissions />
+      <PartnerCommissions plans={plans ?? []} />
 
       {/* SECTION : AVANTAGES DU PARTENAIRE */}
       <section className="mb-24 rounded-2xl border border-line bg-surface p-8 sm:p-12 shadow-xs">

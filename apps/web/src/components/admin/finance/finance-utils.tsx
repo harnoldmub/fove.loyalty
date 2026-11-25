@@ -9,7 +9,7 @@ function intlLocale(locale?: string) {
   return INTL_LOCALE[isLocale(lang) ? lang : "fr"];
 }
 
-export function formatFinance(cents: number | null | undefined, currency = "USD", locale?: string): string {
+export function formatFinance(cents: number | null | undefined, currency = "EUR", locale?: string): string {
   const safeCents = typeof cents === "number" && !Number.isNaN(cents) ? cents : 0;
   const amount = safeCents / 100;
   const curr = (currency || "USD").toUpperCase();

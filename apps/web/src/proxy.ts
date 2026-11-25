@@ -1,5 +1,9 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { defaultBillingCurrency, isBillingCurrency } from "@fove/shared";
 import { isLocale, LOCALE_COOKIE, localeForCountry, localeFromAcceptLanguage } from "@/i18n/config";
+
+// Même valeur que CURRENCY_COOKIE (lib/marketing-currency.ts, module client).
+const CURRENCY_COOKIE = "fove_currency";
 
 // Même valeur que NATIVE_APP_MARKER (lib/native-app.ts, module client).
 const NATIVE_APP_MARKER = "FoveApp";
@@ -19,14 +23,25 @@ export function proxy(request: NextRequest) {
   }
 
   // Langue : choix de l'utilisateur (cookie), sinon pays du visiteur (en-tête
-  // Cloudflare), sinon langue du navigateur.
-  if (isLocale(request.cookies.get(LOCALE_COOKIE)?.value)) return NextResponse.next();
+  // Cloudflare), sinon langue du navigateur. Monnaie des prix : choix du
+  // visiteur, sinon celle de son pays (sans pays connu, le navigateur décide).
   const country = request.headers.get("cf-ipcountry");
-  const locale = country && country !== "XX" ? localeForCountry(country) : (localeFromAcceptLanguage(request.headers.get("accept-language")) ?? "fr");
-  const forwarded = new Headers(request.headers);
-  forwarded.set("x-fove-locale", locale);
-  const response = NextResponse.next({ request: { headers: forwarded } });
-  response.cookies.set(LOCALE_COOKIE, locale, { path: "/", maxAge: 60 * 60 * 24 * 365, sameSite: "lax" });
+  const knownCountry = country && country !== "XX" ? country : null;
+  const hasLocale = isLocale(request.cookies.get(LOCALE_COOKIE)?.value);
+  const setCurrency = knownCountry && !isBillingCurrency(request.cookies.get(CURRENCY_COOKIE)?.value);
+  if (hasLocale && !setCurrency) return NextResponse.next();
+
+  let response: NextResponse;
+  if (hasLocale) {
+    response = NextResponse.next();
+  } else {
+    const locale = knownCountry ? localeForCountry(knownCountry) : (localeFromAcceptLanguage(request.headers.get("accept-language")) ?? "fr");
+    const forwarded = new Headers(request.headers);
+    forwarded.set("x-fove-locale", locale);
+    response = NextResponse.next({ request: { headers: forwarded } });
+    response.cookies.set(LOCALE_COOKIE, locale, { path: "/", maxAge: 60 * 60 * 24 * 365, sameSite: "lax" });
+  }
+  if (setCurrency) response.cookies.set(CURRENCY_COOKIE, defaultBillingCurrency(knownCountry), { path: "/", maxAge: 60 * 60 * 24 * 365, sameSite: "lax" });
   return response;
 }
 

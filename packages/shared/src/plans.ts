@@ -42,9 +42,6 @@ export interface PlanDefinition {
   kind: PlanKindCode;
   name: string;
   description: string;
-  currency: string;
-  priceMonthlyCents: number;
-  priceYearlyCents: number;
   trialDays: number;
   features: PlanFeatures;
   limits: PlanLimits;
@@ -72,9 +69,6 @@ export const DEFAULT_PLANS: PlanDefinition[] = [
     kind: "FREE",
     name: "Gratuit",
     description: "Pour démarrer votre programme de fidélité sans engagement.",
-    currency: "USD",
-    priceMonthlyCents: 0,
-    priceYearlyCents: 0,
     trialDays: 0,
     features: FREE_PLAN_FEATURES,
     limits: FREE_PLAN_LIMITS,
@@ -85,9 +79,6 @@ export const DEFAULT_PLANS: PlanDefinition[] = [
     kind: "PAID",
     name: "Essentiel",
     description: "Pour les petits commerces, salons et indépendants.",
-    currency: "USD",
-    priceMonthlyCents: 0,
-    priceYearlyCents: 9900,
     trialDays: 14,
     features: { ...PAID_FEATURES, api: false, integrations: false },
     limits: { customers: 500, establishments: 1, staff: 3, programs: 1 },
@@ -98,9 +89,6 @@ export const DEFAULT_PLANS: PlanDefinition[] = [
     kind: "PAID",
     name: "Business",
     description: "Pour les boutiques qui veulent développer leur clientèle.",
-    currency: "USD",
-    priceMonthlyCents: 0,
-    priceYearlyCents: 19900,
     trialDays: 14,
     features: { ...PAID_FEATURES, api: true, integrations: true },
     limits: { customers: 2000, establishments: 1, staff: 15, programs: 3 },
@@ -111,9 +99,6 @@ export const DEFAULT_PLANS: PlanDefinition[] = [
     kind: "PAID",
     name: "Réseau",
     description: "Pour les enseignes qui gèrent plusieurs boutiques.",
-    currency: "USD",
-    priceMonthlyCents: 0,
-    priceYearlyCents: 39900,
     trialDays: 14,
     features: { ...PAID_FEATURES, api: true, integrations: true },
     limits: { customers: 10000, establishments: 3, staff: null, programs: null },
@@ -124,9 +109,6 @@ export const DEFAULT_PLANS: PlanDefinition[] = [
     kind: "CUSTOM",
     name: "Sur-mesure",
     description: "Pour les réseaux et enseignes aux besoins spécifiques : quotas, accompagnement et contrat sur devis.",
-    currency: "USD",
-    priceMonthlyCents: 0,
-    priceYearlyCents: 0,
     trialDays: 0,
     features: { ...PAID_FEATURES, api: true, integrations: true },
     limits: { customers: null, establishments: null, staff: null, programs: null },

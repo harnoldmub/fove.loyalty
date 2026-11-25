@@ -2,7 +2,7 @@ import { Body, Controller, Get, Headers, HttpCode, Post, Req } from "@nestjs/com
 import { ApiExcludeEndpoint, ApiTags } from "@nestjs/swagger";
 import { SkipThrottle } from "@nestjs/throttler";
 import type { Request } from "express";
-import { checkoutSchema } from "@fove/shared";
+import { billingCurrencySchema, checkoutSchema } from "@fove/shared";
 import type { z } from "zod";
 import { ZodPipe } from "../common/zod.pipe";
 import { RequirePermission, Tenant } from "../common/decorators";
@@ -46,6 +46,14 @@ export class BillingController {
   @RequirePermission("billing.write")
   checkout(@Tenant() ctx: TenantContext, @Body(new ZodPipe(checkoutSchema)) body: z.infer<typeof checkoutSchema>) {
     return this.billing.checkout(ctx, body.planCode, body.interval);
+  }
+
+  /** Monnaie de facturation : tout de suite sans abonnement payant en cours, sinon au renouvellement. */
+  @Post("app/billing/currency")
+  @TenantRoute()
+  @RequirePermission("billing.write")
+  setCurrency(@Tenant() ctx: TenantContext, @Body(new ZodPipe(billingCurrencySchema)) body: z.infer<typeof billingCurrencySchema>) {
+    return this.billing.setCurrency(ctx, body.currency);
   }
 
   @Post("app/billing/portal")

@@ -139,6 +139,9 @@
     },
     "overview": {
       "title": "Centre financier et associés",
+      "byCurrency": { "title": "Encaissements par monnaie", "help": "Montants nets, avant conversion en {currency}.", "count": "{count, plural, one {# paiement} other {# paiements}}" },
+      "missingRates": "Taux comptable manquant pour {currencies} : ces montants comptent pour 0 dans les totaux.",
+      "ratesLink": "Renseigner les taux",
       "description": "Vision consolidée et transparente de l'activité économique réelle de FOVE.",
       "addExpense": "Ajouter une dépense",
       "newPartner": "Nouveau partenaire",
@@ -380,6 +383,18 @@
         "CANCELED": "Résilié"
       }
     },
+    "rates": {
+      "title": "Taux comptables",
+      "description": "Unités de chaque monnaie pour 1 €. Servent à consolider la Finance en euros et à convertir les commissions des partenaires ; jamais au prix payé par un commerçant.",
+      "help": "Revoyez-les régulièrement (par exemple chaque trimestre). Un changement s’applique aux calculs suivants ; les commissions déjà converties gardent leur taux.",
+      "label": "1 € = … {currency}",
+      "updated": "Modifié le {date} par {by}",
+      "system": "l’initialisation",
+      "default": "Valeur initiale, jamais modifiée",
+      "invalid": "Chaque taux doit être un nombre positif.",
+      "saved": "Taux enregistrés.",
+      "save": "Enregistrer les taux"
+    },
     "treasury": {
       "title": "Trésorerie et rapprochement bancaire",
       "description": "Trésorerie nette disponible, soldes Stripe et contrôle des écritures.",
@@ -427,6 +442,7 @@
         "commissions": "Partenaires",
         "expenses": "Dépenses",
         "treasury": "Trésorerie",
+        "rates": "Taux comptables",
         "reports": "Rapports associés",
         "audit": "Audit"
       }
@@ -630,6 +646,14 @@
       "title": "Journal d'audit",
       "empty": "Aucune action enregistrée."
     },
+    "billingCurrency": {
+      "label": "Monnaie de facturation",
+      "hint": "Prix affichés au commerçant, contrats et règlements hors ligne. Paiement en ligne : en euros ou en dollars.",
+      "pending": "Abonnement en cours en {current} ; passage en {next} au renouvellement.",
+      "country": "Selon le pays",
+      "countryWith": "Selon le pays ({currency})",
+      "saved": "Monnaie de facturation enregistrée."
+    },
     "form": {
       "unlimited": "illimité",
       "saved": "Abonnement mis à jour",
@@ -643,7 +667,8 @@
       },
       "end": "Fin du contrat",
       "endHint": "Vide = sans échéance. À cette date, l'entreprise repasse sur l'offre Gratuite.",
-      "price": "Prix annuel du contrat (USD)",
+      "price": "Prix annuel du contrat",
+      "currency": "Monnaie",
       "priceHint": "Facturé hors Stripe, compté dans le revenu.",
       "quotas": "Quotas négociés (vide = ceux de l'offre, « {unlimited} » accepté)",
       "quota": {
@@ -847,6 +872,7 @@
       "partners": "Programme Partenaires",
       "expenses": "Dépenses & Charges",
       "treasury": "Trésorerie & Banque",
+      "rates": "Taux comptables",
       "reports": "Rapports associés",
       "audit": "Journal d'audit",
       "tenants": "Entreprises",
@@ -882,8 +908,11 @@
     "name": "Nom",
     "descriptionLabel": "Description",
     "yearlyPrice": "Prix annuel ({currency})",
-    "yearlyPriceHint": "Pour les nouvelles souscriptions.",
-    "stripePriceId": "Identifiant du prix Stripe",
+    "yearlyPrices": "Prix annuels par monnaie",
+    "yearlyPriceHint": "Pour les nouvelles souscriptions et les renouvellements. Vide = offre non proposée dans cette monnaie.",
+    "stripePriceId": "Tarif Stripe ({currency})",
+    "offlineOnly": "Réglé hors ligne : pas de tarif Stripe.",
+    "invalidPrice": "Prix invalide en {currency}.",
     "trialDays": "Jours d’essai",
     "trialDaysHint": "Durée par défaut d’un essai accordé depuis la fiche entreprise.",
     "quotas": "Quotas (vide = illimité)",

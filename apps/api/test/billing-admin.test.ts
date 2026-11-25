@@ -94,6 +94,7 @@ describe("webhooks Stripe signés", () => {
   beforeAll(async () => {
     await resetDatabase();
     app = await startApp({ STRIPE_SECRET_KEY: "sk_test_fove_fake", STRIPE_WEBHOOK_SECRET: whsec });
+    await db.planPrice.updateMany({ where: { plan: { code: "business" }, currency: "USD" }, data: { stripePriceId: "price_business_m" } });
   });
   afterAll(async () => {
     await app.close();
@@ -116,7 +117,7 @@ describe("webhooks Stripe signés", () => {
           cancel_at_period_end: false,
           trial_end: null,
           metadata: { tenantId: o.tenantId },
-          items: { data: [{ id: "si_1", current_period_end: Math.floor(Date.now() / 1000) + 86400, price: { id: "price_business_m", recurring: { interval: "month" } } }] },
+          items: { data: [{ id: "si_1", current_period_end: Math.floor(Date.now() / 1000) + 86400, price: { id: "price_business_m", currency: "usd", recurring: { interval: "month" } } }] },
         },
       },
     };
@@ -180,7 +181,7 @@ describe("webhooks Stripe signés", () => {
             cancel_at_period_end: false,
             trial_end: null,
             metadata: {},
-            items: { data: [{ id: "si_2", current_period_end: Math.floor(Date.now() / 1000) + 86400, price: { id: "price_business_m", recurring: { interval: "year" } } }] },
+            items: { data: [{ id: "si_2", current_period_end: Math.floor(Date.now() / 1000) + 86400, price: { id: "price_business_m", currency: "usd", recurring: { interval: "year" } } }] },
           },
         },
       });
@@ -249,10 +250,14 @@ describe("Super Admin FOVE", () => {
     expect(stats.body.paying + stats.body.free).toBeLessThanOrEqual(stats.body.tenants);
   });
 
-  it("modifie le prix d'une offre sans toucher au code", async () => {
+  it("modifie le prix d'une offre dans une monnaie sans toucher aux autres", async () => {
     const admin = await superAdmin();
     const plan = await db.subscriptionPlan.findUniqueOrThrow({ where: { code: "starter" } });
-    expect((await admin.patch(`/api/admin/plans/${plan.id}`, { priceMonthlyCents: 1490 })).status).toBe(200);
-    expect((await request(app.getHttpServer()).get("/api/plans")).body.find((p: { code: string }) => p.code === "starter").priceMonthlyCents).toBe(1490);
+    const res = await admin.patch(`/api/admin/plans/${plan.id}`, { prices: [{ currency: "EUR", yearlyCents: 9900, stripePriceId: "price_eur" }, { currency: "DZD", yearlyCents: 1_800_000 }] });
+    expect(res.status).toBe(200);
+    const prices = (await request(app.getHttpServer()).get("/api/plans")).body.find((p: { code: string }) => p.code === "starter").prices;
+    expect(prices).toMatchObject({ EUR: 9900, DZD: 1_800_000, USD: 12900, MAD: 129000 });
+    // Pas de tarif Stripe pour une monnaie réglée hors ligne.
+    expect((await admin.patch(`/api/admin/plans/${plan.id}`, { prices: [{ currency: "MAD", yearlyCents: 100, stripePriceId: "price_mad" }] })).status).toBe(400);
   });
 });

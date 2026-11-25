@@ -44,7 +44,7 @@ export default function ExpensesPage() {
   const { data, isLoading, refetch } = useQuery({
     queryKey: ["admin-finance-expenses", period, category],
     queryFn: () =>
-      api.get<{ items: ExpenseRow[]; totalCents: number; count: number }>(
+      api.get<{ items: ExpenseRow[]; totalCents: number; currency: string; count: number }>(
         `/admin/finance/expenses?range=${period}&category=${category}`
       ),
   });
@@ -102,7 +102,7 @@ export default function ExpensesPage() {
           <div className="rounded-lg bg-surface-2 px-4 py-2 text-xs">
             {t("total")}{" "}
             <strong className="text-rose-500 font-mono text-sm ms-1">
-              {formatFinance(data?.totalCents ?? 0, "USD")}
+              {formatFinance(data?.totalCents ?? 0, data?.currency)}
             </strong>
           </div>
         </div>

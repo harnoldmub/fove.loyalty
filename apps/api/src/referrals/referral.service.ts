@@ -4,16 +4,19 @@ import type { Prisma } from "@fove/database";
 import { PrismaService } from "../common/prisma.service";
 import { AuditService } from "../common/audit.service";
 import { PlanService } from "../billing/plan.service";
+import { PricingService } from "../billing/pricing.service";
+import { convertCents, referralCapCents, referralRewardCents } from "@fove/shared";
 import { badRequest, notFound } from "../common/errors";
 import { loadConfig, stripeSecretKey } from "../config";
 import { EmailService } from "../notifications/email.service";
 import { partnerInviteMessage } from "../i18n/emails";
 import { tenantLocale } from "../i18n/locale";
 
-/** Récompense du parrain et remise du filleul (USD, en centimes). docs/chantier-parrainage.md */
-export const REFERRAL_REWARD_CENTS = 2000;
-/** Plafond absolu de gain par année civile ; sinon le prix annuel de l'offre du parrain s'il est plus bas. */
-export const REFERRAL_YEARLY_CAP_CENTS = 20000;
+/**
+ * Récompense du parrain, remise du filleul et plafond annuel : grille par monnaie de @fove/shared
+ * (20 € / 20 $ / 200 MAD… ; plafond 200 € / 200 $…), docs/chantier-parrainage.md et chantier-multi-devises.md.
+ * Le plafond est aussi limité au prix annuel de l'offre du parrain.
+ */
 /** Attente après le premier paiement annuel du filleul (remboursement ou résiliation possibles). */
 export const REFERRAL_PENDING_DAYS = 14;
 /** Durée de validité d'un crédit acquis. */
@@ -64,6 +67,7 @@ export class ReferralService {
     private readonly audit: AuditService,
     private readonly plans: PlanService,
     private readonly email: EmailService,
+    private readonly pricing: PricingService,
   ) {
     const key = stripeSecretKey();
     this.stripe = key ? new Stripe(key) : null;
@@ -89,7 +93,7 @@ export class ReferralService {
 
     const clickedAt = p.clickedAt && p.clickedAt <= Date.now() ? new Date(p.clickedAt) : null;
     try {
-      await db.referralReward.create({ data: { referrerTenantId: referrer.id, referredTenantId: p.referredTenantId, clickedAt, refereeDiscountCents: REFERRAL_REWARD_CENTS } });
+      await db.referralReward.create({ data: { referrerTenantId: referrer.id, referredTenantId: p.referredTenantId, clickedAt } });
     } catch {
       return false; // Déjà parrainé : un commerce n'a qu'un parrain.
     }
@@ -114,24 +118,23 @@ export class ReferralService {
       }),
       db.referralReward.findUnique({ where: { referredTenantId: tenantId }, include: { referrerTenant: { select: { name: true } } } }),
     ]);
-    const { start, end } = calendarYear(now);
-    const earnedThisYear = rewards
-      .filter((r) => (r.status === "EARNED" || r.status === "EXPIRED") && r.earnedAt && r.earnedAt >= start && r.earnedAt < end)
-      .reduce((sum, r) => sum + r.creditAmountCents, 0);
-    const cap = await this.yearlyCap(tenantId);
-    const earned = rewards.filter((r) => r.status === "EARNED" || r.status === "EXPIRED");
-    const available = rewards.filter((r) => r.status === "EARNED" && r.creditRemainingCents > 0);
+    const { start } = calendarYear(now);
+    const { cap, currency } = await this.yearlyCap(tenantId);
+    const earnedThisYear = await this.earnedThisYear(tenantId, currency, now);
+    // Gains et crédit dans la monnaie actuelle du commerce (un crédit d'une autre monnaie reste dans la liste).
+    const earned = rewards.filter((r) => (r.status === "EARNED" || r.status === "EXPIRED") && r.currency === currency);
+    const available = rewards.filter((r) => r.status === "EARNED" && r.creditRemainingCents > 0 && r.currency === currency);
     const nextExpiry = available.map((r) => r.expiresAt).filter((d): d is Date => Boolean(d)).sort((a, b) => a.getTime() - b.getTime())[0] ?? null;
 
     return {
       available: features.referral,
       link: features.referral ? `${appUrl}/signup?ref=${tenant.slug}` : null,
-      rewardCents: REFERRAL_REWARD_CENTS,
-      currency: "USD",
+      rewardCents: referralRewardCents(currency),
+      currency,
       year: { year: start.getUTCFullYear(), capCents: cap, earnedCents: earnedThisYear, remainingCents: Math.max(0, cap - earnedThisYear) },
       credit: {
         earnedCents: earned.reduce((sum, r) => sum + r.creditAmountCents, 0),
-        usedCents: rewards.reduce((sum, r) => sum + r.creditUsedCents, 0),
+        usedCents: rewards.filter((r) => r.currency === currency).reduce((sum, r) => sum + r.creditUsedCents, 0),
         availableCents: available.reduce((sum, r) => sum + r.creditRemainingCents, 0),
         pendingCount: rewards.filter((r) => r.status === "PENDING").length,
         nextExpiry,
@@ -142,6 +145,7 @@ export class ReferralService {
         signedUpAt: r.createdAt,
         status: r.status,
         amountCents: r.creditAmountCents,
+        currency: r.currency,
         pendingUntil: r.pendingUntil,
         earnedAt: r.earnedAt,
         expiresAt: r.expiresAt,
@@ -149,22 +153,29 @@ export class ReferralService {
       partnerInvite: await this.partnerInvite(tenantId, now),
       asReferee:
         asReferee && !asReferee.refereeDiscountUsedAt && asReferee.status !== "CANCELLED"
-          ? { referrerName: asReferee.referrerTenant.name, discountCents: asReferee.refereeDiscountCents }
+          ? { referrerName: asReferee.referrerTenant.name, discountCents: referralRewardCents(currency), currency }
           : null,
     };
   }
 
   // --- Remise du filleul -------------------------------------------------------
 
-  /** Remise due au filleul sur sa première souscription annuelle (0 si déjà utilisée ou pas de parrainage). */
-  async refereeDiscount(tenantId: string): Promise<number> {
+  /**
+   * Remise due au filleul sur sa première souscription annuelle, dans la monnaie de la facture
+   * (0 si déjà utilisée ou pas de parrainage).
+   */
+  async refereeDiscount(tenantId: string, currency: string): Promise<number> {
     const referral = await this.prisma.client.referralReward.findUnique({ where: { referredTenantId: tenantId } });
     if (!referral || referral.refereeDiscountUsedAt || referral.status === "CANCELLED") return 0;
-    return referral.refereeDiscountCents;
+    return referralRewardCents(currency);
   }
 
-  async markRefereeDiscountUsed(tenantId: string): Promise<void> {
-    await this.prisma.client.referralReward.updateMany({ where: { referredTenantId: tenantId, refereeDiscountUsedAt: null }, data: { refereeDiscountUsedAt: new Date() } });
+  /** Remise du filleul appliquée : montant retenu dans la monnaie de la facture. */
+  async markRefereeDiscountUsed(tenantId: string, amountCents?: number): Promise<void> {
+    await this.prisma.client.referralReward.updateMany({
+      where: { referredTenantId: tenantId, refereeDiscountUsedAt: null },
+      data: { refereeDiscountUsedAt: new Date(), ...(amountCents !== undefined ? { refereeDiscountCents: amountCents } : {}) },
+    });
   }
 
   // --- Crédit du parrain -------------------------------------------------------
@@ -210,7 +221,7 @@ export class ReferralService {
     const expiring = await db.referralReward.findMany({ where: { status: "EARNED", expiresAt: { lte: now } }, take: 200 });
     for (const referral of expiring) {
       await db.referralReward.update({ where: { id: referral.id }, data: { status: "EXPIRED", creditRemainingCents: 0 } });
-      if (referral.creditRemainingCents > 0) await this.pushToStripe(referral.referrerTenantId, referral.creditRemainingCents, "Crédit de parrainage expiré");
+      if (referral.creditRemainingCents > 0) await this.pushToStripe(referral.referrerTenantId, referral.creditRemainingCents, referral.currency, "Crédit de parrainage expiré");
       await this.audit.log({ tenantId: referral.referrerTenantId, action: "referral.expired", targetType: "referral", targetId: referral.id, metadata: { remainingCents: referral.creditRemainingCents } });
       result.expired += 1;
     }
@@ -240,16 +251,13 @@ export class ReferralService {
       return "NO_PLAN";
     }
 
-    // Plafond de l'année civile : le plus petit de 200 USD ou du prix annuel de l'offre du parrain.
-    const cap = await this.yearlyCap(referral.referrerTenantId);
-    const { start, end } = calendarYear(now);
-    const alreadyEarned = await db.referralReward.aggregate({
-      where: { referrerTenantId: referral.referrerTenantId, status: { in: ["EARNED", "EXPIRED"] }, earnedAt: { gte: start, lt: end } },
-      _sum: { creditAmountCents: true },
-    });
-    const amount = Math.min(REFERRAL_REWARD_CENTS, Math.max(0, cap - (alreadyEarned._sum.creditAmountCents ?? 0)));
+    // Plafond de l'année civile : le plus petit de la grille (200 €, 200 $…) ou du prix annuel de l'offre du parrain,
+    // dans la monnaie de son abonnement.
+    const { cap, currency } = await this.yearlyCap(referral.referrerTenantId);
+    const alreadyEarned = await this.earnedThisYear(referral.referrerTenantId, currency, now);
+    const amount = Math.min(referralRewardCents(currency), Math.max(0, cap - alreadyEarned));
     if (amount === 0) {
-      await db.referralReward.update({ where: { id: referral.id }, data: { status: "CAPPED", earnedAt: now } });
+      await db.referralReward.update({ where: { id: referral.id }, data: { status: "CAPPED", earnedAt: now, currency } });
       await this.audit.log({ tenantId: referral.referrerTenantId, action: "referral.capped", targetType: "referral", targetId: referral.id });
       await this.maybeInvitePartner(referral.referrerTenantId, now);
       return "CAPPED";
@@ -257,12 +265,12 @@ export class ReferralService {
 
     const expiresAt = new Date(now);
     expiresAt.setUTCFullYear(expiresAt.getUTCFullYear() + REFERRAL_CREDIT_YEARS);
-    const stripeBalanceTxId = await this.pushToStripe(referral.referrerTenantId, -amount, "Crédit de parrainage FOVE");
+    const stripeBalanceTxId = await this.pushToStripe(referral.referrerTenantId, -amount, currency, "Crédit de parrainage FOVE");
     await db.referralReward.update({
       where: { id: referral.id },
-      data: { status: "EARNED", earnedAt: now, expiresAt, creditAmountCents: amount, creditRemainingCents: amount, stripeBalanceTxId },
+      data: { status: "EARNED", earnedAt: now, expiresAt, currency, creditAmountCents: amount, creditRemainingCents: amount, stripeBalanceTxId },
     });
-    await this.audit.log({ tenantId: referral.referrerTenantId, action: "referral.earned", targetType: "referral", targetId: referral.id, metadata: { amountCents: amount } });
+    await this.audit.log({ tenantId: referral.referrerTenantId, action: "referral.earned", targetType: "referral", targetId: referral.id, metadata: { amountCents: amount, currency } });
     await this.maybeInvitePartner(referral.referrerTenantId, now);
     return "EARNED";
   }
@@ -281,13 +289,9 @@ export class ReferralService {
     if (owners.some((o) => o.user.isPartner)) return null;
     if ((await db.partner.count({ where: { email: { in: owners.map((o) => o.user.email) }, status: { notIn: ["REJECTED"] } } })) > 0) return null;
     const { start, end } = calendarYear(now);
-    const earned = await db.referralReward.aggregate({
-      where: { referrerTenantId: tenantId, status: { in: ["EARNED", "EXPIRED"] }, earnedAt: { gte: start, lt: end } },
-      _sum: { creditAmountCents: true },
-    });
     const capped = await db.referralReward.count({ where: { referrerTenantId: tenantId, status: "CAPPED", earnedAt: { gte: start, lt: end } } });
-    const cap = await this.yearlyCap(tenantId);
-    const total = earned._sum.creditAmountCents ?? 0;
+    const { cap, currency } = await this.yearlyCap(tenantId);
+    const total = await this.earnedThisYear(tenantId, currency, now);
     if (total >= cap || capped > 0) return "reached";
     return total >= cap * PARTNER_INVITE_RATIO ? "approaching" : null;
   }
@@ -326,21 +330,43 @@ export class ReferralService {
     if (referral.status === "CANCELLED" || referral.status === "EXPIRED") throw badRequest("referral_closed", "Ce parrainage est déjà clos");
     const remaining = referral.status === "EARNED" ? referral.creditRemainingCents : 0;
     await db.referralReward.update({ where: { id }, data: { status: "CANCELLED", cancelReason: `admin: ${reason}`, creditRemainingCents: 0 } });
-    if (remaining > 0) await this.pushToStripe(referral.referrerTenantId, remaining, "Crédit de parrainage annulé");
+    if (remaining > 0) await this.pushToStripe(referral.referrerTenantId, remaining, referral.currency, "Crédit de parrainage annulé");
     await this.audit.log({ tenantId: referral.referrerTenantId, actorUserId, action: "referral.cancelled", targetType: "referral", targetId: id, metadata: { reason: "admin", note: reason, removedCents: remaining } });
     return { status: "CANCELLED", removedCents: remaining };
   }
 
-  /** Plafond annuel du parrain selon son offre (prix du contrat Sur-mesure s'il existe). */
-  async yearlyCap(tenantId: string): Promise<number> {
+  /** Monnaie du crédit d'un parrain : celle de son abonnement payant en cours, sinon sa monnaie de facturation. */
+  async referrerCurrency(tenantId: string): Promise<string> {
     const sub = await this.prisma.client.subscription.findUnique({ where: { tenantId }, include: { plan: true } });
-    const price = sub?.contractPriceYearlyCents ?? sub?.plan.priceYearlyCents ?? 0;
-    return price > 0 ? Math.min(REFERRAL_YEARLY_CAP_CENTS, price) : REFERRAL_YEARLY_CAP_CENTS;
+    if (sub && sub.plan.kind !== "FREE" && sub.status !== "CANCELED" && sub.status !== "INCOMPLETE") return sub.currency;
+    return this.pricing.tenantCurrency(tenantId);
   }
 
-  /** Crédit disponible du parrain (acquis, non utilisé, non expiré). */
-  async availableCredit(tenantId: string): Promise<number> {
-    const sum = await this.prisma.client.referralReward.aggregate({ where: { referrerTenantId: tenantId, status: "EARNED" }, _sum: { creditRemainingCents: true } });
+  /** Plafond annuel du parrain, dans sa monnaie, selon son offre (prix du contrat Sur-mesure s'il existe). */
+  async yearlyCap(tenantId: string): Promise<{ cap: number; currency: string }> {
+    const currency = await this.referrerCurrency(tenantId);
+    const sub = await this.prisma.client.subscription.findUnique({ where: { tenantId }, include: { plan: { include: { prices: true } } } });
+    const price = sub?.contractPriceYearlyCents ?? (sub ? this.pricing.yearlyCents(sub.plan, currency) : null) ?? 0;
+    const grid = referralCapCents(currency);
+    return { cap: price > 0 ? Math.min(grid, price) : grid, currency };
+  }
+
+  /** Crédits acquis pendant l'année civile, convertis dans `currency` (un parrain a pu changer de monnaie). */
+  private async earnedThisYear(tenantId: string, currency: string, now: Date): Promise<number> {
+    const { start, end } = calendarYear(now);
+    const rows = await this.prisma.client.referralReward.groupBy({
+      by: ["currency"],
+      where: { referrerTenantId: tenantId, status: { in: ["EARNED", "EXPIRED"] }, earnedAt: { gte: start, lt: end } },
+      _sum: { creditAmountCents: true },
+    });
+    if (rows.every((r) => r.currency === currency)) return rows.reduce((sum, r) => sum + (r._sum.creditAmountCents ?? 0), 0);
+    const rates = await this.pricing.rates();
+    return rows.reduce((sum, r) => sum + (convertCents(r._sum.creditAmountCents ?? 0, r.currency, currency, rates) ?? 0), 0);
+  }
+
+  /** Crédit disponible du parrain dans une monnaie (acquis, non utilisé, non expiré). */
+  async availableCredit(tenantId: string, currency: string): Promise<number> {
+    const sum = await this.prisma.client.referralReward.aggregate({ where: { referrerTenantId: tenantId, status: "EARNED", currency }, _sum: { creditRemainingCents: true } });
     return sum._sum.creditRemainingCents ?? 0;
   }
 
@@ -348,10 +374,10 @@ export class ReferralService {
    * Utilise jusqu'à `maxCents` de crédit sur une facture du parrain, le plus ancien d'abord.
    * Renvoie le montant utilisé. En mode Stripe, Stripe a déjà déduit le solde : on ne fait que suivre.
    */
-  async consumeCredit(tenantId: string, maxCents: number, paymentId: string | null, db: Prisma.TransactionClient | PrismaService["client"] = this.prisma.client): Promise<number> {
+  async consumeCredit(tenantId: string, maxCents: number, currency: string, paymentId: string | null, db: Prisma.TransactionClient | PrismaService["client"] = this.prisma.client): Promise<number> {
     if (maxCents <= 0) return 0;
     const credits = await db.referralReward.findMany({
-      where: { referrerTenantId: tenantId, status: "EARNED", creditRemainingCents: { gt: 0 } },
+      where: { referrerTenantId: tenantId, status: "EARNED", currency, creditRemainingCents: { gt: 0 } },
       orderBy: { earnedAt: "asc" },
     });
     let used = 0;
@@ -372,12 +398,12 @@ export class ReferralService {
    * Mouvement du solde client Stripe du parrain (négatif = crédit, déduit des prochaines factures).
    * Sans client Stripe (mode simulé, ou pas encore abonné via Stripe), le suivi reste interne.
    */
-  private async pushToStripe(tenantId: string, amountCents: number, description: string): Promise<string | null> {
+  private async pushToStripe(tenantId: string, amountCents: number, currency: string, description: string): Promise<string | null> {
     if (!this.stripe) return null;
     const sub = await this.prisma.client.subscription.findUnique({ where: { tenantId }, select: { stripeCustomerId: true } });
     if (!sub?.stripeCustomerId) return null;
     try {
-      const tx = await this.stripe.customers.createBalanceTransaction(sub.stripeCustomerId, { amount: amountCents, currency: "usd", description });
+      const tx = await this.stripe.customers.createBalanceTransaction(sub.stripeCustomerId, { amount: amountCents, currency: currency.toLowerCase(), description });
       return tx.id;
     } catch (error) {
       this.logger.error(`Solde Stripe non mis à jour pour ${tenantId} : ${(error as Error).message}`);

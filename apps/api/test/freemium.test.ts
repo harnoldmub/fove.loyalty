@@ -186,6 +186,7 @@ describe("offre Sur-mesure attribuée par l'admin", () => {
       limitsOverride: { customers: 2, establishments: 8 },
       featuresOverride: { api: false },
       contractPriceYearlyCents: 120_000,
+      currency: "EUR",
     });
     expect(res.status).toBe(204);
     const tenant = (await o.client.get("/api/app/tenant")).body;

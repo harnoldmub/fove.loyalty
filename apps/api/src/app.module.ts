@@ -11,6 +11,7 @@ import { AuthService } from "./auth/auth.service";
 import { AuthController } from "./auth/auth.controller";
 import { ApiKeyGuard, FinanceAccessGuard, PartnerGuard, PublishableKeyGuard, SessionGuard, SuperAdminGuard, TenantGuard } from "./auth/guards";
 import { PlanService } from "./billing/plan.service";
+import { PricingService } from "./billing/pricing.service";
 import { QuotaAlertService } from "./billing/quota-alert.service";
 import { BillingService } from "./billing/billing.service";
 import { BillingController } from "./billing/billing.controller";
@@ -108,6 +109,7 @@ import { ClientJoinController } from "./client-account/client-join.controller";
     ApiKeyGuard,
     PublishableKeyGuard,
     PlanService,
+    PricingService,
     QuotaAlertService,
     BillingService,
     TenantsService,

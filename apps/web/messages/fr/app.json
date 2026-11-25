@@ -59,7 +59,16 @@
     "cancelConsequence": "Il reste actif jusqu’à la fin de la période payée, et vous pouvez revenir sur votre décision jusque-là. Ensuite, votre compte passe à l’offre Gratuite. Aucune carte n’est supprimée.",
     "usage": "Utilisation",
     "changePlan": "Changer d’offre",
-    "annual": "Abonnement annuel, payé à l’avance en dollars US.",
+    "annual": "Abonnement annuel, payé à l’avance.",
+    "currency": {
+      "label": "Monnaie de facturation",
+      "names": { "EUR": "Euro (€)", "USD": "Dollar US ($)", "MAD": "Dirham marocain (MAD)", "DZD": "Dinar algérien (DZD)", "CDF": "Franc congolais (CDF)" },
+      "saved": "Monnaie de facturation enregistrée.",
+      "savedRenewal": "Enregistré : la nouvelle monnaie s’appliquera au renouvellement, le {date}.",
+      "pending": "Votre abonnement en cours reste en {current} ; il passera en {next} au renouvellement, le {date}.",
+      "localNote": "Prix en {currency} pour un règlement par virement, en espèces ou par mobile money. Le paiement en ligne par carte se fait en {online}.",
+      "online": "En ligne : {price}"
+    },
     "plan": {
       "current": "Offre actuelle",
       "scheduled": "Prévue le {date}",

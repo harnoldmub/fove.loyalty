@@ -1,10 +1,12 @@
+import { BILLING_CURRENCIES } from "@fove/shared";
 import { z } from "zod";
 
 export const financeFilterSchema = z.object({
   range: z.enum(["today", "yesterday", "7d", "30d", "month", "last_month", "quarter", "year", "all", "custom"]).default("month"),
   from: z.string().optional(),
   to: z.string().optional(),
-  currency: z.string().optional().default("USD"),
+  /** Monnaie du rapport : tous les montants y sont convertis au taux comptable. */
+  currency: z.enum(BILLING_CURRENCIES).optional().default("EUR"),
 });
 
 export type FinanceFilterDto = z.infer<typeof financeFilterSchema>;
@@ -34,7 +36,7 @@ export const expenseCreateSchema = z.object({
   supplier: z.string().trim().min(2).max(80),
   category: z.enum(["HOSTING", "DATABASE", "EMAILS", "DOMAINS", "SAAS", "MARKETING", "ADS", "DEV", "FREELANCE", "BANK_FEES", "LEGAL", "OFFICE", "OTHER"]),
   amountCents: z.number().int().positive(),
-  currency: z.string().default("USD"),
+  currency: z.enum(BILLING_CURRENCIES).default("EUR"),
   taxCents: z.number().int().min(0).default(0),
   isRecurring: z.boolean().default(false),
   recurringInterval: z.enum(["month", "year"]).optional(),
@@ -72,3 +74,10 @@ export const reconcileSchema = z.object({
 
 export type ReconcileDto = z.infer<typeof reconcileSchema>;
 
+export const exchangeRatesSchema = z.object({
+  rates: z
+    .array(z.object({ currency: z.enum(BILLING_CURRENCIES).exclude(["EUR"]), unitsPerEur: z.number().positive().max(1_000_000) }))
+    .min(1)
+    .max(BILLING_CURRENCIES.length - 1),
+});
+export type ExchangeRatesDto = z.infer<typeof exchangeRatesSchema>;

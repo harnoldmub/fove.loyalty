@@ -7,7 +7,7 @@ import { Suspense, useEffect, useRef, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import type { ReferralSummary } from "@/lib/referral";
 import { toast } from "sonner";
-import { PAST_DUE_GRACE_DAYS } from "@fove/shared";
+import { BILLING_CURRENCIES, PAST_DUE_GRACE_DAYS, type BillingCurrency } from "@fove/shared";
 import { useCan } from "@/components/app/me-context";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/dialog";
@@ -22,9 +22,8 @@ interface Plan {
   kind: "FREE" | "PAID" | "CUSTOM";
   name: string;
   description: string;
-  currency: string;
-  priceMonthlyCents: number;
-  priceYearlyCents: number;
+  /** Prix annuel par monnaie. */
+  prices: Partial<Record<BillingCurrency, number>>;
   limits: Record<string, number | null>;
 }
 interface Billing {
@@ -46,6 +45,14 @@ interface Billing {
   plans: Plan[];
   usage: Record<string, number>;
   limits: Record<string, number | null>;
+  currency: {
+    /** Monnaie choisie (ou celle du pays) : prix affichés et règlement hors ligne. */
+    billing: BillingCurrency;
+    /** Monnaie d'un paiement en ligne (USD ou EUR). */
+    online: "USD" | "EUR";
+    /** Monnaie de l'abonnement en cours, fixe jusqu'au renouvellement. */
+    subscription: string | null;
+  };
 }
 
 const STATUS_TONE: Record<string, "mint" | "stamp" | "danger" | "neutral"> = {
@@ -146,6 +153,24 @@ function BillingView() {
   const renewal = sub?.currentPeriodEnd ? formatDate(sub.currentPeriodEnd) : t("periodEnd");
 
   const refresh = () => qc.invalidateQueries({ queryKey: ["billing"] });
+
+  // Prix dans la monnaie de l'abonnement en cours (fixe jusqu'au renouvellement), sinon dans celle du commerce.
+  const priceCurrency = (data.currency.subscription ?? data.currency.billing) as BillingCurrency;
+  const priceOf = (p: Plan, currency: BillingCurrency = priceCurrency) => p.prices[currency];
+  const money = (cents: number | undefined, currency: string = priceCurrency) => (cents === undefined ? "—" : formatPrice(cents, currency, locale));
+  const subPlanPrice = sub ? data.plans.find((p) => p.code === sub.plan.code)?.prices[priceCurrency] : undefined;
+  // Monnaie locale (MAD, DZD, CDF) sans abonnement en cours : le paiement en ligne se fait au prix en euros ou en dollars.
+  const localCurrency = !data.currency.subscription && data.currency.online !== data.currency.billing;
+
+  const changeCurrency = async (currency: BillingCurrency) => {
+    try {
+      const res = await api.post<{ effective: "now" | "renewal" }>("/app/billing/currency", { currency });
+      await refresh();
+      toast.success(res.effective === "renewal" ? t("currency.savedRenewal", { date: renewal }) : t("currency.saved"));
+    } catch (e) {
+      toast.error(toErrorMessage(e));
+    }
+  };
 
   /** Ce qui dépasse les quotas de l'offre visée : rien n'est supprimé, mais plus rien ne peut être ajouté. */
   const overQuota = (p: Plan) =>
@@ -296,15 +321,41 @@ function BillingView() {
       {canWrite && !managedByFove && (
         <section className="mt-10" aria-labelledby="offres">
           <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
-            <h2 id="offres" className="font-display text-2xl font-semibold">{t("changePlan")}</h2>
-            <p className="text-sm text-ink-2">{t("annual")}</p>
+            <div>
+              <h2 id="offres" className="font-display text-2xl font-semibold">{t("changePlan")}</h2>
+              <p className="text-sm text-ink-2">{t("annual")}</p>
+            </div>
+            <label className="grid gap-1 text-sm">
+              <span className="text-ink-2">{t("currency.label")}</span>
+              <select
+                className="h-10 rounded-[var(--radius)] border border-line bg-surface px-3 text-sm"
+                value={data.currency.billing}
+                onChange={(e) => void changeCurrency(e.target.value as BillingCurrency)}
+              >
+                {BILLING_CURRENCIES.map((c) => (
+                  <option key={c} value={c}>
+                    {t(`currency.names.${c}`)}
+                  </option>
+                ))}
+              </select>
+            </label>
           </div>
+          {data.currency.subscription && data.currency.subscription !== data.currency.billing && (
+            <p className="mb-4 rounded-md bg-surface-2 px-4 py-3 text-sm text-ink-2">
+              {t("currency.pending", { current: t(`currency.names.${data.currency.subscription}`), next: t(`currency.names.${data.currency.billing}`), date: renewal })}
+            </p>
+          )}
+          {localCurrency && (
+            <p className="mb-4 rounded-md bg-surface-2 px-4 py-3 text-sm text-ink-2">
+              {t("currency.localNote", { currency: t(`currency.names.${data.currency.billing}`), online: t(`currency.names.${data.currency.online}`) })}
+            </p>
+          )}
           <div className="grid gap-4 md:grid-cols-3">
             {data.plans.filter((p) => p.kind === "PAID").map((p) => {
               const isCurrent = current.code === p.code && subApplies && sub?.status !== "CANCELED";
               const isScheduled = scheduled?.code === p.code;
               const disabled = isCurrent || isScheduled || data.mode === "unavailable";
-              const downgrade = paidRunning && sub !== null && p.priceYearlyCents < sub.plan.priceYearlyCents;
+              const downgrade = paidRunning && sub !== null && (priceOf(p) ?? 0) < (subPlanPrice ?? 0);
               const label = isCurrent ? t("plan.current") : isScheduled ? t("plan.scheduled", { date: renewal }) : downgrade ? t("plan.downgrade", { name: p.name }) : t("plan.upgrade", { name: p.name });
               const over = downgrade ? overQuota(p) : [];
               return (
@@ -312,16 +363,19 @@ function BillingView() {
                   <h3 className="font-display text-xl font-semibold">{p.name}</h3>
                   <p className="text-sm text-ink-2">{p.description}</p>
                   <p className="font-display text-3xl font-semibold tabular">
-                    {formatPrice(p.priceYearlyCents, p.currency)}
+                    {money(priceOf(p))}
                     <span className="text-base font-normal text-ink-3"> {t("plan.perYear")}</span>
                   </p>
+                  {localCurrency && p.prices[data.currency.online] !== undefined && (
+                    <p className="-mt-2 text-sm text-ink-3">{t("currency.online", { price: money(p.prices[data.currency.online], data.currency.online) })}</p>
+                  )}
                   {downgrade && !disabled ? (
                     // Offre inférieure : rien ne change avant le renouvellement, et rien n'est remboursé.
                     <ConfirmDialog
                       trigger={<Button variant="secondary" loading={pending === p.code}>{label}</Button>}
                       title={t("downgrade.title", { name: p.name })}
                       consequence={[
-                        t("downgrade.keep", { current: current.name, date: renewal, name: p.name, price: formatPrice(p.priceYearlyCents, p.currency) }),
+                        t("downgrade.keep", { current: current.name, date: renewal, name: p.name, price: money(priceOf(p)) }),
                         over.length ? ` ${t("downgrade.over", { name: p.name, items: over.join(", ") })}` : "",
                         ` ${t("downgrade.undo")}`,
                       ].join("")}
@@ -333,7 +387,7 @@ function BillingView() {
                     <ConfirmDialog
                       trigger={<Button loading={pending === p.code}>{label}</Button>}
                       title={t("upgrade.title", { name: p.name })}
-                      consequence={t("upgrade.consequence", { date: renewal, price: formatPrice(p.priceYearlyCents, p.currency) })}
+                      consequence={t("upgrade.consequence", { date: renewal, price: money(priceOf(p)) })}
                       confirmLabel={t("plan.upgrade", { name: p.name })}
                       onConfirm={() => choose(p.code)}
                     />
