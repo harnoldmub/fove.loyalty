@@ -1253,21 +1253,54 @@ model PartnerPayout {
   @@index([partnerId])
 }
 
+/// États d'un parrainage (docs/chantier-parrainage.md, 3.3).
+enum ReferralStatus {
+  /// Le filleul a créé son commerce ; aucun crédit.
+  SIGNED_UP
+  /// Premier paiement annuel du filleul ; acquis à `pendingUntil` sauf remboursement ou résiliation.
+  PENDING
+  /// Crédit acquis (`creditAmountCents`), utilisable jusqu'à `expiresAt`.
+  EARNED
+  /// Plafond de l'année civile atteint : 0 pour le parrain, remise maintenue pour le filleul.
+  CAPPED
+  /// Parrain hors offre payante à la date d'acquisition : 0 pour le parrain.
+  NO_PLAN
+  /// Remboursement ou résiliation pendant l'attente, exclusion anti-abus ou annulation par l'admin.
+  CANCELLED
+  /// Crédit non utilisé 3 ans après l'acquisition.
+  EXPIRED
+}
+
 model ReferralReward {
   id                  String   @id @default(uuid()) @db.Uuid
   referrerTenantId    String   @db.Uuid
   referrerTenant      Tenant   @relation("ReferrerTenant", fields: [referrerTenantId], references: [id], onDelete: Cascade)
   referredTenantId    String   @db.Uuid
   referredTenant      Tenant   @relation("ReferredTenant", fields: [referredTenantId], references: [id], onDelete: Cascade)
-  creditAmountCents   Int      /// Montant du crédit accordé
+  /// Crédit acquis par le parrain (0 tant qu'il n'est pas acquis, ou hors plafond).
+  creditAmountCents   Int      @default(0)
   creditUsedCents     Int      @default(0)
-  creditRemainingCents Int
+  creditRemainingCents Int     @default(0)
   currency            String   @default("USD")
-  status              String   @default("ACTIVE") /// ACTIVE, EXHAUSTED, CANCELLED
+  status              ReferralStatus @default(SIGNED_UP)
+  /// Clic du filleul sur le lien de parrainage (règle « premier lien » face à un lien partenaire).
+  clickedAt           DateTime?
+  /// Paiement du filleul qui a déclenché l'attente, et fin de l'attente (paiement + 14 jours).
+  triggerPaymentId    String?  @db.Uuid
+  pendingUntil        DateTime?
+  earnedAt            DateTime?
+  expiresAt           DateTime?
+  cancelReason        String?
+  /// Remise du filleul sur sa première souscription annuelle, et date de son application.
+  refereeDiscountCents Int     @default(2000)
+  refereeDiscountUsedAt DateTime?
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
 
   @@unique([referrerTenantId, referredTenantId])
+  /// Un commerce n'a qu'un parrain.
+  @@unique([referredTenantId])
+  @@index([referrerTenantId, status])
 }
 
 enum ExpenseCategory {

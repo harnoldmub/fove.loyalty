@@ -76,6 +76,9 @@ const tenantFields = z.object({
   timezone: z.string().max(64),
   partnerCode: z.string().trim().max(30).optional(),
   referrerSlug: z.string().trim().max(64).optional(),
+  /** Dates des clics sur le lien partenaire et sur le lien de parrainage (ms) : le premier l'emporte. */
+  partnerClickedAt: z.number().int().positive().optional(),
+  referrerClickedAt: z.number().int().positive().optional(),
 });
 export const createTenantSchema = tenantFields.extend({
   primaryColor: hexColor.default("#1F4FFF"),

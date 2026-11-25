@@ -884,7 +884,8 @@
       "exports": "Exports",
       "walletCampaigns": "Campagnes Wallet",
       "whatsappAuto": "WhatsApp automatique",
-      "removeBranding": "Sans mention FOVE"
+      "removeBranding": "Sans mention FOVE",
+      "referral": "Programme de parrainage"
     },
     "onSale": "Offre proposée à la vente",
     "saved": "Offre enregistrée",

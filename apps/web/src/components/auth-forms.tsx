@@ -170,7 +170,10 @@ export function SignupForm() {
     const params = new URLSearchParams(window.location.search);
     const ref = params.get("ref");
     if (ref) {
-      document.cookie = `fove_ref=${encodeURIComponent(ref.trim().toLowerCase())}; path=/; max-age=${30 * 24 * 3600}; SameSite=Lax`;
+      const maxAge = 30 * 24 * 3600;
+      document.cookie = `fove_ref=${encodeURIComponent(ref.trim().toLowerCase())}; path=/; max-age=${maxAge}; SameSite=Lax`;
+      // Date du clic : face à un lien partenaire, le premier lien cliqué l'emporte.
+      document.cookie = `fove_ref_at=${Date.now()}; path=/; max-age=${maxAge}; SameSite=Lax`;
     }
   }, []);
 
