@@ -4,7 +4,10 @@ import type { Prisma } from "@fove/database";
 import { PrismaService } from "../common/prisma.service";
 import { AuditService } from "../common/audit.service";
 import { PlanService } from "../billing/plan.service";
-import { stripeSecretKey } from "../config";
+import { loadConfig, stripeSecretKey } from "../config";
+import { EmailService } from "../notifications/email.service";
+import { partnerInviteMessage } from "../i18n/emails";
+import { tenantLocale } from "../i18n/locale";
 
 /** Récompense du parrain et remise du filleul (USD, en centimes). docs/chantier-parrainage.md */
 export const REFERRAL_REWARD_CENTS = 2000;
@@ -14,6 +17,8 @@ export const REFERRAL_YEARLY_CAP_CENTS = 20000;
 export const REFERRAL_PENDING_DAYS = 14;
 /** Durée de validité d'un crédit acquis. */
 export const REFERRAL_CREDIT_YEARS = 3;
+/** Part du plafond annuel à partir de laquelle on invite le parrain au programme partenaires. */
+export const PARTNER_INVITE_RATIO = 0.8;
 
 const DAY = 86_400_000;
 
@@ -57,6 +62,7 @@ export class ReferralService {
     private readonly prisma: PrismaService,
     private readonly audit: AuditService,
     private readonly plans: PlanService,
+    private readonly email: EmailService,
   ) {
     const key = stripeSecretKey();
     this.stripe = key ? new Stripe(key) : null;
@@ -139,6 +145,7 @@ export class ReferralService {
         earnedAt: r.earnedAt,
         expiresAt: r.expiresAt,
       })),
+      partnerInvite: await this.partnerInvite(tenantId, now),
       asReferee:
         asReferee && !asReferee.refereeDiscountUsedAt && asReferee.status !== "CANCELLED"
           ? { referrerName: asReferee.referrerTenant.name, discountCents: asReferee.refereeDiscountCents }
@@ -243,6 +250,7 @@ export class ReferralService {
     if (amount === 0) {
       await db.referralReward.update({ where: { id: referral.id }, data: { status: "CAPPED", earnedAt: now } });
       await this.audit.log({ tenantId: referral.referrerTenantId, action: "referral.capped", targetType: "referral", targetId: referral.id });
+      await this.maybeInvitePartner(referral.referrerTenantId, now);
       return "CAPPED";
     }
 
@@ -254,7 +262,56 @@ export class ReferralService {
       data: { status: "EARNED", earnedAt: now, expiresAt, creditAmountCents: amount, creditRemainingCents: amount, stripeBalanceTxId },
     });
     await this.audit.log({ tenantId: referral.referrerTenantId, action: "referral.earned", targetType: "referral", targetId: referral.id, metadata: { amountCents: amount } });
+    await this.maybeInvitePartner(referral.referrerTenantId, now);
     return "EARNED";
+  }
+
+  /**
+   * Palier de l'invitation au programme partenaires : « approaching » à 80 % du plafond de l'année,
+   * « reached » au plafond. Rien si le commerce n'a pas le parrainage ou si un propriétaire est déjà partenaire.
+   */
+  async partnerInvite(tenantId: string, now = new Date()): Promise<"approaching" | "reached" | null> {
+    const db = this.prisma.client;
+    if (!(await this.plans.features(tenantId)).referral) return null;
+    const owners = await db.tenantMembership.findMany({
+      where: { tenantId, status: "ACTIVE", role: { key: "OWNER" } },
+      select: { user: { select: { email: true, isPartner: true } } },
+    });
+    if (owners.some((o) => o.user.isPartner)) return null;
+    if ((await db.partner.count({ where: { email: { in: owners.map((o) => o.user.email) }, status: { notIn: ["REJECTED"] } } })) > 0) return null;
+    const { start, end } = calendarYear(now);
+    const earned = await db.referralReward.aggregate({
+      where: { referrerTenantId: tenantId, status: { in: ["EARNED", "EXPIRED"] }, earnedAt: { gte: start, lt: end } },
+      _sum: { creditAmountCents: true },
+    });
+    const capped = await db.referralReward.count({ where: { referrerTenantId: tenantId, status: "CAPPED", earnedAt: { gte: start, lt: end } } });
+    const cap = await this.yearlyCap(tenantId);
+    const total = earned._sum.creditAmountCents ?? 0;
+    if (total >= cap || capped > 0) return "reached";
+    return total >= cap * PARTNER_INVITE_RATIO ? "approaching" : null;
+  }
+
+  /** Email d'invitation au programme partenaires, une fois par palier et par année civile. */
+  private async maybeInvitePartner(tenantId: string, now: Date): Promise<void> {
+    try {
+      const level = await this.partnerInvite(tenantId, now);
+      if (!level) return;
+      const year = now.getUTCFullYear();
+      const sent = await this.prisma.client.auditLog.count({
+        where: { tenantId, action: "referral.partner_invite", AND: [{ metadata: { path: ["year"], equals: year } }, { metadata: { path: ["level"], equals: level } }] },
+      });
+      if (sent > 0) return;
+      const tenant = await this.prisma.client.tenant.findUnique({ where: { id: tenantId }, include: { settings: true } });
+      const to = tenant?.settings?.contactEmail;
+      if (!tenant || !to) return;
+      await this.email.send({
+        to,
+        ...partnerInviteMessage(tenantLocale(tenant.settings), { tenantName: tenant.name, reached: level === "reached", link: `${loadConfig().APP_URL}/app/parrainage` }),
+      });
+      await this.audit.log({ tenantId, action: "referral.partner_invite", metadata: { year, level } });
+    } catch (error) {
+      this.logger.warn(`Invitation partenaire non envoyée pour ${tenantId} : ${(error as Error).message}`);
+    }
   }
 
   /** Plafond annuel du parrain selon son offre (prix du contrat Sur-mesure s'il existe). */

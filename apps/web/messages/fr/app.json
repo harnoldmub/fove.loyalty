@@ -970,6 +970,13 @@
       "yearReached": "Plafond {year} atteint : vos prochains filleuls gardent leur remise, mais vous ne gagnez plus de crédit avant le 1er janvier."
     },
     "referee": "Vous avez été parrainé par {name} : {amount} offerts sur votre premier abonnement annuel.",
+    "partner": {
+      "approachingTitle": "Vous approchez de votre plafond de l'année",
+      "reachedTitle": "Plafond de l'année atteint",
+      "body": "Vous recommandez FOVE avec succès : rejoignez le programme partenaires et touchez une commission sur chaque abonnement que vous apportez, sans plafond.",
+      "cta": "Devenir partenaire",
+      "strategy": "Je suis commerçant client de FOVE ({company}) et je recommande déjà FOVE à mes confrères grâce au parrainage."
+    },
     "list": {
       "title": "Mes filleuls",
       "empty": "Aucun filleul pour l'instant : partagez votre lien !",

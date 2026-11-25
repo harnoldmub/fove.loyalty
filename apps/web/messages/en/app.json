@@ -970,6 +970,13 @@
       "yearReached": "{year} cap reached: your next referrals keep their discount, but you won't earn more credit before 1 January."
     },
     "referee": "You were referred by {name}: {amount} off your first annual subscription.",
+    "partner": {
+      "approachingTitle": "You're approaching this year's cap",
+      "reachedTitle": "This year's cap reached",
+      "body": "You're successfully recommending FOVE: join the partner programme and earn a commission on every subscription you bring in, with no cap.",
+      "cta": "Become a partner",
+      "strategy": "I'm a FOVE merchant ({company}) and I already recommend FOVE to other businesses through the referral programme."
+    },
     "list": {
       "title": "My referrals",
       "empty": "No referrals yet: share your link!",

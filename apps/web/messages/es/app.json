@@ -970,6 +970,13 @@
       "yearReached": "Límite {year} alcanzado: tus próximos recomendados conservan su descuento, pero no ganas más crédito antes del 1 de enero."
     },
     "referee": "Te ha recomendado {name}: {amount} de descuento en tu primera suscripción anual.",
+    "partner": {
+      "approachingTitle": "Te acercas al límite de este año",
+      "reachedTitle": "Límite de este año alcanzado",
+      "body": "Estás recomendando FOVE con éxito: únete al programa de socios y cobra una comisión por cada suscripción que aportes, sin límite.",
+      "cta": "Hacerme socio",
+      "strategy": "Soy un comercio cliente de FOVE ({company}) y ya recomiendo FOVE a otros comercios mediante el programa de recomendación."
+    },
     "list": {
       "title": "Mis recomendados",
       "empty": "Aún no tienes recomendados: ¡comparte tu enlace!",

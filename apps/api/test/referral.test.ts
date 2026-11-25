@@ -236,3 +236,46 @@ describe("page « Parrainage »", () => {
     expect(locked).toMatchObject({ available: false, link: null });
   });
 });
+
+describe("invitation au programme partenaires", () => {
+  /** Ajoute au parrain un crédit déjà acquis cette année (filleul fictif). */
+  async function earned(referrerTenantId: string, amount: number, at: Date) {
+    const other = await ownerWithTenant(app);
+    await db.referralReward.create({ data: { referrerTenantId, referredTenantId: other.tenantId, status: "EARNED", creditAmountCents: amount, creditRemainingCents: amount, earnedAt: at } });
+  }
+  const invites = (to: string) => db.emailOutbox.findMany({ where: { to, OR: [{ subject: { contains: "plafond de parrainage" } }, { subject: { contains: "Plafond de parrainage" } }] } });
+
+  it("à 80 % du plafond puis au plafond : encart sur la page et un email par palier", async () => {
+    const first = await referredAndPaid("starter");
+    const parrainId = first.parrain.tenantId;
+    const contact = (await db.tenantSettings.findUniqueOrThrow({ where: { tenantId: parrainId } })).contactEmail!;
+    const cap = await referrals().yearlyCap(parrainId);
+    const at = new Date(Date.now() + 15 * DAY);
+    await earned(parrainId, Math.ceil(cap * 0.8) - 2000, at);
+
+    await referrals().processDue(at); // + 20 $ : franchit les 80 %
+    expect(await referrals().partnerInvite(parrainId, at)).toBe("approaching");
+    expect((await invites(contact)).map((m) => m.subject)).toEqual(["Vous approchez de votre plafond de parrainage"]);
+
+    await earned(parrainId, cap, at);
+    const slug = (await db.tenant.findUniqueOrThrow({ where: { id: parrainId } })).slug;
+    const second = await newTenant({ referrerSlug: slug });
+    await second.client.post("/api/app/billing/checkout", { planCode: "starter", interval: "YEAR" });
+    await referrals().processDue(at); // hors plafond
+    await referrals().processDue(at);
+    expect(await referrals().partnerInvite(parrainId, at)).toBe("reached");
+    const subjects = (await invites(contact)).map((m) => m.subject);
+    expect(subjects).toHaveLength(2);
+    expect(subjects).toContain("Plafond de parrainage atteint : devenez partenaire FOVE");
+  });
+
+  it("rien pour un commerçant déjà partenaire", async () => {
+    const parrain = await ownerWithTenant(app, { plan: "business" });
+    const cap = await referrals().yearlyCap(parrain.tenantId);
+    await earned(parrain.tenantId, cap, new Date());
+    expect(await referrals().partnerInvite(parrain.tenantId)).toBe("reached");
+    await db.partner.create({ data: { name: "Moi", email: parrain.email, code: uniq("ME").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 12), status: "ACTIVE" } });
+    expect(await referrals().partnerInvite(parrain.tenantId)).toBeNull();
+    expect((await parrain.client.get("/api/app/referrals")).body.partnerInvite).toBeNull();
+  });
+});

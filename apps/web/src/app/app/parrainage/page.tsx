@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Badge, PageHeader, Panel, Skeleton } from "@/components/ui/misc";
 import { ErrorNote } from "@/components/ui/misc";
 import { api, useErrorMessage } from "@/lib/api";
+import { useActiveTenant, useMe } from "@/components/app/me-context";
 import { formatDate, formatPrice } from "@/lib/utils";
 import type { ReferralStatus, ReferralSummary } from "@/lib/referral";
 
@@ -29,6 +30,16 @@ export default function ReferralPage() {
   const toErrorMessage = useErrorMessage();
   const { data, isLoading, error } = useQuery({ queryKey: ["referrals"], queryFn: () => api.get<ReferralSummary>("/app/referrals") });
   const money = (cents: number) => formatPrice(cents, data?.currency ?? "USD", locale);
+  const me = useMe();
+  const tenant = useActiveTenant();
+  // Candidature partenaire pré-remplie (le formulaire lit ces paramètres).
+  const partnerApplyHref = `/partenaires/rejoindre?${new URLSearchParams({
+    source: "referral",
+    name: me.user.name,
+    email: me.user.email,
+    company: tenant?.name ?? "",
+    strategy: t("partner.strategy", { company: tenant?.name ?? "" }),
+  })}`;
 
   return (
     <div className="mx-auto grid max-w-4xl gap-6">
@@ -40,6 +51,18 @@ export default function ReferralPage() {
           {data.asReferee && (
             <Panel className="border border-mint/30 bg-mint-soft p-4 text-sm text-ink">
               {t("referee", { name: data.asReferee.referrerName, amount: money(data.asReferee.discountCents) })}
+            </Panel>
+          )}
+
+          {data.partnerInvite && (
+            <Panel className="grid gap-2 border border-cobalt/30 bg-cobalt-soft p-5">
+              <h2 className="font-display text-lg font-semibold">{t(data.partnerInvite === "reached" ? "partner.reachedTitle" : "partner.approachingTitle")}</h2>
+              <p className="text-sm text-ink-2">{t("partner.body")}</p>
+              <div>
+                <Button asChild>
+                  <Link href={partnerApplyHref}>{t("partner.cta")}</Link>
+                </Button>
+              </div>
             </Panel>
           )}
 

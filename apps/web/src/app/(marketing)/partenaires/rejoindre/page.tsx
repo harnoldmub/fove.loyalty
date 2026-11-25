@@ -60,6 +60,14 @@ export default function RejoindrePartenairePage() {
       if (opt?.defaultCity) {
         setCity(opt.defaultCity);
       }
+      // Candidature pré-remplie depuis la page Parrainage d'un commerçant FOVE.
+      const params = new URLSearchParams(window.location.search);
+      const prefill = (key: string, max: number) => params.get(key)?.trim().slice(0, max) ?? "";
+      if (prefill("name", 100)) setName(prefill("name", 100));
+      if (prefill("email", 254)) setEmail(prefill("email", 254));
+      if (prefill("company", 100)) setCompany(prefill("company", 100));
+      if (prefill("strategy", 2000)) setPromotionStrategy(prefill("strategy", 2000));
+      if (params.get("source") === "referral") setPartnerType("MERCHANT_NETWORK");
     });
     return () => cancelAnimationFrame(frame);
   }, []);
