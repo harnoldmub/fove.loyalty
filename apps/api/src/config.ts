@@ -33,6 +33,8 @@ const schema = z.object({
   STRIPE_TEST_PRICE_PREMIUM_YEARLY_ID: z.string().optional(),
   /** Garde-fou : les clés Stripe « live » sont refusées tant que ce drapeau n'est pas posé. */
   STRIPE_ALLOW_LIVE: z.enum(["true", "false"]).default("false"),
+  /** Coupon Stripe « 20 USD, une fois » : remise du filleul sur sa première souscription (parrainage). */
+  REFERRAL_STRIPE_COUPON_ID: z.string().optional(),
   /** Google Wallet : identifiant d'émetteur et compte de service (JSON). Absents = fonction masquée. */
   GOOGLE_WALLET_ISSUER_ID: z.string().regex(/^\d+$/).optional(),
   GOOGLE_WALLET_SERVICE_ACCOUNT_JSON: z.string().optional(),

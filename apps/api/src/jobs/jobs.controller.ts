@@ -10,6 +10,7 @@ import { LoyaltyService } from "../loyalty/loyalty.service";
 import { BillingService } from "../billing/billing.service";
 import { AuthService } from "../auth/auth.service";
 import { ClientAccountService } from "../client-account/client-account.service";
+import { ReferralService } from "../referrals/referral.service";
 
 /**
  * Tâches périodiques déclenchées par un cron Railway (toutes les 5 minutes)
@@ -26,6 +27,7 @@ export class JobsController {
     private readonly billing: BillingService,
     private readonly auth: AuthService,
     private readonly clientAccounts: ClientAccountService,
+    private readonly referrals: ReferralService,
   ) {}
 
   @Get("health")
@@ -39,13 +41,14 @@ export class JobsController {
   async run(@Headers("x-cron-secret") secret?: string) {
     if (!secret || !safeEqual(secret, loadConfig().CRON_SECRET)) throw unauthorized();
     const now = new Date();
-    const [webhooks, expired, subscriptions, verificationReminders, clientAccounts, clientReminders] = [
+    const [webhooks, expired, subscriptions, verificationReminders, clientAccounts, clientReminders, referrals] = [
       await this.webhooks.retryDue(),
       await this.loyalty.expireInactive(now),
       await this.billing.closeExpired(now),
       await this.auth.sendVerificationReminders(now),
       await this.clientAccounts.purgeInactive(now),
       await this.clientAccounts.sendConfirmationReminders(now),
+      await this.referrals.processDue(now),
     ];
     const db = this.prisma.client;
     const cleanup = await db.$transaction([
@@ -57,6 +60,6 @@ export class JobsController {
       // Gardés 24 h : ils servent à limiter le nombre de demandes par email et par adresse IP.
       db.clientLoginCode.deleteMany({ where: { createdAt: { lt: new Date(now.getTime() - 86_400_000) } } }),
     ]);
-    return { webhooksRetried: webhooks, accountsExpired: expired, subscriptions, verificationReminders, clientAccounts, clientReminders, cleaned: cleanup.map((c) => c.count) };
+    return { webhooksRetried: webhooks, accountsExpired: expired, subscriptions, verificationReminders, clientAccounts, clientReminders, referrals, cleaned: cleanup.map((c) => c.count) };
   }
 }

@@ -1041,6 +1041,8 @@ model Payment {
   currency             String          @default("USD")
   status               PaymentStatus   @default(PENDING)
   method               String?         /// card, bank_transfer, airtel_money, orange_money, mpesa, cash
+  /// Empreinte de la carte (Stripe) : repère une même carte d'un commerce à l'autre (anti-abus du parrainage).
+  cardFingerprint      String?
   failureCode          String?
   failureMessage       String?
 
@@ -1294,8 +1296,11 @@ model ReferralReward {
   /// Remise du filleul sur sa première souscription annuelle, et date de son application.
   refereeDiscountCents Int     @default(2000)
   refereeDiscountUsedAt DateTime?
+  /// Mouvement de solde client Stripe qui a crédité le parrain (mode Stripe uniquement).
+  stripeBalanceTxId   String?
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
+  uses                ReferralCreditUse[]
 
   @@unique([referrerTenantId, referredTenantId])
   /// Un commerce n'a qu'un parrain.
@@ -1460,4 +1465,19 @@ model ClientDismissedCustomer {
 
   @@id([clientAccountId, customerId])
   @@index([customerId])
+}
+
+/// Utilisation d'un crédit de parrainage sur une facture du parrain (le plus ancien crédit d'abord).
+model ReferralCreditUse {
+  id          String         @id @default(uuid()) @db.Uuid
+  rewardId    String         @db.Uuid
+  reward      ReferralReward @relation(fields: [rewardId], references: [id], onDelete: Cascade)
+  /// Commerce du parrain, qui a utilisé le crédit.
+  tenantId    String         @db.Uuid
+  paymentId   String?        @db.Uuid
+  amountCents Int
+  createdAt   DateTime       @default(now())
+
+  @@index([tenantId, createdAt])
+  @@index([rewardId])
 }
