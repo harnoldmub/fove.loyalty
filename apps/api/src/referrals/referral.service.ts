@@ -90,6 +90,62 @@ export class ReferralService {
     return true;
   }
 
+  /**
+   * Page « Parrainage » du commerçant : lien, gains, plafond de l'année, filleuls, et la remise
+   * dont il bénéficie lui-même s'il a été parrainé. Lien absent si son offre n'inclut pas le parrainage.
+   */
+  async summary(tenantId: string, appUrl: string) {
+    const db = this.prisma.client;
+    const now = new Date();
+    const [tenant, features, rewards, asReferee] = await Promise.all([
+      db.tenant.findUniqueOrThrow({ where: { id: tenantId }, select: { slug: true } }),
+      this.plans.features(tenantId),
+      db.referralReward.findMany({
+        where: { referrerTenantId: tenantId },
+        orderBy: { createdAt: "desc" },
+        include: { referredTenant: { select: { name: true } } },
+      }),
+      db.referralReward.findUnique({ where: { referredTenantId: tenantId }, include: { referrerTenant: { select: { name: true } } } }),
+    ]);
+    const { start, end } = calendarYear(now);
+    const earnedThisYear = rewards
+      .filter((r) => (r.status === "EARNED" || r.status === "EXPIRED") && r.earnedAt && r.earnedAt >= start && r.earnedAt < end)
+      .reduce((sum, r) => sum + r.creditAmountCents, 0);
+    const cap = await this.yearlyCap(tenantId);
+    const earned = rewards.filter((r) => r.status === "EARNED" || r.status === "EXPIRED");
+    const available = rewards.filter((r) => r.status === "EARNED" && r.creditRemainingCents > 0);
+    const nextExpiry = available.map((r) => r.expiresAt).filter((d): d is Date => Boolean(d)).sort((a, b) => a.getTime() - b.getTime())[0] ?? null;
+
+    return {
+      available: features.referral,
+      link: features.referral ? `${appUrl}/signup?ref=${tenant.slug}` : null,
+      rewardCents: REFERRAL_REWARD_CENTS,
+      currency: "USD",
+      year: { year: start.getUTCFullYear(), capCents: cap, earnedCents: earnedThisYear, remainingCents: Math.max(0, cap - earnedThisYear) },
+      credit: {
+        earnedCents: earned.reduce((sum, r) => sum + r.creditAmountCents, 0),
+        usedCents: rewards.reduce((sum, r) => sum + r.creditUsedCents, 0),
+        availableCents: available.reduce((sum, r) => sum + r.creditRemainingCents, 0),
+        pendingCount: rewards.filter((r) => r.status === "PENDING").length,
+        nextExpiry,
+      },
+      referrals: rewards.map((r) => ({
+        id: r.id,
+        name: r.referredTenant.name,
+        signedUpAt: r.createdAt,
+        status: r.status,
+        amountCents: r.creditAmountCents,
+        pendingUntil: r.pendingUntil,
+        earnedAt: r.earnedAt,
+        expiresAt: r.expiresAt,
+      })),
+      asReferee:
+        asReferee && !asReferee.refereeDiscountUsedAt && asReferee.status !== "CANCELLED"
+          ? { referrerName: asReferee.referrerTenant.name, discountCents: asReferee.refereeDiscountCents }
+          : null,
+    };
+  }
+
   // --- Remise du filleul -------------------------------------------------------
 
   /** Remise due au filleul sur sa première souscription annuelle (0 si déjà utilisée ou pas de parrainage). */

@@ -36,6 +36,7 @@ const FEATURE_ROWS: { key: string; included: (f: Partial<PlanFeatures>) => boole
   { key: "whatsappAuto", included: (f) => Boolean(f.whatsappAuto) },
   { key: "api", included: (f) => Boolean(f.api) },
   { key: "integrations", included: (f) => Boolean(f.integrations) },
+  { key: "referral", included: (f) => Boolean(f.referral) },
 ];
 
 type T = ReturnType<typeof useTranslations>;

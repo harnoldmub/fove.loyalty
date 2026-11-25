@@ -11,6 +11,7 @@ import {
   Gift,
   Home,
   LogOut,
+  Megaphone,
   Menu as MenuIcon,
   Plug,
   ReceiptText,
@@ -50,6 +51,7 @@ const NAV = [
   { href: "/app/team", key: "team", icon: UserCog, permission: "members.read" },
   { href: "/app/integrations", key: "integrations", icon: Plug, permission: "integrations.read" },
   { href: "/app/billing", key: "billing", icon: CreditCard, permission: "billing.read" },
+  { href: "/app/parrainage", key: "referral", icon: Megaphone, permission: "billing.read" },
   { href: "/app/settings", key: "settings", icon: Settings, permission: "tenant.read" },
 ] as const;
 

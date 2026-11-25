@@ -212,3 +212,27 @@ describe("parrainage : récompenses (mode simulé)", () => {
     expect(await referrals().refereeDiscount(filleul.tenantId)).toBe(0);
   });
 });
+
+describe("page « Parrainage »", () => {
+  it("offre payante : lien, filleuls et plafond de l'année ; Gratuit : pas de lien", async () => {
+    const parrain = await ownerWithTenant(app, { plan: "business" });
+    const slug = (await db.tenant.findUniqueOrThrow({ where: { id: parrain.tenantId } })).slug;
+    const filleul = await newTenant({ referrerSlug: slug });
+
+    const res = await parrain.client.get("/api/app/referrals");
+    expect(res.status).toBe(200);
+    expect(res.body.available).toBe(true);
+    expect(res.body.link).toMatch(new RegExp(`/signup\\?ref=${slug}$`));
+    expect(res.body.referrals).toEqual([expect.objectContaining({ status: "SIGNED_UP", amountCents: 0 })]);
+    expect(res.body.year).toMatchObject({ capCents: Math.min(20000, (await db.subscriptionPlan.findUniqueOrThrow({ where: { code: "business" } })).priceYearlyCents) });
+
+    // Le filleul voit sa remise jusqu'à son premier paiement.
+    expect((await filleul.client.get("/api/app/referrals")).body.asReferee).toMatchObject({ discountCents: 2000 });
+    await filleul.client.post("/api/app/billing/checkout", { planCode: "starter", interval: "YEAR" });
+    expect((await filleul.client.get("/api/app/referrals")).body.asReferee).toBeNull();
+
+    const free = await ownerWithTenant(app, { plan: "free" });
+    const locked = (await free.client.get("/api/app/referrals")).body;
+    expect(locked).toMatchObject({ available: false, link: null });
+  });
+});

@@ -487,6 +487,7 @@
     "team": "Collaborateurs",
     "integrations": "Intégrations",
     "billing": "Abonnement",
+    "referral": "Parrainage",
     "settings": "Paramètres",
     "home": "Accueil"
   },
@@ -749,12 +750,13 @@
     "whatsapp": "Envoi instantané du lien de la carte par WhatsApp aux nouveaux clients.",
     "referral": {
       "title": "Parrainage entre commerçants",
-      "badge": "1 mois offert",
-      "body": "Recommandez FOVE à un confrère commerçant : recevez <strong>20 $ de crédit</strong> déduits de votre abonnement dès sa première souscription.",
+      "badge": "Jusqu'à 1 an offert",
+      "body": "Recommandez FOVE à vos confrères : <strong>20 $ de crédit</strong> par filleul abonné, jusqu'à une année offerte chaque année.",
       "copied": "Lien de parrainage copié dans le presse-papier !",
       "copy": "Copier mon lien",
       "message": "Bonjour, je gère la fidélité de mes clients avec FOVE sur Apple Wallet et Google Wallet. Découvre et teste gratuitement ici : {url}",
-      "share": "Partager"
+      "share": "Partager",
+      "open": "Voir mon parrainage"
     },
     "links": {
       "programs": "Règles de fidélité",
@@ -935,8 +937,71 @@
         "whatsappAuto": "Messages WhatsApp envoyés automatiquement",
         "removeBranding": "Carte et widget sans la mention FOVE",
         "integrations": "Connexion à votre boutique en ligne",
-        "api": "API et webhooks"
+        "api": "API et webhooks",
+        "referral": "Parrainage : jusqu'à une année offerte"
       }
+    }
+  },
+  "referralPage": {
+    "title": "Parrainage",
+    "subtitle": "Recommandez FOVE à d'autres commerçants : vous gagnez jusqu'à une année d'abonnement offerte, ils gagnent 20 $.",
+    "locked": {
+      "title": "Le parrainage est inclus dans les offres payantes",
+      "body": "Passez à une offre payante pour parrainer vos confrères : 20 $ de crédit par filleul, jusqu'à une année offerte chaque année. Vos filleuls gagnent 20 $ sur leur premier abonnement.",
+      "cta": "Voir les offres"
+    },
+    "link": {
+      "title": "Votre lien de parrainage",
+      "copy": "Copier le lien",
+      "copied": "Lien copié",
+      "share": "Partager sur WhatsApp",
+      "message": "Bonjour, je gère la fidélité de mes clients avec FOVE (cartes sur Apple Wallet et Google Wallet). Avec mon lien, tu as 20 $ offerts sur ton premier abonnement : {url}"
+    },
+    "gains": {
+      "title": "Mes gains",
+      "available": "Crédit disponible",
+      "availableHint": "Déduit automatiquement de votre prochaine facture.",
+      "earned": "Gagné au total",
+      "used": "Déjà utilisé",
+      "pending": "{count, plural, =0 {Aucun parrainage en attente} one {# parrainage en attente} other {# parrainages en attente}}",
+      "nextExpiry": "Prochaine expiration : {date}",
+      "year": "Plafond {year}",
+      "yearProgress": "{earned} gagnés sur {cap}",
+      "yearReached": "Plafond {year} atteint : vos prochains filleuls gardent leur remise, mais vous ne gagnez plus de crédit avant le 1er janvier."
+    },
+    "referee": "Vous avez été parrainé par {name} : {amount} offerts sur votre premier abonnement annuel.",
+    "list": {
+      "title": "Mes filleuls",
+      "empty": "Aucun filleul pour l'instant : partagez votre lien !",
+      "name": "Commerce",
+      "signedUp": "Inscrit le",
+      "status": "État",
+      "amount": "Crédit"
+    },
+    "status": {
+      "SIGNED_UP": "Inscrit, pas encore abonné",
+      "PENDING": "En attente jusqu'au {date}",
+      "EARNED": "Crédit acquis",
+      "CAPPED": "Hors plafond",
+      "NO_PLAN": "Hors offre payante",
+      "CANCELLED": "Annulé",
+      "EXPIRED": "Expiré"
+    },
+    "terms": {
+      "title": "Conditions du programme de parrainage",
+      "items": [
+        "Qui peut parrainer. Tout commerçant abonné à une offre payante FOVE. Un crédit n'est acquis que si votre commerce est sur une offre payante à la date d'acquisition.",
+        "Comment parrainer. Partagez votre lien de parrainage. Le commerce que vous recommandez (le « filleul ») doit créer son compte FOVE dans les 30 jours qui suivent son clic sur votre lien.",
+        "Ce que gagne le filleul. 20 USD déduits de sa première souscription annuelle à une offre payante. Une seule fois par commerce.",
+        "Ce que vous gagnez. 20 USD de crédit par filleul, acquis 14 jours après son premier paiement annuel, à condition qu'il n'ait été ni remboursé ni résilié pendant ce délai.",
+        "Plafond. Par année civile (du 1er janvier au 31 décembre), vos gains sont plafonnés au plus petit de ces deux montants : 200 USD, ou le prix annuel de votre offre au moment où le crédit est acquis. Exemples : Essentiel, 99 USD ; Business, 199 USD ; Réseau, 200 USD. Au-delà, vos filleuls gardent leur remise, mais vous ne gagnez plus de crédit avant le 1er janvier suivant. Le nombre de filleuls n'est pas limité.",
+        "Utilisation du crédit. Votre crédit est déduit automatiquement de vos prochaines factures FOVE, en commençant par le plus ancien. Il ne peut être ni versé en argent, ni transféré, ni échangé.",
+        "Expiration. Chaque crédit expire 3 ans après avoir été acquis s'il n'a pas été utilisé.",
+        "Exclusions. Aucun crédit n'est accordé lorsque le parrain et le filleul ont un propriétaire en commun, utilisent le même moyen de paiement, ou lorsqu'un même commerce est parrainé plusieurs fois. Si le filleul est arrivé par le lien d'un partenaire commercial FOVE avant votre lien, c'est le partenaire qui est récompensé.",
+        "Fraude. FOVE peut annuler un crédit obtenu de manière abusive ou frauduleuse.",
+        "Programme partenaires. Si vous recommandez FOVE régulièrement, vous pouvez rejoindre le programme partenaires et percevoir une commission à la place du crédit.",
+        "Évolution du programme. FOVE peut modifier ou arrêter ce programme ; les crédits déjà acquis restent utilisables jusqu'à leur expiration."
+      ]
     }
   }
 }

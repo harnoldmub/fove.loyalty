@@ -238,7 +238,8 @@
       "walletCampaigns": "حملات Wallet لجميع عملائك",
       "whatsappAuto": "إرسال تلقائي عبر WhatsApp",
       "api": "واجهة البرمجة وWebhooks",
-      "integrations": "ربط المتجر الإلكتروني (عبر واجهة البرمجة)"
+      "integrations": "ربط المتجر الإلكتروني (عبر واجهة البرمجة)",
+      "referral": "برنامج الإحالة (حتى سنة مجانية)"
     },
     "custom": "حسب الطلب",
     "unlimited": "غير محدود",

@@ -238,7 +238,8 @@
       "walletCampaigns": "Campañas Wallet a todos sus clientes",
       "whatsappAuto": "Envío automático por WhatsApp",
       "api": "API y webhooks",
-      "integrations": "Conexión con tienda online (vía API)"
+      "integrations": "Conexión con tienda online (vía API)",
+      "referral": "Programa de recomendación (hasta un año gratis)"
     },
     "custom": "A medida",
     "unlimited": "Ilimitados",

@@ -49,9 +49,9 @@ interface PaidPlan {
 }
 
 /** Fonctions mises en avant, dans l'ordre où elles parlent le plus à un commerçant. */
-const FEATURE_PERKS = ["walletCampaigns", "whatsappAuto", "removeBranding", "integrations", "api"] as const satisfies readonly (keyof PlanFeatures)[];
+const FEATURE_PERKS = ["walletCampaigns", "whatsappAuto", "removeBranding", "referral", "integrations", "api"] as const satisfies readonly (keyof PlanFeatures)[];
 /** Ordre des avantages de l'encart : quotas et fonctions intercalés. */
-const PERK_ORDER = ["customers", "walletCampaigns", "staff", "whatsappAuto", "programs", "establishments", "removeBranding", "integrations", "api"] as const;
+const PERK_ORDER = ["customers", "walletCampaigns", "staff", "whatsappAuto", "programs", "establishments", "removeBranding", "referral", "integrations", "api"] as const;
 const MAX_PERKS = 4;
 
 /** Le bandeau revient au plus une fois tous les 4 jours, par commerce. */
