@@ -172,6 +172,37 @@ describe("parcours au scan : email déjà connu (option 1 du 24/11/2026)", () =>
   });
 });
 
+describe("parcours au scan : téléphone facultatif, email obligatoire", () => {
+  it("« Créer ma carte » sans téléphone : la fiche et le compte n'ont que l'email", async () => {
+    const { token, tenantId } = await shop();
+    const email = newEmail();
+    const res = await selfEnroll(app, token, { firstName: "SansTel", email, acceptTerms: true });
+    expect(res.status).toBe(200);
+    expect(res.body).toMatchObject({ state: "joined", status: "ACTIVE" });
+    const fiche = await db.customer.findFirstOrThrow({ where: { tenantId } });
+    expect(fiche).toMatchObject({ email, phone: null, marketingSmsConsent: false });
+    expect((await db.clientAccount.findUniqueOrThrow({ where: { email } })).phone).toBeNull();
+  });
+
+  it("après Google ou une connexion, rejoindre sans téléphone", async () => {
+    const { token, tenantId } = await shop();
+    const { c } = await verifiedClient();
+    const joined = await c.post(`/api/client/join/${token}`, { firstName: "Yao", phone: "", acceptTerms: true });
+    expect(joined.status).toBe(200);
+    expect(joined.body.state).toBe("joined");
+    expect((await db.customer.findFirstOrThrow({ where: { tenantId } })).phone).toBeNull();
+  });
+
+  it("l'email reste obligatoire, et un numéro saisi doit être valide", async () => {
+    const { token } = await shop();
+    expect((await agent(app).post(`/api/client/join/${token}/signup`, { firstName: "SansMail", acceptTerms: true })).status).toBe(400);
+    expect((await selfEnroll(app, token, { firstName: "Court", phone: "123", acceptTerms: true })).status).toBe(400);
+    const invalid = await selfEnroll(app, token, { firstName: "Faux", phone: "000000000000", acceptTerms: true });
+    expect(invalid.status).toBe(400);
+    expect(invalid.body.error.code).toBe("invalid_phone");
+  });
+});
+
 describe("parcours au scan : règles", () => {
   it("téléphone déjà connu chez ce commerce sous un autre email : nouvelle fiche, sans le téléphone", async () => {
     const { owner, token, tenantId, programId } = await shop();

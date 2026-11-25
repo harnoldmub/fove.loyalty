@@ -187,14 +187,19 @@ export class ClientEnrollmentService {
       }
     }
 
+    // Téléphone facultatif : l'email du compte identifie toujours la fiche.
+    const country = link.tenant.settings?.country ?? "CD";
+    let phone: string | null = null;
+    if (input.phone) {
+      phone = normalizePhone(input.phone, country);
+      if (!phone) throw badRequest("invalid_phone", "Numéro de téléphone invalide");
+    }
+
     // 2. Sinon nouvelle fiche. Un téléphone déjà connu chez ce commerce appartient peut-être à
     //    quelqu'un d'autre (numéro réattribué) : la fiche est créée sans lui.
     if (!customer) {
       if (!firstName) throw badRequest("first_name_required", "Indiquez votre prénom");
-      const country = link.tenant.settings?.country ?? "CD";
-      const phone = normalizePhone(input.phone, country);
-      if (!phone) throw badRequest("invalid_phone", "Numéro de téléphone invalide");
-      const phoneTaken = await tx.customerIdentity.findUnique({ where: { tenantId_kind_value: { tenantId, kind: "PHONE", value: phone } } });
+      const phoneTaken = phone ? await tx.customerIdentity.findUnique({ where: { tenantId_kind_value: { tenantId, kind: "PHONE", value: phone } } }) : null;
       const created = await this.customers.createInTx(
         tx,
         publicCtx(tenantId),
@@ -205,7 +210,7 @@ export class ClientEnrollmentService {
           email: account.email,
           externalRef: null,
           marketingEmailConsent: input.marketingConsent,
-          marketingSmsConsent: input.marketingConsent && !phoneTaken,
+          marketingSmsConsent: input.marketingConsent && Boolean(phone) && !phoneTaken,
           termsAcceptedAt: new Date(),
         },
         "QR_ENROLLMENT",
@@ -220,7 +225,7 @@ export class ClientEnrollmentService {
 
     // 3. Mémoire du compte : téléphone et nom pré-remplis la prochaine fois.
     const memory: Prisma.ClientAccountUpdateInput = {};
-    if (!account.phone) memory.phone = normalizePhone(input.phone, link.tenant.settings?.country ?? "CD") ?? input.phone;
+    if (!account.phone && phone) memory.phone = phone;
     if (!account.firstName) memory.firstName = firstName;
     if (!account.lastName && lastName) memory.lastName = lastName;
     if (Object.keys(memory).length) await tx.clientAccount.update({ where: { id: account.id }, data: memory });

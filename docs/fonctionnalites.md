@@ -80,7 +80,7 @@ Sur la page d'inscription, le client voit :
 | Situation | Ce qui se passe |
 |---|---|
 | Connecté, et déjà une carte dans ce programme | Sa carte s'ouvre directement. |
-| Connecté avec un compte confirmé, sans carte ici | « Rejoindre <commerce> » : téléphone pré-rempli, acceptation des conditions du programme, un bouton. |
+| Connecté avec un compte confirmé, sans carte ici | « Rejoindre <commerce> » : téléphone facultatif (pré-rempli s'il est connu), acceptation des conditions du programme, un bouton. |
 | Connecté sans avoir confirmé son email, et une carte dans un autre commerce | « Confirmez votre email » (Google ou code), puis inscription. Un nouveau passage chez le **même** commerce n'est jamais bloqué. |
 | Pas connecté | **Continuer avec Google** (en premier), **J'ai déjà un compte FOVE** (code par email), ou **Créer ma carte** avec son email. L'onglet « Retrouver ma carte » reste disponible ([2.3](#23-retrouver-sa-carte)). |
 
@@ -90,7 +90,7 @@ Sur la page d'inscription, le client voit :
 |---|---|
 | Prénom | Obligatoire |
 | Nom | Facultatif |
-| Téléphone | Obligatoire (contact pour le commerce, jamais identifiant) |
+| Téléphone | Facultatif ; s'il est saisi, il doit être valide (contact pour le commerce, jamais identifiant) |
 | Email | Obligatoire : c'est l'identifiant du compte FOVE |
 | Conditions du programme | Acceptation obligatoire ; la mention sous le bouton vaut acceptation des conditions et de la politique de confidentialité du compte FOVE |
 | Offres commerciales | Consentement facultatif. Il couvre les offres par email et par SMS ou WhatsApp. |

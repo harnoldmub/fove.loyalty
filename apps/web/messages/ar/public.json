@@ -26,6 +26,7 @@
     "firstName": "الاسم",
     "lastName": "اللقب",
     "phone": "الهاتف",
+    "phoneOptional": "الهاتف (اختياري)",
     "email": "البريد الإلكتروني",
     "emailOptional": "البريد الإلكتروني (اختياري)",
     "emailCodeHint": "سيُرسل إليك رمز تحقق.",

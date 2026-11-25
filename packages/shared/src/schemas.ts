@@ -237,10 +237,22 @@ export const redeemSchema = z.object({
 export const enrollAccountSchema = z.object({ customerId: z.uuid(), programId: z.uuid() });
 
 // --- Inscription publique ----------------------------------------------------
+/**
+ * Téléphone facultatif à l'inscription (décision du 25/11/2026) : l'email est la donnée obligatoire.
+ * Vide ou absent => null ; sinon au moins 6 caractères (le format est vérifié avec le pays du commerce).
+ */
+const optionalPhone = z
+  .string()
+  .trim()
+  .max(32)
+  .nullish()
+  .transform((v) => v || null)
+  .refine((v) => v === null || v.length >= 6, "Numéro de téléphone invalide");
+
 export const publicEnrollSchema = z.object({
   firstName: z.string().trim().min(1).max(60),
   lastName: z.string().trim().max(60).default(""),
-  phone: z.string().trim().min(6).max(32),
+  phone: optionalPhone,
   email: z.email().max(254).nullable().default(null),
   acceptTerms: z.literal(true, { error: "Vous devez accepter les conditions du programme" }),
   marketingConsent: z.boolean().default(false),
@@ -251,11 +263,11 @@ export const verifyOtpSchema = z.object({ code: z.string().regex(/^\d{6}$/) });
 // --- Compte client FOVE -------------------------------------------------------
 export const clientCodeRequestSchema = z.object({ email: z.email().max(254) });
 export const clientCodeVerifySchema = z.object({ email: z.email().max(254), code: z.string().trim().regex(/^\d{6}$/) });
-/** Rejoindre un programme en étant connecté : seul le téléphone est à confirmer (pré-rempli). */
+/** Rejoindre un programme en étant connecté : acceptation des conditions, téléphone facultatif (pré-rempli s'il est connu). */
 export const clientJoinSchema = z.object({
   firstName: z.string().trim().max(60).default(""),
   lastName: z.string().trim().max(60).default(""),
-  phone: z.string().trim().min(6).max(32),
+  phone: optionalPhone,
   acceptTerms: z.literal(true, { error: "Vous devez accepter les conditions du programme" }),
   marketingConsent: z.boolean().default(false),
 });

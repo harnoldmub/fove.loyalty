@@ -26,6 +26,7 @@
     "firstName": "First name",
     "lastName": "Last name",
     "phone": "Phone",
+    "phoneOptional": "Phone (optional)",
     "email": "Email",
     "emailOptional": "Email (optional)",
     "emailCodeHint": "A verification code will be sent to you.",

@@ -26,6 +26,7 @@
     "firstName": "Prénom",
     "lastName": "Nom",
     "phone": "Téléphone",
+    "phoneOptional": "Téléphone (facultatif)",
     "email": "Email",
     "emailOptional": "Email (facultatif)",
     "emailCodeHint": "Un code de validation vous sera envoyé.",
