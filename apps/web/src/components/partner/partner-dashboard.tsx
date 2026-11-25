@@ -32,12 +32,14 @@ import {
   UserPlus,
   Users,
   Wallet,
+  Banknote,
 } from "lucide-react";
 import { Logo } from "@/components/brand";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { Badge, PageHeader, Panel } from "@/components/ui/misc";
 import { api, ApiError, useErrorMessage } from "@/lib/api";
+import { PartnerCollection } from "./partner-collection";
 import { useLocale, useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { formatDate, formatNumber, formatPrice } from "@/lib/utils";
@@ -130,6 +132,7 @@ const TABS = [
   { id: "clients", icon: Store },
   { id: "commissions", icon: Award },
   { id: "payouts", icon: Wallet },
+  { id: "collection", icon: Banknote },
   { id: "resources", icon: FileText },
 ] as const;
 
@@ -807,6 +810,9 @@ export function PartnerDashboard({ user }: { user: { name: string; email: string
             )}
           </div>
         )}
+
+        {/* VUE : ENCAISSEMENTS HORS LIGNE */}
+        {activeTab === "collection" && <PartnerCollection partnerCode={partner.code} />}
 
         {/* VUE : RESSOURCES DE VENTE */}
         {activeTab === "resources" && (

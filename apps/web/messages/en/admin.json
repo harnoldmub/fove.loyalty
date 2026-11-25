@@ -938,6 +938,10 @@
       "defaultReason": "Application not accepted"
     },
     "rate": {
+      "collection": "Offline collection",
+      "collectionEnabled": "Can collect subscriptions",
+      "collectionCap": "Outstanding limit (€)",
+      "collectionCapHint": "Maximum amount collected and not yet paid to FOVE. €300 by default.",
       "title": "Commission rate for {name}",
       "description": "Percentage paid on each payment attributed to this partner.",
       "label": "Rate (%)",

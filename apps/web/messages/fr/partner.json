@@ -246,6 +246,7 @@
       "clients": "Clients apportés",
       "commissions": "Commissions",
       "payouts": "Paiements & Retraits",
+      "collection": "Encaissements",
       "resources": "Ressources de vente"
     },
     "overview": {
@@ -444,5 +445,81 @@
     "generated": "Lien généré",
     "copied": "Lien de campagne copié !",
     "copy": "Copier le lien avec UTM"
+  },
+  "collection": {
+    "title": "Encaissements",
+    "subtitle": "Encaissez les abonnements en espèces ou en mobile money et reversez-les chaque mois à FOVE (relevé mensuel). Frais d’encaissement : {fee} % sur les renouvellements et sur les clients que vous n’avez pas apportés.",
+    "outstanding": "Encours dû à FOVE",
+    "blocked": {
+      "not_approved": "Votre compte partenaire doit être validé pour encaisser.",
+      "disabled": "L’encaissement est désactivé pour votre compte : contactez FOVE.",
+      "overdue": "Relevé {reference} impayé : réglez-le pour encaisser à nouveau.",
+      "cap": "Plafond d’encours atteint : reversez vos encaissements à FOVE pour encaisser à nouveau."
+    },
+    "byReference": {
+      "title": "Encaisser par référence",
+      "help": "Pour un commerçant qui n’est pas votre client : saisissez la référence qu’il vous montre (page Abonnement ou email), vérifiez le commerce et le montant, puis confirmez.",
+      "label": "Référence de paiement",
+      "search": "Vérifier"
+    },
+    "clients": {
+      "title": "Mes clients",
+      "empty": "Aucun client apporté pour l’instant.",
+      "until": "{plan} jusqu’au {date}",
+      "free": "Offre Gratuite",
+      "plan": "Offre",
+      "subscribe": "Encaisser la souscription",
+      "renew": "Renouveler"
+    },
+    "invite": {
+      "title": "Inscrire un commerce",
+      "help": "Le commerçant crée lui-même son compte (il confirme son email) ; il vous est attribué automatiquement. Envoyez-lui le lien ou ouvrez-le sur son téléphone.",
+      "name": "Nom du commerçant",
+      "business": "Nom du commerce",
+      "email": "Email",
+      "copy": "Copier le lien",
+      "copied": "Lien copié.",
+      "whatsapp": "Envoyer par WhatsApp",
+      "open": "Ouvrir le lien",
+      "message": "Bonjour, voici le lien pour créer votre programme de fidélité FOVE : {url}"
+    },
+    "statements": {
+      "title": "Relevés mensuels",
+      "owe": "À verser : {amount}",
+      "credit": "En votre faveur : {amount}",
+      "due": "À verser avant le {date} avec la référence {reference}.",
+      "status": {
+        "ISSUED": "À régler",
+        "PAID": "Réglé",
+        "SETTLED": "Soldé"
+      }
+    },
+    "history": {
+      "title": "Historique",
+      "empty": "Aucun encaissement pour l’instant.",
+      "disputed": "Signalé",
+      "toSettle": "À reverser"
+    },
+    "confirm": {
+      "title": "Encaisser : {name}",
+      "description": "{plan} · {kind}",
+      "kind": {
+        "new": "souscription",
+        "renewal": "renouvellement"
+      },
+      "amount": "Montant à encaisser",
+      "method": "Moyen de paiement",
+      "methods": {
+        "CASH": "Espèces",
+        "MOBILE_MONEY": "Mobile money",
+        "BANK_TRANSFER": "Virement sur votre compte"
+      },
+      "receipt": "Numéro de reçu",
+      "receiptHint": "Facultatif : le reçu que vous remettez au commerçant.",
+      "warning": "Confirmez seulement si vous avez reçu {amount}. L’abonnement est activé tout de suite, et ce montant s’ajoute à votre encours dû à FOVE.",
+      "cancel": "Annuler",
+      "submit": "J’ai reçu le paiement"
+    },
+    "collected": "Encaissement confirmé : l’abonnement de {name} est actif."
   }
 }

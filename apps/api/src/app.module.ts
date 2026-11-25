@@ -14,6 +14,8 @@ import { PlanService } from "./billing/plan.service";
 import { PricingService } from "./billing/pricing.service";
 import { OfflineBillingService } from "./billing/offline.service";
 import { ReconciliationService } from "./admin/finance/reconciliation.service";
+import { CollectionService } from "./partners/collection.service";
+import { CollectionController } from "./partners/collection.controller";
 import { QuotaAlertService } from "./billing/quota-alert.service";
 import { BillingService } from "./billing/billing.service";
 import { BillingController } from "./billing/billing.controller";
@@ -83,6 +85,7 @@ import { ClientJoinController } from "./client-account/client-join.controller";
     AdminController,
     FinanceController,
     OfflineFinanceController,
+    CollectionController,
     PartnersController,
     JobsController,
     MediaController,
@@ -116,6 +119,7 @@ import { ClientJoinController } from "./client-account/client-join.controller";
     PricingService,
     OfflineBillingService,
     ReconciliationService,
+    CollectionService,
     QuotaAlertService,
     BillingService,
     TenantsService,

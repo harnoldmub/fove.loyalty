@@ -938,6 +938,10 @@
       "defaultReason": "Candidature non retenue"
     },
     "rate": {
+      "collection": "Encaissement hors ligne",
+      "collectionEnabled": "Peut encaisser les abonnements",
+      "collectionCap": "Plafond d’encours (€)",
+      "collectionCapHint": "Montant maximal encaissé et pas encore reversé à FOVE. 300 € par défaut.",
       "title": "Taux de commission de {name}",
       "description": "Pourcentage reversé sur chaque paiement attribué à ce partenaire.",
       "label": "Taux (%)",

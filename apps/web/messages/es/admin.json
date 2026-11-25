@@ -938,6 +938,10 @@
       "defaultReason": "Solicitud no aceptada"
     },
     "rate": {
+      "collection": "Cobro fuera de línea",
+      "collectionEnabled": "Puede cobrar suscripciones",
+      "collectionCap": "Límite de saldo (€)",
+      "collectionCapHint": "Importe máximo cobrado y aún no entregado a FOVE. 300 € por defecto.",
       "title": "Tasa de comisión de {name}",
       "description": "Porcentaje abonado por cada pago atribuido a este socio.",
       "label": "Tasa (%)",

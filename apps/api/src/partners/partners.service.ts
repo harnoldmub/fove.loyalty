@@ -891,6 +891,8 @@ export class PartnersService {
         minimumPayoutThresholdCents: dto.minimumPayoutThresholdCents !== undefined ? dto.minimumPayoutThresholdCents : undefined,
         rejectionReason: dto.rejectionReason !== undefined ? dto.rejectionReason : undefined,
         payoutCurrency: dto.payoutCurrency,
+        collectionEnabled: dto.collectionEnabled,
+        collectionCapEurCents: dto.collectionCapEurCents,
       },
     });
     if (dto.payoutCurrency) await this.reconvertAvailable(partner.id, dto.payoutCurrency);

@@ -246,6 +246,7 @@
       "clients": "Clientes aportados",
       "commissions": "Comisiones",
       "payouts": "Pagos y retiros",
+      "collection": "Cobros",
       "resources": "Recursos de venta"
     },
     "overview": {
@@ -444,5 +445,81 @@
     "generated": "Enlace generado",
     "copied": "¡Enlace de campaña copiado!",
     "copy": "Copiar el enlace con UTM"
+  },
+  "collection": {
+    "title": "Cobros",
+    "subtitle": "Cobra las suscripciones en efectivo o con dinero móvil y entrégalas cada mes a FOVE (extracto mensual). Gastos de cobro: {fee} % en las renovaciones y en los clientes que no has traído.",
+    "outstanding": "Adeudado a FOVE",
+    "blocked": {
+      "not_approved": "Tu cuenta de socio debe estar validada para cobrar.",
+      "disabled": "El cobro está desactivado para tu cuenta: contacta con FOVE.",
+      "overdue": "Extracto {reference} sin pagar: págalo para volver a cobrar.",
+      "cap": "Límite de saldo alcanzado: entrega tus cobros a FOVE para volver a cobrar."
+    },
+    "byReference": {
+      "title": "Cobrar por referencia",
+      "help": "Para un comercio que no es cliente tuyo: introduce la referencia que te muestra (página Suscripción o correo), comprueba el comercio y el importe y confirma.",
+      "label": "Referencia de pago",
+      "search": "Comprobar"
+    },
+    "clients": {
+      "title": "Mis clientes",
+      "empty": "Aún no has traído clientes.",
+      "until": "{plan} hasta el {date}",
+      "free": "Plan Gratuito",
+      "plan": "Plan",
+      "subscribe": "Cobrar la suscripción",
+      "renew": "Renovar"
+    },
+    "invite": {
+      "title": "Registrar un comercio",
+      "help": "El comercio crea su propia cuenta (confirma su correo); se te asigna automáticamente. Envíale el enlace o ábrelo en su teléfono.",
+      "name": "Nombre del comerciante",
+      "business": "Nombre del comercio",
+      "email": "Correo",
+      "copy": "Copiar el enlace",
+      "copied": "Enlace copiado.",
+      "whatsapp": "Enviar por WhatsApp",
+      "open": "Abrir el enlace",
+      "message": "Hola, este es el enlace para crear tu programa de fidelidad FOVE: {url}"
+    },
+    "statements": {
+      "title": "Extractos mensuales",
+      "owe": "A pagar: {amount}",
+      "credit": "A tu favor: {amount}",
+      "due": "A pagar antes del {date} con la referencia {reference}.",
+      "status": {
+        "ISSUED": "Por pagar",
+        "PAID": "Pagado",
+        "SETTLED": "Saldado"
+      }
+    },
+    "history": {
+      "title": "Historial",
+      "empty": "Aún no hay cobros.",
+      "disputed": "Señalado",
+      "toSettle": "Por entregar"
+    },
+    "confirm": {
+      "title": "Cobrar: {name}",
+      "description": "{plan} · {kind}",
+      "kind": {
+        "new": "suscripción",
+        "renewal": "renovación"
+      },
+      "amount": "Importe a cobrar",
+      "method": "Medio de pago",
+      "methods": {
+        "CASH": "Efectivo",
+        "MOBILE_MONEY": "Dinero móvil",
+        "BANK_TRANSFER": "Transferencia a tu cuenta"
+      },
+      "receipt": "Número de recibo",
+      "receiptHint": "Opcional: el recibo que entregas al comercio.",
+      "warning": "Confirma solo si has recibido {amount}. La suscripción se activa de inmediato y este importe se suma a lo que debes a FOVE.",
+      "cancel": "Cancelar",
+      "submit": "He recibido el pago"
+    },
+    "collected": "Cobro confirmado: la suscripción de {name} está activa."
   }
 }

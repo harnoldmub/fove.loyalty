@@ -161,7 +161,7 @@ export class OfflineBillingService {
    * Sans abonnement payant en cours, l'offre s'active tout de suite pour 7 jours (une seule fois par
    * commerce) ; avec un abonnement hors ligne en cours, la facture couvre la période suivante.
    */
-  async request(tenantId: string, planCode: string, opts: { actorUserId?: string; withProvisional?: boolean } = {}) {
+  async request(tenantId: string, planCode: string, opts: { actorUserId?: string; withProvisional?: boolean; silent?: boolean } = {}) {
     const db = this.prisma.client;
     const plan = await db.subscriptionPlan.findFirst({ where: { code: planCode, active: true }, include: { prices: true } });
     if (!plan) throw notFound("Offre");
@@ -236,7 +236,8 @@ export class OfflineBillingService {
       await db.subscription.upsert({ where: { tenantId }, update: data, create: { tenantId, ...data } });
     }
     await this.audit.log({ tenantId, actorUserId: opts.actorUserId, action: "billing.offline_requested", targetType: "invoice", targetId: invoice.id, metadata: { reference, plan: plan.code, kind, amountCents: amount, currency, provisional } });
-    await this.sendInstructions(tenantId, invoice, plan.name);
+    // Facture créée par un partenaire pour l'encaisser sur place : pas d'email d'instructions.
+    if (!opts.silent) await this.sendInstructions(tenantId, invoice, plan.name);
     return { invoice, created: true };
   }
 

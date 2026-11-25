@@ -80,6 +80,9 @@ export const adminPartnerUpdateSchema = z.object({
   minimumPayoutThresholdCents: z.number().int().positive().optional(),
   rejectionReason: z.string().trim().max(500).optional(),
   payoutCurrency: z.enum(PAYOUT_CURRENCIES).optional(),
+  /** Encaissement hors ligne : autorisé, et plafond d'encours dû à FOVE (centimes d'euro). */
+  collectionEnabled: z.boolean().optional(),
+  collectionCapEurCents: z.number().int().min(0).max(100_000_000).optional(),
 });
 
 export type AdminPartnerUpdateDto = z.infer<typeof adminPartnerUpdateSchema>;

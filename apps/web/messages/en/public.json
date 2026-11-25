@@ -164,5 +164,15 @@
     "knownTitle": "You already have a FOVE account",
     "knownText": "A code has just been sent to {email}. Enter it to add this card to your account.",
     "loadError": "This page couldn't be loaded. Check your connection."
+  },
+  "collectionReport": {
+    "title": "Report a collection problem",
+    "intro": "A FOVE partner declared that they received your payment. If the amount, the date or the payment itself is not correct, let us know: the FOVE team will get back to you.",
+    "note": "What happened?",
+    "noteHint": "Optional but useful: amount actually paid, date…",
+    "submit": "Send the report",
+    "doneTitle": "Thank you, noted",
+    "doneText": "The FOVE team has been notified and will get back to you shortly.",
+    "invalid": "This link is not valid."
   }
 }
