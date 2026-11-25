@@ -194,6 +194,8 @@ describe("parcours au scan : règles", () => {
     expect(res.body.status).toBe("PENDING_VERIFICATION");
     const t = cardToken(res.body.cardPath);
     expect((await http().get(`/api/public/cards/${t}`)).body.verification).toBe("EMAIL_OTP");
+    // Sans l'en-tête anti-CSRF (formulaire d'un autre site), le code est refusé.
+    expect((await http().post(`/api/public/cards/${t}/verify`).send({ code: await codeFor(email) })).status).toBe(403);
     // Le code se saisit aussi depuis la page de la carte.
     expect((await http().post(`/api/public/cards/${t}/verify`).set("x-fove-csrf", "1").send({ code: await codeFor(email) })).body.status).toBe("ACTIVE");
     expect((await db.clientAccount.findUniqueOrThrow({ where: { email } })).emailVerifiedAt).not.toBeNull();

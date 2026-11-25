@@ -1,4 +1,5 @@
 import { Injectable } from "@nestjs/common";
+import { publicUrlProblem } from "../common/public-url";
 import { createApiKeySchema, webhookEndpointSchema, WEBHOOK_EVENTS } from "@fove/shared";
 import type { IntegrationProvider } from "@fove/database";
 import type { z } from "zod";
@@ -82,6 +83,10 @@ export class IntegrationsService {
     const unknown = input.events.filter((e) => !(WEBHOOK_EVENTS as readonly string[]).includes(e));
     if (unknown.length) throw badRequest("invalid_events", `Événements inconnus : ${unknown.join(", ")}`);
     if (loadConfig().isProd && !input.url.startsWith("https://")) throw badRequest("https_required", "HTTPS requis");
+    // En production, l'adresse doit viser Internet : jamais le réseau interne du serveur (SSRF).
+    if (loadConfig().isProd && (await publicUrlProblem(input.url))) {
+      throw badRequest("webhook_url_forbidden", "Adresse de webhook non autorisée : utilisez une adresse HTTPS publique");
+    }
     const secret = randomToken("whsec_", 24);
     const endpoint = await this.prisma.client.webhookEndpoint.create({
       data: { tenantId: ctx.tenantId, url: input.url, events: input.events, secretEncrypted: encrypt(secret, loadConfig().APP_ENCRYPTION_KEY) },
