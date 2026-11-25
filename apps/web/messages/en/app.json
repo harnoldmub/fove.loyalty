@@ -41,6 +41,7 @@
     "mockMode": "Simulated billing mode: no real payment is made in this environment.",
     "unavailable": "Online payment will be available soon. Your current plan remains accessible.",
     "summary": {
+      "offline": "Paid offline until {date}, with no automatic renewal: pay for the following year below.",
       "ended": "Your {name} subscription has ended: your account is on the Free plan.",
       "free": "Free, with no time limit. Upgrade when you need more customers or features.",
       "trial": "Trial until {date}, then Free plan.",
@@ -68,6 +69,28 @@
       "pending": "Your current subscription stays in {current}; it will switch to {next} at renewal, on {date}.",
       "localNote": "Prices in {currency} for payment by bank transfer, in cash or by mobile money. Online card payment is made in {online}.",
       "online": "Online: {price}"
+    },
+    "offline": {
+      "pay": "Pay by transfer or cash",
+      "renew": "Renew {name} offline",
+      "requested": "Payment reference created: it has also been sent to you by email.",
+      "pendingTitle": "Payment pending: {name}",
+      "provisional": "Your plan is active provisionally until {date}. It will be confirmed as soon as the payment is received; otherwise your business returns to the Free plan (nothing is deleted).",
+      "afterPayment": "Your plan will be activated as soon as the payment is received.",
+      "renewal": "This payment covers the year after your current subscription.",
+      "reference": "Payment reference",
+      "amount": "Amount",
+      "copy": "Copy",
+      "copied": "Reference copied.",
+      "mandatory": "Always include this reference in the transfer or deposit description.",
+      "beneficiary": "Beneficiary",
+      "bank": "Bank",
+      "account": "Account",
+      "partner": "You can also pay a FOVE partner by giving them this reference: your plan is activated as soon as they confirm the collection.",
+      "cancel": "Cancel this payment",
+      "cancelTitle": "Cancel this payment?",
+      "cancelProvisional": "The reference will no longer be valid and your provisional access will end immediately.",
+      "cancelConsequence": "The reference will no longer be valid."
     },
     "plan": {
       "current": "Current plan",

@@ -383,6 +383,83 @@
         "CANCELED": "Résilié"
       }
     },
+    "offline": {
+      "title": "Règlements hors ligne",
+      "description": "Virements, espèces et mobile money : factures à référence, validation et coordonnées bancaires par pays.",
+      "search": "Référence ou commerce",
+      "searchButton": "Rechercher",
+      "status": "État",
+      "empty": "Aucune facture.",
+      "statuses": {
+        "OPEN": "En attente",
+        "PAID": "Payée",
+        "VOID": "Annulée",
+        "ALL": "Toutes"
+      },
+      "kind": {
+        "new": "souscription",
+        "renewal": "renouvellement"
+      },
+      "provisional": "Accès provisoire en cours",
+      "collectedBy": "Encaissé par {name} ({code})",
+      "disputed": "Signalée par le commerçant",
+      "table": {
+        "reference": "Référence",
+        "tenant": "Commerce",
+        "plan": "Offre",
+        "amount": "Montant",
+        "date": "Date",
+        "status": "État"
+      },
+      "void": "Annuler",
+      "voidTitle": "Annuler la facture {reference} ?",
+      "voidProvisional": "La référence ne sera plus valable et l’accès provisoire du commerce prendra fin.",
+      "voidConsequence": "La référence ne sera plus valable.",
+      "validate": {
+        "button": "Valider",
+        "title": "Paiement reçu : {reference}",
+        "description": "{tenant} · montant dû {amount}",
+        "method": "Moyen de paiement",
+        "methods": {
+          "BANK_TRANSFER": "Virement",
+          "CASH": "Espèces",
+          "MOBILE_MONEY": "Mobile money"
+        },
+        "amount": "Montant reçu ({currency})",
+        "paidAt": "Date de réception",
+        "shortfall": "Accepter un montant inférieur au dû (frais bancaires, arrondi)",
+        "bankReference": "Référence bancaire",
+        "bankReferenceHint": "Libellé ou numéro de l’opération sur le relevé.",
+        "proofUrl": "Lien du justificatif",
+        "note": "Note interne",
+        "cancel": "Annuler",
+        "confirm": "Valider le paiement",
+        "done": "Paiement validé : l’abonnement est actif."
+      },
+      "accounts": {
+        "title": "Coordonnées bancaires par pays",
+        "help": "Affichées au commerçant et dans l’email d’instructions selon son pays ; « * » = coordonnées par défaut. Algérie : compte local.",
+        "empty": "Aucune coordonnée : le règlement hors ligne n’est proposé dans aucun pays.",
+        "default": "Par défaut",
+        "inactive": "Inactif",
+        "edit": "Modifier",
+        "delete": "Supprimer",
+        "deleteTitle": "Supprimer ces coordonnées ?",
+        "deleteConsequence": "Ces coordonnées ne seront plus affichées aux commerçants.",
+        "country": "Pays (MA, DZ, CD… ou *)",
+        "currency": "Monnaie",
+        "beneficiary": "Bénéficiaire",
+        "bankName": "Banque",
+        "accountNumber": "RIB / numéro de compte",
+        "instructions": "Autres moyens",
+        "instructionsHint": "Espèces au bureau, numéro mobile money… Affiché tel quel.",
+        "active": "Actif",
+        "add": "Ajouter",
+        "update": "Enregistrer",
+        "cancel": "Annuler",
+        "saved": "Coordonnées enregistrées."
+      }
+    },
     "rates": {
       "title": "Taux comptables",
       "description": "Unités de chaque monnaie pour 1 €. Servent à consolider la Finance en euros et à convertir les commissions des partenaires ; jamais au prix payé par un commerçant.",
@@ -439,6 +516,7 @@
         "subscriptions": "Abonnements",
         "customers": "Clients",
         "invoices": "Factures",
+        "offline": "Règlements hors ligne",
         "commissions": "Partenaires",
         "expenses": "Dépenses",
         "treasury": "Trésorerie",
@@ -872,6 +950,7 @@
       "partners": "Programme Partenaires",
       "expenses": "Dépenses & Charges",
       "treasury": "Trésorerie & Banque",
+      "offline": "Règlements hors ligne",
       "rates": "Taux comptables",
       "reports": "Rapports associés",
       "audit": "Journal d'audit",

@@ -10,6 +10,7 @@ import { randomToken } from "../common/crypto";
 import type { TenantContext } from "../common/context";
 import { PlanService } from "./plan.service";
 import { PricingService, type PlanWithPrices } from "./pricing.service";
+import { OfflineBillingService } from "./offline.service";
 import { PartnersService } from "../partners/partners.service";
 import { ReferralService } from "../referrals/referral.service";
 
@@ -35,6 +36,7 @@ export class BillingService {
     private readonly partners: PartnersService,
     private readonly referrals: ReferralService,
     private readonly pricing: PricingService,
+    private readonly offline: OfflineBillingService,
   ) {
     const key = stripeSecretKey();
     this.stripe = key ? new Stripe(key) : null;
@@ -54,13 +56,14 @@ export class BillingService {
   }
 
   async overview(ctx: TenantContext) {
-    const [subscription, plans, usage, limits, current, billingCurrency] = await Promise.all([
+    const [subscription, plans, usage, limits, current, billingCurrency, offline] = await Promise.all([
       this.prisma.client.subscription.findUnique({ where: { tenantId: ctx.tenantId }, include: { plan: true, scheduledPlan: { select: { code: true, name: true } } } }),
       this.listPlans(),
       this.plans.usage(ctx.tenantId),
       this.plans.limits(ctx.tenantId),
       this.plans.currentPlan(ctx.tenantId),
       this.pricing.tenantCurrency(ctx.tenantId),
+      this.offline.summary(ctx.tenantId),
     ]);
     const currentPlan = { code: current.code, name: current.name, kind: current.kind };
     const running = subscription ? await this.runningPaid(subscription) : false;
@@ -79,6 +82,8 @@ export class BillingService {
         /** Monnaie de l'abonnement en cours, fixe jusqu'au renouvellement. */
         subscription: running ? subscription!.currency : null,
       },
+      /** Règlement hors ligne (virement, espèces, mobile money) : coordonnées et facture en attente. */
+      offline,
     };
   }
 
@@ -97,6 +102,10 @@ export class BillingService {
     const effective = sub && (await this.runningPaid(sub)) ? ("renewal" as const) : ("now" as const);
     await this.audit.forTenant(ctx, "billing.currency_changed", undefined, { currency, effective });
     return { currency, effective };
+  }
+
+  async tenantCountry(tenantId: string): Promise<string | null> {
+    return (await this.prisma.client.tenantSettings.findUnique({ where: { tenantId }, select: { country: true } }))?.country ?? null;
   }
 
   /** Abonnement payant en vigueur (quel que soit le fournisseur) : sa monnaie ne change pas avant le renouvellement. */
@@ -118,6 +127,15 @@ export class BillingService {
     const plan = await this.plan(planCode);
     const appUrl = loadConfig().APP_URL;
     const current = await this.prisma.client.subscription.findUnique({ where: { tenantId: ctx.tenantId }, include: { plan: { include: { prices: true } } } });
+
+    // Abonnement réglé hors ligne et payé : il court jusqu'à son échéance ; le suivant se règle depuis la page Abonnement.
+    if (current?.provider === "OFFLINE" && current.status !== "CANCELED" && current.provisionalUntil === null && current.currentPeriodEnd && current.currentPeriodEnd > new Date()) {
+      throw badRequest("offline_running", "Votre abonnement est réglé hors ligne jusqu’à son échéance : réglez la période suivante par virement, ou par carte une fois l’abonnement terminé.");
+    }
+    // Accès provisoire en attente de virement : le paiement par carte le remplace.
+    if (current?.provider === "OFFLINE" && current.provisionalUntil !== null) {
+      await this.prisma.client.invoice.updateMany({ where: { tenantId: ctx.tenantId, status: "OPEN", paymentReference: { not: null } }, data: { status: "VOID", voidedAt: new Date(), amountDueCents: 0 } });
+    }
 
     // Abonnement payant en cours : changement d'offre, sans nouvelle période.
     if (current && this.isRunningPaid(current)) return this.changePlan(ctx, current, plan);
@@ -335,7 +353,7 @@ export class BillingService {
   async closeExpired(now = new Date()) {
     const db = this.prisma.client;
     const due = await db.subscription.findMany({
-      where: { provider: { in: ["MANUAL", "MOCK"] }, status: { in: ["ACTIVE", "TRIALING", "PAST_DUE"] }, currentPeriodEnd: { lt: now } },
+      where: { provider: { in: ["MANUAL", "MOCK", "OFFLINE"] }, status: { in: ["ACTIVE", "TRIALING", "PAST_DUE"] }, currentPeriodEnd: { lt: now }, provisionalUntil: null },
     });
     // Renouvellement simulé : la monnaie choisie entre-temps par le commerçant s'applique (paiement en ligne : USD ou EUR).
     let ended = 0;
@@ -645,6 +663,9 @@ function mapStatus(status: Stripe.Subscription.Status): SubscriptionStatus {
 function assertCancellable(sub: Subscription & { plan: SubscriptionPlan }) {
   if (sub.plan.kind === "FREE" || sub.status === "CANCELED" || sub.status === "TRIALING") {
     throw badRequest("nothing_to_cancel", "Aucun abonnement payant à résilier");
+  }
+  if (sub.provider === "OFFLINE") {
+    throw badRequest("offline_no_renewal", "Votre abonnement réglé hors ligne prend fin à son échéance, sans renouvellement automatique.");
   }
   if (sub.plan.kind === "CUSTOM" || sub.provider === "MANUAL") {
     throw badRequest("contract_managed", "Votre abonnement est géré par l’équipe FOVE : contactez-nous pour le modifier.");

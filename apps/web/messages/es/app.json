@@ -41,6 +41,7 @@
     "mockMode": "Modo de facturación simulado: no se realiza ningún pago real en este entorno.",
     "unavailable": "El pago en línea estará disponible próximamente. Tu plan actual sigue accesible.",
     "summary": {
+      "offline": "Pagado fuera de línea hasta el {date}, sin renovación automática: paga el año siguiente más abajo.",
       "ended": "Tu suscripción {name} ha terminado: tu cuenta usa el plan Gratuito.",
       "free": "Gratis, sin límite de tiempo. Cambia a un plan superior cuando necesites más clientes o funciones.",
       "trial": "Prueba hasta el {date}, luego plan Gratuito.",
@@ -68,6 +69,28 @@
       "pending": "Su suscripción actual sigue en {current}; pasará a {next} en la renovación, el {date}.",
       "localNote": "Precios en {currency} para pagar por transferencia, en efectivo o con dinero móvil. El pago en línea con tarjeta se hace en {online}.",
       "online": "En línea: {price}"
+    },
+    "offline": {
+      "pay": "Pagar por transferencia o en efectivo",
+      "renew": "Renovar {name} fuera de línea",
+      "requested": "Referencia de pago creada: también te la hemos enviado por correo.",
+      "pendingTitle": "Pago pendiente: {name}",
+      "provisional": "Tu plan está activo de forma provisional hasta el {date}. Se confirmará en cuanto se reciba el pago; si no, tu comercio volverá al plan Gratuito (no se borra nada).",
+      "afterPayment": "Tu plan se activará en cuanto se reciba el pago.",
+      "renewal": "Este pago cubre el año siguiente a tu suscripción actual.",
+      "reference": "Referencia de pago",
+      "amount": "Importe",
+      "copy": "Copiar",
+      "copied": "Referencia copiada.",
+      "mandatory": "Indica obligatoriamente esta referencia en el concepto de la transferencia o del depósito.",
+      "beneficiary": "Beneficiario",
+      "bank": "Banco",
+      "account": "Cuenta",
+      "partner": "También puedes pagar a un socio de FOVE dándole esta referencia: tu plan se activa en cuanto confirme el cobro.",
+      "cancel": "Anular este pago",
+      "cancelTitle": "¿Anular este pago?",
+      "cancelProvisional": "La referencia dejará de ser válida y tu acceso provisional terminará de inmediato.",
+      "cancelConsequence": "La referencia dejará de ser válida."
     },
     "plan": {
       "current": "Plan actual",

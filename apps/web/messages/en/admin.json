@@ -383,6 +383,83 @@
         "CANCELED": "Cancelled"
       }
     },
+    "offline": {
+      "title": "Offline payments",
+      "description": "Bank transfers, cash and mobile money: invoices with references, validation and bank details by country.",
+      "search": "Reference or business",
+      "searchButton": "Search",
+      "status": "Status",
+      "empty": "No invoices.",
+      "statuses": {
+        "OPEN": "Pending",
+        "PAID": "Paid",
+        "VOID": "Cancelled",
+        "ALL": "All"
+      },
+      "kind": {
+        "new": "subscription",
+        "renewal": "renewal"
+      },
+      "provisional": "Provisional access running",
+      "collectedBy": "Collected by {name} ({code})",
+      "disputed": "Reported by the merchant",
+      "table": {
+        "reference": "Reference",
+        "tenant": "Business",
+        "plan": "Plan",
+        "amount": "Amount",
+        "date": "Date",
+        "status": "Status"
+      },
+      "void": "Cancel",
+      "voidTitle": "Cancel invoice {reference}?",
+      "voidProvisional": "The reference will no longer be valid and the business's provisional access will end.",
+      "voidConsequence": "The reference will no longer be valid.",
+      "validate": {
+        "button": "Validate",
+        "title": "Payment received: {reference}",
+        "description": "{tenant} · amount due {amount}",
+        "method": "Payment method",
+        "methods": {
+          "BANK_TRANSFER": "Bank transfer",
+          "CASH": "Cash",
+          "MOBILE_MONEY": "Mobile money"
+        },
+        "amount": "Amount received ({currency})",
+        "paidAt": "Date received",
+        "shortfall": "Accept an amount below what is due (bank fees, rounding)",
+        "bankReference": "Bank reference",
+        "bankReferenceHint": "Label or number of the transaction on the statement.",
+        "proofUrl": "Proof link",
+        "note": "Internal note",
+        "cancel": "Cancel",
+        "confirm": "Validate payment",
+        "done": "Payment validated: the subscription is active."
+      },
+      "accounts": {
+        "title": "Bank details by country",
+        "help": "Shown to the merchant and in the instructions email based on their country; \"*\" = default details. Algeria: local account.",
+        "empty": "No details: offline payment is not offered in any country.",
+        "default": "Default",
+        "inactive": "Inactive",
+        "edit": "Edit",
+        "delete": "Delete",
+        "deleteTitle": "Delete these details?",
+        "deleteConsequence": "These details will no longer be shown to merchants.",
+        "country": "Country (MA, DZ, CD… or *)",
+        "currency": "Currency",
+        "beneficiary": "Beneficiary",
+        "bankName": "Bank",
+        "accountNumber": "Account number",
+        "instructions": "Other methods",
+        "instructionsHint": "Cash at the office, mobile money number… Shown as is.",
+        "active": "Active",
+        "add": "Add",
+        "update": "Save",
+        "cancel": "Cancel",
+        "saved": "Details saved."
+      }
+    },
     "rates": {
       "title": "Accounting rates",
       "description": "Units of each currency for €1. Used to consolidate Finance in euros and convert partner commissions; never for the price a merchant pays.",
@@ -439,6 +516,7 @@
         "subscriptions": "Subscriptions",
         "customers": "Customers",
         "invoices": "Invoices",
+        "offline": "Offline payments",
         "commissions": "Partners",
         "expenses": "Expenses",
         "treasury": "Treasury",
@@ -872,6 +950,7 @@
       "partners": "Partner program",
       "expenses": "Expenses & Costs",
       "treasury": "Treasury & Bank",
+      "offline": "Offline payments",
       "rates": "Accounting rates",
       "reports": "Partner reports",
       "audit": "Audit log",

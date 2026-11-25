@@ -41,6 +41,7 @@
     "mockMode": "Mode de facturation simulé : aucun paiement réel n’est effectué sur cet environnement.",
     "unavailable": "Le paiement en ligne sera disponible prochainement. Votre offre actuelle reste accessible.",
     "summary": {
+      "offline": "Réglé hors ligne jusqu’au {date}, sans renouvellement automatique : réglez l’année suivante ci-dessous.",
       "ended": "Votre abonnement {name} est terminé : votre compte utilise l’offre Gratuite.",
       "free": "Gratuit, sans limite de durée. Passez à une offre supérieure quand vous avez besoin de plus de clients ou de fonctions.",
       "trial": "Essai jusqu’au {date}, puis offre Gratuite.",
@@ -68,6 +69,28 @@
       "pending": "Votre abonnement en cours reste en {current} ; il passera en {next} au renouvellement, le {date}.",
       "localNote": "Prix en {currency} pour un règlement par virement, en espèces ou par mobile money. Le paiement en ligne par carte se fait en {online}.",
       "online": "En ligne : {price}"
+    },
+    "offline": {
+      "pay": "Payer par virement ou espèces",
+      "renew": "Renouveler {name} hors ligne",
+      "requested": "Référence de paiement créée : elle vous a aussi été envoyée par email.",
+      "pendingTitle": "Règlement en attente : {name}",
+      "provisional": "Votre offre est active à titre provisoire jusqu’au {date}. Elle sera confirmée dès réception du paiement ; sinon, votre commerce reviendra à l’offre Gratuite (rien n’est supprimé).",
+      "afterPayment": "Votre offre sera activée dès réception du paiement.",
+      "renewal": "Ce règlement couvre l’année qui suit votre abonnement en cours.",
+      "reference": "Référence de paiement",
+      "amount": "Montant",
+      "copy": "Copier",
+      "copied": "Référence copiée.",
+      "mandatory": "Indiquez obligatoirement cette référence dans le motif du virement ou du dépôt.",
+      "beneficiary": "Bénéficiaire",
+      "bank": "Banque",
+      "account": "Compte",
+      "partner": "Vous pouvez aussi régler auprès d’un partenaire FOVE en lui donnant cette référence : votre offre est activée dès qu’il valide l’encaissement.",
+      "cancel": "Annuler ce règlement",
+      "cancelTitle": "Annuler ce règlement ?",
+      "cancelProvisional": "La référence ne sera plus valable et votre accès provisoire prendra fin tout de suite.",
+      "cancelConsequence": "La référence ne sera plus valable."
     },
     "plan": {
       "current": "Offre actuelle",

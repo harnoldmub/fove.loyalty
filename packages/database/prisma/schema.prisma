@@ -654,6 +654,8 @@ enum BillingProvider {
   STRIPE
   MOCK
   MANUAL
+  /// Réglé hors ligne (virement, espèces, mobile money), validé par FOVE ou un partenaire (docs/chantier-encaissement-hors-ligne.md).
+  OFFLINE
 }
 
 model Subscription {
@@ -676,6 +678,8 @@ model Subscription {
   cancelAtPeriodEnd    Boolean            @default(false)
   /// Début de l'impayé en cours : les droits sont gardés pendant le délai de grâce, puis le Gratuit s'applique.
   pastDueSince         DateTime?
+  /// Accès provisoire d'une souscription par virement, en attendant le paiement (7 jours).
+  provisionalUntil     DateTime?
   stripeCustomerId     String?            @unique
   stripeSubscriptionId String?            @unique
   /// Contrat sur-mesure : quotas et fonctions négociés, prioritaires sur ceux de l'offre.
@@ -995,6 +999,8 @@ model Invoice {
   voidedAt            DateTime?
 
   stripeInvoiceId     String?       @unique
+  /// Référence à indiquer dans le motif d'un virement (ex. FV-7KQ4M2-X) : facture réglée hors ligne.
+  paymentReference    String?       @unique
   pdfUrl              String?
   hostedInvoiceUrl    String?
   billingReason       String?       /// subscription_create, subscription_cycle, manual, custom_contract
@@ -1071,6 +1077,18 @@ model Payment {
   partnerId            String?         @db.Uuid
   partner              Partner?        @relation(fields: [partnerId], references: [id], onDelete: SetNull)
 
+  /// Paiement hors ligne : partenaire qui a encaissé (sinon validé par FOVE), reçu, justificatif.
+  collectorPartnerId   String?         @db.Uuid
+  collectorPartner     Partner?        @relation("CollectedPayments", fields: [collectorPartnerId], references: [id], onDelete: SetNull)
+  receiptNumber        String?
+  proofUrl             String?
+  /// Relevé mensuel du partenaire qui reverse cet encaissement à FOVE.
+  statementId          String?         @db.Uuid
+  statement            PartnerStatement? @relation(fields: [statementId], references: [id], onDelete: SetNull)
+  /// Le commerçant a signalé un problème sur cet encaissement (lien de l'email de confirmation).
+  disputeReportedAt    DateTime?
+  disputeNote          String?
+
   confirmedAt          DateTime?
   createdAt            DateTime        @default(now())
   updatedAt            DateTime        @updatedAt
@@ -1144,7 +1162,13 @@ model Partner {
   createdAt                   DateTime            @default(now())
   updatedAt                   DateTime            @updatedAt
 
+  /// Encaissement hors ligne : autorisé, et encours maximal dû à FOVE (en centimes d'euro).
+  collectionEnabled           Boolean             @default(true)
+  collectionCapEurCents       Int                 @default(30000)
+
   payments                    Payment[]
+  collectedPayments           Payment[]           @relation("CollectedPayments")
+  statements                  PartnerStatement[]
   commissions                 PartnerCommission[]
   payouts                     PartnerPayout[]
   clicks                      PartnerClick[]
@@ -1250,6 +1274,11 @@ model PartnerCommission {
   payoutCurrency        String?
   payoutAmountCents     Int?
   fxRate                Decimal?         @db.Decimal(18, 8)
+  /// ACQUISITION : commission d'apport ; COLLECTION_FEE : frais d'encaissement hors ligne (5 %).
+  kind                  String           @default("ACQUISITION")
+  /// Relevé mensuel qui a compensé cette commission avec les encaissements du partenaire.
+  statementId           String?          @db.Uuid
+  statement             PartnerStatement? @relation(fields: [statementId], references: [id], onDelete: SetNull)
   status                CommissionStatus @default(PENDING)
 
   availableAt           DateTime?
@@ -1390,6 +1419,11 @@ model BankStatementEntry {
   reconciled         Boolean   @default(false)
   reconciledType     String?   /// PAYMENT, EXPENSE, PARTNER_PAYOUT
   reconciledId       String?   @db.Uuid
+  /// Rapprochement proposé à partir d'une référence trouvée dans le libellé (INVOICE, STATEMENT).
+  suggestedType      String?
+  suggestedId        String?   @db.Uuid
+  /// Montant différent du montant attendu (frais bancaires, paiement partiel).
+  amountMismatch     Boolean   @default(false)
   source             String    @default("MANUAL") /// IMPORT_CSV, MANUAL
   notes              String?
   createdAt          DateTime  @default(now())
@@ -1508,4 +1542,62 @@ model ReferralCreditUse {
 
   @@index([tenantId, createdAt])
   @@index([rewardId])
+}
+
+/// Coordonnées pour les règlements hors ligne, par pays ("*" = par défaut). Algérie : compte local.
+model BankAccount {
+  id           String   @id @default(uuid()) @db.Uuid
+  country      String
+  currency     String
+  beneficiary  String
+  bankName     String?
+  iban         String?
+  /// RIB local, numéro de compte, SWIFT/BIC…
+  accountNumber String?
+  swift        String?
+  /// Autres moyens (espèces au bureau, mobile money) : texte libre affiché tel quel.
+  instructions String?
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([country, active])
+}
+
+enum PartnerStatementStatus {
+  /// Émis : le partenaire doit verser le solde à FOVE avant l'échéance.
+  ISSUED
+  /// Solde reçu par FOVE.
+  PAID
+  /// Solde en faveur du partenaire : versé par FOVE (versement créé), ou nul.
+  SETTLED
+}
+
+/// Relevé mensuel d'un partenaire encaisseur : encaissements − commissions et frais = solde (docs/chantier-encaissement-hors-ligne.md, 7).
+model PartnerStatement {
+  id               String                 @id @default(uuid()) @db.Uuid
+  partnerId        String                 @db.Uuid
+  partner          Partner                @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+  /// Référence du virement du partenaire (ex. FV-RL-7KQ4M2-X).
+  reference        String                 @unique
+  periodStart      DateTime
+  periodEnd        DateTime
+  /// Monnaie des encaissements ; commissions converties dans cette monnaie.
+  currency         String
+  collectedCents   Int
+  commissionsCents Int
+  feesCents        Int
+  /// Positif : dû par le partenaire ; négatif : dû au partenaire.
+  balanceCents     Int
+  paidCents        Int                    @default(0)
+  status           PartnerStatementStatus @default(ISSUED)
+  dueAt            DateTime
+  paidAt           DateTime?
+  createdAt        DateTime               @default(now())
+
+  payments         Payment[]
+  commissions      PartnerCommission[]
+
+  @@unique([partnerId, periodStart, currency])
+  @@index([status, dueAt])
 }

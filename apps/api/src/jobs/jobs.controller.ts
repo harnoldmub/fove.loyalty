@@ -12,6 +12,7 @@ import { AuthService } from "../auth/auth.service";
 import { ClientAccountService } from "../client-account/client-account.service";
 import { ReferralService } from "../referrals/referral.service";
 import { PartnersService } from "../partners/partners.service";
+import { OfflineBillingService } from "../billing/offline.service";
 
 /**
  * Tâches périodiques déclenchées par un cron Railway (toutes les 5 minutes)
@@ -30,6 +31,7 @@ export class JobsController {
     private readonly clientAccounts: ClientAccountService,
     private readonly referrals: ReferralService,
     private readonly partners: PartnersService,
+    private readonly offline: OfflineBillingService,
   ) {}
 
   @Get("health")
@@ -43,6 +45,8 @@ export class JobsController {
   async run(@Headers("x-cron-secret") secret?: string) {
     if (!secret || !safeEqual(secret, loadConfig().CRON_SECRET)) throw unauthorized();
     const now = new Date();
+    // Accès provisoires (virement) échus d'abord : email dédié, avant la fin de période générique.
+    const offlineExpired = await this.offline.expireProvisional(now);
     const [webhooks, expired, subscriptions, verificationReminders, clientAccounts, clientReminders, referrals, commissionsReleased] = [
       await this.webhooks.retryDue(),
       await this.loyalty.expireInactive(now),
@@ -64,6 +68,6 @@ export class JobsController {
       // Gardés 24 h : ils servent à limiter le nombre de demandes par email et par adresse IP.
       db.clientLoginCode.deleteMany({ where: { createdAt: { lt: new Date(now.getTime() - 86_400_000) } } }),
     ]);
-    return { webhooksRetried: webhooks, accountsExpired: expired, subscriptions, verificationReminders, clientAccounts, clientReminders, referrals, commissionsReleased, cleaned: cleanup.map((c) => c.count) };
+    return { webhooksRetried: webhooks, accountsExpired: expired, subscriptions, verificationReminders, clientAccounts, clientReminders, referrals, commissionsReleased, offlineExpired, cleaned: cleanup.map((c) => c.count) };
   }
 }

@@ -3,7 +3,11 @@ import { ApiExcludeEndpoint, ApiTags } from "@nestjs/swagger";
 import { SkipThrottle } from "@nestjs/throttler";
 import type { Request } from "express";
 import { billingCurrencySchema, checkoutSchema } from "@fove/shared";
-import type { z } from "zod";
+import { z } from "zod";
+import { badRequest } from "../common/errors";
+import { OfflineBillingService } from "./offline.service";
+
+const offlineRequestSchema = z.object({ planCode: z.string().min(2).max(40) });
 import { ZodPipe } from "../common/zod.pipe";
 import { RequirePermission, Tenant } from "../common/decorators";
 import type { TenantContext } from "../common/context";
@@ -18,6 +22,7 @@ export class BillingController {
   constructor(
     private readonly billing: BillingService,
     private readonly referralService: ReferralService,
+    private readonly offline: OfflineBillingService,
   ) {}
 
   @Get("plans")
@@ -46,6 +51,25 @@ export class BillingController {
   @RequirePermission("billing.write")
   checkout(@Tenant() ctx: TenantContext, @Body(new ZodPipe(checkoutSchema)) body: z.infer<typeof checkoutSchema>) {
     return this.billing.checkout(ctx, body.planCode, body.interval);
+  }
+
+  /** Règlement hors ligne : facture avec référence de paiement (et accès provisoire de 7 jours). */
+  @Post("app/billing/offline")
+  @TenantRoute()
+  @RequirePermission("billing.write")
+  async offlineRequest(@Tenant() ctx: TenantContext, @Body(new ZodPipe(offlineRequestSchema)) body: z.infer<typeof offlineRequestSchema>) {
+    const settings = await this.offline.bankAccounts((await this.billing.tenantCountry(ctx.tenantId)) ?? null);
+    if (!settings.length) throw badRequest("offline_unavailable", "Le règlement hors ligne n’est pas proposé dans votre pays.");
+    const { invoice } = await this.offline.request(ctx.tenantId, body.planCode, { actorUserId: ctx.actor.type === "user" ? ctx.actor.userId : undefined });
+    return { reference: invoice.paymentReference, amountCents: invoice.amountDueCents, currency: invoice.currency };
+  }
+
+  @Post("app/billing/offline/cancel")
+  @HttpCode(204)
+  @TenantRoute()
+  @RequirePermission("billing.write")
+  async offlineCancel(@Tenant() ctx: TenantContext) {
+    await this.offline.cancelRequest(ctx);
   }
 
   /** Monnaie de facturation : tout de suite sans abonnement payant en cours, sinon au renouvellement. */
