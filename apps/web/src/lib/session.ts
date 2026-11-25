@@ -38,3 +38,13 @@ export async function redirectIfSignedIn(params: { next?: string | string[]; off
   const { status } = await serverGet<Me>("/auth/me", true);
   if (status === 200) redirect(safeInternalPath(typeof params.next === "string" ? params.next : null, "/app"));
 }
+
+/**
+ * Connexion au compte client FOVE alors que la session client est valide : direction « Mes cartes »
+ * (ou `next`). Sauf avec le lien de l'email (`?code=`) : la page confirme l'email ou change de compte.
+ */
+export async function redirectIfClientSignedIn(params: { next?: string | string[]; code?: string | string[] }): Promise<void> {
+  if (params.code) return;
+  const { status } = await serverGet("/client/me", true);
+  if (status === 200) redirect(safeInternalPath(typeof params.next === "string" ? params.next : null, "/mes-cartes"));
+}
