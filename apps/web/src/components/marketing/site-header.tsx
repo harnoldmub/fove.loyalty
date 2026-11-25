@@ -5,6 +5,7 @@ import { CookieSettingsButton } from "@/components/cookie-consent";
 import { LocaleSwitcher } from "@/components/locale-switcher";
 import { NavLink } from "@/components/marketing/nav-link";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { AccountLink } from "@/components/marketing/account-link";
 import { Button } from "@/components/ui/button";
 
 const links = [
@@ -34,7 +35,7 @@ export async function SiteHeader() {
           <LocaleSwitcher className="hidden xl:inline-flex" />
           <ThemeToggle />
           <Button asChild variant="ghost" size="sm" className="hidden sm:inline-flex">
-            <Link href="/login">{t("login")}</Link>
+            <AccountLink />
           </Button>
           <Button asChild size="sm">
             <Link href="/signup">
@@ -50,9 +51,7 @@ export async function SiteHeader() {
             {t(`links.${l.key}`)}
           </NavLink>
         ))}
-        <Link href="/login" className="shrink-0 rounded-full px-3 py-1.5 text-sm text-ink-2 sm:hidden">
-          {t("login")}
-        </Link>
+        <AccountLink className="shrink-0 rounded-full px-3 py-1.5 text-sm text-ink-2 sm:hidden" />
       </nav>
     </header>
   );

@@ -1,6 +1,7 @@
 import "server-only";
 import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
+import { safeInternalPath } from "@fove/shared";
 import { serverGet } from "./server-api";
 
 export interface Me {
@@ -26,4 +27,14 @@ export async function requireMe(next: string): Promise<Me> {
   if (status === 401 || status === 403) redirect(`/login?next=${encodeURIComponent(next)}`);
   if (!data) throw new Error((await getTranslations("errors"))("workspaceUnavailable", { status }));
   return data;
+}
+
+/**
+ * Page de connexion ou d'inscription ouverte alors que la session est valide : direction l'espace
+ * (ou `next`). Avec une offre choisie (`?offre=`), le formulaire garde la main : il mène au paiement.
+ */
+export async function redirectIfSignedIn(params: { next?: string | string[]; offre?: string | string[] }): Promise<void> {
+  if (params.offre) return;
+  const { status } = await serverGet<Me>("/auth/me", true);
+  if (status === 200) redirect(safeInternalPath(typeof params.next === "string" ? params.next : null, "/app"));
 }
