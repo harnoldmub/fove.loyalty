@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Check, X } from "lucide-react";
 import { useTranslations } from "next-intl";
 import type { ReactNode } from "react";
-import type { PlanFeatures, PlanLimits, QuotaKey } from "@fove/shared";
+import type { BillingCurrency, PlanFeatures, PlanLimits, QuotaKey } from "@fove/shared";
 import { Button } from "@/components/ui/button";
 import { cn, formatNumber, formatPrice } from "@/lib/utils";
 import { useMarketingCurrency } from "@/lib/marketing-currency";
@@ -14,8 +14,8 @@ export interface Plan {
   code: string;
   kind: "FREE" | "PAID" | "CUSTOM";
   name: string;
-  currency: string;
-  priceYearlyCents: number;
+  /** Prix annuel dans chaque monnaie (fixé dans l'administration). */
+  prices: Partial<Record<BillingCurrency, number>>;
   features: Partial<PlanFeatures>;
   limits: PlanLimits;
 }
@@ -59,7 +59,7 @@ const stickyCol = "sticky start-0 z-10 bg-surface";
 
 export function PricingTable({ plans }: { plans: Plan[] }) {
   const t = useTranslations("marketing.pricing");
-  const { currency, isEuro } = useMarketingCurrency();
+  const { currency, online, isLocal } = useMarketingCurrency();
   const featuredCell = (plan: Plan) => plan.code === FEATURED && "bg-cobalt-soft/50";
 
   const groupRow = (label: string) => (
@@ -85,21 +85,27 @@ export function PricingTable({ plans }: { plans: Plan[] }) {
 
   const included = (plan: Plan, f: (typeof FEATURE_ROWS)[number]) => plan.kind === "CUSTOM" || f.included(plan.features);
 
-  const price = (plan: Plan) => (
-    <>
-      {plan.kind === "CUSTOM" ? t("onQuote") : formatPrice(plan.priceYearlyCents, currency)}
-      {plan.kind === "PAID" && <span className="text-sm font-normal text-ink-3">{t("perYear")}</span>}
-    </>
-  );
+  const amount = (plan: Plan) => (plan.kind === "FREE" ? 0 : plan.prices[currency]);
+  const price = (plan: Plan) => {
+    if (plan.kind === "CUSTOM") return t("onQuote");
+    const cents = amount(plan);
+    if (cents === undefined) return "—";
+    return (
+      <>
+        {formatPrice(cents, currency)}
+        {plan.kind === "PAID" && <span className="text-sm font-normal text-ink-3">{t("perYear")}</span>}
+      </>
+    );
+  };
 
-  const priceNote = (plan: Plan) =>
-    plan.kind === "FREE"
-      ? t("noteFree")
-      : plan.kind === "CUSTOM"
-        ? t("noteCustom")
-        : isEuro
-          ? t("noteEur")
-          : t("noteUsd");
+  /** Monnaies locales : réglées hors ligne dans la monnaie, ou en ligne au prix en euros ou en dollars. */
+  const priceNote = (plan: Plan) => {
+    if (plan.kind === "FREE") return t("noteFree");
+    if (plan.kind === "CUSTOM") return t("noteCustom");
+    if (!isLocal) return t(online === "EUR" ? "noteEur" : "noteUsd");
+    const onlineCents = plan.prices[online];
+    return onlineCents === undefined ? t("noteLocalOnly") : t("noteLocal", { price: formatPrice(onlineCents, online) });
+  };
 
   return (
     <div className="grid gap-4">

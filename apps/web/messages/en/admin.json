@@ -139,6 +139,9 @@
     },
     "overview": {
       "title": "Finance and partners hub",
+      "byCurrency": { "title": "Collections by currency", "help": "Net amounts, before conversion to {currency}.", "count": "{count, plural, one {# payment} other {# payments}}" },
+      "missingRates": "Missing accounting rate for {currencies}: these amounts count as 0 in the totals.",
+      "ratesLink": "Set the rates",
       "description": "A consolidated, transparent view of FOVE's actual business activity.",
       "addExpense": "Add expense",
       "newPartner": "New partner",
@@ -380,7 +383,137 @@
         "CANCELED": "Cancelled"
       }
     },
+    "offline": {
+      "title": "Offline payments",
+      "description": "Bank transfers, cash and mobile money: invoices with references, validation and bank details by country.",
+      "search": "Reference or business",
+      "searchButton": "Search",
+      "status": "Status",
+      "empty": "No invoices.",
+      "statuses": {
+        "OPEN": "Pending",
+        "PAID": "Paid",
+        "VOID": "Cancelled",
+        "ALL": "All"
+      },
+      "kind": {
+        "new": "subscription",
+        "renewal": "renewal"
+      },
+      "provisional": "Provisional access running",
+      "collectedBy": "Collected by {name} ({code})",
+      "disputed": "Reported by the merchant",
+      "table": {
+        "reference": "Reference",
+        "tenant": "Business",
+        "plan": "Plan",
+        "amount": "Amount",
+        "date": "Date",
+        "status": "Status"
+      },
+      "void": "Cancel",
+      "voidTitle": "Cancel invoice {reference}?",
+      "voidProvisional": "The reference will no longer be valid and the business's provisional access will end.",
+      "voidConsequence": "The reference will no longer be valid.",
+      "validate": {
+        "button": "Validate",
+        "title": "Payment received: {reference}",
+        "description": "{tenant} · amount due {amount}",
+        "method": "Payment method",
+        "methods": {
+          "BANK_TRANSFER": "Bank transfer",
+          "CASH": "Cash",
+          "MOBILE_MONEY": "Mobile money"
+        },
+        "amount": "Amount received ({currency})",
+        "paidAt": "Date received",
+        "shortfall": "Accept an amount below what is due (bank fees, rounding)",
+        "bankReference": "Bank reference",
+        "bankReferenceHint": "Label or number of the transaction on the statement.",
+        "proofUrl": "Proof link",
+        "note": "Internal note",
+        "cancel": "Cancel",
+        "confirm": "Validate payment",
+        "done": "Payment validated: the subscription is active."
+      },
+      "statements": {
+        "title": "Partner statements",
+        "help": "Each month, partners' collections are netted against their commissions and fees. Positive balance: the partner pays it within 15 days with the statement reference; negative balance: a payout is created for them.",
+        "issue": "Issue pending statements",
+        "issued": "{count, plural, =0 {No statement to issue} one {# statement issued} other {# statements issued}}",
+        "empty": "No statements.",
+        "detail": "{period} · collected {collected} · commissions and fees {deducted}",
+        "owes": "Still owed by the partner: {amount} (before {due})",
+        "credit": "In the partner's favour: {amount} (payout created)",
+        "status": {
+          "ISSUED": "To pay",
+          "PAID": "Paid",
+          "SETTLED": "Settled"
+        },
+        "overdue": "Unpaid: collections blocked",
+        "amount": "Amount received ({currency})",
+        "markPaid": "Payment received",
+        "paid": "Statement payment recorded."
+      },
+      "accounts": {
+        "title": "Bank details by country",
+        "help": "Shown to the merchant and in the instructions email based on their country; \"*\" = default details. Algeria: local account.",
+        "empty": "No details: offline payment is not offered in any country.",
+        "default": "Default",
+        "inactive": "Inactive",
+        "edit": "Edit",
+        "delete": "Delete",
+        "deleteTitle": "Delete these details?",
+        "deleteConsequence": "These details will no longer be shown to merchants.",
+        "country": "Country (MA, DZ, CD… or *)",
+        "currency": "Currency",
+        "beneficiary": "Beneficiary",
+        "bankName": "Bank",
+        "accountNumber": "Account number",
+        "instructions": "Other methods",
+        "instructionsHint": "Cash at the office, mobile money number… Shown as is.",
+        "active": "Active",
+        "add": "Add",
+        "update": "Save",
+        "cancel": "Cancel",
+        "saved": "Details saved."
+      }
+    },
+    "rates": {
+      "title": "Accounting rates",
+      "description": "Units of each currency for €1. Used to consolidate Finance in euros and convert partner commissions; never for the price a merchant pays.",
+      "help": "Review them regularly (for example every quarter). A change applies to later calculations; commissions already converted keep their rate.",
+      "label": "€1 = … {currency}",
+      "updated": "Changed on {date} by {by}",
+      "system": "initial setup",
+      "default": "Initial value, never changed",
+      "invalid": "Each rate must be a positive number.",
+      "saved": "Rates saved.",
+      "save": "Save rates"
+    },
     "treasury": {
+      "suggestion": "Suggested: {reference} ({name})",
+      "mismatch": "Expected amount: {expected}",
+      "confirmMatch": "Confirm",
+      "confirmTitle": "Match with {reference}?",
+      "confirmBody": "The {amount} payment will be recorded and the line matched.",
+      "confirmMismatch": "Amount received {amount} instead of {expected}: it will be recorded as is and the line matched.",
+      "matched": "Payment recorded, line matched.",
+      "import": {
+        "title": "Bank statement",
+        "help": "Import the bank's CSV export (date, label, amount or credit / debit) or enter a line: FV-… references in the label are recognised and the matching document is suggested.",
+        "currency": "Currency",
+        "currencyHint": "If the file has no currency column.",
+        "file": "Import a CSV",
+        "importing": "Importing…",
+        "rematch": "Search references again",
+        "date": "Date",
+        "label": "Label",
+        "amount": "Amount ({currency})",
+        "add": "Add line",
+        "invalid": "Label and non-zero amount required.",
+        "done": "{imported} line(s) imported, {matched} reference(s) recognised, {duplicates} duplicate(s), {skipped} skipped."
+      },
       "title": "Treasury and bank reconciliation",
       "description": "Available net cash, Stripe balances and entry checks.",
       "cash": "Available net cash",
@@ -407,6 +540,7 @@
       "error": "Couldn’t load the treasury.",
       "retry": "Try again",
       "reconciledTypes": {
+        "PARTNER_STATEMENT": "Partner statement",
         "PAYMENT": "payment",
         "EXPENSE": "expense",
         "PARTNER_PAYOUT": "commission"
@@ -424,9 +558,11 @@
         "subscriptions": "Subscriptions",
         "customers": "Customers",
         "invoices": "Invoices",
+        "offline": "Offline payments",
         "commissions": "Partners",
         "expenses": "Expenses",
         "treasury": "Treasury",
+        "rates": "Accounting rates",
         "reports": "Partner reports",
         "audit": "Audit"
       }
@@ -630,6 +766,14 @@
       "title": "Audit log",
       "empty": "No actions recorded."
     },
+    "billingCurrency": {
+      "label": "Billing currency",
+      "hint": "Prices shown to the merchant, contracts and offline payments. Online payment: in euros or dollars.",
+      "pending": "Current subscription in {current}; switches to {next} at renewal.",
+      "country": "Based on country",
+      "countryWith": "Based on country ({currency})",
+      "saved": "Billing currency saved."
+    },
     "form": {
       "unlimited": "unlimited",
       "saved": "Subscription updated",
@@ -643,7 +787,8 @@
       },
       "end": "Contract end",
       "endHint": "Empty = no end date. On that date the business moves back to the Free plan.",
-      "price": "Annual contract price (USD)",
+      "price": "Yearly contract price",
+      "currency": "Currency",
       "priceHint": "Billed outside Stripe, counted in revenue.",
       "quotas": "Negotiated quotas (empty = plan defaults, “{unlimited}” allowed)",
       "quota": {
@@ -812,6 +957,10 @@
       "defaultReason": "Application not accepted"
     },
     "rate": {
+      "collection": "Offline collection",
+      "collectionEnabled": "Can collect subscriptions",
+      "collectionCap": "Outstanding limit (€)",
+      "collectionCapHint": "Maximum amount collected and not yet paid to FOVE. €300 by default.",
       "title": "Commission rate for {name}",
       "description": "Percentage paid on each payment attributed to this partner.",
       "label": "Rate (%)",
@@ -847,6 +996,8 @@
       "partners": "Partner program",
       "expenses": "Expenses & Costs",
       "treasury": "Treasury & Bank",
+      "offline": "Offline payments",
+      "rates": "Accounting rates",
       "reports": "Partner reports",
       "audit": "Audit log",
       "tenants": "Businesses",
@@ -882,8 +1033,11 @@
     "name": "Name",
     "descriptionLabel": "Description",
     "yearlyPrice": "Yearly price ({currency})",
-    "yearlyPriceHint": "For new subscriptions.",
-    "stripePriceId": "Stripe price ID",
+    "yearlyPrices": "Yearly prices by currency",
+    "yearlyPriceHint": "For new subscriptions and renewals. Empty = plan not offered in this currency.",
+    "stripePriceId": "Stripe price ({currency})",
+    "offlineOnly": "Paid offline: no Stripe price.",
+    "invalidPrice": "Invalid price in {currency}.",
     "trialDays": "Trial days",
     "trialDaysHint": "Default length of a trial granted from the business page.",
     "quotas": "Quotas (empty = unlimited)",

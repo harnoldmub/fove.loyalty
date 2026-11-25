@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, ParseUUIDPipe, Post, Query } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Param, ParseUUIDPipe, Post, Put, Query } from "@nestjs/common";
 import { ApiTags } from "@nestjs/swagger";
 import { ZodPipe } from "../../common/zod.pipe";
 import { Auth } from "../../common/decorators";
@@ -17,6 +17,8 @@ import {
   partnerCreateSchema,
   refundCreateSchema,
   reconcileSchema,
+  exchangeRatesSchema,
+  type ExchangeRatesDto,
   type FinanceFilterDto,
   type SalesFilterDto,
   type PaymentsFilterDto,
@@ -34,6 +36,17 @@ export class FinanceController {
     private readonly finance: FinanceService,
     private readonly referralService: ReferralService,
   ) {}
+
+  /** Taux comptables (unités pour 1 €) : consolidation et conversions des commissions. */
+  @Get("exchange-rates")
+  exchangeRates() {
+    return this.finance.exchangeRates();
+  }
+
+  @Put("exchange-rates")
+  setExchangeRates(@Auth() auth: AuthState, @Body(new ZodPipe(exchangeRatesSchema)) body: ExchangeRatesDto) {
+    return this.finance.setExchangeRates(auth, body);
+  }
 
   @Get("overview")
   overview(@Query(new ZodPipe(financeFilterSchema)) filter: FinanceFilterDto) {

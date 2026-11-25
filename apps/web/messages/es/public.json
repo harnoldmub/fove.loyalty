@@ -164,5 +164,15 @@
     "knownTitle": "Ya tienes una cuenta FOVE",
     "knownText": "Acabamos de enviar un código a {email}. Introdúcelo para añadir esta tarjeta a tu cuenta.",
     "loadError": "No se ha podido cargar esta página. Comprueba tu conexión."
+  },
+  "collectionReport": {
+    "title": "Señalar un problema de cobro",
+    "intro": "Un socio de FOVE ha declarado haber recibido tu pago. Si el importe, la fecha o el propio pago no son correctos, dínoslo: el equipo de FOVE te contactará.",
+    "note": "¿Qué ha pasado?",
+    "noteHint": "Opcional pero útil: importe realmente pagado, fecha…",
+    "submit": "Enviar el aviso",
+    "doneTitle": "Gracias, anotado",
+    "doneText": "El equipo de FOVE ha sido avisado y te contactará pronto.",
+    "invalid": "Este enlace no es válido."
   }
 }

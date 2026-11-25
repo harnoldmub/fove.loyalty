@@ -1,20 +1,30 @@
 import { Injectable } from "@nestjs/common";
 import { Prisma } from "@fove/database";
 import { z } from "zod";
-import { PLAN_FEATURE_KEYS, QUOTA_KEYS } from "@fove/shared";
+import { BILLING_CURRENCIES, convertCents, isOnlineCurrency, PLAN_FEATURE_KEYS, QUOTA_KEYS, REFERENCE_CURRENCY } from "@fove/shared";
 import { PrismaService } from "../common/prisma.service";
 import { AuditService } from "../common/audit.service";
 import { badRequest, notFound } from "../common/errors";
 import type { AuthState } from "../common/context";
 import { BillingService } from "../billing/billing.service";
+import { PricingService } from "../billing/pricing.service";
 
 export const updatePlanSchema = z.object({
   name: z.string().min(2).max(40).optional(),
   description: z.string().max(300).optional(),
-  priceMonthlyCents: z.int().min(0).max(1_000_000).optional(),
-  priceYearlyCents: z.int().min(0).max(10_000_000).optional(),
-  stripePriceMonthlyId: z.string().max(100).nullable().optional(),
-  stripePriceYearlyId: z.string().max(100).nullable().optional(),
+  /** Prix annuel par monnaie ; tarif Stripe pour EUR et USD seulement (les autres se règlent hors ligne). */
+  prices: z
+    .array(
+      z.object({
+        currency: z.enum(BILLING_CURRENCIES),
+        yearlyCents: z.int().min(0).max(100_000_000_000),
+        stripePriceId: z.string().trim().max(100).nullable().optional(),
+      }),
+    )
+    .max(BILLING_CURRENCIES.length)
+    .refine((list) => new Set(list.map((p) => p.currency)).size === list.length, "Une ligne par monnaie")
+    .refine((list) => list.every((p) => !p.stripePriceId || isOnlineCurrency(p.currency)), "Tarif Stripe : EUR et USD seulement")
+    .optional(),
   trialDays: z.int().min(0).max(90).optional(),
   features: z.object(Object.fromEntries(PLAN_FEATURE_KEYS.map((k) => [k, z.boolean()])) as Record<(typeof PLAN_FEATURE_KEYS)[number], z.ZodBoolean>).optional(),
   limits: z.object(Object.fromEntries(QUOTA_KEYS.map((k) => [k, z.int().min(1).nullable()])) as Record<(typeof QUOTA_KEYS)[number], z.ZodNullable<z.ZodInt>>).optional(),
@@ -33,8 +43,13 @@ export const setSubscriptionSchema = z.object({
   currentPeriodEnd: z.iso.datetime().nullable().optional(),
   limitsOverride: z.object(Object.fromEntries(QUOTA_KEYS.map((k) => [k, z.int().min(1).nullable()]))).partial().nullable().optional(),
   featuresOverride: z.object(Object.fromEntries(PLAN_FEATURE_KEYS.map((k) => [k, z.boolean()]))).partial().nullable().optional(),
-  contractPriceYearlyCents: z.int().min(0).max(100_000_000).nullable().optional(),
+  contractPriceYearlyCents: z.int().min(0).max(100_000_000_000).nullable().optional(),
+  /** Monnaie du contrat (prix et factures) ; par défaut celle du commerce. */
+  currency: z.enum(BILLING_CURRENCIES).optional(),
 });
+
+export const tenantCurrencySchema = z.object({ currency: z.enum(BILLING_CURRENCIES).nullable() });
+
 
 export const supportAccessSchema = z.object({
   reason: z.string().trim().min(10).max(300),
@@ -53,6 +68,7 @@ export class AdminService {
     private readonly prisma: PrismaService,
     private readonly audit: AuditService,
     private readonly billing: BillingService,
+    private readonly pricing: PricingService,
   ) {}
 
   async stats() {
@@ -62,14 +78,15 @@ export class AdminService {
       db.tenant.count(),
       db.tenant.count({ where: { status: "SUSPENDED" } }),
       db.tenant.count({ where: { createdAt: { gte: since } } }),
-      db.subscription.findMany({ include: { plan: true } }),
+      db.subscription.findMany({ include: { plan: { include: { prices: true } } } }),
       db.customer.count({ where: { anonymizedAt: null } }),
       db.loyaltyAccount.count(),
       db.loyaltyTransaction.count({ where: { createdAt: { gte: since } } }),
     ]);
     const byStatus: Record<string, number> = {};
     const byPlan: Record<string, number> = {};
-    let mrrCents = 0;
+    // MRR par monnaie, et total consolidé en euros au taux comptable.
+    const mrrByCurrency: Record<string, number> = {};
     let paying = 0;
     let free = 0;
     for (const s of subs) {
@@ -80,13 +97,15 @@ export class AdminService {
       if (s.status === "ACTIVE" || s.status === "PAST_DUE") {
         byPlan[s.plan.code] = (byPlan[s.plan.code] ?? 0) + 1;
         // Le MRR ne compte que les abonnements réellement facturés : Stripe et contrats sur-mesure.
-        if (s.provider === "STRIPE") mrrCents += s.interval === "YEAR" ? Math.round(s.plan.priceYearlyCents / 12) : s.plan.priceMonthlyCents;
-        else if (s.provider === "MANUAL" && s.contractPriceYearlyCents) mrrCents += Math.round(s.contractPriceYearlyCents / 12);
+        const yearly = s.provider === "STRIPE" ? this.pricing.yearlyCents(s.plan, s.currency) : s.provider === "MANUAL" ? s.contractPriceYearlyCents : null;
+        if (yearly) mrrByCurrency[s.currency] = (mrrByCurrency[s.currency] ?? 0) + Math.round(yearly / 12);
       }
     }
     // Une entreprise sans abonnement en cours (résilié, essai expiré) relève aussi du Gratuit.
     free += tenants - subs.filter((s) => s.status === "ACTIVE" || s.status === "PAST_DUE" || s.status === "TRIALING").length;
-    return { tenants, suspended, newTenants30d: newTenants, subscriptionsByStatus: byStatus, activeByPlan: byPlan, paying, free, mrrCents, customers, accounts, transactions30d };
+    const rates = await this.pricing.rates();
+    const mrrCents = Object.entries(mrrByCurrency).reduce((sum, [currency, cents]) => sum + (convertCents(cents, currency, REFERENCE_CURRENCY, rates) ?? 0), 0);
+    return { tenants, suspended, newTenants30d: newTenants, subscriptionsByStatus: byStatus, activeByPlan: byPlan, paying, free, mrrCents, mrrCurrency: REFERENCE_CURRENCY, mrrByCurrency, customers, accounts, transactions30d };
   }
 
   async listTenants(q: string | undefined) {
@@ -127,7 +146,7 @@ export class AdminService {
       take: 50,
     });
 
-    return { ...tenant, audit };
+    return { ...tenant, billingCurrency: await this.pricing.tenantCurrency(id), audit };
   }
 
   listMessages(status?: string) {
@@ -161,6 +180,7 @@ export class AdminService {
     const { status } = input;
     const trialEndsAt = status === "TRIALING" ? new Date(Date.now() + (input.trialDays ?? plan.trialDays) * 86_400_000) : null;
     const existing = await this.prisma.client.subscription.findUnique({ where: { tenantId } });
+    const currency = input.currency ?? (await this.pricing.tenantCurrency(tenantId));
     // Le contrat remplace l'abonnement Stripe en cours : on l'arrête pour que Stripe ne prélève plus.
     const stripeEnded = existing ? await this.billing.endStripeSubscription(existing) : false;
     const data = {
@@ -168,6 +188,7 @@ export class AdminService {
       status,
       trialEndsAt,
       provider: "MANUAL" as const,
+      currency,
       currentPeriodEnd: input.currentPeriodEnd ? new Date(input.currentPeriodEnd) : null,
       cancelAtPeriodEnd: false,
       limitsOverride: input.limitsOverride ?? Prisma.DbNull,
@@ -187,12 +208,33 @@ export class AdminService {
     });
   }
 
-  listPlans() {
-    return this.prisma.client.subscriptionPlan.findMany({ orderBy: { sortOrder: "asc" }, include: { _count: { select: { subscriptions: true } } } });
+  /** Monnaie de facturation d'un commerce (null = celle de son pays) ; l'abonnement en cours garde la sienne. */
+  async setTenantCurrency(auth: AuthState, tenantId: string, currency: string | null) {
+    const tenant = await this.prisma.client.tenant.findUnique({ where: { id: tenantId }, select: { id: true } });
+    if (!tenant) throw notFound("Entreprise");
+    await this.prisma.client.tenantSettings.upsert({ where: { tenantId }, update: { billingCurrency: currency }, create: { tenantId, billingCurrency: currency } });
+    await this.audit.log({ tenantId, actorUserId: auth.user.id, action: "admin.billing_currency_set", metadata: { currency } });
+    return { currency: await this.pricing.tenantCurrency(tenantId) };
   }
 
+  listPlans() {
+    return this.prisma.client.subscriptionPlan.findMany({
+      orderBy: { sortOrder: "asc" },
+      include: { prices: { orderBy: { currency: "asc" } }, _count: { select: { subscriptions: true } } },
+    });
+  }
+
+  /** Les prix envoyés remplacent ceux de leur monnaie ; une monnaie absente garde son prix. */
   async updatePlan(auth: AuthState, id: string, input: z.infer<typeof updatePlanSchema>) {
-    const plan = await this.prisma.client.subscriptionPlan.update({ where: { id }, data: input });
+    const { prices, ...data } = input;
+    const plan = await this.prisma.client.$transaction(async (tx) => {
+      const updated = await tx.subscriptionPlan.update({ where: { id }, data });
+      for (const p of prices ?? []) {
+        const values = { yearlyCents: p.yearlyCents, stripePriceId: p.stripePriceId || null };
+        await tx.planPrice.upsert({ where: { planId_currency: { planId: id, currency: p.currency } }, update: values, create: { planId: id, currency: p.currency, ...values } });
+      }
+      return tx.subscriptionPlan.findUniqueOrThrow({ where: { id: updated.id }, include: { prices: { orderBy: { currency: "asc" } } } });
+    });
     await this.audit.log({ actorUserId: auth.user.id, action: "admin.plan_updated", targetType: "plan", targetId: id, metadata: input as Prisma.InputJsonValue });
     return plan;
   }

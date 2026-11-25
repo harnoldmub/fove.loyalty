@@ -139,6 +139,9 @@
     },
     "overview": {
       "title": "Centro financiero y socios",
+      "byCurrency": { "title": "Cobros por moneda", "help": "Importes netos, antes de la conversión a {currency}.", "count": "{count, plural, one {# pago} other {# pagos}}" },
+      "missingRates": "Falta el tipo contable de {currencies}: estos importes cuentan como 0 en los totales.",
+      "ratesLink": "Indicar los tipos",
       "description": "Visión consolidada y transparente de la actividad económica real de FOVE.",
       "addExpense": "Añadir gasto",
       "newPartner": "Nuevo socio",
@@ -380,7 +383,137 @@
         "CANCELED": "Cancelada"
       }
     },
+    "offline": {
+      "title": "Pagos fuera de línea",
+      "description": "Transferencias, efectivo y dinero móvil: facturas con referencia, validación y datos bancarios por país.",
+      "search": "Referencia o comercio",
+      "searchButton": "Buscar",
+      "status": "Estado",
+      "empty": "No hay facturas.",
+      "statuses": {
+        "OPEN": "Pendiente",
+        "PAID": "Pagada",
+        "VOID": "Anulada",
+        "ALL": "Todas"
+      },
+      "kind": {
+        "new": "suscripción",
+        "renewal": "renovación"
+      },
+      "provisional": "Acceso provisional en curso",
+      "collectedBy": "Cobrado por {name} ({code})",
+      "disputed": "Señalada por el comercio",
+      "table": {
+        "reference": "Referencia",
+        "tenant": "Comercio",
+        "plan": "Plan",
+        "amount": "Importe",
+        "date": "Fecha",
+        "status": "Estado"
+      },
+      "void": "Anular",
+      "voidTitle": "¿Anular la factura {reference}?",
+      "voidProvisional": "La referencia dejará de ser válida y terminará el acceso provisional del comercio.",
+      "voidConsequence": "La referencia dejará de ser válida.",
+      "validate": {
+        "button": "Validar",
+        "title": "Pago recibido: {reference}",
+        "description": "{tenant} · importe adeudado {amount}",
+        "method": "Medio de pago",
+        "methods": {
+          "BANK_TRANSFER": "Transferencia",
+          "CASH": "Efectivo",
+          "MOBILE_MONEY": "Dinero móvil"
+        },
+        "amount": "Importe recibido ({currency})",
+        "paidAt": "Fecha de recepción",
+        "shortfall": "Aceptar un importe inferior al adeudado (gastos bancarios, redondeo)",
+        "bankReference": "Referencia bancaria",
+        "bankReferenceHint": "Concepto o número de la operación en el extracto.",
+        "proofUrl": "Enlace del justificante",
+        "note": "Nota interna",
+        "cancel": "Cancelar",
+        "confirm": "Validar el pago",
+        "done": "Pago validado: la suscripción está activa."
+      },
+      "statements": {
+        "title": "Extractos de los socios",
+        "help": "Cada mes, los cobros de los socios se compensan con sus comisiones y gastos. Saldo positivo: el socio lo paga en 15 días con la referencia del extracto; saldo negativo: se le crea un pago.",
+        "issue": "Emitir los extractos pendientes",
+        "issued": "{count, plural, =0 {Ningún extracto que emitir} one {# extracto emitido} other {# extractos emitidos}}",
+        "empty": "No hay extractos.",
+        "detail": "{period} · cobrado {collected} · comisiones y gastos {deducted}",
+        "owes": "Pendiente del socio: {amount} (antes del {due})",
+        "credit": "A favor del socio: {amount} (pago creado)",
+        "status": {
+          "ISSUED": "Por pagar",
+          "PAID": "Pagado",
+          "SETTLED": "Saldado"
+        },
+        "overdue": "Impagado: cobros bloqueados",
+        "amount": "Importe recibido ({currency})",
+        "markPaid": "Pago recibido",
+        "paid": "Pago del extracto registrado."
+      },
+      "accounts": {
+        "title": "Datos bancarios por país",
+        "help": "Se muestran al comercio y en el correo de instrucciones según su país; «*» = datos por defecto. Argelia: cuenta local.",
+        "empty": "Sin datos: el pago fuera de línea no se ofrece en ningún país.",
+        "default": "Por defecto",
+        "inactive": "Inactivo",
+        "edit": "Editar",
+        "delete": "Eliminar",
+        "deleteTitle": "¿Eliminar estos datos?",
+        "deleteConsequence": "Estos datos dejarán de mostrarse a los comercios.",
+        "country": "País (MA, DZ, CD… o *)",
+        "currency": "Moneda",
+        "beneficiary": "Beneficiario",
+        "bankName": "Banco",
+        "accountNumber": "Número de cuenta",
+        "instructions": "Otros medios",
+        "instructionsHint": "Efectivo en la oficina, número de dinero móvil… Se muestra tal cual.",
+        "active": "Activo",
+        "add": "Añadir",
+        "update": "Guardar",
+        "cancel": "Cancelar",
+        "saved": "Datos guardados."
+      }
+    },
+    "rates": {
+      "title": "Tipos de cambio contables",
+      "description": "Unidades de cada moneda por 1 €. Sirven para consolidar las finanzas en euros y convertir las comisiones de los socios; nunca para el precio que paga un comercio.",
+      "help": "Revíselos con regularidad (por ejemplo cada trimestre). Un cambio se aplica a los cálculos siguientes; las comisiones ya convertidas conservan su tipo.",
+      "label": "1 € = … {currency}",
+      "updated": "Modificado el {date} por {by}",
+      "system": "la configuración inicial",
+      "default": "Valor inicial, nunca modificado",
+      "invalid": "Cada tipo debe ser un número positivo.",
+      "saved": "Tipos guardados.",
+      "save": "Guardar los tipos"
+    },
     "treasury": {
+      "suggestion": "Propuesto: {reference} ({name})",
+      "mismatch": "Importe esperado: {expected}",
+      "confirmMatch": "Confirmar",
+      "confirmTitle": "¿Conciliar con {reference}?",
+      "confirmBody": "Se registrará el pago de {amount} y la línea quedará conciliada.",
+      "confirmMismatch": "Importe recibido {amount} en lugar de {expected}: se registrará tal cual y la línea quedará conciliada.",
+      "matched": "Pago registrado, línea conciliada.",
+      "import": {
+        "title": "Extracto bancario",
+        "help": "Importa el CSV del banco (fecha, concepto, importe o crédito / débito) o introduce una línea: se reconocen las referencias FV-… del concepto y se propone el documento correspondiente.",
+        "currency": "Moneda",
+        "currencyHint": "Si el archivo no tiene columna de moneda.",
+        "file": "Importar un CSV",
+        "importing": "Importando…",
+        "rematch": "Buscar de nuevo las referencias",
+        "date": "Fecha",
+        "label": "Concepto",
+        "amount": "Importe ({currency})",
+        "add": "Añadir la línea",
+        "invalid": "Se requieren concepto e importe no nulo.",
+        "done": "{imported} línea(s) importada(s), {matched} referencia(s) reconocida(s), {duplicates} duplicado(s), {skipped} ignorada(s)."
+      },
       "title": "Tesorería y conciliación bancaria",
       "description": "Tesorería neta disponible, saldos de Stripe y control de asientos.",
       "cash": "Tesorería neta disponible",
@@ -407,6 +540,7 @@
       "error": "No se pudo cargar la tesorería.",
       "retry": "Reintentar",
       "reconciledTypes": {
+        "PARTNER_STATEMENT": "Extracto de socio",
         "PAYMENT": "pago",
         "EXPENSE": "gasto",
         "PARTNER_PAYOUT": "comisión"
@@ -424,9 +558,11 @@
         "subscriptions": "Suscripciones",
         "customers": "Clientes",
         "invoices": "Facturas",
+        "offline": "Pagos fuera de línea",
         "commissions": "Socios",
         "expenses": "Gastos",
         "treasury": "Tesorería",
+        "rates": "Tipos contables",
         "reports": "Informes de socios",
         "audit": "Auditoría"
       }
@@ -630,6 +766,14 @@
       "title": "Registro de auditoría",
       "empty": "No hay acciones registradas."
     },
+    "billingCurrency": {
+      "label": "Moneda de facturación",
+      "hint": "Precios mostrados al comercio, contratos y pagos fuera de línea. Pago en línea: en euros o dólares.",
+      "pending": "Suscripción actual en {current}; pasa a {next} en la renovación.",
+      "country": "Según el país",
+      "countryWith": "Según el país ({currency})",
+      "saved": "Moneda de facturación guardada."
+    },
     "form": {
       "unlimited": "ilimitado",
       "saved": "Suscripción actualizada",
@@ -643,7 +787,8 @@
       },
       "end": "Fin del contrato",
       "endHint": "Vacío = sin vencimiento. En esa fecha, la empresa vuelve al plan Gratuito.",
-      "price": "Precio anual del contrato (USD)",
+      "price": "Precio anual del contrato",
+      "currency": "Moneda",
       "priceHint": "Facturado fuera de Stripe, contabilizado en los ingresos.",
       "quotas": "Cuotas negociadas (vacío = las del plan, se acepta «{unlimited}»)",
       "quota": {
@@ -812,6 +957,10 @@
       "defaultReason": "Solicitud no aceptada"
     },
     "rate": {
+      "collection": "Cobro fuera de línea",
+      "collectionEnabled": "Puede cobrar suscripciones",
+      "collectionCap": "Límite de saldo (€)",
+      "collectionCapHint": "Importe máximo cobrado y aún no entregado a FOVE. 300 € por defecto.",
       "title": "Tasa de comisión de {name}",
       "description": "Porcentaje abonado por cada pago atribuido a este socio.",
       "label": "Tasa (%)",
@@ -847,6 +996,8 @@
       "partners": "Programa de socios",
       "expenses": "Gastos y cargas",
       "treasury": "Tesorería y banco",
+      "offline": "Pagos fuera de línea",
+      "rates": "Tipos contables",
       "reports": "Informes para socios",
       "audit": "Registro de auditoría",
       "tenants": "Empresas",
@@ -882,8 +1033,11 @@
     "name": "Nombre",
     "descriptionLabel": "Descripción",
     "yearlyPrice": "Precio anual ({currency})",
-    "yearlyPriceHint": "Para las nuevas suscripciones.",
-    "stripePriceId": "ID del precio de Stripe",
+    "yearlyPrices": "Precios anuales por moneda",
+    "yearlyPriceHint": "Para nuevas suscripciones y renovaciones. Vacío = plan no ofrecido en esta moneda.",
+    "stripePriceId": "Precio de Stripe ({currency})",
+    "offlineOnly": "Pago fuera de línea: sin precio de Stripe.",
+    "invalidPrice": "Precio no válido en {currency}.",
     "trialDays": "Días de prueba",
     "trialDaysHint": "Duración por defecto de una prueba concedida desde la ficha de la empresa.",
     "quotas": "Cuotas (vacío = ilimitado)",

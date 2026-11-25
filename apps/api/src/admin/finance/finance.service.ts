@@ -3,7 +3,10 @@ import { PrismaService } from "../../common/prisma.service";
 import type { AuthState } from "../../common/context";
 import { badRequest, notFound, forbidden } from "../../common/errors";
 import { loadConfig, stripeSecretKey } from "../../config";
+import { convertCents, REFERENCE_CURRENCY } from "@fove/shared";
+import { PricingService, type PlanWithPrices } from "../../billing/pricing.service";
 import type {
+  ExchangeRatesDto,
   ExpenseCreateDto,
   FinanceFilterDto,
   PartnerCreateDto,
@@ -25,7 +28,32 @@ export interface DateRange {
 export class FinanceService {
   private readonly logger = new Logger("FinanceService");
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly pricing: PricingService,
+  ) {}
+
+  /**
+   * Conversion vers la monnaie du rapport au taux comptable (docs/chantier-multi-devises.md).
+   * Une monnaie sans taux compte pour 0 et apparaît dans `missingRates`.
+   */
+  private async converter(target: string = REFERENCE_CURRENCY) {
+    const rates = await this.pricing.rates();
+    const missing = new Set<string>();
+    const to = (cents: number, from: string) => {
+      const value = convertCents(cents, from, target, rates);
+      if (value === null) missing.add(from);
+      return value ?? 0;
+    };
+    return { to, currency: target, missingRates: () => [...missing] };
+  }
+
+  /** Prix annuel d'un abonnement dans sa monnaie : contrat Sur-mesure, sinon prix de l'offre. */
+  private yearlyPrice(sub: { provider: string; currency: string; contractPriceYearlyCents: number | null; plan: PlanWithPrices }): number {
+    if (sub.contractPriceYearlyCents !== null) return sub.contractPriceYearlyCents;
+    if (sub.provider === "MANUAL") return 0; // offre accordée gratuitement / geste commercial
+    return this.pricing.yearlyCents(sub.plan, sub.currency) ?? 0;
+  }
 
   /**
    * Calcule les dates de début et fin pour la période demandée ainsi que la période N-1 équivalente.
@@ -108,162 +136,101 @@ export class FinanceService {
   }
 
   /**
-   * Vue d'ensemble financière : calcul exact du CA, encaissements, charges, abonnements et résultat.
+   * Chiffres d'une période, convertis dans la monnaie du rapport au taux comptable.
+   * MRR et ARR sont ceux du jour (pas d'historique des abonnements).
+   */
+  private async periodFigures(from: Date, to: Date, fx: Awaited<ReturnType<FinanceService["converter"]>>) {
+    const db = this.prisma.client;
+    const [invoices, payments, expenses, commissions, creditUses, newPaid, churned] = await Promise.all([
+      db.invoice.findMany({ where: { createdAt: { gte: from, lte: to }, status: { not: "VOID" } } }),
+      db.payment.findMany({ where: { createdAt: { gte: from, lte: to } } }),
+      db.expense.findMany({ where: { expenseDate: { gte: from, lte: to }, status: "PAID" } }),
+      db.partnerCommission.findMany({ where: { createdAt: { gte: from, lte: to }, status: { notIn: ["CANCELLED", "REVERSED"] } } }),
+      db.referralCreditUse.findMany({ where: { createdAt: { gte: from, lte: to } }, include: { reward: { select: { currency: true } } } }),
+      db.subscription.count({ where: { createdAt: { gte: from, lte: to }, plan: { kind: { not: "FREE" } }, status: { in: ["ACTIVE", "PAST_DUE"] } } }),
+      db.subscription.count({ where: { updatedAt: { gte: from, lte: to }, plan: { kind: { not: "FREE" } }, status: "CANCELED" } }),
+    ]);
+    const sum = <T,>(rows: T[], amount: (r: T) => number, currency: (r: T) => string) => rows.reduce((total, r) => total + fx.to(amount(r), currency(r)), 0);
+    const succeeded = payments.filter((p) => p.status === "SUCCEEDED" || p.status === "PARTIALLY_REFUNDED" || p.status === "REFUNDED");
+    const grossCollectedCents = sum(succeeded, (p) => p.amountCents, (p) => p.currency);
+    const providerFeesCents = sum(succeeded, (p) => p.feeCents, (p) => p.currency);
+    const refundedCents = sum(succeeded, (p) => p.amountRefundedCents, (p) => p.currency);
+    const netCollectedCents = grossCollectedCents - providerFeesCents - refundedCents;
+    const operatingExpensesCents = sum(expenses, (e) => e.amountCents, (e) => e.currency);
+    const partnerCommissionsCents = sum(commissions, (c) => c.commissionAmountCents, (c) => c.currency);
+    return {
+      revenueInvoicedCents: sum(invoices, (i) => i.amountTotalCents, (i) => i.currency),
+      revenueInvoicedHtCents: sum(invoices, (i) => i.amountSubtotalCents, (i) => i.currency),
+      taxesCollectedCents: sum(invoices, (i) => i.amountTaxCents, (i) => i.currency),
+      discountCents: sum(invoices, (i) => i.amountDiscountCents, (i) => i.currency),
+      grossCollectedCents,
+      providerFeesCents,
+      refundedCents,
+      netCollectedCents,
+      pendingCollectedCents: sum(payments.filter((p) => p.status === "PENDING" || p.status === "PROCESSING"), (p) => p.amountCents, (p) => p.currency),
+      failedCollectedCents: sum(payments.filter((p) => p.status === "FAILED"), (p) => p.amountCents, (p) => p.currency),
+      operatingExpensesCents,
+      partnerCommissionsCents,
+      referralCreditsCents: sum(creditUses, (u) => u.amountCents, (u) => u.reward.currency),
+      provisionalNetProfitCents: netCollectedCents - operatingExpensesCents - partnerCommissionsCents,
+      newPaidSubscriptionsCount: newPaid,
+      churnedSubscriptionsCount: churned,
+      collectedByCurrency: succeeded.reduce<Record<string, { grossCents: number; netCents: number; count: number }>>((acc, p) => {
+        const row = (acc[p.currency] ??= { grossCents: 0, netCents: 0, count: 0 });
+        row.grossCents += p.amountCents;
+        row.netCents += p.amountCents - p.feeCents - p.amountRefundedCents;
+        row.count += 1;
+        return acc;
+      }, {}),
+    };
+  }
+
+  /**
+   * Vue d'ensemble financière de la période et de la période précédente équivalente, consolidée
+   * dans la monnaie du rapport (l'euro par défaut) au taux comptable ; encaissements aussi par monnaie.
    */
   async overview(filter: FinanceFilterDto) {
     const range = this.parseRange(filter);
+    const fx = await this.converter(filter.currency);
+    const [current, previous, subs] = await Promise.all([
+      this.periodFigures(range.from, range.to, fx),
+      this.periodFigures(range.previousFrom, range.previousTo, fx),
+      this.prisma.client.subscription.findMany({ include: { plan: { include: { prices: true } } } }),
+    ]);
 
-    // 1. Ventes et Factures sur la période
-    const currentInvoices = await this.prisma.client.invoice.findMany({
-      where: { createdAt: { gte: range.from, lte: range.to } },
-    });
-    const prevInvoices = await this.prisma.client.invoice.findMany({
-      where: { createdAt: { gte: range.previousFrom, lte: range.previousTo } },
-    });
+    // MRR normalisé (prix annuel / 12) des abonnements payants en cours.
+    const activePaid = subs.filter((s) => s.status === "ACTIVE" && s.plan.kind !== "FREE");
+    const mrrCents = activePaid.reduce((total, s) => total + fx.to(Math.round(this.yearlyPrice(s) / 12), s.currency), 0);
+    const churnBase = activePaid.length + current.churnedSubscriptionsCount;
+    const change = (curr: number, prev: number) => (prev === 0 ? (curr === 0 ? 0 : null) : Math.round(((curr - prev) / Math.abs(prev)) * 100));
 
-    const invoicedSubtotalCents = currentInvoices.reduce((s, i) => s + i.amountSubtotalCents, 0);
-    const invoicedTaxCents = currentInvoices.reduce((s, i) => s + i.amountTaxCents, 0);
-    const invoicedDiscountCents = currentInvoices.reduce((s, i) => s + i.amountDiscountCents, 0);
-    const invoicedTotalCents = currentInvoices.reduce((s, i) => s + i.amountTotalCents, 0);
-    const prevInvoicedTotalCents = prevInvoices.reduce((s, i) => s + i.amountTotalCents, 0);
-
-    // 2. Encaissements réels (Paiements)
-    const currentPayments = await this.prisma.client.payment.findMany({
-      where: { createdAt: { gte: range.from, lte: range.to } },
-    });
-    const prevPayments = await this.prisma.client.payment.findMany({
-      where: { createdAt: { gte: range.previousFrom, lte: range.previousTo } },
-    });
-
-    const succeededPayments = currentPayments.filter((p) => p.status === "SUCCEEDED" || p.status === "PARTIALLY_REFUNDED");
-    const grossCollectedCents = succeededPayments.reduce((s, p) => s + p.amountCents, 0);
-    const feesCents = succeededPayments.reduce((s, p) => s + p.feeCents, 0);
-    const refundedCents = succeededPayments.reduce((s, p) => s + p.amountRefundedCents, 0);
-    const netCollectedCents = grossCollectedCents - feesCents - refundedCents;
-
-    const prevSucceeded = prevPayments.filter((p) => p.status === "SUCCEEDED" || p.status === "PARTIALLY_REFUNDED");
-    const prevGrossCollectedCents = prevSucceeded.reduce((s, p) => s + p.amountCents, 0);
-    const prevNetCollectedCents = prevGrossCollectedCents - prevSucceeded.reduce((s, p) => s + p.feeCents, 0) - prevSucceeded.reduce((s, p) => s + p.amountRefundedCents, 0);
-
-    const pendingPayments = currentPayments.filter((p) => p.status === "PENDING" || p.status === "PROCESSING");
-    const pendingAmountCents = pendingPayments.reduce((s, p) => s + p.amountCents, 0);
-    const failedPayments = currentPayments.filter((p) => p.status === "FAILED");
-    const failedAmountCents = failedPayments.reduce((s, p) => s + p.amountCents, 0);
-
-    // 3. Dépenses opérationnelles
-    const currentExpenses = await this.prisma.client.expense.findMany({
-      where: { expenseDate: { gte: range.from, lte: range.to }, status: "PAID" },
-    });
-    const prevExpenses = await this.prisma.client.expense.findMany({
-      where: { expenseDate: { gte: range.previousFrom, lte: range.previousTo }, status: "PAID" },
-    });
-    const expensesTotalCents = currentExpenses.reduce((s, e) => s + e.amountCents, 0);
-    const prevExpensesTotalCents = prevExpenses.reduce((s, e) => s + e.amountCents, 0);
-
-    // 4. Commissions partenaires
-    const currentCommissions = await this.prisma.client.partnerCommission.findMany({
-      where: { createdAt: { gte: range.from, lte: range.to } },
-    });
-    const commissionsDueCents = currentCommissions
-      .filter((c) => c.status === "PENDING" || c.status === "CONFIRMED" || c.status === "AVAILABLE")
-      .reduce((s, c) => s + c.commissionAmountCents, 0);
-    const commissionsPaidCents = currentCommissions
-      .filter((c) => c.status === "PAID")
-      .reduce((s, c) => s + c.commissionAmountCents, 0);
-
-    // 5. Parrainages
-    const currentReferrals = await this.prisma.client.referralReward.findMany({
-      where: { createdAt: { gte: range.from, lte: range.to } },
-    });
-    const referralCreditsUsedCents = currentReferrals.reduce((s, r) => s + r.creditUsedCents, 0);
-
-    // 6. Abonnements et métriques SaaS
-    const allSubs = await this.prisma.client.subscription.findMany({
-      include: { plan: true },
-    });
-    const activePaidSubs = allSubs.filter((s) => s.status === "ACTIVE" && s.plan.kind !== "FREE");
-    const trialingSubs = allSubs.filter((s) => s.status === "TRIALING");
-    const pastDueSubs = allSubs.filter((s) => s.status === "PAST_DUE");
-    const canceledSubs = allSubs.filter((s) => s.status === "CANCELED");
-
-    // Calcul du MRR normalisé (mensuel + annuel/12)
-    let mrrCents = 0;
-    for (const sub of activePaidSubs) {
-      if (sub.contractPriceYearlyCents !== null && sub.contractPriceYearlyCents !== undefined) {
-        mrrCents += Math.round(sub.contractPriceYearlyCents / 12);
-      } else if (sub.provider === "MANUAL" && (sub.contractPriceYearlyCents === 0 || sub.contractPriceYearlyCents === null)) {
-        // Offre accordée gratuitement / geste commercial / contrat direct à 0 €
-        mrrCents += 0;
-      } else if (sub.interval === "YEAR") {
-        mrrCents += Math.round(sub.plan.priceYearlyCents / 12);
-      } else {
-        mrrCents += sub.plan.priceMonthlyCents;
-      }
-    }
-    const arrCents = mrrCents * 12;
-
-    // Résultat net estimé
-    const estimatedProfitCents = netCollectedCents - expensesTotalCents - commissionsPaidCents;
-    const prevEstimatedProfitCents = prevNetCollectedCents - prevExpensesTotalCents;
-
-    const calcChange = (curr: number, prev: number) => {
-      if (prev === 0) return curr > 0 ? 100 : 0;
-      return Math.round(((curr - prev) / prev) * 100);
-    };
-
+    const { collectedByCurrency, ...cur } = current;
+    const { collectedByCurrency: _prevByCurrency, ...prev } = previous;
     return {
-      period: {
-        from: range.from.toISOString(),
-        to: range.to.toISOString(),
-        label: range.label,
-        currency: filter.currency ?? "USD",
-      },
-      revenue: {
-        subtotalCents: invoicedSubtotalCents,
-        taxCents: invoicedTaxCents,
-        discountCents: invoicedDiscountCents,
-        totalInvoicedCents: invoicedTotalCents,
-        invoicedChangePercent: calcChange(invoicedTotalCents, prevInvoicedTotalCents),
-      },
-      collected: {
-        grossCents: grossCollectedCents,
-        feesCents,
-        refundedCents,
-        netCents: netCollectedCents,
-        collectedChangePercent: calcChange(netCollectedCents, prevNetCollectedCents),
-        pendingCents: pendingAmountCents,
-        pendingCount: pendingPayments.length,
-        failedCents: failedAmountCents,
-        failedCount: failedPayments.length,
-      },
-      expenses: {
-        totalCents: expensesTotalCents,
-        changePercent: calcChange(expensesTotalCents, prevExpensesTotalCents),
-        count: currentExpenses.length,
-      },
-      commissions: {
-        dueCents: commissionsDueCents,
-        paidCents: commissionsPaidCents,
-        count: currentCommissions.length,
-      },
-      referrals: {
-        creditsUsedCents: referralCreditsUsedCents,
-        count: currentReferrals.length,
-      },
-      profitability: {
-        estimatedProfitCents,
-        profitChangePercent: calcChange(estimatedProfitCents, prevEstimatedProfitCents),
-        isProvisional: true, // mention légale obligatoire
-      },
-      subscriptions: {
-        activePaidCount: activePaidSubs.length,
-        trialingCount: trialingSubs.length,
-        pastDueCount: pastDueSubs.length,
-        canceledCount: canceledSubs.length,
+      currency: fx.currency,
+      missingRates: fx.missingRates(),
+      period: { from: range.from.toISOString(), to: range.to.toISOString(), label: range.label },
+      previousPeriod: { from: range.previousFrom.toISOString(), to: range.previousTo.toISOString() },
+      current: {
+        ...cur,
         mrrCents,
-        arrCents,
-        arpuCents: activePaidSubs.length > 0 ? Math.round(mrrCents / activePaidSubs.length) : 0,
+        arrCents: mrrCents * 12,
+        activePaidSubscriptionsCount: activePaid.length,
+        trialingCount: subs.filter((s) => s.status === "TRIALING").length,
+        pastDueCount: subs.filter((s) => s.status === "PAST_DUE").length,
+        churnRatePercent: churnBase > 0 ? Math.round((current.churnedSubscriptionsCount / churnBase) * 1000) / 10 : 0,
       },
+      previous: prev,
+      deltas: {
+        revenueInvoicedPct: change(cur.revenueInvoicedCents, prev.revenueInvoicedCents),
+        grossCollectedPct: change(cur.grossCollectedCents, prev.grossCollectedCents),
+        netCollectedPct: change(cur.netCollectedCents, prev.netCollectedCents),
+        expensesPct: change(cur.operatingExpensesCents, prev.operatingExpensesCents),
+        provisionalProfitPct: change(cur.provisionalNetProfitCents, prev.provisionalNetProfitCents),
+        activePaidSubsPct: null,
+      },
+      collectedByCurrency,
+      isProvisional: true, // mention légale obligatoire
     };
   }
 
@@ -272,24 +239,25 @@ export class FinanceService {
    */
   async charts(filter: FinanceFilterDto) {
     const range = this.parseRange(filter);
+    const fx = await this.converter(filter.currency);
     const invoices = await this.prisma.client.invoice.findMany({
       where: { createdAt: { gte: range.from, lte: range.to } },
-      select: { createdAt: true, amountTotalCents: true, status: true },
+      select: { createdAt: true, amountTotalCents: true, status: true, currency: true },
     });
     const payments = await this.prisma.client.payment.findMany({
       where: { createdAt: { gte: range.from, lte: range.to } },
-      select: { createdAt: true, amountCents: true, netCents: true, status: true, provider: true },
+      select: { createdAt: true, amountCents: true, netCents: true, status: true, provider: true, currency: true },
     });
     const expenses = await this.prisma.client.expense.findMany({
       where: { expenseDate: { gte: range.from, lte: range.to }, status: "PAID" },
-      select: { expenseDate: true, amountCents: true, category: true },
+      select: { expenseDate: true, amountCents: true, category: true, currency: true },
     });
     const plans = await this.prisma.client.subscriptionPlan.findMany({
       select: { id: true, code: true, name: true },
     });
     const lines = await this.prisma.client.invoiceLine.findMany({
       where: { invoice: { createdAt: { gte: range.from, lte: range.to } } },
-      select: { planId: true, amountTotalCents: true },
+      select: { planId: true, amountTotalCents: true, currency: true },
     });
 
     // Agrégation par jour (clé YYYY-MM-DD)
@@ -304,21 +272,21 @@ export class FinanceService {
     for (const inv of invoices) {
       const key = inv.createdAt.toISOString().slice(0, 10);
       const row = dailyMap.get(key);
-      if (row) row.invoicedCents += inv.amountTotalCents;
+      if (row) row.invoicedCents += fx.to(inv.amountTotalCents, inv.currency);
     }
 
     for (const pay of payments) {
       if (pay.status === "SUCCEEDED" || pay.status === "PARTIALLY_REFUNDED") {
         const key = pay.createdAt.toISOString().slice(0, 10);
         const row = dailyMap.get(key);
-        if (row) row.collectedCents += pay.netCents;
+        if (row) row.collectedCents += fx.to(pay.netCents, pay.currency);
       }
     }
 
     for (const exp of expenses) {
       const key = exp.expenseDate.toISOString().slice(0, 10);
       const row = dailyMap.get(key);
-      if (row) row.expensesCents += exp.amountCents;
+      if (row) row.expensesCents += fx.to(exp.amountCents, exp.currency);
     }
 
     const timeSeries = Array.from(dailyMap.values()).map((r) => ({
@@ -331,18 +299,19 @@ export class FinanceService {
     for (const l of lines) {
       const p = plans.find((x) => x.id === l.planId);
       const label = p ? p.name : "Autres";
-      planMap.set(label, (planMap.get(label) ?? 0) + l.amountTotalCents);
+      planMap.set(label, (planMap.get(label) ?? 0) + fx.to(l.amountTotalCents, l.currency));
     }
     const planBreakdown = Array.from(planMap.entries()).map(([label, amountCents]) => ({ label, amountCents }));
 
     // Répartition par catégorie de dépense
     const expCatMap = new Map<string, number>();
     for (const e of expenses) {
-      expCatMap.set(e.category, (expCatMap.get(e.category) ?? 0) + e.amountCents);
+      expCatMap.set(e.category, (expCatMap.get(e.category) ?? 0) + fx.to(e.amountCents, e.currency));
     }
     const expenseBreakdown = Array.from(expCatMap.entries()).map(([category, amountCents]) => ({ category, amountCents }));
 
     return {
+      currency: fx.currency,
       timeSeries,
       planBreakdown,
       expenseBreakdown,
@@ -566,32 +535,28 @@ export class FinanceService {
    * Gestion des abonnements avec MRR / ARR normalisés.
    */
   async subscriptions() {
+    const fx = await this.converter();
     const subs = await this.prisma.client.subscription.findMany({
       include: {
         tenant: { select: { id: true, name: true, slug: true, status: true } },
-        plan: true,
+        plan: { include: { prices: true } },
         invoices: { orderBy: { createdAt: "desc" }, take: 3 },
       },
       orderBy: { createdAt: "desc" },
     });
 
-    return subs.map((s) => {
-      let mrrCents = 0;
-      if (s.status === "ACTIVE" && s.plan.kind !== "FREE") {
-        if (s.contractPriceYearlyCents !== null && s.contractPriceYearlyCents !== undefined) {
-          mrrCents = Math.round(s.contractPriceYearlyCents / 12);
-        } else if (s.provider === "MANUAL" && (s.contractPriceYearlyCents === 0 || s.contractPriceYearlyCents === null)) {
-          mrrCents = 0;
-        } else if (s.interval === "YEAR") {
-          mrrCents = Math.round(s.plan.priceYearlyCents / 12);
-        } else {
-          mrrCents = s.plan.priceMonthlyCents;
-        }
-      }
+    const items = subs.map((s) => {
+      // MRR dans la monnaie de l'abonnement, et équivalent en euros.
+      const mrrCents = s.status === "ACTIVE" && s.plan.kind !== "FREE" ? Math.round(this.yearlyPrice(s) / 12) : 0;
+      const { prices: _prices, ...plan } = s.plan;
       return {
         id: s.id,
         tenant: s.tenant,
-        plan: s.plan,
+        plan,
+        currency: s.currency,
+        /** Prix annuel facturé (contrat ou offre), dans la monnaie de l'abonnement. */
+        yearlyPriceCents: s.plan.kind === "FREE" ? 0 : this.yearlyPrice(s),
+        mrrRefCents: fx.to(mrrCents, s.currency),
         status: s.status,
         interval: s.interval,
         provider: s.provider,
@@ -600,25 +565,37 @@ export class FinanceService {
         pastDueSince: s.pastDueSince?.toISOString() ?? null,
         mrrCents,
         arrCents: mrrCents * 12,
-        recentInvoices: s.invoices.map((i) => ({ id: i.id, number: i.number, amountTotalCents: i.amountTotalCents, status: i.status })),
+        recentInvoices: s.invoices.map((i) => ({ id: i.id, number: i.number, amountTotalCents: i.amountTotalCents, currency: i.currency, status: i.status })),
       };
     });
+    const running = items.filter((s) => s.status === "ACTIVE" || s.status === "PAST_DUE");
+    const mrrTotalCents = items.reduce((sum, s) => sum + s.mrrRefCents, 0);
+    return {
+      currency: fx.currency,
+      items,
+      mrrTotalCents,
+      arrTotalCents: mrrTotalCents * 12,
+      activeCount: running.length,
+      trialingCount: items.filter((s) => s.status === "TRIALING").length,
+      payingCount: running.filter((s) => s.plan.kind !== "FREE").length,
+    };
   }
 
   /**
    * Fiche de suivi des clients payants.
    */
   async customers() {
+    const fx = await this.converter();
     const tenants = await this.prisma.client.tenant.findMany({
       include: {
         settings: { select: { country: true } },
         establishments: { select: { city: true }, take: 1 },
         subscription: { include: { plan: true } },
-        invoices: { select: { amountTotalCents: true, status: true, createdAt: true } },
+        invoices: { select: { amountTotalCents: true, currency: true, status: true, createdAt: true } },
         payments: {
           where: { status: "SUCCEEDED" },
           orderBy: { confirmedAt: "asc" },
-          select: { amountCents: true, confirmedAt: true },
+          select: { amountCents: true, currency: true, confirmedAt: true },
         },
         attribution: { include: { partner: { select: { name: true } } } },
       },
@@ -626,8 +603,9 @@ export class FinanceService {
     });
 
     return tenants.map((t) => {
-      const totalInvoicedCents = t.invoices.reduce((s, i) => s + (i.amountTotalCents || 0), 0);
-      const totalPaidCents = t.payments.reduce((s, p) => s + (p.amountCents || 0), 0);
+      // Totaux en euros (taux comptable) : un commerce a pu payer dans plusieurs monnaies.
+      const totalInvoicedCents = t.invoices.reduce((s, i) => s + fx.to(i.amountTotalCents || 0, i.currency), 0);
+      const totalPaidCents = t.payments.reduce((s, p) => s + fx.to(p.amountCents || 0, p.currency), 0);
       const firstPayment = t.payments[0];
       const lastPayment = t.payments[t.payments.length - 1];
 
@@ -656,6 +634,8 @@ export class FinanceService {
         interval: t.subscription?.interval ?? "YEAR",
         provider: t.subscription?.provider ?? "MOCK",
         contractPriceYearlyCents: t.subscription?.contractPriceYearlyCents ?? null,
+        subscriptionCurrency: t.subscription?.currency ?? null,
+        currency: fx.currency,
 
         totalInvoicedCents,
         totalPaidCents,
@@ -674,7 +654,7 @@ export class FinanceService {
    * Dépenses opérationnelles.
    */
   async expenses(query: { category?: string; range?: string; from?: string; to?: string }) {
-    const range = this.parseRange({ range: (query.range as any) ?? "month", from: query.from, to: query.to, currency: "USD" });
+    const range = this.parseRange({ range: (query.range as any) ?? "month", from: query.from, to: query.to, currency: "EUR" });
     const where: any = {
       expenseDate: { gte: range.from, lte: range.to },
     };
@@ -685,8 +665,10 @@ export class FinanceService {
       orderBy: { expenseDate: "desc" },
     });
 
-    const totalCents = items.reduce((s, e) => s + e.amountCents, 0);
-    return { items, totalCents, count: items.length };
+    // Total en euros au taux comptable ; chaque dépense garde sa monnaie.
+    const fx = await this.converter();
+    const totalCents = items.reduce((s, e) => s + fx.to(e.amountCents, e.currency), 0);
+    return { items, totalCents, currency: fx.currency, count: items.length };
   }
 
   async createExpense(auth: AuthState, dto: ExpenseCreateDto) {
@@ -754,11 +736,12 @@ export class FinanceService {
       },
       orderBy: { createdAt: "desc" },
     });
+    const fx = await this.converter();
 
     return partners.map((p) => {
-      const gmvCents = p.commissions.reduce((s, c) => s + c.amountBaseCents, 0);
-      const totalEarnedCents = p.commissions.reduce((s, c) => s + c.commissionAmountCents, 0);
-      const paidCents = p.payouts.reduce((s, pay) => s + pay.amountCents, 0);
+      const gmvCents = p.commissions.reduce((s, c) => s + fx.to(c.amountBaseCents, c.currency), 0);
+      const totalEarnedCents = p.commissions.reduce((s, c) => s + fx.to(c.commissionAmountCents, c.currency), 0);
+      const paidCents = p.payouts.reduce((s, pay) => s + fx.to(pay.amountCents, pay.currency), 0);
       const balanceDueCents = totalEarnedCents - paidCents;
 
       return {
@@ -775,6 +758,11 @@ export class FinanceService {
         paidCents,
         balanceDueCents: Math.max(0, balanceDueCents),
         conversionsCount: p.commissions.length,
+        // Noms lus par la page Finance > Partenaires ; montants en euros (taux comptable).
+        totalSalesCount: p.commissions.length,
+        pendingCents: Math.max(0, balanceDueCents),
+        currency: fx.currency,
+        payoutCurrency: p.payoutCurrency,
       };
     });
   }
@@ -816,14 +804,38 @@ export class FinanceService {
     if (query.partnerId) where.partnerId = query.partnerId;
     if (query.status && query.status !== "ALL") where.status = query.status;
 
-    return this.prisma.client.partnerCommission.findMany({
+    const rows = await this.prisma.client.partnerCommission.findMany({
       where,
       include: {
         partner: { select: { id: true, name: true, code: true, email: true } },
         tenant: { select: { id: true, name: true, slug: true } },
+        invoice: { select: { id: true, number: true } },
       },
       orderBy: { createdAt: "desc" },
     });
+    // Chaque commission dans sa monnaie (celle du paiement) ; totaux en euros au taux comptable.
+    const fx = await this.converter();
+    const total = (statuses: string[]) => rows.filter((c) => statuses.includes(c.status)).reduce((sum, c) => sum + fx.to(c.commissionAmountCents, c.currency), 0);
+    return {
+      currency: fx.currency,
+      totalPendingCents: total(["PENDING", "CONFIRMED", "AVAILABLE"]),
+      totalPaidCents: total(["PAID"]),
+      items: rows.map((c) => ({
+        id: c.id,
+        amountCents: c.commissionAmountCents,
+        currency: c.currency,
+        payoutAmountCents: c.payoutAmountCents,
+        payoutCurrency: c.payoutCurrency,
+        ratePercent: Number(c.commissionRatePercent),
+        status: c.status,
+        createdAt: c.createdAt,
+        paidAt: c.paidAt,
+        availableAt: c.availableAt,
+        partner: c.partner,
+        tenant: c.tenant,
+        invoice: { id: c.invoice?.id ?? null, number: c.invoice?.number ?? "—", amountTotalCents: c.amountBaseCents, tenant: { name: c.tenant.name } },
+      })),
+    };
   }
 
   async payCommission(auth: AuthState, commissionId: string) {
@@ -834,11 +846,19 @@ export class FinanceService {
     if (!comm) throw notFound("Commission introuvable");
     if (comm.status === "PAID") throw badRequest("already_paid", "Cette commission a déjà été versée.");
 
+    // Versement dans la monnaie de versement du partenaire (taux figé si déjà disponible, sinon taux du jour).
+    let amountCents = comm.payoutAmountCents;
+    let currency = comm.payoutCurrency;
+    if (amountCents === null || currency === null) {
+      const converted = await this.pricing.convert(comm.commissionAmountCents, comm.currency, comm.partner.payoutCurrency);
+      amountCents = converted?.cents ?? comm.commissionAmountCents;
+      currency = converted ? comm.partner.payoutCurrency : comm.currency;
+    }
     const payout = await this.prisma.client.partnerPayout.create({
       data: {
         partnerId: comm.partnerId,
-        amountCents: comm.commissionAmountCents,
-        currency: comm.currency,
+        amountCents,
+        currency,
         method: "Virement direct",
         status: "PAID",
         reference: `PAYOUT-${Date.now().toString().slice(-6)}`,
@@ -848,7 +868,7 @@ export class FinanceService {
 
     await this.prisma.client.partnerCommission.update({
       where: { id: comm.id },
-      data: { status: "PAID", paidAt: new Date(), payoutId: payout.id },
+      data: { status: "PAID", paidAt: new Date(), payoutId: payout.id, payoutAmountCents: amountCents, payoutCurrency: currency },
     });
 
     await this.prisma.client.financialAuditLog.create({
@@ -858,7 +878,7 @@ export class FinanceService {
         action: "partner.commission_paid",
         entityType: "partner_commission",
         entityId: comm.id,
-        newValue: { payoutId: payout.id, amountCents: comm.commissionAmountCents },
+        newValue: { payoutId: payout.id, amountCents, currency },
         reason: `Paiement commission à ${comm.partner.name}`,
       },
     });
@@ -879,11 +899,14 @@ export class FinanceService {
       orderBy: { createdAt: "desc" },
     });
     const earned = items.filter((r) => r.status === "EARNED" || r.status === "EXPIRED" || (r.status === "CANCELLED" && r.creditAmountCents > 0));
+    // Totaux en euros (taux comptable) ; chaque parrainage garde sa monnaie.
+    const fx = await this.converter();
     return {
       items,
-      totalCreditCents: earned.reduce((sum, r) => sum + r.creditAmountCents, 0),
-      usedCents: items.reduce((sum, r) => sum + r.creditUsedCents, 0),
-      remainingCents: items.filter((r) => r.status === "EARNED").reduce((sum, r) => sum + r.creditRemainingCents, 0),
+      currency: fx.currency,
+      totalCreditCents: earned.reduce((sum, r) => sum + fx.to(r.creditAmountCents, r.currency), 0),
+      usedCents: items.reduce((sum, r) => sum + fx.to(r.creditUsedCents, r.currency), 0),
+      remainingCents: items.filter((r) => r.status === "EARNED").reduce((sum, r) => sum + fx.to(r.creditRemainingCents, r.currency), 0),
     };
   }
 
@@ -895,32 +918,34 @@ export class FinanceService {
       // Mêmes règles que la vue d'ensemble : paiements encaissés, y compris partiellement remboursés.
       this.prisma.client.payment.findMany({
         where: { status: { in: ["SUCCEEDED", "PARTIALLY_REFUNDED"] } },
-        select: { amountCents: true, feeCents: true, amountRefundedCents: true, provider: true },
+        select: { amountCents: true, feeCents: true, amountRefundedCents: true, provider: true, currency: true },
       }),
-      this.prisma.client.expense.findMany({ where: { status: "PAID" }, select: { amountCents: true } }),
-      this.prisma.client.partnerPayout.findMany({ where: { status: "PAID" }, select: { amountCents: true } }),
+      this.prisma.client.expense.findMany({ where: { status: "PAID" }, select: { amountCents: true, currency: true } }),
+      this.prisma.client.partnerPayout.findMany({ where: { status: "PAID" }, select: { amountCents: true, currency: true } }),
       this.prisma.client.bankStatementEntry.findMany({ orderBy: { entryDate: "desc" } }),
     ]);
 
-    // Net encaissé = brut − frais du prestataire − remboursements.
-    const net = (p: (typeof payments)[number]) => p.amountCents - p.feeCents - p.amountRefundedCents;
+    // Net encaissé = brut − frais du prestataire − remboursements, converti en euros au taux comptable.
+    const fx = await this.converter();
+    const net = (p: (typeof payments)[number]) => fx.to(p.amountCents - p.feeCents - p.amountRefundedCents, p.currency);
     const totalCollectedNetCents = payments.reduce((s, p) => s + net(p), 0);
     const stripeHeldCents = payments.filter((p) => p.provider === "STRIPE").reduce((s, p) => s + net(p), 0);
     const manualDirectCents = payments.filter((p) => p.provider !== "STRIPE").reduce((s, p) => s + net(p), 0);
 
-    const totalExpensesCents = expenses.reduce((s, e) => s + e.amountCents, 0);
-    const totalPayoutsCents = payouts.reduce((s, p) => s + p.amountCents, 0);
+    const totalExpensesCents = expenses.reduce((s, e) => s + fx.to(e.amountCents, e.currency), 0);
+    const totalPayoutsCents = payouts.reduce((s, p) => s + fx.to(p.amountCents, p.currency), 0);
 
     // Solde théorique estimé
     const estimatedCashCents = totalCollectedNetCents - totalExpensesCents - totalPayoutsCents;
 
     // Solde bancaire réel réconcilié
-    const bankBalanceCents = bankEntries.reduce((s, b) => s + b.amountCents, 0);
+    const bankBalanceCents = bankEntries.reduce((s, b) => s + fx.to(b.amountCents, b.currency), 0);
     const unreconciledCount = bankEntries.filter((b) => !b.reconciled).length;
 
     return {
-      // Les prix FOVE sont en USD : les totaux sont exprimés dans cette devise.
-      currency: "USD",
+      // Totaux consolidés en euros (monnaie de référence) ; les lignes gardent leur monnaie.
+      currency: fx.currency,
+      missingRates: fx.missingRates(),
       totalCollectedNetCents,
       estimatedCashCents,
       stripeHeldCents,
@@ -930,8 +955,25 @@ export class FinanceService {
       bankBalanceCents,
       bankEntryCount: bankEntries.length,
       unreconciledCount,
-      bankEntries: bankEntries.slice(0, 50),
+      bankEntries: await this.withSuggestions(bankEntries.slice(0, 100)),
     };
+  }
+
+  /** Pièce proposée pour chaque ligne non rapprochée : référence, commerce ou partenaire, montant attendu. */
+  private async withSuggestions<T extends { suggestedType: string | null; suggestedId: string | null; reconciled: boolean }>(entries: T[]) {
+    const ids = (type: string) => entries.filter((e) => !e.reconciled && e.suggestedType === type && e.suggestedId).map((e) => e.suggestedId!);
+    const [invoices, statements] = await Promise.all([
+      this.prisma.client.invoice.findMany({ where: { id: { in: ids("INVOICE") } }, include: { tenant: { select: { name: true } } } }),
+      this.prisma.client.partnerStatement.findMany({ where: { id: { in: ids("STATEMENT") } }, include: { partner: { select: { name: true, code: true } } } }),
+    ]);
+    return entries.map((e) => {
+      if (e.reconciled || !e.suggestedId) return { ...e, suggestion: null };
+      const invoice = invoices.find((i) => i.id === e.suggestedId);
+      if (invoice) return { ...e, suggestion: { type: "INVOICE", reference: invoice.paymentReference, name: invoice.tenant.name, expectedCents: invoice.amountDueCents, currency: invoice.currency } };
+      const statement = statements.find((st) => st.id === e.suggestedId);
+      if (statement) return { ...e, suggestion: { type: "STATEMENT", reference: statement.reference, name: `${statement.partner.name} (${statement.partner.code})`, expectedCents: statement.balanceCents - statement.paidCents, currency: statement.currency } };
+      return { ...e, suggestion: null };
+    });
   }
 
   async reconcileEntry(auth: AuthState, entryId: string, dto: ReconcileDto) {
@@ -962,6 +1004,27 @@ export class FinanceService {
     return updated;
   }
 
+  /** Taux comptables (unités pour 1 €) : consolidation de la Finance et conversions des commissions. */
+  async exchangeRates() {
+    const rows = await this.prisma.client.exchangeRate.findMany({ orderBy: { currency: "asc" } });
+    return rows.map((r) => ({ currency: r.currency, unitsPerEur: Number(r.unitsPerEur), updatedAt: r.updatedAt, updatedByEmail: r.updatedByEmail }));
+  }
+
+  async setExchangeRates(auth: AuthState, input: ExchangeRatesDto) {
+    const before = await this.exchangeRates();
+    for (const r of input.rates) {
+      await this.prisma.client.exchangeRate.upsert({
+        where: { currency: r.currency },
+        update: { unitsPerEur: r.unitsPerEur, updatedByEmail: auth.user.email },
+        create: { currency: r.currency, unitsPerEur: r.unitsPerEur, updatedByEmail: auth.user.email },
+      });
+    }
+    await this.prisma.client.financialAuditLog.create({
+      data: { actorUserId: auth.user.id, actorEmail: auth.user.email, action: "fx.rates_updated", entityType: "exchange_rate", entityId: "all", oldValue: before as never, newValue: input.rates as never },
+    });
+    return this.exchangeRates();
+  }
+
   /**
    * Journal d'audit financier append-only.
    */
@@ -978,6 +1041,6 @@ export class FinanceService {
   async monthlyAssociateReport(year: number, month: number) {
     const from = new Date(year, month - 1, 1, 0, 0, 0, 0);
     const to = new Date(year, month, 0, 23, 59, 59, 999);
-    return this.overview({ range: "custom", from: from.toISOString(), to: to.toISOString(), currency: "USD" });
+    return this.overview({ range: "custom", from: from.toISOString(), to: to.toISOString(), currency: "EUR" });
   }
 }

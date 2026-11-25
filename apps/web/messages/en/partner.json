@@ -79,7 +79,7 @@
       },
       "payouts": {
         "title": "Flexible payouts",
-        "desc": "Get paid by bank transfer or Mobile Money once you have earned $50."
+        "desc": "Get paid by bank transfer or Mobile Money once you have earned $50 or €50."
       },
       "attribution": {
         "title": "30-day first-party attribution",
@@ -246,6 +246,7 @@
       "clients": "Referred clients",
       "commissions": "Commissions",
       "payouts": "Payments & Withdrawals",
+      "collection": "Collections",
       "resources": "Sales resources"
     },
     "overview": {
@@ -329,6 +330,7 @@
       "colAvailability": "Availability",
       "colStatus": "Status",
       "immediate": "Immediate",
+      "converted": "i.e. {amount} at payout",
       "paid": "Paid out",
       "available": "Available",
       "cancelled": "Cancelled (Refund)",
@@ -337,6 +339,9 @@
     "payouts": {
       "balance": "Available balance: {amount}",
       "minimum": "Minimum withdrawal amount: {amount}",
+      "currency": "Payout currency:",
+      "currencySaved": "Payout currency saved.",
+      "currencyHelp": "Your commissions are calculated in the currency paid by the merchant, then converted at the day’s rate when they become available.",
       "requestPayout": "Request a payout",
       "history": "Payout history",
       "empty": "No payouts requested yet.",
@@ -366,7 +371,7 @@
       "objectionPaper": "“My customers prefer paper”",
       "answerPaper": "In reality, 70% of customers forget their paper card. Their smartphone, on the other hand, is always in their pocket when it’s time to pay.",
       "objectionPrice": "“It’s too expensive for me”",
-      "answerPrice": "The Essentiel plan is only $99 a year (less than $9 a month). Just one extra loyal customer a week pays for the investment.",
+      "answerPrice": "The Essentiel plan is only €89 a year ($99; MAD 990 in Morocco), less than €8 a month. Just one extra loyal customer a week pays for the investment.",
       "objectionTime": "“I don’t have time to set it up”",
       "answerTime": "The account takes just 5 minutes to set up on a smartphone or computer, and the QR code poster is generated instantly, ready to print."
     }
@@ -392,7 +397,7 @@
     "title": "Request a payout",
     "available": "Available to withdraw: {amount}",
     "close": "Close",
-    "amount": "Withdrawal amount (USD) *",
+    "amount": "Withdrawal amount ({currency}) *",
     "threshold": "Minimum threshold: {amount}",
     "method": "Payout method *",
     "bankTransfer": "Bank transfer (IBAN / SWIFT)",
@@ -440,5 +445,81 @@
     "generated": "Generated link",
     "copied": "Campaign link copied!",
     "copy": "Copy link with UTM"
+  },
+  "collection": {
+    "title": "Collections",
+    "subtitle": "Collect subscriptions in cash or by mobile money and pay them to FOVE each month (monthly statement). Collection fee: {fee}% on renewals and on customers you did not bring.",
+    "outstanding": "Owed to FOVE",
+    "blocked": {
+      "not_approved": "Your partner account must be approved to collect.",
+      "disabled": "Collection is disabled for your account: contact FOVE.",
+      "overdue": "Statement {reference} unpaid: settle it to collect again.",
+      "cap": "Outstanding limit reached: pay your collections to FOVE to collect again."
+    },
+    "byReference": {
+      "title": "Collect by reference",
+      "help": "For a merchant who is not your customer: enter the reference they show you (Subscription page or email), check the business and the amount, then confirm.",
+      "label": "Payment reference",
+      "search": "Check"
+    },
+    "clients": {
+      "title": "My customers",
+      "empty": "No customers brought in yet.",
+      "until": "{plan} until {date}",
+      "free": "Free plan",
+      "plan": "Plan",
+      "subscribe": "Collect the subscription",
+      "renew": "Renew"
+    },
+    "invite": {
+      "title": "Sign up a business",
+      "help": "The merchant creates their own account (they confirm their email); it is assigned to you automatically. Send them the link or open it on their phone.",
+      "name": "Merchant name",
+      "business": "Business name",
+      "email": "Email",
+      "copy": "Copy link",
+      "copied": "Link copied.",
+      "whatsapp": "Send via WhatsApp",
+      "open": "Open link",
+      "message": "Hello, here is the link to create your FOVE loyalty programme: {url}"
+    },
+    "statements": {
+      "title": "Monthly statements",
+      "owe": "To pay: {amount}",
+      "credit": "In your favour: {amount}",
+      "due": "To pay before {date} with the reference {reference}.",
+      "status": {
+        "ISSUED": "To pay",
+        "PAID": "Paid",
+        "SETTLED": "Settled"
+      }
+    },
+    "history": {
+      "title": "History",
+      "empty": "No collections yet.",
+      "disputed": "Reported",
+      "toSettle": "To pay over"
+    },
+    "confirm": {
+      "title": "Collect: {name}",
+      "description": "{plan} · {kind}",
+      "kind": {
+        "new": "subscription",
+        "renewal": "renewal"
+      },
+      "amount": "Amount to collect",
+      "method": "Payment method",
+      "methods": {
+        "CASH": "Cash",
+        "MOBILE_MONEY": "Mobile money",
+        "BANK_TRANSFER": "Transfer to your account"
+      },
+      "receipt": "Receipt number",
+      "receiptHint": "Optional: the receipt you give the merchant.",
+      "warning": "Only confirm if you have received {amount}. The subscription is activated immediately, and this amount is added to what you owe FOVE.",
+      "cancel": "Cancel",
+      "submit": "I received the payment"
+    },
+    "collected": "Collection confirmed: {name}'s subscription is active."
   }
 }

@@ -139,6 +139,9 @@
     },
     "overview": {
       "title": "Centre financier et associés",
+      "byCurrency": { "title": "Encaissements par monnaie", "help": "Montants nets, avant conversion en {currency}.", "count": "{count, plural, one {# paiement} other {# paiements}}" },
+      "missingRates": "Taux comptable manquant pour {currencies} : ces montants comptent pour 0 dans les totaux.",
+      "ratesLink": "Renseigner les taux",
       "description": "Vision consolidée et transparente de l'activité économique réelle de FOVE.",
       "addExpense": "Ajouter une dépense",
       "newPartner": "Nouveau partenaire",
@@ -380,7 +383,137 @@
         "CANCELED": "Résilié"
       }
     },
+    "offline": {
+      "title": "Règlements hors ligne",
+      "description": "Virements, espèces et mobile money : factures à référence, validation et coordonnées bancaires par pays.",
+      "search": "Référence ou commerce",
+      "searchButton": "Rechercher",
+      "status": "État",
+      "empty": "Aucune facture.",
+      "statuses": {
+        "OPEN": "En attente",
+        "PAID": "Payée",
+        "VOID": "Annulée",
+        "ALL": "Toutes"
+      },
+      "kind": {
+        "new": "souscription",
+        "renewal": "renouvellement"
+      },
+      "provisional": "Accès provisoire en cours",
+      "collectedBy": "Encaissé par {name} ({code})",
+      "disputed": "Signalée par le commerçant",
+      "table": {
+        "reference": "Référence",
+        "tenant": "Commerce",
+        "plan": "Offre",
+        "amount": "Montant",
+        "date": "Date",
+        "status": "État"
+      },
+      "void": "Annuler",
+      "voidTitle": "Annuler la facture {reference} ?",
+      "voidProvisional": "La référence ne sera plus valable et l’accès provisoire du commerce prendra fin.",
+      "voidConsequence": "La référence ne sera plus valable.",
+      "validate": {
+        "button": "Valider",
+        "title": "Paiement reçu : {reference}",
+        "description": "{tenant} · montant dû {amount}",
+        "method": "Moyen de paiement",
+        "methods": {
+          "BANK_TRANSFER": "Virement",
+          "CASH": "Espèces",
+          "MOBILE_MONEY": "Mobile money"
+        },
+        "amount": "Montant reçu ({currency})",
+        "paidAt": "Date de réception",
+        "shortfall": "Accepter un montant inférieur au dû (frais bancaires, arrondi)",
+        "bankReference": "Référence bancaire",
+        "bankReferenceHint": "Libellé ou numéro de l’opération sur le relevé.",
+        "proofUrl": "Lien du justificatif",
+        "note": "Note interne",
+        "cancel": "Annuler",
+        "confirm": "Valider le paiement",
+        "done": "Paiement validé : l’abonnement est actif."
+      },
+      "statements": {
+        "title": "Relevés des partenaires",
+        "help": "Chaque mois, les encaissements des partenaires sont compensés avec leurs commissions et frais. Solde positif : le partenaire le verse sous 15 jours avec la référence du relevé ; solde négatif : un versement lui est créé.",
+        "issue": "Émettre les relevés en attente",
+        "issued": "{count, plural, =0 {Aucun relevé à émettre} one {# relevé émis} other {# relevés émis}}",
+        "empty": "Aucun relevé.",
+        "detail": "{period} · encaissé {collected} · commissions et frais {deducted}",
+        "owes": "Reste dû par le partenaire : {amount} (avant le {due})",
+        "credit": "En faveur du partenaire : {amount} (versement créé)",
+        "status": {
+          "ISSUED": "À régler",
+          "PAID": "Réglé",
+          "SETTLED": "Soldé"
+        },
+        "overdue": "Impayé : encaissements bloqués",
+        "amount": "Montant reçu ({currency})",
+        "markPaid": "Paiement reçu",
+        "paid": "Paiement du relevé enregistré."
+      },
+      "accounts": {
+        "title": "Coordonnées bancaires par pays",
+        "help": "Affichées au commerçant et dans l’email d’instructions selon son pays ; « * » = coordonnées par défaut. Algérie : compte local.",
+        "empty": "Aucune coordonnée : le règlement hors ligne n’est proposé dans aucun pays.",
+        "default": "Par défaut",
+        "inactive": "Inactif",
+        "edit": "Modifier",
+        "delete": "Supprimer",
+        "deleteTitle": "Supprimer ces coordonnées ?",
+        "deleteConsequence": "Ces coordonnées ne seront plus affichées aux commerçants.",
+        "country": "Pays (MA, DZ, CD… ou *)",
+        "currency": "Monnaie",
+        "beneficiary": "Bénéficiaire",
+        "bankName": "Banque",
+        "accountNumber": "RIB / numéro de compte",
+        "instructions": "Autres moyens",
+        "instructionsHint": "Espèces au bureau, numéro mobile money… Affiché tel quel.",
+        "active": "Actif",
+        "add": "Ajouter",
+        "update": "Enregistrer",
+        "cancel": "Annuler",
+        "saved": "Coordonnées enregistrées."
+      }
+    },
+    "rates": {
+      "title": "Taux comptables",
+      "description": "Unités de chaque monnaie pour 1 €. Servent à consolider la Finance en euros et à convertir les commissions des partenaires ; jamais au prix payé par un commerçant.",
+      "help": "Revoyez-les régulièrement (par exemple chaque trimestre). Un changement s’applique aux calculs suivants ; les commissions déjà converties gardent leur taux.",
+      "label": "1 € = … {currency}",
+      "updated": "Modifié le {date} par {by}",
+      "system": "l’initialisation",
+      "default": "Valeur initiale, jamais modifiée",
+      "invalid": "Chaque taux doit être un nombre positif.",
+      "saved": "Taux enregistrés.",
+      "save": "Enregistrer les taux"
+    },
     "treasury": {
+      "suggestion": "Proposé : {reference} ({name})",
+      "mismatch": "Montant attendu : {expected}",
+      "confirmMatch": "Confirmer",
+      "confirmTitle": "Rapprocher avec {reference} ?",
+      "confirmBody": "Le paiement de {amount} sera enregistré et la ligne rapprochée.",
+      "confirmMismatch": "Montant reçu {amount} au lieu de {expected} : il sera enregistré tel quel et la ligne rapprochée.",
+      "matched": "Paiement enregistré, ligne rapprochée.",
+      "import": {
+        "title": "Relevé bancaire",
+        "help": "Importez l’export CSV de la banque (date, libellé, montant ou crédit / débit) ou saisissez une ligne : les références FV-… du libellé sont reconnues et la pièce correspondante est proposée.",
+        "currency": "Monnaie",
+        "currencyHint": "Si le fichier n’a pas de colonne devise.",
+        "file": "Importer un CSV",
+        "importing": "Import…",
+        "rematch": "Rechercher à nouveau les références",
+        "date": "Date",
+        "label": "Libellé",
+        "amount": "Montant ({currency})",
+        "add": "Ajouter la ligne",
+        "invalid": "Libellé et montant non nul requis.",
+        "done": "{imported} ligne(s) importée(s), {matched} référence(s) reconnue(s), {duplicates} doublon(s), {skipped} ignorée(s)."
+      },
       "title": "Trésorerie et rapprochement bancaire",
       "description": "Trésorerie nette disponible, soldes Stripe et contrôle des écritures.",
       "cash": "Trésorerie nette disponible",
@@ -407,6 +540,7 @@
       "error": "Impossible de charger la trésorerie.",
       "retry": "Réessayer",
       "reconciledTypes": {
+        "PARTNER_STATEMENT": "Relevé partenaire",
         "PAYMENT": "paiement",
         "EXPENSE": "dépense",
         "PARTNER_PAYOUT": "commission"
@@ -424,9 +558,11 @@
         "subscriptions": "Abonnements",
         "customers": "Clients",
         "invoices": "Factures",
+        "offline": "Règlements hors ligne",
         "commissions": "Partenaires",
         "expenses": "Dépenses",
         "treasury": "Trésorerie",
+        "rates": "Taux comptables",
         "reports": "Rapports associés",
         "audit": "Audit"
       }
@@ -630,6 +766,14 @@
       "title": "Journal d'audit",
       "empty": "Aucune action enregistrée."
     },
+    "billingCurrency": {
+      "label": "Monnaie de facturation",
+      "hint": "Prix affichés au commerçant, contrats et règlements hors ligne. Paiement en ligne : en euros ou en dollars.",
+      "pending": "Abonnement en cours en {current} ; passage en {next} au renouvellement.",
+      "country": "Selon le pays",
+      "countryWith": "Selon le pays ({currency})",
+      "saved": "Monnaie de facturation enregistrée."
+    },
     "form": {
       "unlimited": "illimité",
       "saved": "Abonnement mis à jour",
@@ -643,7 +787,8 @@
       },
       "end": "Fin du contrat",
       "endHint": "Vide = sans échéance. À cette date, l'entreprise repasse sur l'offre Gratuite.",
-      "price": "Prix annuel du contrat (USD)",
+      "price": "Prix annuel du contrat",
+      "currency": "Monnaie",
       "priceHint": "Facturé hors Stripe, compté dans le revenu.",
       "quotas": "Quotas négociés (vide = ceux de l'offre, « {unlimited} » accepté)",
       "quota": {
@@ -812,6 +957,10 @@
       "defaultReason": "Candidature non retenue"
     },
     "rate": {
+      "collection": "Encaissement hors ligne",
+      "collectionEnabled": "Peut encaisser les abonnements",
+      "collectionCap": "Plafond d’encours (€)",
+      "collectionCapHint": "Montant maximal encaissé et pas encore reversé à FOVE. 300 € par défaut.",
       "title": "Taux de commission de {name}",
       "description": "Pourcentage reversé sur chaque paiement attribué à ce partenaire.",
       "label": "Taux (%)",
@@ -847,6 +996,8 @@
       "partners": "Programme Partenaires",
       "expenses": "Dépenses & Charges",
       "treasury": "Trésorerie & Banque",
+      "offline": "Règlements hors ligne",
+      "rates": "Taux comptables",
       "reports": "Rapports associés",
       "audit": "Journal d'audit",
       "tenants": "Entreprises",
@@ -882,8 +1033,11 @@
     "name": "Nom",
     "descriptionLabel": "Description",
     "yearlyPrice": "Prix annuel ({currency})",
-    "yearlyPriceHint": "Pour les nouvelles souscriptions.",
-    "stripePriceId": "Identifiant du prix Stripe",
+    "yearlyPrices": "Prix annuels par monnaie",
+    "yearlyPriceHint": "Pour les nouvelles souscriptions et les renouvellements. Vide = offre non proposée dans cette monnaie.",
+    "stripePriceId": "Tarif Stripe ({currency})",
+    "offlineOnly": "Réglé hors ligne : pas de tarif Stripe.",
+    "invalidPrice": "Prix invalide en {currency}.",
     "trialDays": "Jours d’essai",
     "trialDaysHint": "Durée par défaut d’un essai accordé depuis la fiche entreprise.",
     "quotas": "Quotas (vide = illimité)",

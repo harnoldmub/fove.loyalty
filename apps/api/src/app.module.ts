@@ -11,6 +11,12 @@ import { AuthService } from "./auth/auth.service";
 import { AuthController } from "./auth/auth.controller";
 import { ApiKeyGuard, FinanceAccessGuard, PartnerGuard, PublishableKeyGuard, SessionGuard, SuperAdminGuard, TenantGuard } from "./auth/guards";
 import { PlanService } from "./billing/plan.service";
+import { PricingService } from "./billing/pricing.service";
+import { OfflineBillingService } from "./billing/offline.service";
+import { ReconciliationService } from "./admin/finance/reconciliation.service";
+import { CollectionService } from "./partners/collection.service";
+import { StatementService } from "./partners/statement.service";
+import { CollectionController } from "./partners/collection.controller";
 import { QuotaAlertService } from "./billing/quota-alert.service";
 import { BillingService } from "./billing/billing.service";
 import { BillingController } from "./billing/billing.controller";
@@ -36,6 +42,7 @@ import { AdminService } from "./admin/admin.service";
 import { AdminController } from "./admin/admin.controller";
 import { FinanceService } from "./admin/finance/finance.service";
 import { FinanceController } from "./admin/finance/finance.controller";
+import { OfflineFinanceController } from "./admin/finance/offline.controller";
 import { PartnersService } from "./partners/partners.service";
 import { PartnersController } from "./partners/partners.controller";
 import { JobsController } from "./jobs/jobs.controller";
@@ -78,6 +85,8 @@ import { ClientJoinController } from "./client-account/client-join.controller";
     WidgetController,
     AdminController,
     FinanceController,
+    OfflineFinanceController,
+    CollectionController,
     PartnersController,
     JobsController,
     MediaController,
@@ -108,6 +117,11 @@ import { ClientJoinController } from "./client-account/client-join.controller";
     ApiKeyGuard,
     PublishableKeyGuard,
     PlanService,
+    PricingService,
+    OfflineBillingService,
+    ReconciliationService,
+    CollectionService,
+    StatementService,
     QuotaAlertService,
     BillingService,
     TenantsService,

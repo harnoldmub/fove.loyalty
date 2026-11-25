@@ -2,8 +2,10 @@ import { Injectable, Logger } from "@nestjs/common";
 import type { Prisma } from "@fove/database";
 import { PrismaService } from "../common/prisma.service";
 import { AuditService } from "../common/audit.service";
+import { PricingService } from "../billing/pricing.service";
 import { EmailService } from "../notifications/email.service";
 import { loadConfig } from "../config";
+import { convertCents } from "@fove/shared";
 import { badRequest, forbidden, notFound } from "../common/errors";
 import { sha256 } from "../common/crypto";
 import type { AuthState } from "../common/context";
@@ -28,7 +30,31 @@ export class PartnersService {
     private readonly prisma: PrismaService,
     private readonly audit: AuditService,
     private readonly email: EmailService,
+    private readonly pricing: PricingService,
   ) {}
+
+  /**
+   * Commissions arrivées au bout du délai de validation : disponibles, et converties dans la
+   * monnaie de versement du partenaire au taux comptable du jour (taux figé sur la commission).
+   */
+  async releaseDueCommissions(partnerId?: string, now = new Date()): Promise<number> {
+    const due = await this.prisma.client.partnerCommission.findMany({
+      where: { status: "PENDING", availableAt: { lte: now }, ...(partnerId ? { partnerId } : {}) },
+      include: { partner: { select: { payoutCurrency: true } } },
+    });
+    for (const c of due) await this.convertForPayout(c, c.partner.payoutCurrency, { status: "AVAILABLE" });
+    return due.length;
+  }
+
+  private async convertForPayout(c: { id: string; commissionAmountCents: number; currency: string }, payoutCurrency: string, extra: Prisma.PartnerCommissionUpdateInput = {}) {
+    const converted = await this.pricing.convert(c.commissionAmountCents, c.currency, payoutCurrency);
+    // Sans taux pour cette monnaie, la commission reste dans sa monnaie (l'équipe FOVE complète la table des taux).
+    const data = converted
+      ? { payoutCurrency, payoutAmountCents: converted.cents, fxRate: converted.rate }
+      : { payoutCurrency: c.currency, payoutAmountCents: c.commissionAmountCents, fxRate: 1 };
+    await this.prisma.client.partnerCommission.update({ where: { id: c.id }, data: { ...data, ...extra } });
+    return data;
+  }
 
   /**
    * Récupère ou initialise les réglages du programme partenaire.
@@ -453,6 +479,7 @@ export class PartnersService {
    */
   async getDashboard(userId: string) {
     const partner = await this.getPartnerByUserId(userId);
+    await this.releaseDueCommissions(partner.id);
 
     const [clicks, attributions, commissions, payouts, leads] = await Promise.all([
       this.prisma.client.partnerClick.findMany({
@@ -491,17 +518,13 @@ export class PartnersService {
       }),
     ]);
 
-    // Validation automatique des commissions arrivées à échéance
-    const now = new Date();
-    for (const c of commissions) {
-      if (c.status === "PENDING" && c.availableAt && c.availableAt <= now) {
-        await this.prisma.client.partnerCommission.update({
-          where: { id: c.id },
-          data: { status: "AVAILABLE" },
-        });
-        c.status = "AVAILABLE";
-      }
-    }
+    // Montants dans la monnaie de versement : taux figé pour les commissions disponibles ou versées,
+    // estimation au taux du jour pour celles en attente.
+    const rates = await this.pricing.rates();
+    const inPayout = (c: (typeof commissions)[number]) =>
+      c.payoutAmountCents !== null && c.payoutCurrency === partner.payoutCurrency
+        ? c.payoutAmountCents
+        : (convertCents(c.commissionAmountCents, c.currency, partner.payoutCurrency, rates) ?? 0);
 
     // Calculs agrégés
     const totalClicks = partner.totalClicksCount || clicks.length;
@@ -511,15 +534,15 @@ export class PartnersService {
 
     const pendingCommissionsCents = commissions
       .filter((c) => c.status === "PENDING")
-      .reduce((s, c) => s + c.commissionAmountCents, 0);
+      .reduce((s, c) => s + inPayout(c), 0);
 
     const availableCommissionsCents = commissions
       .filter((c) => c.status === "AVAILABLE")
-      .reduce((s, c) => s + c.commissionAmountCents, 0);
+      .reduce((s, c) => s + inPayout(c), 0);
 
     const paidCommissionsCents = commissions
       .filter((c) => c.status === "PAID")
-      .reduce((s, c) => s + c.commissionAmountCents, 0);
+      .reduce((s, c) => s + inPayout(c), 0);
 
     const totalEarnedCents = pendingCommissionsCents + availableCommissionsCents + paidCommissionsCents;
 
@@ -539,6 +562,7 @@ export class PartnersService {
         status: partner.status,
         payoutInfo: partner.payoutInfo,
         minimumPayoutThresholdCents: partner.minimumPayoutThresholdCents,
+        payoutCurrency: partner.payoutCurrency,
         partnerLink,
       },
       kpi: {
@@ -550,6 +574,7 @@ export class PartnersService {
         availableCommissionsCents,
         paidCommissionsCents,
         totalEarnedCents,
+        currency: partner.payoutCurrency,
         canRequestPayout: availableCommissionsCents >= partner.minimumPayoutThresholdCents,
       },
       attributions: attributions.map((a) => ({
@@ -569,6 +594,8 @@ export class PartnersService {
         commissionAmountCents: c.commissionAmountCents,
         ratePercent: Number(c.commissionRatePercent),
         currency: c.currency,
+        payoutAmountCents: inPayout(c),
+        payoutCurrency: partner.payoutCurrency,
         status: c.status,
         availableAt: c.availableAt,
         createdAt: c.createdAt,
@@ -638,8 +665,10 @@ export class PartnersService {
    */
   async requestPayout(userId: string, dto: PartnerPayoutRequestDto) {
     const partner = await this.getPartnerByUserId(userId);
+    await this.releaseDueCommissions(partner.id);
+    const currency = partner.payoutCurrency;
 
-    // Vérification du solde disponible réel
+    // Vérification du solde disponible réel, dans la monnaie de versement.
     const availableCommissions = await this.prisma.client.partnerCommission.findMany({
       where: {
         partnerId: partner.id,
@@ -647,12 +676,12 @@ export class PartnersService {
       },
     });
 
-    const totalAvailableCents = availableCommissions.reduce((s, c) => s + c.commissionAmountCents, 0);
+    const totalAvailableCents = availableCommissions.reduce((s, c) => s + (c.payoutCurrency === currency ? (c.payoutAmountCents ?? 0) : 0), 0);
 
     if (totalAvailableCents < partner.minimumPayoutThresholdCents) {
       throw badRequest(
         "threshold_not_reached",
-        `Le montant minimum de retrait est de ${(partner.minimumPayoutThresholdCents / 100).toFixed(2)} USD. Solde disponible : ${(totalAvailableCents / 100).toFixed(2)} USD.`
+        `Le montant minimum de retrait est de ${(partner.minimumPayoutThresholdCents / 100).toFixed(2)} ${currency}. Solde disponible : ${(totalAvailableCents / 100).toFixed(2)} ${currency}.`
       );
     }
 
@@ -671,7 +700,7 @@ export class PartnersService {
       data: {
         partnerId: partner.id,
         amountCents: dto.amountCents,
-        currency: "USD",
+        currency,
         method: dto.method,
         status: "PENDING",
       },
@@ -682,8 +711,8 @@ export class PartnersService {
     try {
       await this.email.send({
         to: adminEmail,
-        subject: `[Demande de retrait partenaire] ${partner.name} (${(dto.amountCents / 100).toFixed(2)} USD)`,
-        text: `Le partenaire ${partner.name} (${partner.code}) a demandé un versement de ${(dto.amountCents / 100).toFixed(2)} USD.\n\nMéthode : ${dto.method}\nCoordonnées : ${JSON.stringify(dto.payoutDetails, null, 2)}\n\nValidez ou traitez le paiement dans le back-office :\n${loadConfig().APP_URL}/admin/finance/commissions`,
+        subject: `[Demande de retrait partenaire] ${partner.name} (${(dto.amountCents / 100).toFixed(2)} ${currency})`,
+        text: `Le partenaire ${partner.name} (${partner.code}) a demandé un versement de ${(dto.amountCents / 100).toFixed(2)} ${currency}.\n\nMéthode : ${dto.method}\nCoordonnées : ${JSON.stringify(dto.payoutDetails, null, 2)}\n\nValidez ou traitez le paiement dans le back-office :\n${loadConfig().APP_URL}/admin/finance/commissions`,
       });
     } catch (e) {
       this.logger.error("Erreur notification admin retrait partenaire", e);
@@ -697,14 +726,26 @@ export class PartnersService {
    */
   async updateProfile(userId: string, dto: PartnerProfileUpdateDto) {
     const partner = await this.getPartnerByUserId(userId);
-    return this.prisma.client.partner.update({
+    const updated = await this.prisma.client.partner.update({
       where: { id: partner.id },
       data: {
         phone: dto.phone ?? partner.phone,
         company: dto.company ?? partner.company,
         payoutInfo: dto.payoutInfo ?? (partner.payoutInfo as any),
+        payoutCurrency: dto.payoutCurrency ?? partner.payoutCurrency,
       },
     });
+    if (dto.payoutCurrency && dto.payoutCurrency !== partner.payoutCurrency) await this.reconvertAvailable(partner.id, dto.payoutCurrency);
+    return updated;
+  }
+
+  /**
+   * Changement de monnaie de versement : les commissions disponibles non versées sont reconverties
+   * au taux du jour ; une demande de versement en attente garde sa monnaie.
+   */
+  private async reconvertAvailable(partnerId: string, payoutCurrency: string) {
+    const available = await this.prisma.client.partnerCommission.findMany({ where: { partnerId, status: "AVAILABLE", payoutId: null } });
+    for (const c of available) await this.convertForPayout(c, payoutCurrency);
   }
 
   // --- ACTIONS ADMINISTRATEUR ------------------------------------------------
@@ -849,8 +890,12 @@ export class PartnersService {
         commissionRatePercent: dto.commissionRatePercent !== undefined ? dto.commissionRatePercent : undefined,
         minimumPayoutThresholdCents: dto.minimumPayoutThresholdCents !== undefined ? dto.minimumPayoutThresholdCents : undefined,
         rejectionReason: dto.rejectionReason !== undefined ? dto.rejectionReason : undefined,
+        payoutCurrency: dto.payoutCurrency,
+        collectionEnabled: dto.collectionEnabled,
+        collectionCapEurCents: dto.collectionCapEurCents,
       },
     });
+    if (dto.payoutCurrency) await this.reconvertAvailable(partner.id, dto.payoutCurrency);
 
     await this.audit.log({
       actorUserId: auth.user.id,
@@ -892,7 +937,7 @@ export class PartnersService {
             payoutId: payout.id,
           },
         });
-        remaining -= c.commissionAmountCents;
+        remaining -= c.payoutCurrency === payout.currency ? (c.payoutAmountCents ?? 0) : c.commissionAmountCents;
       }
 
       await this.prisma.client.partnerPayout.update({
@@ -912,7 +957,7 @@ export class PartnersService {
           to: payout.partner.email,
           ...(await (async () => {
             const t = partnerEmails(await this.partnerLocale(payout.partner));
-            const amount = `${(payout.amountCents / 100).toFixed(2)} USD`;
+            const amount = `${(payout.amountCents / 100).toFixed(2)} ${payout.currency}`;
             return { subject: t.payoutSubject(amount), text: t.payout(payout.partner.name, amount, dto.reference ?? t.bankTransfer) };
           })()),
         });

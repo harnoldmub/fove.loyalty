@@ -7,20 +7,27 @@ import { CurrencyToggle } from "./currency-toggle";
 import { useLocale, useTranslations } from "next-intl";
 import { useMarketingCurrency } from "@/lib/marketing-currency";
 import { formatNumber, formatPrice } from "@/lib/utils";
+import type { Plan } from "./pricing-table";
 
+/** Offres présentées ; noms et prix (par monnaie) viennent de l'API, jamais du code. */
 const PLANS = [
-  { plan: "Essentiel", key: "starter", priceCents: 9900, featured: false, features: ["annual", "net", "tracking"] },
-  { plan: "Business", key: "business", priceCents: 19900, featured: true, features: ["annual", "net", "fastPayout"] },
-  { plan: "Réseau", key: "premium", priceCents: 39900, featured: false, features: ["annual", "net", "support"] },
+  { key: "starter", featured: false, features: ["annual", "net", "tracking"] },
+  { key: "business", featured: true, features: ["annual", "net", "fastPayout"] },
+  { key: "premium", featured: false, features: ["annual", "net", "support"] },
 ] as const;
 
 const COMMISSION_RATE = 20;
 
-export function PartnerCommissions() {
+export function PartnerCommissions({ plans }: { plans: Plan[] }) {
   const { currency } = useMarketingCurrency();
   const t = useTranslations("partner.commissions");
   const locale = useLocale();
-  const money = currency === "EUR" ? "EUR" : "USD";
+  // Commission calculée dans la monnaie payée par le commerçant.
+  const offers = PLANS.flatMap((c) => {
+    const plan = plans.find((p) => p.code === c.key);
+    const priceCents = plan?.prices[currency];
+    return plan && priceCents !== undefined ? [{ ...c, plan: plan.name, priceCents }] : [];
+  });
   const rate = `${formatNumber(COMMISSION_RATE, locale)}%`;
 
   return (
@@ -43,7 +50,7 @@ export function PartnerCommissions() {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
-        {PLANS.map((c) => (
+        {offers.map((c) => (
           <div
             key={c.plan}
             className={`rounded-2xl border p-6 shadow-sm flex flex-col justify-between  ${
@@ -63,10 +70,10 @@ export function PartnerCommissions() {
 
               <div className="mb-6 rounded-xl bg-surface-2 p-4">
                 <div className="text-xs text-ink-3">
-                  {t("clientPrice", { price: t("perYear", { price: formatPrice(c.priceCents, money, locale) }) })}
+                  {t("clientPrice", { price: t("perYear", { price: formatPrice(c.priceCents, currency, locale) }) })}
                 </div>
                 <div className="mt-2 flex items-baseline gap-2">
-                  <span className="font-display text-3xl font-extrabold text-ink tabular">{formatPrice((c.priceCents * COMMISSION_RATE) / 100, money, locale)}</span>
+                  <span className="font-display text-3xl font-extrabold text-ink tabular">{formatPrice(Math.round((c.priceCents * COMMISSION_RATE) / 100), currency, locale)}</span>
                   <span className="text-xs font-semibold text-mint-ink">
                     {t("rate", { rate })}
                   </span>

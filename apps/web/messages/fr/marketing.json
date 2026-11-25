@@ -220,7 +220,8 @@
   },
   "currencyToggle": {
     "label": "Devise :",
-    "groupLabel": "Sélectionner la devise des tarifs"
+    "groupLabel": "Sélectionner la devise des tarifs",
+    "names": { "EUR": "Euro", "USD": "Dollar US", "MAD": "Dirham marocain", "DZD": "Dinar algérien", "CDF": "Franc congolais" }
   },
   "pricing": {
     "unavailable": "Les tarifs sont momentanément indisponibles. Réessayez dans un instant.",
@@ -254,6 +255,8 @@
     "noteCustom": "Contrat adapté à votre réseau",
     "noteEur": "Payé à l’avance, en euros (€)",
     "noteUsd": "Payé à l’avance, en dollars US ($)",
+    "noteLocal": "Payé à l’avance, en espèces, par virement ou mobile money, ou en ligne ({price})",
+    "noteLocalOnly": "Payé à l’avance, en espèces, par virement ou mobile money",
     "recommended": "Recommandé",
     "notIncludedSuffix": " : non inclus",
     "caption": "Comparatif des offres FOVE : capacité et fonctions incluses",
@@ -275,7 +278,7 @@
       { "q": "Et si je résilie ?", "a": "Votre offre reste active jusqu’à la fin de la période payée, et vous pouvez revenir sur votre décision jusque-là. Ensuite, votre compte passe sur l’offre Gratuite : rien n’est supprimé." },
       { "q": "Mon besoin dépasse l’offre Réseau ?", "a": "L’offre Sur-mesure s’adapte à vos volumes : nombre de clients, d’établissements et de collaborateurs, accompagnement et contrat sur devis. Contactez-nous." },
       { "q": "Mes clients paient-ils quelque chose ?", "a": "Non. La carte est gratuite pour eux et s’ouvre dans le navigateur du téléphone." },
-      { "q": "Comment payer ?", "a": "En dollars US ($) ou en euros (€) selon votre région, réglé une fois par an à l’avance. Les factures sont disponibles dans votre espace." }
+      { "q": "Comment payer ?", "a": "Une fois par an, à l’avance. En ligne par carte, en euros (€) ou en dollars US ($). Au Maroc, en Algérie et en RDC, vous pouvez aussi régler dans votre monnaie par virement, en espèces ou par mobile money, directement à FOVE ou à un partenaire FOVE. Les factures sont disponibles dans votre espace." }
     ]
   },
   "features": {

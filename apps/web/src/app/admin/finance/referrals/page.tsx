@@ -23,6 +23,7 @@ interface ReferralItem {
   creditAmountCents: number;
   creditUsedCents: number;
   creditRemainingCents: number;
+  currency: string;
   pendingUntil: string | null;
   earnedAt: string | null;
   expiresAt: string | null;
@@ -31,6 +32,8 @@ interface ReferralItem {
 }
 
 interface ReferralsData {
+  /** Monnaie des totaux (conversion au taux comptable). */
+  currency: string;
   items: ReferralItem[];
   totalCreditCents: number;
   usedCents: number;
@@ -63,8 +66,8 @@ export default function ReferralsFinancePage() {
       <FinanceNav />
 
       <div className="mb-6 grid gap-4 sm:grid-cols-3">
-        <Kpi label={t("credits")} help={t("creditsHelp")} icon={<Gift className="size-4 text-cobalt" />} value={formatFinance(data?.totalCreditCents ?? 0, "USD")} />
-        <Kpi label={t("remaining")} help={t("used", { amount: formatFinance(data?.usedCents ?? 0, "USD") })} icon={<Wallet className="size-4 text-mint" />} value={formatFinance(data?.remainingCents ?? 0, "USD")} />
+        <Kpi label={t("credits")} help={t("creditsHelp")} icon={<Gift className="size-4 text-cobalt" />} value={formatFinance(data?.totalCreditCents ?? 0, data?.currency)} />
+        <Kpi label={t("remaining")} help={t("used", { amount: formatFinance(data?.usedCents ?? 0, data?.currency) })} icon={<Wallet className="size-4 text-mint" />} value={formatFinance(data?.remainingCents ?? 0, data?.currency)} />
         <Kpi label={t("count")} help={t("countHelp")} icon={<Users className="size-4 text-mint" />} value={String(referrals.length)} />
       </div>
 
@@ -96,8 +99,8 @@ export default function ReferralsFinancePage() {
                     <Badge tone={TONE[r.status]}>{t(`status.${r.status}`, { date: r.pendingUntil ? formatDate(r.pendingUntil) : "" })}</Badge>
                     {r.cancelReason && <p className="mt-1 text-xs text-ink-3">{r.cancelReason}</p>}
                   </td>
-                  <td className="px-4 py-3 text-end tabular-nums">{r.creditAmountCents > 0 ? formatFinance(r.creditAmountCents, "USD") : "—"}</td>
-                  <td className="px-4 py-3 text-end tabular-nums">{r.creditUsedCents > 0 ? formatFinance(r.creditUsedCents, "USD") : "—"}</td>
+                  <td className="px-4 py-3 text-end tabular-nums">{r.creditAmountCents > 0 ? formatFinance(r.creditAmountCents, r.currency) : "—"}</td>
+                  <td className="px-4 py-3 text-end tabular-nums">{r.creditUsedCents > 0 ? formatFinance(r.creditUsedCents, r.currency) : "—"}</td>
                   <td className="px-4 py-3 text-end">
                     {(r.status === "SIGNED_UP" || r.status === "PENDING" || r.status === "EARNED") && (
                       <CancelReferral id={r.id} onDone={() => qc.invalidateQueries({ queryKey: ["admin-finance-referrals"] })} />

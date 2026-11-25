@@ -13,6 +13,7 @@ import { Checkbox, Field, Input } from "@/components/ui/field";
 import { ErrorNote, SuccessNote } from "@/components/ui/misc";
 import { PrivacyDialog, TermsDialog } from "@/components/privacy-dialog";
 import { GoogleIcon } from "@/components/google-icon";
+import { BUSINESS_PREFILL_KEY } from "@/lib/signup-prefill";
 import { api, ApiError, errorMessage } from "@/lib/api";
 import { useIsNativeApp } from "@/lib/native-app";
 import { afterAuthPath, clearPlanChoice, rememberPlanChoice, withPlanChoice } from "@/lib/plan-choice";
@@ -164,18 +165,6 @@ export function SignupForm() {
   const [error, setError] = useState<string | null>(null);
   const [leaving, setLeaving] = useState(false);
 
-  // Mémorisation du commerçant parrain (ref) s'il est présent dans l'URL
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const params = new URLSearchParams(window.location.search);
-    const ref = params.get("ref");
-    if (ref) {
-      const maxAge = 30 * 24 * 3600;
-      document.cookie = `fove_ref=${encodeURIComponent(ref.trim().toLowerCase())}; path=/; max-age=${maxAge}; SameSite=Lax`;
-      // Date du clic : face à un lien partenaire, le premier lien cliqué l'emporte.
-      document.cookie = `fove_ref_at=${Date.now()}; path=/; max-age=${maxAge}; SameSite=Lax`;
-    }
-  }, []);
 
   const t = useTranslations("auth");
   const signupForm = useMemo(
@@ -183,6 +172,32 @@ export function SignupForm() {
     [t],
   );
   const form = useForm<z.infer<typeof signupForm>>({ resolver: zodResolver(signupForm), defaultValues: { acceptTerms: false } });
+
+  // Mémorisation du commerçant parrain (ref) s'il est présent dans l'URL
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    // Lien d'inscription envoyé par un partenaire FOVE : nom, email et nom du commerce pré-remplis.
+    const name = params.get("name");
+    const email = params.get("email");
+    if (name) form.setValue("name", name.slice(0, 80));
+    if (email) form.setValue("email", email.slice(0, 120));
+    const business = params.get("business");
+    if (business) {
+      try {
+        localStorage.setItem(BUSINESS_PREFILL_KEY, business.slice(0, 80));
+      } catch {
+        // Stockage indisponible : le commerçant saisira le nom de son commerce.
+      }
+    }
+    const ref = params.get("ref");
+    if (ref) {
+      const maxAge = 30 * 24 * 3600;
+      document.cookie = `fove_ref=${encodeURIComponent(ref.trim().toLowerCase())}; path=/; max-age=${maxAge}; SameSite=Lax`;
+      // Date du clic : face à un lien partenaire, le premier lien cliqué l'emporte.
+      document.cookie = `fove_ref_at=${Date.now()}; path=/; max-age=${maxAge}; SameSite=Lax`;
+    }
+  }, [form]);
   const onSubmit = form.handleSubmit(async (values) => {
     setError(null);
     try {

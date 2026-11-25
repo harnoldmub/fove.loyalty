@@ -7,7 +7,7 @@ import { Suspense, useEffect, useRef, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import type { ReferralSummary } from "@/lib/referral";
 import { toast } from "sonner";
-import { PAST_DUE_GRACE_DAYS } from "@fove/shared";
+import { BILLING_CURRENCIES, PAST_DUE_GRACE_DAYS, type BillingCurrency } from "@fove/shared";
 import { useCan } from "@/components/app/me-context";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/dialog";
@@ -22,9 +22,8 @@ interface Plan {
   kind: "FREE" | "PAID" | "CUSTOM";
   name: string;
   description: string;
-  currency: string;
-  priceMonthlyCents: number;
-  priceYearlyCents: number;
+  /** Prix annuel par monnaie. */
+  prices: Partial<Record<BillingCurrency, number>>;
   limits: Record<string, number | null>;
 }
 interface Billing {
@@ -36,7 +35,7 @@ interface Billing {
     currentPeriodEnd: string | null;
     cancelAtPeriodEnd: boolean;
     pastDueSince: string | null;
-    provider: "STRIPE" | "MOCK" | "MANUAL";
+    provider: "STRIPE" | "MOCK" | "MANUAL" | "OFFLINE";
     plan: Plan;
     /** Offre inférieure choisie, appliquée au renouvellement. */
     scheduledPlan: { code: string; name: string } | null;
@@ -46,6 +45,20 @@ interface Billing {
   plans: Plan[];
   usage: Record<string, number>;
   limits: Record<string, number | null>;
+  currency: {
+    /** Monnaie choisie (ou celle du pays) : prix affichés et règlement hors ligne. */
+    billing: BillingCurrency;
+    /** Monnaie d'un paiement en ligne (USD ou EUR). */
+    online: "USD" | "EUR";
+    /** Monnaie de l'abonnement en cours, fixe jusqu'au renouvellement. */
+    subscription: string | null;
+  };
+  /** Règlement hors ligne (virement, espèces, mobile money) : coordonnées du pays et facture en attente. */
+  offline: {
+    available: boolean;
+    accounts: { id: string; beneficiary: string; bankName: string | null; iban: string | null; accountNumber: string | null; swift: string | null; instructions: string | null; currency: string }[];
+    invoice: { id: string; reference: string; amountCents: number; currency: string; planCode: string; kind: "new" | "renewal"; provisionalUntil: string | null; createdAt: string } | null;
+  };
 }
 
 const STATUS_TONE: Record<string, "mint" | "stamp" | "danger" | "neutral"> = {
@@ -136,16 +149,51 @@ function BillingView() {
   const subApplies = sub !== null && sub.plan.code === current.code;
   const status = subApplies && sub && STATUS_TONE[sub.status] ? { tone: STATUS_TONE[sub.status]!, label: t(`status.${sub.status}`) } : null;
   const managedByFove = sub !== null && (sub.plan.kind === "CUSTOM" || sub.provider === "MANUAL") && subApplies && current.kind !== "FREE";
+  // Abonnement réglé hors ligne et payé : pas de renouvellement automatique, la période suivante se règle aussi hors ligne.
+  const offlinePaid = subApplies && sub?.provider === "OFFLINE" && sub.status !== "CANCELED" && !data.offline.invoice?.provisionalUntil;
+  const pendingOffline = data.offline.invoice;
   const stripeSubscriber = sub?.provider === "STRIPE" && subApplies && sub.status !== "CANCELED";
-  const canCancel = subApplies && sub !== null && sub.plan.kind === "PAID" && !managedByFove && ["ACTIVE", "PAST_DUE"].includes(sub.status) && !sub.cancelAtPeriodEnd;
+  const canCancel = subApplies && sub !== null && sub.plan.kind === "PAID" && !managedByFove && sub.provider !== "OFFLINE" && ["ACTIVE", "PAST_DUE"].includes(sub.status) && !sub.cancelAtPeriodEnd;
   const canResume = subApplies && sub !== null && sub.cancelAtPeriodEnd && sub.status !== "CANCELED";
   const graceEnd = sub?.status === "PAST_DUE" && sub.pastDueSince ? new Date(new Date(sub.pastDueSince).getTime() + PAST_DUE_GRACE_DAYS * 86_400_000) : null;
   // Abonnement payé en cours : choisir une autre offre la modifie (supérieure tout de suite, inférieure au renouvellement).
-  const paidRunning = subApplies && sub !== null && sub.plan.kind === "PAID" && !managedByFove && sub.status !== "CANCELED" && sub.status !== "INCOMPLETE";
+  const paidRunning = subApplies && sub !== null && sub.plan.kind === "PAID" && !managedByFove && sub.provider !== "OFFLINE" && sub.status !== "CANCELED" && sub.status !== "INCOMPLETE";
   const scheduled = paidRunning ? (sub?.scheduledPlan ?? null) : null;
   const renewal = sub?.currentPeriodEnd ? formatDate(sub.currentPeriodEnd) : t("periodEnd");
 
   const refresh = () => qc.invalidateQueries({ queryKey: ["billing"] });
+
+  // Prix dans la monnaie de l'abonnement en cours (fixe jusqu'au renouvellement), sinon dans celle du commerce.
+  const priceCurrency = (data.currency.subscription ?? data.currency.billing) as BillingCurrency;
+  const priceOf = (p: Plan, currency: BillingCurrency = priceCurrency) => p.prices[currency];
+  const money = (cents: number | undefined, currency: string = priceCurrency) => (cents === undefined ? "—" : formatPrice(cents, currency, locale));
+  const subPlanPrice = sub ? data.plans.find((p) => p.code === sub.plan.code)?.prices[priceCurrency] : undefined;
+  // Monnaie locale (MAD, DZD, CDF) sans abonnement en cours : le paiement en ligne se fait au prix en euros ou en dollars.
+  const localCurrency = !data.currency.subscription && data.currency.online !== data.currency.billing;
+
+  const payOffline = async (code: string) => {
+    setPending(`offline-${code}`);
+    try {
+      await api.post("/app/billing/offline", { planCode: code });
+      await refresh();
+      toast.success(t("offline.requested"));
+      document.getElementById("reglement")?.scrollIntoView({ behavior: "smooth" });
+    } catch (e) {
+      toast.error(toErrorMessage(e));
+    } finally {
+      setPending(null);
+    }
+  };
+
+  const changeCurrency = async (currency: BillingCurrency) => {
+    try {
+      const res = await api.post<{ effective: "now" | "renewal" }>("/app/billing/currency", { currency });
+      await refresh();
+      toast.success(res.effective === "renewal" ? t("currency.savedRenewal", { date: renewal }) : t("currency.saved"));
+    } catch (e) {
+      toast.error(toErrorMessage(e));
+    }
+  };
 
   /** Ce qui dépasse les quotas de l'offre visée : rien n'est supprimé, mais plus rien ne peut être ajouté. */
   const overQuota = (p: Plan) =>
@@ -192,6 +240,67 @@ function BillingView() {
         </p>
       )}
       {data.mode === "unavailable" && <p className="mb-6 rounded-md bg-surface-2 px-4 py-3 text-sm">{t("unavailable")}</p>}
+      {pendingOffline && (
+        <Panel id="reglement" className="mb-6 grid gap-3 border border-cobalt/30 p-5 sm:p-6">
+          <h2 className="font-display text-lg font-semibold">{t("offline.pendingTitle", { name: data.plans.find((p) => p.code === pendingOffline.planCode)?.name ?? pendingOffline.planCode })}</h2>
+          <p className="text-sm text-ink-2">
+            {pendingOffline.provisionalUntil
+              ? t("offline.provisional", { date: formatDate(pendingOffline.provisionalUntil) })
+              : pendingOffline.kind === "renewal"
+                ? t("offline.renewal")
+                : t("offline.afterPayment")}
+          </p>
+          <div className="flex flex-wrap items-center gap-3 rounded-md bg-surface-2 px-4 py-3">
+            <div>
+              <p className="text-xs text-ink-3">{t("offline.reference")}</p>
+              <p className="font-mono text-xl font-semibold tracking-wider" dir="ltr">{pendingOffline.reference}</p>
+            </div>
+            <div className="ms-auto text-end">
+              <p className="text-xs text-ink-3">{t("offline.amount")}</p>
+              <p className="font-display text-xl font-semibold tabular">{formatPrice(pendingOffline.amountCents, pendingOffline.currency, locale)}</p>
+            </div>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => {
+                void navigator.clipboard?.writeText(pendingOffline.reference);
+                toast.success(t("offline.copied"));
+              }}
+            >
+              {t("offline.copy")}
+            </Button>
+          </div>
+          <p className="text-sm font-medium text-ink">{t("offline.mandatory")}</p>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {data.offline.accounts.map((a) => (
+              <dl key={a.id} className="grid gap-1 rounded-md border border-line p-3 text-sm">
+                <div><dt className="inline text-ink-3">{t("offline.beneficiary")} : </dt><dd className="inline font-medium">{a.beneficiary}</dd></div>
+                {a.bankName && <div><dt className="inline text-ink-3">{t("offline.bank")} : </dt><dd className="inline">{a.bankName}</dd></div>}
+                {a.iban && <div><dt className="inline text-ink-3">IBAN : </dt><dd className="inline font-mono" dir="ltr">{a.iban}</dd></div>}
+                {a.accountNumber && <div><dt className="inline text-ink-3">{t("offline.account")} : </dt><dd className="inline font-mono" dir="ltr">{a.accountNumber}</dd></div>}
+                {a.swift && <div><dt className="inline text-ink-3">BIC/SWIFT : </dt><dd className="inline font-mono" dir="ltr">{a.swift}</dd></div>}
+                {a.instructions && <p className="mt-1 whitespace-pre-line text-ink-2">{a.instructions}</p>}
+              </dl>
+            ))}
+          </div>
+          <p className="text-sm text-ink-2">{t("offline.partner")}</p>
+          {canWrite && (
+            <div>
+              <ConfirmDialog
+                trigger={<Button variant="ghost" size="sm">{t("offline.cancel")}</Button>}
+                title={t("offline.cancelTitle")}
+                consequence={pendingOffline.provisionalUntil ? t("offline.cancelProvisional") : t("offline.cancelConsequence")}
+                confirmLabel={t("offline.cancel")}
+                destructive
+                onConfirm={async () => {
+                  await api.post("/app/billing/offline/cancel");
+                  await refresh();
+                }}
+              />
+            </div>
+          )}
+        </Panel>
+      )}
       <div className="grid gap-6 lg:grid-cols-[1fr_20rem]">
         <Panel className="p-5 sm:p-6">
           <div className="grid gap-2">
@@ -213,6 +322,7 @@ function BillingView() {
                       : t("summary.renewal", { date: formatDate(sub.currentPeriodEnd) })} `}
               {graceEnd && subApplies && t("summary.grace", { date: formatDate(graceEnd) })}
               {managedByFove && t("summary.managed")}
+              {offlinePaid && sub?.currentPeriodEnd && t("summary.offline", { date: formatDate(sub.currentPeriodEnd) })}
             </p>
             {canWrite && (
               <div className="mt-3 flex flex-wrap gap-2">
@@ -296,15 +406,41 @@ function BillingView() {
       {canWrite && !managedByFove && (
         <section className="mt-10" aria-labelledby="offres">
           <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
-            <h2 id="offres" className="font-display text-2xl font-semibold">{t("changePlan")}</h2>
-            <p className="text-sm text-ink-2">{t("annual")}</p>
+            <div>
+              <h2 id="offres" className="font-display text-2xl font-semibold">{t("changePlan")}</h2>
+              <p className="text-sm text-ink-2">{t("annual")}</p>
+            </div>
+            <label className="grid gap-1 text-sm">
+              <span className="text-ink-2">{t("currency.label")}</span>
+              <select
+                className="h-10 rounded-[var(--radius)] border border-line bg-surface px-3 text-sm"
+                value={data.currency.billing}
+                onChange={(e) => void changeCurrency(e.target.value as BillingCurrency)}
+              >
+                {BILLING_CURRENCIES.map((c) => (
+                  <option key={c} value={c}>
+                    {t(`currency.names.${c}`)}
+                  </option>
+                ))}
+              </select>
+            </label>
           </div>
+          {data.currency.subscription && data.currency.subscription !== data.currency.billing && (
+            <p className="mb-4 rounded-md bg-surface-2 px-4 py-3 text-sm text-ink-2">
+              {t("currency.pending", { current: t(`currency.names.${data.currency.subscription}`), next: t(`currency.names.${data.currency.billing}`), date: renewal })}
+            </p>
+          )}
+          {localCurrency && (
+            <p className="mb-4 rounded-md bg-surface-2 px-4 py-3 text-sm text-ink-2">
+              {t("currency.localNote", { currency: t(`currency.names.${data.currency.billing}`), online: t(`currency.names.${data.currency.online}`) })}
+            </p>
+          )}
           <div className="grid gap-4 md:grid-cols-3">
             {data.plans.filter((p) => p.kind === "PAID").map((p) => {
               const isCurrent = current.code === p.code && subApplies && sub?.status !== "CANCELED";
               const isScheduled = scheduled?.code === p.code;
               const disabled = isCurrent || isScheduled || data.mode === "unavailable";
-              const downgrade = paidRunning && sub !== null && p.priceYearlyCents < sub.plan.priceYearlyCents;
+              const downgrade = paidRunning && sub !== null && (priceOf(p) ?? 0) < (subPlanPrice ?? 0);
               const label = isCurrent ? t("plan.current") : isScheduled ? t("plan.scheduled", { date: renewal }) : downgrade ? t("plan.downgrade", { name: p.name }) : t("plan.upgrade", { name: p.name });
               const over = downgrade ? overQuota(p) : [];
               return (
@@ -312,16 +448,19 @@ function BillingView() {
                   <h3 className="font-display text-xl font-semibold">{p.name}</h3>
                   <p className="text-sm text-ink-2">{p.description}</p>
                   <p className="font-display text-3xl font-semibold tabular">
-                    {formatPrice(p.priceYearlyCents, p.currency)}
+                    {money(priceOf(p))}
                     <span className="text-base font-normal text-ink-3"> {t("plan.perYear")}</span>
                   </p>
+                  {localCurrency && p.prices[data.currency.online] !== undefined && (
+                    <p className="-mt-2 text-sm text-ink-3">{t("currency.online", { price: money(p.prices[data.currency.online], data.currency.online) })}</p>
+                  )}
                   {downgrade && !disabled ? (
                     // Offre inférieure : rien ne change avant le renouvellement, et rien n'est remboursé.
                     <ConfirmDialog
                       trigger={<Button variant="secondary" loading={pending === p.code}>{label}</Button>}
                       title={t("downgrade.title", { name: p.name })}
                       consequence={[
-                        t("downgrade.keep", { current: current.name, date: renewal, name: p.name, price: formatPrice(p.priceYearlyCents, p.currency) }),
+                        t("downgrade.keep", { current: current.name, date: renewal, name: p.name, price: money(priceOf(p)) }),
                         over.length ? ` ${t("downgrade.over", { name: p.name, items: over.join(", ") })}` : "",
                         ` ${t("downgrade.undo")}`,
                       ].join("")}
@@ -333,15 +472,19 @@ function BillingView() {
                     <ConfirmDialog
                       trigger={<Button loading={pending === p.code}>{label}</Button>}
                       title={t("upgrade.title", { name: p.name })}
-                      consequence={t("upgrade.consequence", { date: renewal, price: formatPrice(p.priceYearlyCents, p.currency) })}
+                      consequence={t("upgrade.consequence", { date: renewal, price: money(priceOf(p)) })}
                       confirmLabel={t("plan.upgrade", { name: p.name })}
                       onConfirm={() => choose(p.code)}
                     />
-                  ) : (
-
-                    <Button variant={isCurrent || isScheduled ? "secondary" : "primary"} disabled={disabled}
- loading={pending === p.code} onClick={() => choose(p.code)}>
+                  ) : offlinePaid ? null : (
+                    <Button variant={isCurrent || isScheduled ? "secondary" : "primary"} disabled={disabled} loading={pending === p.code} onClick={() => choose(p.code)}>
                       {label}
+                    </Button>
+                  )}
+                  {data.offline.available && !stripeSubscriber && (!isCurrent || offlinePaid) && pendingOffline?.planCode !== p.code && (
+                    // Virement, espèces ou mobile money ; abonnement hors ligne en cours : année suivante.
+                    <Button variant="secondary" loading={pending === `offline-${p.code}`} onClick={() => payOffline(p.code)}>
+                      {offlinePaid ? t("offline.renew", { name: p.name }) : t("offline.pay")}
                     </Button>
                   )}
                 </Panel>

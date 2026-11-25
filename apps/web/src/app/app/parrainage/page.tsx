@@ -43,7 +43,7 @@ export default function ReferralPage() {
 
   return (
     <div className="mx-auto grid max-w-4xl gap-6">
-      <PageHeader title={t("title")} description={t("subtitle")} />
+      <PageHeader title={t("title")} description={t("subtitle", { amount: data ? money(data.rewardCents) : "…" })} />
       {isLoading && <Skeleton className="h-64" />}
       {error && <ErrorNote>{toErrorMessage(error)}</ErrorNote>}
       {data && (
@@ -83,7 +83,7 @@ export default function ReferralPage() {
                   <Copy aria-hidden /> {t("link.copy")}
                 </Button>
                 <Button asChild className="bg-[#25D366] text-white hover:bg-[#20ba59]">
-                  <a href={`https://wa.me/?text=${encodeURIComponent(t("link.message", { url: data.link }))}`} target="_blank" rel="noopener noreferrer">
+                  <a href={`https://wa.me/?text=${encodeURIComponent(t("link.message", { url: data.link, amount: money(data.rewardCents) }))}`} target="_blank" rel="noopener noreferrer">
                     <MessageCircle aria-hidden /> {t("link.share")}
                   </a>
                 </Button>
@@ -92,7 +92,7 @@ export default function ReferralPage() {
           ) : (
             <Panel className="grid gap-3 p-5">
               <h2 className="font-display text-lg font-semibold">{t("locked.title")}</h2>
-              <p className="text-sm text-ink-2">{t("locked.body")}</p>
+              <p className="text-sm text-ink-2">{t("locked.body", { amount: money(data.rewardCents) })}</p>
               <div>
                 <Button asChild>
                   <Link href="/app/billing">{t("locked.cta")}</Link>

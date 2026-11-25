@@ -25,8 +25,7 @@ interface PlanRow {
   code: string;
   kind: "FREE" | "PAID" | "CUSTOM";
   name: string;
-  currency: string;
-  priceYearlyCents: number;
+  prices: Partial<Record<string, number>>;
   trialDays: number;
   sortOrder: number;
   limits: unknown;
@@ -37,10 +36,12 @@ interface BillingSummary {
   plans: PlanRow[];
   usage: Record<QuotaKey, number>;
   limits: Record<QuotaKey, number | null>;
+  currency: { billing: string; subscription: string | null };
 }
 interface PaidPlan {
   code: string;
   name: string;
+  /** Prix annuel dans la monnaie du commerce (affichage). */
   currency: string;
   priceYearlyCents: number;
   trialDays: number;
@@ -75,10 +76,12 @@ function useBillingSummary() {
     staleTime: 60_000,
   });
   if (!canRead || !data) return null;
+  // Prix dans la monnaie de l'abonnement en cours, sinon dans celle du commerce ; offre sans prix dans cette monnaie : écartée.
+  const currency = data.currency.subscription ?? data.currency.billing;
   const paid: PaidPlan[] = data.plans
-    .filter((p) => p.kind === "PAID")
+    .filter((p) => p.kind === "PAID" && p.prices[currency] !== undefined)
     .sort((a, b) => a.sortOrder - b.sortOrder)
-    .map((p) => ({ ...p, limits: resolveLimits(p.limits), features: resolveFeatures(p.features) }));
+    .map((p) => ({ ...p, currency, priceYearlyCents: p.prices[currency]!, limits: resolveLimits(p.limits), features: resolveFeatures(p.features) }));
   return { ...data, isFree: data.currentPlan.kind === "FREE", paid };
 }
 

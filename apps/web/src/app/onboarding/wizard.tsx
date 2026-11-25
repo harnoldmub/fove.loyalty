@@ -1,5 +1,6 @@
 "use client";
 
+import { clearBusinessPrefill, readBusinessPrefill } from "@/lib/signup-prefill";
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Check, Coffee, ImageUp, Printer, Smartphone, Sparkles } from "lucide-react";
@@ -45,7 +46,7 @@ export function OnboardingWizard({ userName, tenant, fallbackTenant }: { userNam
   const [busy, setBusy] = useState(false);
 
   // Données saisies
-  const [name, setName] = useState(tenant?.name ?? "");
+  const [name, setName] = useState(() => tenant?.name ?? readBusinessPrefill());
   const [slug, setSlug] = useState("");
   const [slugTouched, setSlugTouched] = useState(false);
   const [currency, setCurrency] = useState("EUR");
@@ -168,6 +169,7 @@ export function OnboardingWizard({ userName, tenant, fallbackTenant }: { userNam
           partnerClickedAt: partnerCodeCookie ? clickedAt("fove_partner_at") : undefined,
           referrerClickedAt: referrerCookie ? clickedAt("fove_ref_at") : undefined,
         });
+        clearBusinessPrefill();
         setEstName(name);
         setStep(1);
       });

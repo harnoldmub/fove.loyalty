@@ -28,6 +28,10 @@ import { PartnerModal } from "@/components/admin/finance/partner-modal";
 
 interface FinanceOverviewResponse {
   currency: string;
+  /** Monnaies sans taux comptable : comptées pour 0. */
+  missingRates: string[];
+  /** Encaissements de la période par monnaie, sans conversion. */
+  collectedByCurrency: Record<string, { grossCents: number; netCents: number; count: number }>;
   period: { from: string; to: string; label: string };
   previousPeriod: { from: string; to: string; label: string };
   current: {
@@ -65,7 +69,8 @@ interface FinanceOverviewResponse {
 export default function FinanceOverviewPage() {
   const t = useTranslations("admin.finance.overview");
   const [period, setPeriod] = useState<PeriodKey>("month");
-  const [currency, setCurrency] = useState("USD");
+  // Monnaie du rapport : tous les montants y sont convertis au taux comptable (euro par défaut).
+  const [currency, setCurrency] = useState("EUR");
   const [expenseModalOpen, setExpenseModalOpen] = useState(false);
   const [partnerModalOpen, setPartnerModalOpen] = useState(false);
 
@@ -256,6 +261,29 @@ export default function FinanceOverviewPage() {
               </p>
             </Panel>
           </div>
+
+          {/* Encaissements par monnaie, avant conversion */}
+          {overview && Object.keys(overview.collectedByCurrency).length > 0 && (
+            <Panel className="p-5">
+              <h2 className="font-display text-base font-semibold">{t("byCurrency.title")}</h2>
+              <p className="mt-0.5 text-xs text-ink-3">{t("byCurrency.help", { currency })}</p>
+              <ul className="mt-3 grid gap-2 text-sm sm:grid-cols-3">
+                {Object.entries(overview.collectedByCurrency).map(([code, row]) => (
+                  <li key={code} className="rounded-md bg-surface-2 px-3 py-2">
+                    <span className="font-mono text-xs text-ink-3">{code}</span>
+                    <p className="font-display text-lg font-semibold tabular-nums">{formatFinance(row.netCents, code)}</p>
+                    <p className="text-xs text-ink-3">{t("byCurrency.count", { count: row.count })}</p>
+                  </li>
+                ))}
+              </ul>
+            </Panel>
+          )}
+          {overview && overview.missingRates.length > 0 && (
+            <p className="rounded-md bg-stamp-soft px-4 py-3 text-sm text-stamp-ink">
+              {t("missingRates", { currencies: overview.missingRates.join(", ") })}{" "}
+              <Link href="/admin/finance/rates" className="font-medium underline underline-offset-4">{t("ratesLink")}</Link>
+            </p>
+          )}
 
           {/* Section 3 : Graphiques interactifs */}
           <FinanceCharts

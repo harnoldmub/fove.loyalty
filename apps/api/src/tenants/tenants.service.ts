@@ -5,6 +5,8 @@ import { PartnersService } from "../partners/partners.service";
 import { Injectable } from "@nestjs/common";
 import {
   createTenantSchema,
+  DEFAULT_FX_RATES,
+  DEFAULT_PLAN_PRICES,
   DEFAULT_PLANS,
   defaultCurrencyForCountry,
   establishmentSchema,
@@ -36,7 +38,14 @@ export async function ensureSystemReferenceData(prisma: PrismaService): Promise<
     });
   }
   for (const plan of DEFAULT_PLANS) {
-    await prisma.client.subscriptionPlan.upsert({ where: { code: plan.code }, update: {}, create: plan });
+    const saved = await prisma.client.subscriptionPlan.upsert({ where: { code: plan.code }, update: {}, create: plan });
+    // Prix manquants ajoutés depuis la grille ; un prix déjà en base (modifié dans l'admin) n'est jamais écrasé.
+    for (const [currency, yearlyCents] of Object.entries(DEFAULT_PLAN_PRICES[plan.code] ?? {})) {
+      await prisma.client.planPrice.upsert({ where: { planId_currency: { planId: saved.id, currency } }, update: {}, create: { planId: saved.id, currency, yearlyCents } });
+    }
+  }
+  for (const [currency, unitsPerEur] of Object.entries(DEFAULT_FX_RATES)) {
+    await prisma.client.exchangeRate.upsert({ where: { currency }, update: {}, create: { currency, unitsPerEur } });
   }
 }
 

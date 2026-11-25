@@ -12,6 +12,8 @@ interface PartnerPayoutModalProps {
   open: boolean;
   availableCents: number;
   thresholdCents: number;
+  /** Monnaie de versement du partenaire. */
+  currency: string;
   existingPayoutInfo: any;
   onClose: () => void;
   onRequested: () => void;
@@ -23,13 +25,14 @@ export function PartnerPayoutModal({
   open,
   availableCents,
   thresholdCents,
+  currency,
   existingPayoutInfo,
   onClose,
   onRequested,
 }: PartnerPayoutModalProps) {
   const t = useTranslations("partner.payoutModal");
   const locale = useLocale();
-  const money = (cents: number) => formatPrice(cents, "USD", locale);
+  const money = (cents: number) => formatPrice(cents, currency, locale);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -140,7 +143,7 @@ export function PartnerPayoutModal({
 
         <form onSubmit={handleSubmit} className="mt-4 space-y-4">
           <div>
-            <label className="mb-1 block text-xs font-medium text-ink-2">{t("amount")}</label>
+            <label className="mb-1 block text-xs font-medium text-ink-2">{t("amount", { currency })}</label>
             <Input
               required
               type="number"

@@ -13,6 +13,8 @@ import { FinanceNav } from "@/components/admin/finance/finance-nav";
 import { formatFinance } from "@/components/admin/finance/finance-utils";
 
 interface CustomerFinanceRow {
+  /** Monnaie des totaux (euros, taux comptable). */
+  currency?: string;
   tenantId?: string;
   id?: string;
   tenantName?: string;
@@ -134,12 +136,12 @@ export default function CustomersFinancePage() {
                     <td className={`py-3.5 px-4 text-end font-mono text-xs ${
                       invoiced > 0 ? "text-ink-2" : "text-ink-3"
                     }`}>
-                      {formatFinance(invoiced, "USD")}
+                      {formatFinance(invoiced, c.currency)}
                     </td>
                     <td className={`py-3.5 px-4 text-end font-mono text-xs font-bold ${
                       collected > 0 ? "text-emerald-600 dark:text-emerald-400" : "text-ink-3 font-normal"
                     }`}>
-                      {formatFinance(collected, "USD")}
+                      {formatFinance(collected, c.currency)}
                     </td>
                     <td className="py-3.5 px-4 text-center font-mono text-xs text-ink-2">
                       {count}

@@ -1,3 +1,4 @@
+import { PAYOUT_CURRENCIES } from "@fove/shared";
 import { z } from "zod";
 
 export const partnerTypeEnum = z.enum([
@@ -67,6 +68,8 @@ export const partnerProfileUpdateSchema = z.object({
   phone: z.string().trim().max(30).optional(),
   company: z.string().trim().max(100).optional(),
   payoutInfo: z.record(z.string(), z.any()).optional(),
+  /** Monnaie de versement des commissions. */
+  payoutCurrency: z.enum(PAYOUT_CURRENCIES).optional(),
 });
 
 export type PartnerProfileUpdateDto = z.infer<typeof partnerProfileUpdateSchema>;
@@ -76,6 +79,10 @@ export const adminPartnerUpdateSchema = z.object({
   commissionRatePercent: z.number().min(0).max(100).optional(),
   minimumPayoutThresholdCents: z.number().int().positive().optional(),
   rejectionReason: z.string().trim().max(500).optional(),
+  payoutCurrency: z.enum(PAYOUT_CURRENCIES).optional(),
+  /** Encaissement hors ligne : autorisé, et plafond d'encours dû à FOVE (centimes d'euro). */
+  collectionEnabled: z.boolean().optional(),
+  collectionCapEurCents: z.number().int().min(0).max(100_000_000).optional(),
 });
 
 export type AdminPartnerUpdateDto = z.infer<typeof adminPartnerUpdateSchema>;

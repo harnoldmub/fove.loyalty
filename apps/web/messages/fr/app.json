@@ -41,6 +41,7 @@
     "mockMode": "Mode de facturation simulé : aucun paiement réel n’est effectué sur cet environnement.",
     "unavailable": "Le paiement en ligne sera disponible prochainement. Votre offre actuelle reste accessible.",
     "summary": {
+      "offline": "Réglé hors ligne jusqu’au {date}, sans renouvellement automatique : réglez l’année suivante ci-dessous.",
       "ended": "Votre abonnement {name} est terminé : votre compte utilise l’offre Gratuite.",
       "free": "Gratuit, sans limite de durée. Passez à une offre supérieure quand vous avez besoin de plus de clients ou de fonctions.",
       "trial": "Essai jusqu’au {date}, puis offre Gratuite.",
@@ -59,7 +60,38 @@
     "cancelConsequence": "Il reste actif jusqu’à la fin de la période payée, et vous pouvez revenir sur votre décision jusque-là. Ensuite, votre compte passe à l’offre Gratuite. Aucune carte n’est supprimée.",
     "usage": "Utilisation",
     "changePlan": "Changer d’offre",
-    "annual": "Abonnement annuel, payé à l’avance en dollars US.",
+    "annual": "Abonnement annuel, payé à l’avance.",
+    "currency": {
+      "label": "Monnaie de facturation",
+      "names": { "EUR": "Euro (€)", "USD": "Dollar US ($)", "MAD": "Dirham marocain (MAD)", "DZD": "Dinar algérien (DZD)", "CDF": "Franc congolais (CDF)" },
+      "saved": "Monnaie de facturation enregistrée.",
+      "savedRenewal": "Enregistré : la nouvelle monnaie s’appliquera au renouvellement, le {date}.",
+      "pending": "Votre abonnement en cours reste en {current} ; il passera en {next} au renouvellement, le {date}.",
+      "localNote": "Prix en {currency} pour un règlement par virement, en espèces ou par mobile money. Le paiement en ligne par carte se fait en {online}.",
+      "online": "En ligne : {price}"
+    },
+    "offline": {
+      "pay": "Payer par virement ou espèces",
+      "renew": "Renouveler {name} hors ligne",
+      "requested": "Référence de paiement créée : elle vous a aussi été envoyée par email.",
+      "pendingTitle": "Règlement en attente : {name}",
+      "provisional": "Votre offre est active à titre provisoire jusqu’au {date}. Elle sera confirmée dès réception du paiement ; sinon, votre commerce reviendra à l’offre Gratuite (rien n’est supprimé).",
+      "afterPayment": "Votre offre sera activée dès réception du paiement.",
+      "renewal": "Ce règlement couvre l’année qui suit votre abonnement en cours.",
+      "reference": "Référence de paiement",
+      "amount": "Montant",
+      "copy": "Copier",
+      "copied": "Référence copiée.",
+      "mandatory": "Indiquez obligatoirement cette référence dans le motif du virement ou du dépôt.",
+      "beneficiary": "Bénéficiaire",
+      "bank": "Banque",
+      "account": "Compte",
+      "partner": "Vous pouvez aussi régler auprès d’un partenaire FOVE en lui donnant cette référence : votre offre est activée dès qu’il valide l’encaissement.",
+      "cancel": "Annuler ce règlement",
+      "cancelTitle": "Annuler ce règlement ?",
+      "cancelProvisional": "La référence ne sera plus valable et votre accès provisoire prendra fin tout de suite.",
+      "cancelConsequence": "La référence ne sera plus valable."
+    },
     "plan": {
       "current": "Offre actuelle",
       "scheduled": "Prévue le {date}",
@@ -751,7 +783,7 @@
     "referral": {
       "title": "Parrainage entre commerçants",
       "badge": "Jusqu'à 1 an offert",
-      "body": "Recommandez FOVE à vos confrères : <strong>20 $ de crédit</strong> par filleul abonné, jusqu'à une année offerte chaque année.",
+      "body": "Recommandez FOVE à vos confrères : <strong>un crédit</strong> par filleul abonné, jusqu'à une année offerte chaque année.",
       "copied": "Lien de parrainage copié dans le presse-papier !",
       "copy": "Copier mon lien",
       "message": "Bonjour, je gère la fidélité de mes clients avec FOVE sur Apple Wallet et Google Wallet. Découvre et teste gratuitement ici : {url}",
@@ -944,10 +976,10 @@
   },
   "referralPage": {
     "title": "Parrainage",
-    "subtitle": "Recommandez FOVE à d'autres commerçants : vous gagnez jusqu'à une année d'abonnement offerte, ils gagnent 20 $.",
+    "subtitle": "Recommandez FOVE à d'autres commerçants : vous gagnez jusqu'à une année d'abonnement offerte, ils gagnent {amount}.",
     "locked": {
       "title": "Le parrainage est inclus dans les offres payantes",
-      "body": "Passez à une offre payante pour parrainer vos confrères : 20 $ de crédit par filleul, jusqu'à une année offerte chaque année. Vos filleuls gagnent 20 $ sur leur premier abonnement.",
+      "body": "Passez à une offre payante pour parrainer vos confrères : {amount} de crédit par filleul, jusqu'à une année offerte chaque année. Vos filleuls gagnent {amount} sur leur premier abonnement.",
       "cta": "Voir les offres"
     },
     "link": {
@@ -955,7 +987,7 @@
       "copy": "Copier le lien",
       "copied": "Lien copié",
       "share": "Partager sur WhatsApp",
-      "message": "Bonjour, je gère la fidélité de mes clients avec FOVE (cartes sur Apple Wallet et Google Wallet). Avec mon lien, tu as 20 $ offerts sur ton premier abonnement : {url}"
+      "message": "Bonjour, je gère la fidélité de mes clients avec FOVE (cartes sur Apple Wallet et Google Wallet). Avec mon lien, tu as {amount} offerts sur ton premier abonnement : {url}"
     },
     "gains": {
       "title": "Mes gains",
@@ -999,9 +1031,9 @@
       "items": [
         "Qui peut parrainer. Tout commerçant abonné à une offre payante FOVE. Un crédit n'est acquis que si votre commerce est sur une offre payante à la date d'acquisition.",
         "Comment parrainer. Partagez votre lien de parrainage. Le commerce que vous recommandez (le « filleul ») doit créer son compte FOVE dans les 30 jours qui suivent son clic sur votre lien.",
-        "Ce que gagne le filleul. 20 USD déduits de sa première souscription annuelle à une offre payante. Une seule fois par commerce.",
-        "Ce que vous gagnez. 20 USD de crédit par filleul, acquis 14 jours après son premier paiement annuel, à condition qu'il n'ait été ni remboursé ni résilié pendant ce délai.",
-        "Plafond. Par année civile (du 1er janvier au 31 décembre), vos gains sont plafonnés au plus petit de ces deux montants : 200 USD, ou le prix annuel de votre offre au moment où le crédit est acquis. Exemples : Essentiel, 99 USD ; Business, 199 USD ; Réseau, 200 USD. Au-delà, vos filleuls gardent leur remise, mais vous ne gagnez plus de crédit avant le 1er janvier suivant. Le nombre de filleuls n'est pas limité.",
+        "Ce que gagne le filleul. Une remise sur sa première souscription annuelle à une offre payante, dans la monnaie de sa facture : 20 €, 20 $, 200 MAD, 4 000 DA ou 65 000 FC. Une seule fois par commerce.",
+        "Ce que vous gagnez. Un crédit par filleul, dans la monnaie de votre abonnement (20 €, 20 $, 200 MAD, 4 000 DA ou 65 000 FC), acquis 14 jours après son premier paiement annuel, à condition qu'il n'ait été ni remboursé ni résilié pendant ce délai.",
+        "Plafond. Par année civile (du 1er janvier au 31 décembre), vos gains sont plafonnés au plus petit de ces deux montants : 200 € (200 $, 2 000 MAD, 40 000 DA ou 650 000 FC selon la monnaie de votre abonnement), ou le prix annuel de votre offre au moment où le crédit est acquis. Au-delà, vos filleuls gardent leur remise, mais vous ne gagnez plus de crédit avant le 1er janvier suivant. Le nombre de filleuls n'est pas limité.",
         "Utilisation du crédit. Votre crédit est déduit automatiquement de vos prochaines factures FOVE, en commençant par le plus ancien. Il ne peut être ni versé en argent, ni transféré, ni échangé.",
         "Expiration. Chaque crédit expire 3 ans après avoir été acquis s'il n'a pas été utilisé.",
         "Exclusions. Aucun crédit n'est accordé lorsque le parrain et le filleul ont un propriétaire en commun, utilisent le même moyen de paiement, ou lorsqu'un même commerce est parrainé plusieurs fois. Si le filleul est arrivé par le lien d'un partenaire commercial FOVE avant votre lien, c'est le partenaire qui est récompensé.",

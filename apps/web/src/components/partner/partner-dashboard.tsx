@@ -32,12 +32,14 @@ import {
   UserPlus,
   Users,
   Wallet,
+  Banknote,
 } from "lucide-react";
 import { Logo } from "@/components/brand";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { Badge, PageHeader, Panel } from "@/components/ui/misc";
-import { api, ApiError } from "@/lib/api";
+import { api, ApiError, useErrorMessage } from "@/lib/api";
+import { PartnerCollection } from "./partner-collection";
 import { useLocale, useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { formatDate, formatNumber, formatPrice } from "@/lib/utils";
@@ -59,6 +61,8 @@ interface DashboardData {
     status: string;
     payoutInfo: any;
     minimumPayoutThresholdCents: number;
+    /** Monnaie de versement (USD ou EUR) : solde, seuil et versements. */
+    payoutCurrency: "USD" | "EUR";
     partnerLink: string;
   };
   kpi: {
@@ -89,6 +93,9 @@ interface DashboardData {
     commissionAmountCents: number;
     ratePercent: number;
     currency: string;
+    /** Équivalent dans la monnaie de versement (figé quand la commission est disponible). */
+    payoutAmountCents: number;
+    payoutCurrency: string;
     status: string;
     availableAt: string | null;
     createdAt: string;
@@ -125,6 +132,7 @@ const TABS = [
   { id: "clients", icon: Store },
   { id: "commissions", icon: Award },
   { id: "payouts", icon: Wallet },
+  { id: "collection", icon: Banknote },
   { id: "resources", icon: FileText },
 ] as const;
 
@@ -134,7 +142,8 @@ const PAYOUT_METHODS = ["BANK_TRANSFER", "MOBILE_MONEY"] as const;
 export function PartnerDashboard({ user }: { user: { name: string; email: string; isSuperAdmin?: boolean } }) {
   const t = useTranslations("partner.dashboard");
   const locale = useLocale();
-  const money = (cents: number, currency = "USD") => formatPrice(cents, currency, locale);
+  const toErrorMessage = useErrorMessage();
+  const money = (cents: number, currency?: string) => formatPrice(cents, currency ?? data?.partner.payoutCurrency ?? "USD", locale);
   const date = (value: string) => formatDate(value, false, locale);
   const leadStatus = (status: string) =>
     (LEAD_STATUSES as readonly string[]).includes(status) ? t(`leadStatus.${status as (typeof LEAD_STATUSES)[number]}`) : status;
@@ -691,6 +700,9 @@ export function PartnerDashboard({ user }: { user: { name: string; email: string
                         </td>
                         <td className="py-3.5 px-4 text-end font-mono font-bold text-emerald-600 dark:text-emerald-400">
                           {money(c.commissionAmountCents, c.currency)} ({formatNumber(c.ratePercent, locale)}%)
+                          {c.payoutCurrency !== c.currency && (
+                            <span className="block text-[11px] font-normal text-ink-3">{t("commissions.converted", { amount: money(c.payoutAmountCents, c.payoutCurrency) })}</span>
+                          )}
                         </td>
                         <td className="py-3.5 px-4 text-ink-3">
                           {c.availableAt ? date(c.availableAt) : t("commissions.immediate")}
@@ -726,6 +738,26 @@ export function PartnerDashboard({ user }: { user: { name: string; email: string
                 <p className="text-xs text-ink-3">
                   {t("payouts.minimum", { amount: money(partner.minimumPayoutThresholdCents) })}
                 </p>
+                <label className="mt-3 flex items-center gap-2 text-xs text-ink-2">
+                  {t("payouts.currency")}
+                  <select
+                    className="rounded-md border border-line bg-surface px-2 py-1 text-xs"
+                    value={partner.payoutCurrency}
+                    onChange={async (e) => {
+                      try {
+                        await api.patch("/partner/profile", { payoutCurrency: e.target.value });
+                        await refetch();
+                        toast.success(t("payouts.currencySaved"));
+                      } catch (err) {
+                        toast.error(toErrorMessage(err));
+                      }
+                    }}
+                  >
+                    <option value="USD">USD ($)</option>
+                    <option value="EUR">EUR (€)</option>
+                  </select>
+                </label>
+                <p className="mt-1 text-[11px] text-ink-3">{t("payouts.currencyHelp")}</p>
               </div>
               <Button
                 onClick={() => setPayoutModalOpen(true)}
@@ -778,6 +810,9 @@ export function PartnerDashboard({ user }: { user: { name: string; email: string
             )}
           </div>
         )}
+
+        {/* VUE : ENCAISSEMENTS HORS LIGNE */}
+        {activeTab === "collection" && <PartnerCollection partnerCode={partner.code} />}
 
         {/* VUE : RESSOURCES DE VENTE */}
         {activeTab === "resources" && (
@@ -865,6 +900,7 @@ export function PartnerDashboard({ user }: { user: { name: string; email: string
         open={payoutModalOpen}
         availableCents={kpi?.availableCommissionsCents ?? 0}
         thresholdCents={partner.minimumPayoutThresholdCents}
+        currency={partner.payoutCurrency}
         existingPayoutInfo={partner.payoutInfo}
         onClose={() => setPayoutModalOpen(false)}
         onRequested={() => refetch()}

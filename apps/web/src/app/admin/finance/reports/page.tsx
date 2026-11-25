@@ -99,7 +99,7 @@ export default function AssociateReportsPage() {
                 <div className="mt-1 font-display text-lg font-bold text-ink first-letter:uppercase">
                   {monthName}
                 </div>
-                <div className="text-xs text-ink-3">{t("currency", { currency: "USD" })}</div>
+                <div className="text-xs text-ink-3">{t("currency", { currency: data?.currency ?? "EUR" })}</div>
               </div>
             </div>
 
@@ -114,47 +114,47 @@ export default function AssociateReportsPage() {
                 <div className="flex items-center justify-between p-3.5 bg-surface-2 font-medium">
                   <span className="text-ink">{t("lines.revenueHt")}</span>
                   <span className="font-mono text-ink font-bold">
-                    {formatFinance(cur.revenueInvoicedHtCents, "USD")}
+                    {formatFinance(cur.revenueInvoicedHtCents, data?.currency)}
                   </span>
                 </div>
 
                 {/* Ligne 2 : Taxes */}
                 <div className="flex items-center justify-between p-3 text-ink-2 text-xs">
                   <span className="ps-4">{t("lines.taxes")}</span>
-                  <span className="font-mono">{formatFinance(cur.taxesCollectedCents, "USD")}</span>
+                  <span className="font-mono">{formatFinance(cur.taxesCollectedCents, data?.currency)}</span>
                 </div>
 
                 {/* Ligne 3 : Total Facturé TTC */}
                 <div className="flex items-center justify-between p-3.5 bg-surface font-semibold text-xs border-b border-line">
                   <span className="text-ink-2 ps-4">{t("lines.revenueTtc")}</span>
-                  <span className="font-mono text-ink">{formatFinance(cur.revenueInvoicedCents, "USD")}</span>
+                  <span className="font-mono text-ink">{formatFinance(cur.revenueInvoicedCents, data?.currency)}</span>
                 </div>
 
                 {/* Ligne 4 : Encaissements Réels */}
                 <div className="flex items-center justify-between p-3.5 bg-emerald-500/5 font-medium">
                   <span className="text-ink">{t("lines.gross")}</span>
                   <span className="font-mono text-emerald-600 dark:text-emerald-400 font-bold">
-                    {formatFinance(cur.grossCollectedCents, "USD")}
+                    {formatFinance(cur.grossCollectedCents, data?.currency)}
                   </span>
                 </div>
 
                 {/* Ligne 5 : Frais Stripe */}
                 <div className="flex items-center justify-between p-3 text-rose-500 text-xs">
                   <span className="ps-4">{t("lines.fees")}</span>
-                  <span className="font-mono" dir="ltr">-{formatFinance(cur.providerFeesCents, "USD")}</span>
+                  <span className="font-mono" dir="ltr">-{formatFinance(cur.providerFeesCents, data?.currency)}</span>
                 </div>
 
                 {/* Ligne 6 : Remboursements */}
                 <div className="flex items-center justify-between p-3 text-rose-500 text-xs">
                   <span className="ps-4">{t("lines.refunds")}</span>
-                  <span className="font-mono" dir="ltr">-{formatFinance(cur.refundedCents, "USD")}</span>
+                  <span className="font-mono" dir="ltr">-{formatFinance(cur.refundedCents, data?.currency)}</span>
                 </div>
 
                 {/* Ligne 7 : Net Encaissé */}
                 <div className="flex items-center justify-between p-3.5 bg-surface font-semibold">
                   <span className="text-ink">{t("lines.net")}</span>
                   <span className="font-mono text-ink font-bold">
-                    {formatFinance(cur.netCollectedCents, "USD")}
+                    {formatFinance(cur.netCollectedCents, data?.currency)}
                   </span>
                 </div>
 
@@ -162,14 +162,14 @@ export default function AssociateReportsPage() {
                 <div className="flex items-center justify-between p-3.5 bg-rose-500/5 font-medium">
                   <span className="text-ink">{t("lines.expenses")}</span>
                   <span className="font-mono text-rose-500 font-bold" dir="ltr">
-                    -{formatFinance(cur.operatingExpensesCents, "USD")}
+                    -{formatFinance(cur.operatingExpensesCents, data?.currency)}
                   </span>
                 </div>
 
                 {/* Ligne 9 : Commissions partenaires */}
                 <div className="flex items-center justify-between p-3.5 text-rose-500 text-xs">
                   <span className="ps-4">{t("lines.commissions")}</span>
-                  <span className="font-mono" dir="ltr">-{formatFinance(cur.partnerCommissionsCents, "USD")}</span>
+                  <span className="font-mono" dir="ltr">-{formatFinance(cur.partnerCommissionsCents, data?.currency)}</span>
                 </div>
 
                 {/* Ligne 10 : RÉSULTAT NET */}
@@ -182,7 +182,7 @@ export default function AssociateReportsPage() {
                         : "text-rose-600 dark:text-rose-400"
                     }`}
                   >
-                    {formatFinance(cur.provisionalNetProfitCents, "USD")}
+                    {formatFinance(cur.provisionalNetProfitCents, data?.currency)}
                   </span>
                 </div>
               </div>
@@ -197,13 +197,13 @@ export default function AssociateReportsPage() {
                 <div className="rounded-lg border border-line p-3">
                   <div className="text-ink-3">{t("mrr")}</div>
                   <div className="mt-1 font-mono text-base font-bold text-ink">
-                    {formatFinance(cur.mrrCents, "USD")}
+                    {formatFinance(cur.mrrCents, data?.currency)}
                   </div>
                 </div>
                 <div className="rounded-lg border border-line p-3">
                   <div className="text-ink-3">{t("arr")}</div>
                   <div className="mt-1 font-mono text-base font-bold text-ink">
-                    {formatFinance(cur.arrCents, "USD")}
+                    {formatFinance(cur.arrCents, data?.currency)}
                   </div>
                 </div>
                 <div className="rounded-lg border border-line p-3">

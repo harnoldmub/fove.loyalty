@@ -113,14 +113,14 @@ async function referredAndPaid(parrainPlan = "business") {
 }
 
 const referrals = () => app.get(ReferralService);
+const usdPrice = async (code: string) => (await db.planPrice.findFirstOrThrow({ where: { plan: { code }, currency: "USD" } })).yearlyCents;
 const reload = (id: string) => db.referralReward.findUniqueOrThrow({ where: { id } });
 
 describe("parrainage : récompenses (mode simulé)", () => {
   it("le filleul paie 20 $ de moins ; le crédit du parrain attend 14 jours puis est acquis pour 3 ans", async () => {
     const { filleul, referral } = await referredAndPaid();
     const payment = await db.payment.findFirstOrThrow({ where: { tenantId: filleul.tenantId } });
-    const starter = await db.subscriptionPlan.findUniqueOrThrow({ where: { code: "starter" } });
-    expect(payment.amountCents).toBe(starter.priceYearlyCents - 2000);
+    expect(payment.amountCents).toBe((await usdPrice("starter")) - 2000);
     expect(referral.status).toBe("PENDING");
     expect(referral.refereeDiscountUsedAt).not.toBeNull();
     expect(referral.pendingUntil!.getTime() - payment.confirmedAt!.getTime()).toBe(14 * DAY);
@@ -140,9 +140,8 @@ describe("parrainage : récompenses (mode simulé)", () => {
     await db.subscription.update({ where: { tenantId: parrain.tenantId }, data: { provider: "MOCK", currentPeriodEnd: new Date(Date.now() - 1000) } });
     await app.get(BillingService).closeExpired(new Date());
 
-    const business = await db.subscriptionPlan.findUniqueOrThrow({ where: { code: "business" } });
     const renewal = await db.payment.findFirstOrThrow({ where: { tenantId: parrain.tenantId }, orderBy: { createdAt: "desc" } });
-    expect(renewal.amountCents).toBe(business.priceYearlyCents - 2000);
+    expect(renewal.amountCents).toBe((await usdPrice("business")) - 2000);
     expect(await reload(referral.id)).toMatchObject({ creditRemainingCents: 0, creditUsedCents: 2000 });
     expect(await db.referralCreditUse.findFirst({ where: { rewardId: referral.id, paymentId: renewal.id, amountCents: 2000 } })).not.toBeNull();
   });
@@ -169,7 +168,7 @@ describe("parrainage : récompenses (mode simulé)", () => {
 
   it("plafond de l'année civile : crédit partiel jusqu'au plafond, puis « hors plafond » ; l'année passée ne compte pas", async () => {
     const first = await referredAndPaid("starter");
-    const cap = Math.min(20000, (await db.subscriptionPlan.findUniqueOrThrow({ where: { code: "starter" } })).priceYearlyCents);
+    const cap = Math.min(20000, (await usdPrice("starter")));
     const at = new Date(Date.now() + 15 * DAY);
     // Déjà gagné cette année : le plafond moins 500 ; et un gros crédit l'an dernier, qui ne compte pas.
     const lastYear = new Date(Date.UTC(at.getUTCFullYear() - 1, 5, 1));
@@ -210,7 +209,7 @@ describe("parrainage : récompenses (mode simulé)", () => {
 
   it("la remise du filleul ne s'applique qu'une fois", async () => {
     const { filleul } = await referredAndPaid();
-    expect(await referrals().refereeDiscount(filleul.tenantId)).toBe(0);
+    expect(await referrals().refereeDiscount(filleul.tenantId, "USD")).toBe(0);
   });
 });
 
@@ -225,7 +224,7 @@ describe("page « Parrainage »", () => {
     expect(res.body.available).toBe(true);
     expect(res.body.link).toMatch(new RegExp(`/signup\\?ref=${slug}$`));
     expect(res.body.referrals).toEqual([expect.objectContaining({ status: "SIGNED_UP", amountCents: 0 })]);
-    expect(res.body.year).toMatchObject({ capCents: Math.min(20000, (await db.subscriptionPlan.findUniqueOrThrow({ where: { code: "business" } })).priceYearlyCents) });
+    expect(res.body.year).toMatchObject({ capCents: Math.min(20000, (await usdPrice("business"))) });
 
     // Le filleul voit sa remise jusqu'à son premier paiement.
     expect((await filleul.client.get("/api/app/referrals")).body.asReferee).toMatchObject({ discountCents: 2000 });
@@ -250,7 +249,7 @@ describe("invitation au programme partenaires", () => {
     const first = await referredAndPaid("starter");
     const parrainId = first.parrain.tenantId;
     const contact = (await db.tenantSettings.findUniqueOrThrow({ where: { tenantId: parrainId } })).contactEmail!;
-    const cap = await referrals().yearlyCap(parrainId);
+    const { cap } = await referrals().yearlyCap(parrainId);
     const at = new Date(Date.now() + 15 * DAY);
     await earned(parrainId, Math.ceil(cap * 0.8) - 2000, at);
 
@@ -272,7 +271,7 @@ describe("invitation au programme partenaires", () => {
 
   it("rien pour un commerçant déjà partenaire", async () => {
     const parrain = await ownerWithTenant(app, { plan: "business" });
-    const cap = await referrals().yearlyCap(parrain.tenantId);
+    const { cap } = await referrals().yearlyCap(parrain.tenantId);
     await earned(parrain.tenantId, cap, new Date());
     expect(await referrals().partnerInvite(parrain.tenantId)).toBe("reached");
     await db.partner.create({ data: { name: "Moi", email: parrain.email, code: uniq("ME").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 12), status: "ACTIVE" } });

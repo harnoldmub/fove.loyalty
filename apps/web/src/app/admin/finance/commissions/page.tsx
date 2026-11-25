@@ -26,11 +26,15 @@ interface PartnerRow {
   totalEarnedCents: number;
   pendingCents: number;
   paidCents: number;
+  /** Monnaie des totaux (euros, taux comptable). */
+  currency: string;
 }
 
 interface CommissionRow {
   id: string;
   amountCents: number;
+  /** Monnaie du paiement du commerçant. */
+  currency: string;
   ratePercent: number;
   status: string;
   createdAt: string;
@@ -64,7 +68,7 @@ export default function CommissionsPage() {
   const { data: commissionsData, refetch: refetchCommissions, isLoading: loadingComms } = useQuery({
     queryKey: ["admin-finance-commissions"],
     queryFn: () =>
-      api.get<{ items: CommissionRow[]; totalPendingCents: number; totalPaidCents: number }>(
+      api.get<{ currency: string; items: CommissionRow[]; totalPendingCents: number; totalPaidCents: number }>(
         "/admin/finance/commissions"
       ),
   });
@@ -113,7 +117,7 @@ export default function CommissionsPage() {
         <Panel className="p-4">
           <div className="text-xs text-ink-3">{t("kpi.pending")}</div>
           <div className="mt-1 font-display text-2xl font-bold tabular text-amber-500">
-            {formatFinance(commissionsData?.totalPendingCents ?? 0, "USD")}
+            {formatFinance(commissionsData?.totalPendingCents ?? 0, commissionsData?.currency)}
           </div>
           <p className="mt-1 text-xs text-ink-3">{t("kpi.pendingHelp")}</p>
         </Panel>
@@ -121,7 +125,7 @@ export default function CommissionsPage() {
         <Panel className="p-4">
           <div className="text-xs text-ink-3">{t("kpi.paid")}</div>
           <div className="mt-1 font-display text-2xl font-bold tabular text-emerald-600 dark:text-emerald-400">
-            {formatFinance(commissionsData?.totalPaidCents ?? 0, "USD")}
+            {formatFinance(commissionsData?.totalPaidCents ?? 0, commissionsData?.currency)}
           </div>
           <p className="mt-1 text-xs text-ink-3">{t("kpi.paidHelp")}</p>
         </Panel>
@@ -172,13 +176,13 @@ export default function CommissionsPage() {
                       {p.totalSalesCount}
                     </td>
                     <td className="py-3.5 px-4 text-end font-mono text-xs font-semibold text-ink">
-                      {formatFinance(p.totalEarnedCents, "USD")}
+                      {formatFinance(p.totalEarnedCents, p.currency)}
                     </td>
                     <td className="py-3.5 px-4 text-end font-mono text-xs font-bold text-amber-500">
-                      {formatFinance(p.pendingCents, "USD")}
+                      {formatFinance(p.pendingCents, p.currency)}
                     </td>
                     <td className="py-3.5 px-4 text-end font-mono text-xs text-emerald-600 dark:text-emerald-400">
-                      {formatFinance(p.paidCents, "USD")}
+                      {formatFinance(p.paidCents, p.currency)}
                     </td>
                   </tr>
                 ))}
@@ -225,10 +229,10 @@ export default function CommissionsPage() {
                         <div className="font-mono text-ink-3">{c.invoice?.number}</div>
                       </td>
                       <td className="py-3.5 px-4 text-end font-mono text-xs text-ink-2">
-                        {formatFinance(c.invoice?.amountTotalCents ?? 0, "USD")}
+                        {formatFinance(c.invoice?.amountTotalCents ?? 0, c.currency)}
                       </td>
                       <td className="py-3.5 px-4 text-end font-mono text-xs font-bold text-amber-500">
-                        {formatFinance(c.amountCents, "USD")} ({formatPct(c.ratePercent).replace(/^\+/, "")})
+                        {formatFinance(c.amountCents, c.currency)} ({formatPct(c.ratePercent).replace(/^\+/, "")})
                       </td>
                       <td className="py-3.5 px-4">
                         {c.status === "PAID" ? (

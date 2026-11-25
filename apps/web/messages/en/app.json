@@ -41,6 +41,7 @@
     "mockMode": "Simulated billing mode: no real payment is made in this environment.",
     "unavailable": "Online payment will be available soon. Your current plan remains accessible.",
     "summary": {
+      "offline": "Paid offline until {date}, with no automatic renewal: pay for the following year below.",
       "ended": "Your {name} subscription has ended: your account is on the Free plan.",
       "free": "Free, with no time limit. Upgrade when you need more customers or features.",
       "trial": "Trial until {date}, then Free plan.",
@@ -59,7 +60,38 @@
     "cancelConsequence": "It stays active until the end of the paid period, and you can change your mind until then. After that, your account moves to the Free plan. No cards are deleted.",
     "usage": "Usage",
     "changePlan": "Change plan",
-    "annual": "Annual subscription, paid upfront in US dollars.",
+    "annual": "Annual subscription, paid upfront.",
+    "currency": {
+      "label": "Billing currency",
+      "names": { "EUR": "Euro (€)", "USD": "US dollar ($)", "MAD": "Moroccan dirham (MAD)", "DZD": "Algerian dinar (DZD)", "CDF": "Congolese franc (CDF)" },
+      "saved": "Billing currency saved.",
+      "savedRenewal": "Saved: the new currency will apply at renewal, on {date}.",
+      "pending": "Your current subscription stays in {current}; it will switch to {next} at renewal, on {date}.",
+      "localNote": "Prices in {currency} for payment by bank transfer, in cash or by mobile money. Online card payment is made in {online}.",
+      "online": "Online: {price}"
+    },
+    "offline": {
+      "pay": "Pay by transfer or cash",
+      "renew": "Renew {name} offline",
+      "requested": "Payment reference created: it has also been sent to you by email.",
+      "pendingTitle": "Payment pending: {name}",
+      "provisional": "Your plan is active provisionally until {date}. It will be confirmed as soon as the payment is received; otherwise your business returns to the Free plan (nothing is deleted).",
+      "afterPayment": "Your plan will be activated as soon as the payment is received.",
+      "renewal": "This payment covers the year after your current subscription.",
+      "reference": "Payment reference",
+      "amount": "Amount",
+      "copy": "Copy",
+      "copied": "Reference copied.",
+      "mandatory": "Always include this reference in the transfer or deposit description.",
+      "beneficiary": "Beneficiary",
+      "bank": "Bank",
+      "account": "Account",
+      "partner": "You can also pay a FOVE partner by giving them this reference: your plan is activated as soon as they confirm the collection.",
+      "cancel": "Cancel this payment",
+      "cancelTitle": "Cancel this payment?",
+      "cancelProvisional": "The reference will no longer be valid and your provisional access will end immediately.",
+      "cancelConsequence": "The reference will no longer be valid."
+    },
     "plan": {
       "current": "Current plan",
       "scheduled": "Scheduled for {date}",
@@ -751,7 +783,7 @@
     "referral": {
       "title": "Merchant referral",
       "badge": "Up to 1 year free",
-      "body": "Recommend FOVE to other businesses: <strong>$20 of credit</strong> per subscribed referral, up to one free year every year.",
+      "body": "Recommend FOVE to other businesses: <strong>a credit</strong> per subscribed referral, up to one free year every year.",
       "copied": "Referral link copied to the clipboard!",
       "copy": "Copy my link",
       "message": "Hi, I manage my customers’ loyalty with FOVE on Apple Wallet and Google Wallet. Discover it and try it for free here: {url}",
@@ -944,10 +976,10 @@
   },
   "referralPage": {
     "title": "Referrals",
-    "subtitle": "Recommend FOVE to other businesses: you earn up to one year of subscription for free, they get $20.",
+    "subtitle": "Recommend FOVE to other businesses: you earn up to one year of subscription for free, they get {amount}.",
     "locked": {
       "title": "Referrals are included in paid plans",
-      "body": "Upgrade to a paid plan to refer other businesses: $20 of credit per referral, up to one free year every year. Your referrals get $20 off their first subscription.",
+      "body": "Upgrade to a paid plan to refer other businesses: {amount} of credit per referral, up to one free year every year. Your referrals get {amount} off their first subscription.",
       "cta": "See plans"
     },
     "link": {
@@ -955,7 +987,7 @@
       "copy": "Copy link",
       "copied": "Link copied",
       "share": "Share on WhatsApp",
-      "message": "Hi, I manage my customers' loyalty with FOVE (cards in Apple Wallet and Google Wallet). With my link you get $20 off your first subscription: {url}"
+      "message": "Hi, I manage my customers' loyalty with FOVE (cards in Apple Wallet and Google Wallet). With my link you get {amount} off your first subscription: {url}"
     },
     "gains": {
       "title": "My earnings",
@@ -999,9 +1031,9 @@
       "items": [
         "Who can refer. Any business subscribed to a paid FOVE plan. Credit is only earned if your business is on a paid plan on the date it is earned.",
         "How to refer. Share your referral link. The business you recommend (the \"referral\") must create its FOVE account within 30 days of clicking your link.",
-        "What the referral gets. USD 20 off its first annual subscription to a paid plan. Once per business.",
-        "What you get. USD 20 of credit per referral, earned 14 days after its first annual payment, provided it has not been refunded or cancelled during that period.",
-        "Cap. Per calendar year (1 January to 31 December), your earnings are capped at the lower of these two amounts: USD 200, or the annual price of your plan when the credit is earned. Examples: Essentiel, USD 99; Business, USD 199; Réseau, USD 200. Beyond that, your referrals keep their discount, but you earn no more credit until the following 1 January. The number of referrals is not limited.",
+        "What the referral gets. A discount on its first annual subscription to a paid plan, in the currency of its invoice: €20, $20, MAD 200, DZD 4,000 or CDF 65,000. Once per business.",
+        "What you get. A credit per referral, in the currency of your subscription (€20, $20, MAD 200, DZD 4,000 or CDF 65,000), earned 14 days after its first annual payment, provided it has not been refunded or cancelled during that period.",
+        "Cap. Per calendar year (1 January to 31 December), your earnings are capped at the lower of these two amounts: €200 ($200, MAD 2,000, DZD 40,000 or CDF 650,000 depending on the currency of your subscription), or the annual price of your plan when the credit is earned. Beyond that, your referrals keep their discount, but you earn no more credit until the following 1 January. The number of referrals is not limited.",
         "Using credit. Your credit is automatically deducted from your next FOVE invoices, oldest first. It cannot be paid out in cash, transferred or exchanged.",
         "Expiry. Each credit expires 3 years after it was earned if it has not been used.",
         "Exclusions. No credit is granted when the referrer and the referral share an owner, use the same payment method, or when the same business is referred more than once. If the referral came through a FOVE sales partner's link before yours, the partner is rewarded.",

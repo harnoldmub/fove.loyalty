@@ -86,9 +86,9 @@ describe("changement d'offre avec Stripe", () => {
     await resetDatabase();
     app = await startApp({ STRIPE_SECRET_KEY: "sk_test_fove_fake", STRIPE_WEBHOOK_SECRET: whsec });
     stripe = (app.get(BillingService) as unknown as { stripe: Stripe }).stripe;
-    await db.subscriptionPlan.update({ where: { code: "starter" }, data: { stripePriceYearlyId: "price_starter_y" } });
-    await db.subscriptionPlan.update({ where: { code: "business" }, data: { stripePriceYearlyId: "price_business_y" } });
-    await db.subscriptionPlan.update({ where: { code: "premium" }, data: { stripePriceYearlyId: "price_premium_y" } });
+    await db.planPrice.updateMany({ where: { plan: { code: "starter" }, currency: "USD" }, data: { stripePriceId: "price_starter_y" } });
+    await db.planPrice.updateMany({ where: { plan: { code: "business" }, currency: "USD" }, data: { stripePriceId: "price_business_y" } });
+    await db.planPrice.updateMany({ where: { plan: { code: "premium" }, currency: "USD" }, data: { stripePriceId: "price_premium_y" } });
   });
   afterAll(async () => {
     vi.restoreAllMocks();

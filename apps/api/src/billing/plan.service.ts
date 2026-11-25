@@ -57,7 +57,8 @@ export class PlanService {
     // Fin d'un contrat attribué par l'admin ou d'une résiliation hors Stripe : effet
     // immédiat, sans attendre que la tâche planifiée passe l'abonnement à « résilié ».
     const ended = sub.currentPeriodEnd !== null && sub.currentPeriodEnd < now;
-    if (ended && sub.provider !== "STRIPE" && (sub.provider === "MANUAL" || sub.cancelAtPeriodEnd)) return null;
+    // Règlement hors ligne : pas de renouvellement automatique, l'accès s'arrête à l'échéance (ou à la fin de l'accès provisoire).
+    if (ended && sub.provider !== "STRIPE" && (sub.provider === "MANUAL" || sub.provider === "OFFLINE" || sub.cancelAtPeriodEnd)) return null;
     return sub;
   }
 

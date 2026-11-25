@@ -20,7 +20,7 @@ import {
   X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Field, Input, Textarea } from "@/components/ui/field";
+import { Checkbox, Field, Input, Textarea } from "@/components/ui/field";
 import { ConfirmDialog, DialogContent, DialogRoot } from "@/components/ui/dialog";
 import { Badge, PageHeader, Panel } from "@/components/ui/misc";
 import { api, useErrorMessage } from "@/lib/api";
@@ -39,6 +39,9 @@ interface AdminPartnerRow {
   country: string | null;
   city: string | null;
   commissionRatePercent: number;
+  /** Encaissement hors ligne : autorisé, et plafond d'encours dû à FOVE (centimes d'euro). */
+  collectionEnabled: boolean;
+  collectionCapEurCents: number;
   status: string;
   rejectionReason: string | null;
   promotionStrategy: string | null;
@@ -83,7 +86,7 @@ export default function AdminPartnersPage() {
 
   const { data: commissionsData, refetch: refetchCommissions } = useQuery({
     queryKey: ["admin-commissions-all"],
-    queryFn: () => api.get<{ items: any[]; totalPendingCents: number; totalPaidCents: number }>("/admin/finance/commissions"),
+    queryFn: () => api.get<{ currency: string; items: any[]; totalPendingCents: number; totalPaidCents: number }>("/admin/finance/commissions"),
   });
 
   const pendingApplications = partners.filter((p) => p.status === "PENDING" || p.status === "UNDER_REVIEW");
@@ -138,10 +141,10 @@ export default function AdminPartnersPage() {
     }
   };
 
-  const handleEditRate = async (partner: AdminPartnerRow, rate: number) => {
+  const handleEditRate = async (partner: AdminPartnerRow, values: { rate: number; collectionEnabled: boolean; collectionCapEurCents: number }) => {
     setActionLoadingId(partner.id);
     try {
-      await api.patch(`/admin/partners/${partner.id}`, { commissionRatePercent: rate, status: partner.status });
+      await api.patch(`/admin/partners/${partner.id}`, { commissionRatePercent: values.rate, collectionEnabled: values.collectionEnabled, collectionCapEurCents: values.collectionCapEurCents, status: partner.status });
       refetch();
       setRateTarget(null);
     } catch (err) {
@@ -194,7 +197,7 @@ export default function AdminPartnersPage() {
             <Wallet className="size-4 text-rose-500" />
           </div>
           <div className="mt-2 font-display text-2xl font-bold tabular text-rose-500">
-            {formatFinance(commissionsData?.totalPendingCents ?? 0, "USD")}
+            {formatFinance(commissionsData?.totalPendingCents ?? 0, commissionsData?.currency)}
           </div>
           <p className="mt-1 text-xs text-ink-3">{t("kpi.pendingCommissionsHelp")}</p>
         </Panel>
@@ -205,7 +208,7 @@ export default function AdminPartnersPage() {
             <CheckCircle2 className="size-4 text-emerald-500" />
           </div>
           <div className="mt-2 font-display text-2xl font-bold tabular text-emerald-600 dark:text-emerald-400">
-            {formatFinance(commissionsData?.totalPaidCents ?? 0, "USD")}
+            {formatFinance(commissionsData?.totalPaidCents ?? 0, commissionsData?.currency)}
           </div>
           <p className="mt-1 text-xs text-ink-3">{t("kpi.paidCommissionsHelp")}</p>
         </Panel>
@@ -474,7 +477,7 @@ export default function AdminPartnersPage() {
             <div className="rounded-lg border border-line p-3">
               <span className="text-ink-3">{t("settings.minimumPayout")}</span>
               <div className="mt-1 font-mono text-lg font-bold text-ink">
-                {formatFinance(settings.minimumPayoutThresholdCents, "USD")}
+                {formatFinance(settings.minimumPayoutThresholdCents, "USD")} / {formatFinance(settings.minimumPayoutThresholdCents, "EUR")}
               </div>
             </div>
           </div>
@@ -491,7 +494,7 @@ export default function AdminPartnersPage() {
         partner={rateTarget}
         busy={rateTarget !== null && actionLoadingId === rateTarget.id}
         onClose={() => setRateTarget(null)}
-        onSave={(rate) => rateTarget && handleEditRate(rateTarget, rate)}
+        onSave={(values) => rateTarget && handleEditRate(rateTarget, values)}
       />
     </>
   );
@@ -525,14 +528,18 @@ function RejectDialog({ name, disabled, onReject }: { name: string; disabled: bo
   );
 }
 
-function RateDialog({ partner, busy, onClose, onSave }: { partner: AdminPartnerRow | null; busy: boolean; onClose: () => void; onSave: (rate: number) => void }) {
+function RateDialog({ partner, busy, onClose, onSave }: { partner: AdminPartnerRow | null; busy: boolean; onClose: () => void; onSave: (values: { rate: number; collectionEnabled: boolean; collectionCapEurCents: number }) => void }) {
   const t = useTranslations("admin.partners.rate");
   const [value, setValue] = useState("");
+  const [collection, setCollection] = useState(true);
+  const [cap, setCap] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [lastId, setLastId] = useState<string | null>(null);
   if (partner && partner.id !== lastId) {
     setLastId(partner.id);
     setValue(String(partner.commissionRatePercent));
+    setCollection(partner.collectionEnabled);
+    setCap(String(partner.collectionCapEurCents / 100));
     setError(null);
   }
   return (
@@ -553,6 +560,13 @@ function RateDialog({ partner, busy, onClose, onSave }: { partner: AdminPartnerR
               />
             )}
           </Field>
+          <fieldset className="grid gap-2 rounded-md border border-line p-3">
+            <legend className="px-1 text-sm font-medium">{t("collection")}</legend>
+            <Checkbox label={t("collectionEnabled")} checked={collection} onChange={(e) => setCollection(e.target.checked)} />
+            <Field label={t("collectionCap")} hint={t("collectionCapHint")}>
+              {(f) => <Input {...f} inputMode="decimal" dir="ltr" value={cap} onChange={(e) => setCap(e.target.value)} />}
+            </Field>
+          </fieldset>
           <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
             <Button variant="secondary" onClick={onClose} disabled={busy}>
               {t("cancel")}
@@ -561,11 +575,12 @@ function RateDialog({ partner, busy, onClose, onSave }: { partner: AdminPartnerR
               loading={busy}
               onClick={() => {
                 const rate = Number.parseFloat(value.replace(",", "."));
-                if (Number.isNaN(rate) || rate < 0 || rate > 100) {
+                const capEur = Number.parseFloat(cap.replace(/\s/g, "").replace(",", "."));
+                if (Number.isNaN(rate) || rate < 0 || rate > 100 || Number.isNaN(capEur) || capEur < 0) {
                   setError(t("invalid"));
                   return;
                 }
-                onSave(rate);
+                onSave({ rate, collectionEnabled: collection, collectionCapEurCents: Math.round(capEur * 100) });
               }}
             >
               {t("save")}

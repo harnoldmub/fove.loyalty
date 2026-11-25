@@ -31,9 +31,12 @@ const schema = z.object({
   STRIPE_TEST_PRICE_STARTER_YEARLY_ID: z.string().optional(),
   STRIPE_TEST_PRICE_BUSINESS_YEARLY_ID: z.string().optional(),
   STRIPE_TEST_PRICE_PREMIUM_YEARLY_ID: z.string().optional(),
+  STRIPE_TEST_PRICE_STARTER_YEARLY_EUR_ID: z.string().optional(),
+  STRIPE_TEST_PRICE_BUSINESS_YEARLY_EUR_ID: z.string().optional(),
+  STRIPE_TEST_PRICE_PREMIUM_YEARLY_EUR_ID: z.string().optional(),
   /** Garde-fou : les clés Stripe « live » sont refusées tant que ce drapeau n'est pas posé. */
   STRIPE_ALLOW_LIVE: z.enum(["true", "false"]).default("false"),
-  /** Coupon Stripe « 20 USD, une fois » : remise du filleul sur sa première souscription (parrainage). */
+  /** Coupon Stripe « 20, une fois » en USD avec une option EUR (currency_options) : remise du filleul (parrainage). */
   REFERRAL_STRIPE_COUPON_ID: z.string().optional(),
   /** Google Wallet : identifiant d'émetteur et compte de service (JSON). Absents = fonction masquée. */
   GOOGLE_WALLET_ISSUER_ID: z.string().regex(/^\d+$/).optional(),
@@ -104,14 +107,22 @@ export function stripeWebhookSecret(config = loadConfig()): string | undefined {
   return config.TEST_MODE === "true" ? config.STRIPE_TEST_WEBHOOK_SECRET : config.STRIPE_WEBHOOK_SECRET;
 }
 
-export function stripeYearlyPrice(planCode: string, fallback: string | null, config = loadConfig()): string | null {
+/**
+ * Tarif Stripe annuel d'une offre dans une monnaie. En TEST_MODE, les tarifs sandbox
+ * viennent de l'environnement : STRIPE_TEST_PRICE_<OFFRE>_YEARLY_ID (dollars) et
+ * STRIPE_TEST_PRICE_<OFFRE>_YEARLY_EUR_ID (euros).
+ */
+export function stripeYearlyPrice(planCode: string, currency: string, fallback: string | null, config = loadConfig()): string | null {
   if (config.TEST_MODE !== "true") return fallback;
   const testPrices: Record<string, string | undefined> = {
-    starter: config.STRIPE_TEST_PRICE_STARTER_YEARLY_ID,
-    business: config.STRIPE_TEST_PRICE_BUSINESS_YEARLY_ID,
-    premium: config.STRIPE_TEST_PRICE_PREMIUM_YEARLY_ID,
+    "starter:USD": config.STRIPE_TEST_PRICE_STARTER_YEARLY_ID,
+    "business:USD": config.STRIPE_TEST_PRICE_BUSINESS_YEARLY_ID,
+    "premium:USD": config.STRIPE_TEST_PRICE_PREMIUM_YEARLY_ID,
+    "starter:EUR": config.STRIPE_TEST_PRICE_STARTER_YEARLY_EUR_ID,
+    "business:EUR": config.STRIPE_TEST_PRICE_BUSINESS_YEARLY_EUR_ID,
+    "premium:EUR": config.STRIPE_TEST_PRICE_PREMIUM_YEARLY_EUR_ID,
   };
-  return testPrices[planCode] ?? null;
+  return testPrices[`${planCode}:${currency}`] ?? null;
 }
 
 export function resetConfigCache(): void {

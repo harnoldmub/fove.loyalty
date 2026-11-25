@@ -29,10 +29,11 @@ interface SubscriptionRow {
     code: string;
     name: string;
     kind: string;
-    priceYearlyCents: number;
-    priceMonthlyCents: number;
-    currency: string;
   };
+  /** Monnaie de l'abonnement ; prix annuel et MRR dans cette monnaie, `mrrRefCents` en euros. */
+  currency: string;
+  yearlyPriceCents: number;
+  mrrRefCents: number;
   mrrCents: number;
   arrCents: number;
 }
@@ -43,6 +44,7 @@ export default function SubscriptionsFinancePage() {
     queryKey: ["admin-finance-subscriptions"],
     queryFn: () =>
       api.get<{
+        currency: string;
         items: SubscriptionRow[];
         mrrTotalCents: number;
         arrTotalCents: number;
@@ -71,7 +73,7 @@ export default function SubscriptionsFinancePage() {
             <RefreshCw className="size-3.5 text-cobalt" />
           </div>
           <div className="mt-2 font-display text-2xl font-bold tabular text-ink">
-            {formatFinance(data?.mrrTotalCents ?? 0, "USD")}
+            {formatFinance(data?.mrrTotalCents ?? 0, data?.currency)}
             <span className="text-xs font-normal text-ink-3"> {t("perMonth")}</span>
           </div>
           <p className="mt-1 text-xs text-ink-3">{t("mrrHelp")}</p>
@@ -83,7 +85,7 @@ export default function SubscriptionsFinancePage() {
             <TrendingUp className="size-3.5 text-mint" />
           </div>
           <div className="mt-2 font-display text-2xl font-bold tabular text-ink">
-            {formatFinance(data?.arrTotalCents ?? 0, "USD")}
+            {formatFinance(data?.arrTotalCents ?? 0, data?.currency)}
             <span className="text-xs font-normal text-ink-3"> {t("perYear")}</span>
           </div>
           <p className="mt-1 text-xs text-ink-3">{t("arrHelp")}</p>
@@ -135,7 +137,7 @@ export default function SubscriptionsFinancePage() {
               {subs.map((sub) => {
                 const isPaidPlan = sub.plan.kind !== "FREE";
                 const isAnnual = sub.interval === "YEAR";
-                const priceCents = isAnnual ? sub.plan.priceYearlyCents : sub.plan.priceMonthlyCents;
+                const priceCents = isAnnual ? sub.yearlyPriceCents : Math.round(sub.yearlyPriceCents / 12);
 
                 return (
                   <tr key={sub.id} className="hover:bg-surface-2 transition-colors">
@@ -159,7 +161,7 @@ export default function SubscriptionsFinancePage() {
                     <td className="py-3.5 px-4 text-end font-mono text-xs font-semibold text-ink">
                       {isPaidPlan ? (
                         <>
-                          {formatFinance(priceCents, sub.plan.currency)}
+                          {formatFinance(priceCents, sub.currency)}
                           <span className="text-[11px] font-normal text-ink-3">
                             {isAnnual ? t("perYear") : t("perMonth")}
                           </span>
@@ -169,7 +171,7 @@ export default function SubscriptionsFinancePage() {
                       )}
                     </td>
                     <td className="py-3.5 px-4 text-end font-mono text-xs font-bold text-cobalt">
-                      {formatFinance(sub.mrrCents, "USD")}
+                      {formatFinance(sub.mrrCents, sub.currency)}
                     </td>
                     <td className="py-3.5 px-4 text-xs text-ink-2">
                       {sub.currentPeriodEnd ? (

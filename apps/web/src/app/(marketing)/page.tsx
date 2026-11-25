@@ -13,14 +13,14 @@ export async function generateMetadata() {
   return localizedPageMeta("home", "/");
 }
 
-/** Fourchette de prix annuels lue dans les offres de l'API (jamais codée en dur). */
+/** Fourchette de prix annuels en euros (monnaie de référence), lue dans les offres de l'API (jamais codée en dur). */
 function offersFrom(plans: Plan[] | null) {
-  const priced = (plans ?? []).filter((p) => p.kind !== "CUSTOM");
+  const priced = (plans ?? []).filter((p) => p.kind === "FREE" || (p.kind === "PAID" && p.prices.EUR !== undefined));
   if (!priced.length) return undefined;
-  const yearly = priced.map((p) => p.priceYearlyCents / 100);
+  const yearly = priced.map((p) => (p.kind === "FREE" ? 0 : p.prices.EUR! / 100));
   return {
     "@type": "AggregateOffer",
-    priceCurrency: priced[0].currency || "USD",
+    priceCurrency: "EUR",
     lowPrice: String(Math.min(...yearly)),
     highPrice: String(Math.max(...yearly)),
     offerCount: String(priced.length),

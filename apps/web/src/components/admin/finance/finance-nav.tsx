@@ -16,6 +16,8 @@ import {
   Users,
   WalletCards,
   ArrowDownRight,
+  Coins,
+  Banknote,
 } from "lucide-react";
 
 const FINANCE_TABS = [
@@ -25,9 +27,11 @@ const FINANCE_TABS = [
   { href: "/admin/finance/subscriptions", label: "subscriptions", icon: RefreshCw, exact: false },
   { href: "/admin/finance/customers", label: "customers", icon: Users, exact: false },
   { href: "/admin/finance/invoices", label: "invoices", icon: FileText, exact: false },
+  { href: "/admin/finance/offline", label: "offline", icon: Banknote, exact: false },
   { href: "/admin/finance/commissions", label: "commissions", icon: WalletCards, exact: false },
   { href: "/admin/finance/expenses", label: "expenses", icon: ArrowDownRight, exact: false },
   { href: "/admin/finance/treasury", label: "treasury", icon: Landmark, exact: false },
+  { href: "/admin/finance/rates", label: "rates", icon: Coins, exact: false },
   { href: "/admin/finance/reports", label: "reports", icon: BarChart3, exact: false },
   { href: "/admin/finance/audit", label: "audit", icon: ShieldCheck, exact: false },
 ] as const;

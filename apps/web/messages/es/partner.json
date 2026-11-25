@@ -79,7 +79,7 @@
       },
       "payouts": {
         "title": "Pagos flexibles",
-        "desc": "Cobra por transferencia bancaria o Mobile Money a partir de 50 $ de ganancias acumuladas."
+        "desc": "Cobra por transferencia bancaria o Mobile Money a partir de 50 $ o 50 € de ganancias acumuladas."
       },
       "attribution": {
         "title": "Atribución first-party de 30 días",
@@ -246,6 +246,7 @@
       "clients": "Clientes aportados",
       "commissions": "Comisiones",
       "payouts": "Pagos y retiros",
+      "collection": "Cobros",
       "resources": "Recursos de venta"
     },
     "overview": {
@@ -329,6 +330,7 @@
       "colAvailability": "Disponibilidad",
       "colStatus": "Estado",
       "immediate": "Inmediata",
+      "converted": "es decir, {amount} al pago",
       "paid": "Pagada",
       "available": "Disponible",
       "cancelled": "Cancelada (Reembolso)",
@@ -337,6 +339,9 @@
     "payouts": {
       "balance": "Saldo disponible: {amount}",
       "minimum": "Importe mínimo de retiro: {amount}",
+      "currency": "Moneda de pago:",
+      "currencySaved": "Moneda de pago guardada.",
+      "currencyHelp": "Sus comisiones se calculan en la moneda pagada por el comercio y se convierten al tipo del día cuando pasan a estar disponibles.",
       "requestPayout": "Solicitar una transferencia",
       "history": "Historial de pagos",
       "empty": "Todavía no has solicitado ninguna transferencia.",
@@ -366,7 +371,7 @@
       "objectionPaper": "«Mis clientes prefieren el papel»",
       "answerPaper": "En realidad, el 70% de los clientes olvida su tarjeta de papel. En cambio, su smartphone siempre está en su bolsillo en el momento de pagar.",
       "objectionPrice": "«Es demasiado caro para mí»",
-      "answerPrice": "El plan Essentiel cuesta solo 99 $ al año (menos de 9 $ al mes). Un solo cliente fidelizado más por semana amortiza la inversión.",
+      "answerPrice": "El plan Essentiel cuesta solo 89 € al año (99 $; 990 MAD en Marruecos), menos de 8 € al mes. Un solo cliente fidelizado más por semana amortiza la inversión.",
       "objectionTime": "«No tengo tiempo para configurarlo»",
       "answerTime": "La cuenta se configura en solo 5 minutos desde un smartphone o un ordenador, y el cartel con el código QR se genera al instante, listo para imprimir."
     }
@@ -392,7 +397,7 @@
     "title": "Solicitar una transferencia",
     "available": "Disponible para retirar: {amount}",
     "close": "Cerrar",
-    "amount": "Importe del retiro (USD) *",
+    "amount": "Importe del retiro ({currency}) *",
     "threshold": "Umbral mínimo: {amount}",
     "method": "Método de pago *",
     "bankTransfer": "Transferencia bancaria (IBAN / SWIFT)",
@@ -440,5 +445,81 @@
     "generated": "Enlace generado",
     "copied": "¡Enlace de campaña copiado!",
     "copy": "Copiar el enlace con UTM"
+  },
+  "collection": {
+    "title": "Cobros",
+    "subtitle": "Cobra las suscripciones en efectivo o con dinero móvil y entrégalas cada mes a FOVE (extracto mensual). Gastos de cobro: {fee} % en las renovaciones y en los clientes que no has traído.",
+    "outstanding": "Adeudado a FOVE",
+    "blocked": {
+      "not_approved": "Tu cuenta de socio debe estar validada para cobrar.",
+      "disabled": "El cobro está desactivado para tu cuenta: contacta con FOVE.",
+      "overdue": "Extracto {reference} sin pagar: págalo para volver a cobrar.",
+      "cap": "Límite de saldo alcanzado: entrega tus cobros a FOVE para volver a cobrar."
+    },
+    "byReference": {
+      "title": "Cobrar por referencia",
+      "help": "Para un comercio que no es cliente tuyo: introduce la referencia que te muestra (página Suscripción o correo), comprueba el comercio y el importe y confirma.",
+      "label": "Referencia de pago",
+      "search": "Comprobar"
+    },
+    "clients": {
+      "title": "Mis clientes",
+      "empty": "Aún no has traído clientes.",
+      "until": "{plan} hasta el {date}",
+      "free": "Plan Gratuito",
+      "plan": "Plan",
+      "subscribe": "Cobrar la suscripción",
+      "renew": "Renovar"
+    },
+    "invite": {
+      "title": "Registrar un comercio",
+      "help": "El comercio crea su propia cuenta (confirma su correo); se te asigna automáticamente. Envíale el enlace o ábrelo en su teléfono.",
+      "name": "Nombre del comerciante",
+      "business": "Nombre del comercio",
+      "email": "Correo",
+      "copy": "Copiar el enlace",
+      "copied": "Enlace copiado.",
+      "whatsapp": "Enviar por WhatsApp",
+      "open": "Abrir el enlace",
+      "message": "Hola, este es el enlace para crear tu programa de fidelidad FOVE: {url}"
+    },
+    "statements": {
+      "title": "Extractos mensuales",
+      "owe": "A pagar: {amount}",
+      "credit": "A tu favor: {amount}",
+      "due": "A pagar antes del {date} con la referencia {reference}.",
+      "status": {
+        "ISSUED": "Por pagar",
+        "PAID": "Pagado",
+        "SETTLED": "Saldado"
+      }
+    },
+    "history": {
+      "title": "Historial",
+      "empty": "Aún no hay cobros.",
+      "disputed": "Señalado",
+      "toSettle": "Por entregar"
+    },
+    "confirm": {
+      "title": "Cobrar: {name}",
+      "description": "{plan} · {kind}",
+      "kind": {
+        "new": "suscripción",
+        "renewal": "renovación"
+      },
+      "amount": "Importe a cobrar",
+      "method": "Medio de pago",
+      "methods": {
+        "CASH": "Efectivo",
+        "MOBILE_MONEY": "Dinero móvil",
+        "BANK_TRANSFER": "Transferencia a tu cuenta"
+      },
+      "receipt": "Número de recibo",
+      "receiptHint": "Opcional: el recibo que entregas al comercio.",
+      "warning": "Confirma solo si has recibido {amount}. La suscripción se activa de inmediato y este importe se suma a lo que debes a FOVE.",
+      "cancel": "Cancelar",
+      "submit": "He recibido el pago"
+    },
+    "collected": "Cobro confirmado: la suscripción de {name} está activa."
   }
 }

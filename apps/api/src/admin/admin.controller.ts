@@ -1,11 +1,11 @@
-import { Body, Controller, Get, HttpCode, Param, ParseUUIDPipe, Patch, Post, Query } from "@nestjs/common";
+import { Body, Controller, Get, HttpCode, Param, ParseUUIDPipe, Patch, Post, Put, Query } from "@nestjs/common";
 import { ApiTags } from "@nestjs/swagger";
 import { z } from "zod";
 import { ZodPipe } from "../common/zod.pipe";
 import { Auth } from "../common/decorators";
 import type { AuthState } from "../common/context";
 import { SuperAdminRoute, UserRoute } from "../auth/guards";
-import { AdminService, setSubscriptionSchema, supportAccessSchema, updateMessageSchema, updatePlanSchema } from "./admin.service";
+import { AdminService, setSubscriptionSchema, tenantCurrencySchema, supportAccessSchema, updateMessageSchema, updatePlanSchema } from "./admin.service";
 
 const statusSchema = z.object({ status: z.enum(["ACTIVE", "SUSPENDED"]), reason: z.string().trim().min(5).max(300) });
 
@@ -82,6 +82,12 @@ export class AdminController {
   @SuperAdminRoute()
   updatePlan(@Auth() auth: AuthState, @Param("id", ParseUUIDPipe) id: string, @Body(new ZodPipe(updatePlanSchema)) body: z.infer<typeof updatePlanSchema>) {
     return this.admin.updatePlan(auth, id, body);
+  }
+
+  @Post("tenants/:id/billing-currency")
+  @SuperAdminRoute()
+  setTenantCurrency(@Auth() auth: AuthState, @Param("id", ParseUUIDPipe) id: string, @Body(new ZodPipe(tenantCurrencySchema)) body: z.infer<typeof tenantCurrencySchema>) {
+    return this.admin.setTenantCurrency(auth, id, body.currency);
   }
 
   @Get("integrations")

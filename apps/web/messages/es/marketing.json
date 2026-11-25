@@ -220,7 +220,8 @@
   },
   "currencyToggle": {
     "label": "Moneda:",
-    "groupLabel": "Seleccionar la moneda de los precios"
+    "groupLabel": "Seleccionar la moneda de los precios",
+    "names": { "EUR": "Euro", "USD": "Dólar estadounidense", "MAD": "Dírham marroquí", "DZD": "Dinar argelino", "CDF": "Franco congoleño" }
   },
   "pricing": {
     "unavailable": "Los precios no están disponibles en este momento. Inténtelo de nuevo en un instante.",
@@ -254,6 +255,8 @@
     "noteCustom": "Contrato adaptado a su red",
     "noteEur": "Pago por adelantado, en euros (€)",
     "noteUsd": "Pago por adelantado, en dólares estadounidenses ($)",
+    "noteLocal": "Pago por adelantado, en efectivo, por transferencia o dinero móvil, o en línea ({price})",
+    "noteLocalOnly": "Pago por adelantado, en efectivo, por transferencia o dinero móvil",
     "recommended": "Recomendado",
     "notIncludedSuffix": ": no incluido",
     "caption": "Comparativa de los planes FOVE: capacidad y funciones incluidas",
@@ -275,7 +278,7 @@
       { "q": "¿Y si cancelo?", "a": "Su plan sigue activo hasta el final del periodo pagado y puede cambiar de opinión hasta entonces. Después, su cuenta pasa al plan Gratuito: no se elimina nada." },
       { "q": "¿Mi necesidad supera el plan Réseau?", "a": "El plan A medida se adapta a sus volúmenes: número de clientes, establecimientos y colaboradores, acompañamiento y contrato bajo presupuesto. Contáctenos." },
       { "q": "¿Mis clientes pagan algo?", "a": "No. La tarjeta es gratuita para ellos y se abre en el navegador del teléfono." },
-      { "q": "¿Cómo se paga?", "a": "En dólares estadounidenses ($) o en euros (€) según su región, con un pago anual por adelantado. Las facturas están disponibles en su área." }
+      { "q": "¿Cómo se paga?", "a": "Una vez al año, por adelantado. En línea con tarjeta, en euros (€) o en dólares estadounidenses ($). En Marruecos, Argelia y la RDC, también puede pagar en su moneda por transferencia, en efectivo o con dinero móvil, directamente a FOVE o a un socio de FOVE. Las facturas están disponibles en su área." }
     ]
   },
   "features": {

@@ -4,7 +4,7 @@
  * depuis l'administration FOVE (jamais lus en dur par le code).
  */
 import { createHash, randomBytes, scryptSync } from "node:crypto";
-import { DEFAULT_PLANS, PERMISSIONS, ROLE_PERMISSIONS, TENANT_ROLES } from "@fove/shared";
+import { DEFAULT_FX_RATES, DEFAULT_PLAN_PRICES, DEFAULT_PLANS, PERMISSIONS, ROLE_PERMISSIONS, TENANT_ROLES } from "@fove/shared";
 import { createPrismaClient } from "../src/index";
 
 const prisma = createPrismaClient(process.env.DIRECT_DATABASE_URL ?? process.env.DATABASE_URL);
@@ -31,7 +31,14 @@ export async function seedReferenceData(): Promise<void> {
     });
   }
   for (const plan of DEFAULT_PLANS) {
-    await prisma.subscriptionPlan.upsert({ where: { code: plan.code }, update: {}, create: plan });
+    const saved = await prisma.subscriptionPlan.upsert({ where: { code: plan.code }, update: {}, create: plan });
+    // Prix manquants ajoutés depuis la grille ; un prix déjà en base (modifié dans l'admin) n'est jamais écrasé.
+    for (const [currency, yearlyCents] of Object.entries(DEFAULT_PLAN_PRICES[plan.code] ?? {})) {
+      await prisma.planPrice.upsert({ where: { planId_currency: { planId: saved.id, currency } }, update: {}, create: { planId: saved.id, currency, yearlyCents } });
+    }
+  }
+  for (const [currency, unitsPerEur] of Object.entries(DEFAULT_FX_RATES)) {
+    await prisma.exchangeRate.upsert({ where: { currency }, update: {}, create: { currency, unitsPerEur } });
   }
 }
 
