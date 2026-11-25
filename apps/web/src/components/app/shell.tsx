@@ -22,7 +22,7 @@ import {
   Users,
   X,
 } from "lucide-react";
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { Logo } from "@/components/brand";
@@ -32,7 +32,8 @@ import { UpgradeNudge } from "@/components/app/upgrade";
 import { LoaderCircle, type LucideIcon } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
-import { api, useErrorMessage } from "@/lib/api";
+import { api, EMAIL_NOT_VERIFIED_EVENT, useErrorMessage } from "@/lib/api";
+import { DialogContent, DialogRoot } from "@/components/ui/dialog";
 import { useIsNativeApp } from "@/lib/native-app";
 import { cn } from "@/lib/utils";
 import { useActiveTenant, useMe } from "./me-context";
@@ -219,6 +220,49 @@ function VerifyBanner() {
   );
 }
 
+/**
+ * Fenêtre « Confirmez d'abord votre email » : s'ouvre dès qu'une action est refusée avec
+ * `email_not_verified` (inviter, exporter, importer, envois groupés, intégrations, > 50 clients).
+ */
+function VerifyEmailDialog() {
+  const toErrorMessage = useErrorMessage();
+  const t = useTranslations("app.shell");
+  const me = useMe();
+  const [open, setOpen] = useState(false);
+  const [sent, setSent] = useState(false);
+  useEffect(() => {
+    const onRefused = () => setOpen(true);
+    window.addEventListener(EMAIL_NOT_VERIFIED_EVENT, onRefused);
+    return () => window.removeEventListener(EMAIL_NOT_VERIFIED_EVENT, onRefused);
+  }, []);
+  if (me.user.emailVerifiedAt) return null;
+  return (
+    <DialogRoot open={open} onOpenChange={setOpen}>
+      <DialogContent title={t("verifyDialog.title")} description={t("verifyDialog.body", { email: me.user.email })}>
+        <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+          <Button variant="secondary" onClick={() => setOpen(false)}>
+            {t("verifyDialog.close")}
+          </Button>
+          <Button
+            disabled={sent}
+            onClick={async () => {
+              try {
+                await api.post("/auth/resend-verification");
+                setSent(true);
+                toast.success(t("verificationSent"));
+              } catch (e) {
+                toast.error(toErrorMessage(e));
+              }
+            }}
+          >
+            {sent ? t("emailSent") : t("resendEmail")}
+          </Button>
+        </div>
+      </DialogContent>
+    </DialogRoot>
+  );
+}
+
 export function AppShell({ children }: { children: ReactNode }) {
   const t = useTranslations("app.shell");
   const tn = useTranslations("app.nav");
@@ -231,6 +275,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     <div className="min-h-dvh">
       <SupportBanner />
       <VerifyBanner />
+      <VerifyEmailDialog />
       <div className="lg:grid lg:grid-cols-[264px_1fr]">
         <aside className="sticky top-0 hidden h-dvh flex-col gap-6 border-e border-line px-4 py-5 lg:flex">
           <Link href="/app" className="px-2" aria-label={t("dashboard")}>

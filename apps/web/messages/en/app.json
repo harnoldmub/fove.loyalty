@@ -806,7 +806,12 @@
     "foveAdmin": "FOVE administration",
     "supportBanner": "Read-only support access: every view is logged.",
     "endSupport": "End access",
-    "verifyBanner": "Confirm your email ({email}) to secure your account and enable integrations.",
+    "verifyBanner": "Confirm your email ({email}) to invite your team, export or import customers, connect your tools and go beyond 50 customers.",
+    "verifyDialog": {
+      "title": "Confirm your email address first",
+      "body": "This action is reserved for accounts with a confirmed email: inviting your team, exporting or importing customers, messaging all your customers, connecting a shop or your tools, and signing up more than 50 customers. Open the link sent to {email}.",
+      "close": "Later"
+    },
     "verificationSent": "Confirmation email sent",
     "emailSent": "Email sent",
     "resendEmail": "Resend email",

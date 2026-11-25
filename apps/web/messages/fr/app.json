@@ -806,7 +806,12 @@
     "foveAdmin": "Administration FOVE",
     "supportBanner": "Accès support en lecture seule : chaque consultation est journalisée.",
     "endSupport": "Terminer l’accès",
-    "verifyBanner": "Confirmez votre email ({email}) pour sécuriser votre compte et activer les intégrations.",
+    "verifyBanner": "Confirmez votre email ({email}) pour inviter votre équipe, exporter ou importer vos clients, relier vos outils et dépasser 50 clients.",
+    "verifyDialog": {
+      "title": "Confirmez d’abord votre adresse email",
+      "body": "Cette action est réservée aux comptes dont l’email est confirmé : inviter votre équipe, exporter ou importer des clients, écrire à tous vos clients, relier une boutique ou vos outils, et inscrire plus de 50 clients. Ouvrez le lien envoyé à {email}.",
+      "close": "Plus tard"
+    },
     "verificationSent": "Email de confirmation envoyé",
     "emailSent": "Email envoyé",
     "resendEmail": "Renvoyer l’email",

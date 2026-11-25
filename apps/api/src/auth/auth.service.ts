@@ -15,6 +15,9 @@ import { passwordResetMessage, verifyEmailMessage } from "../i18n/emails";
 const MAX_FAILED_LOGINS = 5;
 const LOCK_MINUTES = 15;
 
+/** Jours après l'inscription où l'on relance un compte à l'email non confirmé. */
+export const VERIFICATION_REMINDER_DAYS = [1, 3, 7];
+
 @Injectable()
 export class AuthService {
   constructor(
@@ -205,20 +208,26 @@ export class AuthService {
    * toujours pas confirmé. Rien n'est bloqué (l'abonnement payé reste actif) ;
    * seules les clés API et les webhooks attendent la confirmation.
    */
+  /**
+   * Relances de confirmation de l'email (docs/chantier-email-non-confirme.md) : à J1, J3 et J7
+   * après l'inscription, puis plus rien. Chaque relance contient un nouveau lien de confirmation.
+   */
   async sendVerificationReminders(now = new Date()): Promise<number> {
+    const DAY = 86_400_000;
     const users = await this.prisma.client.user.findMany({
       where: {
         emailVerifiedAt: null,
         isSuperAdmin: false,
-        createdAt: { lt: new Date(now.getTime() - 86_400_000), gt: new Date(now.getTime() - 7 * 86_400_000) },
+        createdAt: { lt: new Date(now.getTime() - VERIFICATION_REMINDER_DAYS[0]! * DAY), gt: new Date(now.getTime() - (VERIFICATION_REMINDER_DAYS.at(-1)! + 1) * DAY) },
       },
-      select: { id: true, email: true },
+      select: { id: true, email: true, createdAt: true },
       take: 200,
     });
     let sent = 0;
     for (const user of users) {
       const already = await this.prisma.client.auditLog.count({ where: { actorUserId: user.id, action: "auth.verification_reminder" } });
-      if (already > 0) continue;
+      const dueDay = VERIFICATION_REMINDER_DAYS[already];
+      if (dueDay === undefined || now.getTime() - user.createdAt.getTime() < dueDay * DAY) continue;
       await this.sendVerification(user.id, user.email);
       await this.audit.log({ actorUserId: user.id, action: "auth.verification_reminder" });
       sent += 1;

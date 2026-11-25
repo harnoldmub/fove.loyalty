@@ -329,6 +329,51 @@ export function clientConfirmMessage(locale: Locale, code: string, link: string)
   };
 }
 
+const CLIENT_REMIND = {
+  fr: {
+    subject: "Confirmez votre email pour garder vos cartes partout — FOVE",
+    heading: "Votre compte FOVE attend sa confirmation",
+    body: "Confirmez votre adresse email pour retrouver toutes vos cartes de fidélité sur n'importe quel téléphone, et en ajouter chez d'autres commerces.",
+    how: "Un geste suffit : continuez avec Google, ou recevez un code à 6 chiffres.",
+    button: "Confirmer mon email",
+    footer: "Vous n'avez pas créé de carte FOVE ? Ignorez cet email : rien ne sera rattaché à votre adresse sans confirmation.",
+  },
+  en: {
+    subject: "Confirm your email to keep your cards everywhere — FOVE",
+    heading: "Your FOVE account is waiting for confirmation",
+    body: "Confirm your email address to find all your loyalty cards on any phone, and add cards at other businesses.",
+    how: "It takes one step: continue with Google, or get a 6-digit code.",
+    button: "Confirm my email",
+    footer: "Didn't create a FOVE card? Ignore this email: nothing will be linked to your address without confirmation.",
+  },
+  ar: {
+    subject: "أكّد بريدك الإلكتروني للاحتفاظ ببطاقاتك في كل مكان — FOVE",
+    heading: "حسابك في FOVE بانتظار التأكيد",
+    body: "أكّد عنوان بريدك الإلكتروني لتجد جميع بطاقات الولاء الخاصة بك على أي هاتف، ولإضافة بطاقات لدى متاجر أخرى.",
+    how: "تكفي خطوة واحدة: تابع باستخدام Google، أو استلم رمزًا من 6 أرقام.",
+    button: "تأكيد بريدي الإلكتروني",
+    footer: "لم تُنشئ بطاقة FOVE؟ تجاهل هذه الرسالة: لن يُربط أي شيء بعنوانك بدون تأكيد.",
+  },
+  es: {
+    subject: "Confirma tu correo para tener tus tarjetas en todas partes — FOVE",
+    heading: "Tu cuenta FOVE espera su confirmación",
+    body: "Confirma tu dirección de correo para encontrar todas tus tarjetas de fidelidad en cualquier teléfono y añadir tarjetas en otros comercios.",
+    how: "Basta un paso: continúa con Google o recibe un código de 6 cifras.",
+    button: "Confirmar mi correo",
+    footer: "¿No has creado ninguna tarjeta FOVE? Ignora este correo: no se vinculará nada a tu dirección sin confirmación.",
+  },
+} satisfies Record<Locale, unknown>;
+
+/** Relance d'un compte client non confirmé : bouton vers la connexion (Google ou nouveau code). */
+export function clientConfirmReminderMessage(locale: Locale, link: string): Content {
+  const t = CLIENT_REMIND[locale];
+  return {
+    subject: t.subject,
+    text: `${t.heading}\n\n${t.body}\n${t.how}\n\n${link}\n\n${t.footer}`,
+    html: emailHtml(locale, { title: t.subject, heading: t.heading, paragraphs: [t.body, t.how], button: { label: t.button, url: link }, footer: t.footer }),
+  };
+}
+
 const CLIENT_INACTIVE = {
   fr: {
     subject: "Votre compte FOVE sera supprimé dans 30 jours",

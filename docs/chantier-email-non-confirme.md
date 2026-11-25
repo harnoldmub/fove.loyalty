@@ -1,6 +1,6 @@
 # Chantier — Limites des comptes à l'email non confirmé
 
-> Statut : **validée le 25 novembre 2026** (grille telle quelle, limite douce à 50 clients, relances J1/J3/J7 et client J3/J10). Rédigée après la revue de sécurité du même jour.
+> Statut : **codé le 25 novembre 2026** (E1 à E4). Validée le 25 novembre 2026 (grille telle quelle, limite douce à 50 clients, relances J1/J3/J7 et client J3/J10). Rédigée après la revue de sécurité du même jour.
 
 ## 1. Pourquoi
 
@@ -30,7 +30,7 @@ Aujourd'hui, seules la création d'une clé API et celle d'un webhook exigent l'
 | Reste libre sans confirmation | Exige l'email confirmé |
 |---|---|
 | Créer le commerce, terminer l'assistant de démarrage | **Inviter des collaborateurs**, changer un rôle, désactiver un membre : FOVE écrit à des tiers au nom du commerce |
-| Programmes, récompenses, établissements, QR d'inscription, affiche | **Exporter les données d'un client** (export RGPD) et **l'export CSV de la liste** |
+| Programmes, récompenses, établissements, QR d'inscription, affiche | **Exporter les données d'un client** (export RGPD ; il n'existe pas d'export de la liste) |
 | Scanner, créditer, utiliser une récompense, ajuster, annuler | **Importer un fichier clients** : des données personnelles de tiers en masse |
 | Inscrire un client en caisse, partager sa carte (lien `wa.me`) | **Envois groupés** : campagnes Wallet à tous les clients d'un programme |
 | Paramètres, logo, statistiques, transactions | **Intégrations** : clés API et webhooks (déjà fait), **connecteur boutique en ligne** |
@@ -64,7 +64,7 @@ Ajouts proposés :
 | Lot | Contenu |
 |---|---|
 | **E1. Règles API** | `@RequireVerified()` sur les routes de la grille (invitations et équipe, export client, import, envois groupés Wallet, connecteur boutique) ; limite douce si retenue ; tests |
-| **E2. Écrans** | Bandeau élargi, fenêtre « Confirmez votre email » sur les boutons bloqués, export CSV de la liste ; 4 langues |
+| **E2. Écrans** | Bandeau élargi, fenêtre « Confirmez d'abord votre email » ouverte par toute action refusée (`email_not_verified`) ; 4 langues |
 | **E3. Relances** | Commerçant J1/J3/J7, client J3/J10 ; 4 langues ; tests |
 | **E4. Référentiel** | `docs/fonctionnalites.md`, `docs/securite.md` |
 

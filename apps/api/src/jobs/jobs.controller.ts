@@ -39,12 +39,13 @@ export class JobsController {
   async run(@Headers("x-cron-secret") secret?: string) {
     if (!secret || !safeEqual(secret, loadConfig().CRON_SECRET)) throw unauthorized();
     const now = new Date();
-    const [webhooks, expired, subscriptions, verificationReminders, clientAccounts] = [
+    const [webhooks, expired, subscriptions, verificationReminders, clientAccounts, clientReminders] = [
       await this.webhooks.retryDue(),
       await this.loyalty.expireInactive(now),
       await this.billing.closeExpired(now),
       await this.auth.sendVerificationReminders(now),
       await this.clientAccounts.purgeInactive(now),
+      await this.clientAccounts.sendConfirmationReminders(now),
     ];
     const db = this.prisma.client;
     const cleanup = await db.$transaction([
@@ -56,6 +57,6 @@ export class JobsController {
       // Gardés 24 h : ils servent à limiter le nombre de demandes par email et par adresse IP.
       db.clientLoginCode.deleteMany({ where: { createdAt: { lt: new Date(now.getTime() - 86_400_000) } } }),
     ]);
-    return { webhooksRetried: webhooks, accountsExpired: expired, subscriptions, verificationReminders, clientAccounts, cleaned: cleanup.map((c) => c.count) };
+    return { webhooksRetried: webhooks, accountsExpired: expired, subscriptions, verificationReminders, clientAccounts, clientReminders, cleaned: cleanup.map((c) => c.count) };
   }
 }
