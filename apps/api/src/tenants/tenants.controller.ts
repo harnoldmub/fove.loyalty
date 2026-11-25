@@ -3,7 +3,7 @@ import { ApiTags } from "@nestjs/swagger";
 import { createTenantSchema, establishmentSchema, inviteMemberSchema, updateMemberSchema, updateTenantSchema } from "@fove/shared";
 import { z } from "zod";
 import { ZodPipe } from "../common/zod.pipe";
-import { Auth, RequirePermission, Tenant } from "../common/decorators";
+import { Auth, RequirePermission, RequireVerified, Tenant } from "../common/decorators";
 import type { AuthState, TenantContext } from "../common/context";
 import { TenantRoute, UserRoute } from "../auth/guards";
 import { TenantsService } from "./tenants.service";
@@ -81,6 +81,7 @@ export class TenantsController {
   }
 
   @Post("team/invitations")
+  @RequireVerified()
   @TenantRoute()
   @RequirePermission("members.write")
   invite(@Tenant() ctx: TenantContext, @Body(new ZodPipe(inviteMemberSchema)) body: z.infer<typeof inviteMemberSchema>) {
@@ -88,6 +89,7 @@ export class TenantsController {
   }
 
   @Delete("team/invitations/:id")
+  @RequireVerified()
   @HttpCode(204)
   @TenantRoute()
   @RequirePermission("members.write")
@@ -96,6 +98,7 @@ export class TenantsController {
   }
 
   @Patch("team/members/:id")
+  @RequireVerified()
   @HttpCode(204)
   @TenantRoute()
   @RequirePermission("members.write")
@@ -104,6 +107,7 @@ export class TenantsController {
   }
 
   @Post("team/members/:id/status")
+  @RequireVerified()
   @HttpCode(204)
   @TenantRoute()
   @RequirePermission("members.write")

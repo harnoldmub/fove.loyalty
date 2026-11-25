@@ -100,6 +100,7 @@ const EXACT: Record<string, Tr> = {
   "Aucune validation en attente": ["No verification pending", "لا يوجد تحقق معلّق", "No hay ninguna validación pendiente"],
   "Code expiré : demandez-en un nouveau": ["Code expired: request a new one", "انتهت صلاحية الرمز: اطلب رمزًا جديدًا", "Código caducado: pide uno nuevo"],
   "Code incorrect": ["Incorrect code", "رمز غير صحيح", "Código incorrecto"],
+  "Confirmez votre email pour inscrire plus de 50 clients": ["Confirm your email to sign up more than 50 customers", "أكّد بريدك الإلكتروني لتسجيل أكثر من 50 عميلًا", "Confirma tu correo para inscribir a más de 50 clientes"],
   "Adresse de webhook non autorisée : utilisez une adresse HTTPS publique": ["Webhook address not allowed: use a public HTTPS address", "عنوان webhook غير مسموح به: استخدم عنوان HTTPS عامًا", "Dirección de webhook no permitida: usa una dirección HTTPS pública"],
   "Confirmez votre email pour ouvrir « Mes cartes »": ["Confirm your email to open “My cards”", "أكّد بريدك الإلكتروني لفتح «بطاقاتي»", "Confirma tu correo para abrir «Mis tarjetas»"],
   "Vous avez déjà une carte rattachée chez ce commerce": ["You already have a card linked at this business", "لديك بالفعل بطاقة مرتبطة لدى هذا المتجر", "Ya tienes una tarjeta vinculada en este comercio"],

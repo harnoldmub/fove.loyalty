@@ -319,9 +319,9 @@ export class CustomersService {
         results.push({ row, status: "created" });
       } catch (error) {
         const code = (error as { response?: { error?: { code?: string; message?: string } } }).response?.error;
-        if (code?.code === "quota_exceeded") {
+        if (code?.code === "quota_exceeded" || code?.code === "email_not_verified") {
           full = true;
-          results.push({ row, status: "quota", message: "Limite de clients de l'offre atteinte" });
+          results.push({ row, status: "quota", message: code.code === "quota_exceeded" ? "Limite de clients de l'offre atteinte" : code.message });
         } else if (code?.code === "customer_exists" || isUniqueViolation(error)) results.push({ row, status: "duplicate" });
         else results.push({ row, status: "invalid", message: code?.message ?? "Ligne invalide" });
       }

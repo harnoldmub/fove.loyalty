@@ -69,6 +69,7 @@ export class IntegrationsController {
   }
 
   @Post("connections")
+  @RequireVerified()
   @RequirePermission("integrations.write")
   createConnection(@Tenant() ctx: TenantContext, @Body(new ZodPipe(connectionSchema)) body: z.infer<typeof connectionSchema>) {
     return this.integrations.createConnection(ctx, body);

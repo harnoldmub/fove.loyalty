@@ -24,7 +24,7 @@ describe("facturation en mode simulé et quotas", () => {
   });
 
   it("le paiement n'attend pas la confirmation de l'email, les clés API si", async () => {
-    const o = await ownerWithTenant(app);
+    const o = await ownerWithTenant(app, { verified: false });
     const key = await o.client.post("/api/app/integrations/keys", { name: "Serveur", kind: "SECRET", scopes: ["customers:read"] });
     expect(key.status).toBe(403);
     const res = await o.client.post("/api/app/billing/checkout", { planCode: "premium", interval: "YEAR" });

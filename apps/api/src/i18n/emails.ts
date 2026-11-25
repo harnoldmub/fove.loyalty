@@ -431,6 +431,35 @@ export function quotaAlertMessage(locale: Locale, p: { reason: "blocked" | "reac
   };
 }
 
+const UNVERIFIED_LIMIT = {
+  fr: {
+    subject: (tenant: string) => `Un client n'a pas pu rejoindre ${tenant}`,
+    body: (limit: number, url: string) =>
+      `Bonjour,\n\nUn client vient d'essayer de rejoindre votre programme de fidélité, mais votre commerce compte déjà ${limit} clients et votre adresse email n'est pas encore confirmée. Il a vu un message lui indiquant que les inscriptions sont momentanément fermées.\n\nConfirmez votre adresse email (lien reçu à l'inscription, ou bouton « Renvoyer l'email » dans votre espace) pour accueillir de nouveaux clients : ${url}\n\nVos clients actuels gardent leurs cartes et leurs points.\n\nL'équipe FOVE`,
+  },
+  en: {
+    subject: (tenant: string) => `A customer couldn't join ${tenant}`,
+    body: (limit: number, url: string) =>
+      `Hello,\n\nA customer just tried to join your loyalty programme, but your business already has ${limit} customers and your email address isn't confirmed yet. They saw a message saying sign-ups are temporarily closed.\n\nConfirm your email address (link received at sign-up, or the "Resend email" button in your space) to welcome new customers: ${url}\n\nYour current customers keep their cards and points.\n\nThe FOVE team`,
+  },
+  ar: {
+    subject: (tenant: string) => `لم يتمكّن عميل من الانضمام إلى ${tenant}`,
+    body: (limit: number, url: string) =>
+      `مرحبًا،\n\nحاول عميل للتو الانضمام إلى برنامج الولاء الخاص بك، لكن متجرك يضم بالفعل ${limit} عميل ولم يتم تأكيد بريدك الإلكتروني بعد. ظهرت له رسالة تفيد بأن التسجيل مغلق مؤقتًا.\n\nأكّد بريدك الإلكتروني (الرابط المستلم عند التسجيل، أو زر «إعادة إرسال البريد» في مساحتك) لاستقبال عملاء جدد: ${url}\n\nيحتفظ عملاؤك الحاليون ببطاقاتهم ونقاطهم.\n\nفريق FOVE`,
+  },
+  es: {
+    subject: (tenant: string) => `Un cliente no ha podido unirse a ${tenant}`,
+    body: (limit: number, url: string) =>
+      `Hola:\n\nUn cliente acaba de intentar unirse a tu programa de fidelidad, pero tu comercio ya tiene ${limit} clientes y tu correo aún no está confirmado. Ha visto un mensaje que indica que las inscripciones están cerradas temporalmente.\n\nConfirma tu correo (enlace recibido al registrarte, o el botón «Reenviar el correo» en tu espacio) para recibir nuevos clientes: ${url}\n\nTus clientes actuales conservan sus tarjetas y sus puntos.\n\nEl equipo de FOVE`,
+  },
+} satisfies Record<Locale, unknown>;
+
+/** Inscription refusée par la limite douce : le propriétaire n'a pas confirmé son email. */
+export function unverifiedLimitMessage(locale: Locale, p: { tenantName: string; limit: number; appUrl: string }): Content {
+  const t = UNVERIFIED_LIMIT[locale];
+  return { subject: t.subject(p.tenantName), text: t.body(p.limit, p.appUrl) };
+}
+
 // --- Partenaires --------------------------------------------------------------
 
 const PARTNER = {

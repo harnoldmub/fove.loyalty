@@ -70,7 +70,7 @@ describe("résiliation d'un abonnement", () => {
 
 describe("relance de confirmation de l'email", () => {
   it("relance une seule fois, 24 h après l'inscription, sans rien bloquer", async () => {
-    const o = await ownerWithTenant(app, { plan: "free" });
+    const o = await ownerWithTenant(app, { plan: "free", verified: false });
     const user = await db.user.findUniqueOrThrow({ where: { email: o.email } });
     const verifyEmails = () => db.emailOutbox.count({ where: { to: o.email, subject: { contains: "Confirmez votre adresse" } } });
     const atSignup = await verifyEmails();
