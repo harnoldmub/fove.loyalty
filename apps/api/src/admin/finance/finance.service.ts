@@ -869,14 +869,22 @@ export class FinanceService {
   /**
    * Parrainage & crédits.
    */
+  /** Parrainages entre commerçants : liste et totaux du crédit (acquis, utilisé, disponible). */
   async referrals() {
-    return this.prisma.client.referralReward.findMany({
+    const items = await this.prisma.client.referralReward.findMany({
       include: {
         referrerTenant: { select: { id: true, name: true, slug: true } },
         referredTenant: { select: { id: true, name: true, slug: true } },
       },
       orderBy: { createdAt: "desc" },
     });
+    const earned = items.filter((r) => r.status === "EARNED" || r.status === "EXPIRED" || (r.status === "CANCELLED" && r.creditAmountCents > 0));
+    return {
+      items,
+      totalCreditCents: earned.reduce((sum, r) => sum + r.creditAmountCents, 0),
+      usedCents: items.reduce((sum, r) => sum + r.creditUsedCents, 0),
+      remainingCents: items.filter((r) => r.status === "EARNED").reduce((sum, r) => sum + r.creditRemainingCents, 0),
+    };
   }
 
   /**

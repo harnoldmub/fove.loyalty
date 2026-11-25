@@ -189,7 +189,7 @@ La page de la carte affiche :
    - premier point de vente : nom et ville ;
    - premier programme, en points ou en tampons, avec sa première récompense ;
    - affichage du **QR d'inscription** à mettre au comptoir.
-3. Le commerce démarre sur l'**offre Gratuite**. Il est rattaché à un partenaire commercial si la personne est arrivée par un lien partenaire ([5.2](#52-son-espace)), et à un commerçant parrain si elle est arrivée par un lien de parrainage ([3.13](#313-paramètres)).
+3. Le commerce démarre sur l'**offre Gratuite**. Il est rattaché à un partenaire commercial si la personne est arrivée par un lien partenaire ([5.2](#52-son-espace)), ou à un commerçant parrain si elle est arrivée par un lien de parrainage ([3.16](#316-parrainage-entre-commerçants)). Si les deux liens ont été suivis, **seul le premier cliqué** est retenu.
 
 **Accès**
 - Connexion par email et mot de passe ; session de 30 jours ; déconnexion automatique quand la session expire.
@@ -428,7 +428,7 @@ La documentation pour les développeurs est sur la page publique `/developpeurs`
 | Compte Instagram | Affiché sur les cartes téléchargées |
 | Bannière des cartes Wallet | Image en tête des cartes Apple Wallet et Google Wallet |
 
-**Parrainage entre commerçants** : chaque commerce a un lien de parrainage à partager. Un commerce créé par ce lien est enregistré comme filleul, et le parrain reçoit **20 $ de crédit** ⚠.
+**Parrainage entre commerçants** : une carte renvoie vers la page « Parrainage » ([3.16](#316-parrainage-entre-commerçants)).
 
 ### 3.14 Abonnement
 
@@ -445,6 +445,21 @@ La documentation pour les développeurs est sur la page publique `/developpeurs`
 - Réinitialisation du mot de passe.
 - Invitation à rejoindre une entreprise.
 - Alertes de quota.
+
+### 3.16 Parrainage entre commerçants
+
+Spec : [chantier-parrainage.md](chantier-parrainage.md). Page `/app/parrainage` (permission facturation en lecture).
+
+- **Réservé aux offres payantes** (fonction d'offre `referral`, réglable dans l'admin). En Gratuit, la page est visible mais verrouillée et invite à passer à une offre payante.
+- **Lien** `fove.digital/signup?ref=<adresse-du-commerce>` (cookie de 30 jours), à copier ou partager sur WhatsApp. Face à un lien partenaire, le premier lien cliqué l'emporte.
+- **Filleul** : 20 USD déduits de sa première souscription annuelle, affichés sur sa page Abonnement avant le paiement.
+- **Parrain** : 20 USD de crédit par filleul, **acquis 14 jours après le premier paiement annuel** du filleul (annulé en cas de remboursement ou de résiliation pendant ce délai).
+- **Plafond** par année civile : le plus petit de 200 USD ou du prix annuel de l'offre du parrain (Essentiel 99, Business 199, Réseau 200). Au-delà, « hors plafond » : 0 pour le parrain, remise maintenue pour le filleul. Aucune limite sur le nombre de filleuls.
+- **Utilisation** : déduit automatiquement des factures suivantes, le plus ancien d'abord ; jamais en argent ; **expiration 3 ans** après l'acquisition.
+- **Anti-abus** : pas de parrainage entre commerces d'un même propriétaire, ni avec la même carte bancaire (Stripe).
+- **Page** : lien, gains (disponible, gagné, utilisé, en attente, prochaine expiration), plafond de l'année, filleuls et leur état (inscrit, en attente, acquis, hors plafond, hors offre, annulé, expiré), conditions complètes.
+- **Invitation au programme partenaires** à 80 % puis à 100 % du plafond (encart et email, une fois par palier et par an), avec une candidature pré-remplie.
+- **Vitrine** : ligne « Programme de parrainage (jusqu'à une année offerte) » dans les offres et le comparatif.
 
 ---
 
@@ -624,7 +639,7 @@ Le nombre d'entreprises abonnées à chaque offre est affiché.
 | **Rapports associés** | Rapport mensuel : facturé, taxes, frais, remboursements, commissions dues, net disponible, résultat du mois |
 | **Audit** | Journal de chaque action financière : qui, quoi, quand |
 | **Partenaires** | Commissions dues et versées, journal des commissions, versement d'une commission |
-| **Parrainages** | Parrainages entre commerçants et crédits accordés ⚠ |
+| **Parrainages** | Parrainages entre commerçants : états, crédit acquis, utilisé et disponible ; annulation d'un parrainage (abus, fraude) avec motif obligatoire, qui retire le crédit non utilisé |
 | **Remboursements** | Historique des remboursements |
 
 ---
@@ -682,7 +697,7 @@ Cette section liste ce qui **existe dans l'application mais n'est pas garanti à
 | **Google Wallet** : ajout, mise à jour, notifications, campagnes | Configuration | Il faut un compte émetteur Google. Seule la construction du lien d'ajout est testée ; l'envoi réel vers Google ne l'est pas. |
 | **Envoi WhatsApp automatique** : lien de carte, retrouver sa carte | Configuration · Non testé | Il faut un compte WhatsApp Business (Meta). L'envoi de messages libres hors fenêtre de 24 h exige des modèles approuvés par Meta : non vérifié. Les liens `wa.me` manuels, eux, fonctionnent partout. |
 | **Emails** | Configuration | Sans fournisseur d'email configuré (Resend), les emails sont seulement écrits dans les journaux du serveur. |
-| **Parrainage entre commerçants** : 20 $ de crédit | Code incomplet | Le crédit est enregistré mais **jamais déduit** d'une facture. L'écran Paramètres le promet pourtant au commerçant, et la page admin « Parrainages » affiche un montant « appliqué » qui reste toujours à 0. |
+| **Parrainage entre commerçants** : remise du filleul et crédit du parrain via Stripe | Configuration · Non testé | Testé en mode simulé uniquement. En mode Stripe, il faut le coupon « 20 USD, une fois » (`REFERRAL_STRIPE_COUPON_ID`) ; le crédit du parrain passe par le solde client Stripe ; l'empreinte de carte (anti-abus) n'existe que pour les paiements par carte. Les conditions du programme sont à faire relire par le juriste. |
 | **Programme partenaires** : attribution, commissions, virements | Non testé | Aucun test automatisé. Les commissions naissent uniquement des paiements Stripe : un contrat attribué à la main (Sur-mesure, par exemple) ne génère pas de commission. |
 | **Centre financier** | Non testé | Aucun test automatisé. Les ventes, paiements et factures viennent uniquement de Stripe : un virement ou un paiement hors ligne ne peut pas être saisi (seules les dépenses se saisissent à la main). |
 | **Réglages partenaires « durée du cookie » et « fenêtre de conversion »** | Code incomplet | Modifiables dans l'admin, mais lus nulle part : le cookie du lien partenaire est fixé à 30 jours dans le code, et aucune fenêtre de conversion n'est appliquée. |

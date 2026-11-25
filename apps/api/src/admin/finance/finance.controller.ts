@@ -5,6 +5,10 @@ import { Auth } from "../../common/decorators";
 import type { AuthState } from "../../common/context";
 import { FinanceRoute } from "../../auth/guards";
 import { FinanceService } from "./finance.service";
+import { ReferralService } from "../../referrals/referral.service";
+import { z } from "zod";
+
+const cancelReferralSchema = z.object({ reason: z.string().trim().min(3).max(300) });
 import {
   financeFilterSchema,
   salesFilterSchema,
@@ -26,7 +30,10 @@ import {
 @Controller("admin/finance")
 @FinanceRoute()
 export class FinanceController {
-  constructor(private readonly finance: FinanceService) {}
+  constructor(
+    private readonly finance: FinanceService,
+    private readonly referralService: ReferralService,
+  ) {}
 
   @Get("overview")
   overview(@Query(new ZodPipe(financeFilterSchema)) filter: FinanceFilterDto) {
@@ -130,6 +137,12 @@ export class FinanceController {
   @Get("referrals")
   referrals() {
     return this.finance.referrals();
+  }
+
+  /** Annulation d'un parrainage par l'équipe FOVE (abus, fraude) : le crédit non utilisé est retiré. */
+  @Post("referrals/:id/cancel")
+  cancelReferral(@Auth() auth: AuthState, @Param("id", ParseUUIDPipe) id: string, @Body(new ZodPipe(cancelReferralSchema)) body: z.infer<typeof cancelReferralSchema>) {
+    return this.referralService.cancelByAdmin(id, body.reason, auth.user.id);
   }
 
   @Get("treasury")

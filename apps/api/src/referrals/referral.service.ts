@@ -4,6 +4,7 @@ import type { Prisma } from "@fove/database";
 import { PrismaService } from "../common/prisma.service";
 import { AuditService } from "../common/audit.service";
 import { PlanService } from "../billing/plan.service";
+import { badRequest, notFound } from "../common/errors";
 import { loadConfig, stripeSecretKey } from "../config";
 import { EmailService } from "../notifications/email.service";
 import { partnerInviteMessage } from "../i18n/emails";
@@ -312,6 +313,22 @@ export class ReferralService {
     } catch (error) {
       this.logger.warn(`Invitation partenaire non envoyée pour ${tenantId} : ${(error as Error).message}`);
     }
+  }
+
+  /**
+   * Annulation par l'équipe FOVE (abus, fraude). Le crédit non utilisé est retiré au parrain (solde
+   * Stripe compris) ; la part déjà déduite de ses factures reste acquise.
+   */
+  async cancelByAdmin(id: string, reason: string, actorUserId: string) {
+    const db = this.prisma.client;
+    const referral = await db.referralReward.findUnique({ where: { id } });
+    if (!referral) throw notFound("Parrainage");
+    if (referral.status === "CANCELLED" || referral.status === "EXPIRED") throw badRequest("referral_closed", "Ce parrainage est déjà clos");
+    const remaining = referral.status === "EARNED" ? referral.creditRemainingCents : 0;
+    await db.referralReward.update({ where: { id }, data: { status: "CANCELLED", cancelReason: `admin: ${reason}`, creditRemainingCents: 0 } });
+    if (remaining > 0) await this.pushToStripe(referral.referrerTenantId, remaining, "Crédit de parrainage annulé");
+    await this.audit.log({ tenantId: referral.referrerTenantId, actorUserId, action: "referral.cancelled", targetType: "referral", targetId: id, metadata: { reason: "admin", note: reason, removedCents: remaining } });
+    return { status: "CANCELLED", removedCents: remaining };
   }
 
   /** Plafond annuel du parrain selon son offre (prix du contrat Sur-mesure s'il existe). */

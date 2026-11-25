@@ -70,6 +70,16 @@ Identité unique du client final, commune à tous les commerces (spécification 
 - **Données du compte** : `GET /api/client/me/export` (JSON en pièce jointe, audité). **Comptes inactifs** : `purgeInactive` dans la tâche planifiée ; inactif = `lastActiveAt` (connexion, visite) et `lastActivityAt` des cartes rattachées tous deux plus vieux que `CLIENT_ACCOUNT_INACTIVE_MONTHS` (36 par défaut, 0 = jamais) ; email 30 jours avant (`inactivityWarnedAt`, remis à zéro par toute activité), puis suppression par lots de 200.
 - `Customer.clientAccountId` est omis par défaut par le client Prisma (`packages/database/src/index.ts`) : le commerçant ne le reçoit jamais. Le module compte client le lit avec un `select` explicite.
 
+## Parrainage entre commerçants
+
+Spec : `docs/chantier-parrainage.md`. Service `apps/api/src/referrals/referral.service.ts`.
+
+- **Attribution** à la création du commerce : `pickAttribution` retient le lien partenaire ou de parrainage cliqué en premier (cookies `fove_partner_at`, `fove_ref_at`) ; `ReferralReward` à l'état `SIGNED_UP`.
+- **Paiement** : `BillingService` appelle `onPaymentConfirmed` (premier paiement du filleul : `PENDING` 14 jours) ; remise du filleul en mode simulé (prix réduit) ou par coupon Stripe (`REFERRAL_STRIPE_COUPON_ID`). En mode simulé, chaque souscription et chaque renouvellement crée un `Payment` (provider `MOCK`).
+- **Tâche planifiée** `processDue` : acquisition plafonnée (année civile, `min(200 USD, prix annuel)`), `CAPPED`, `NO_PLAN`, annulation (remboursement, résiliation), expiration à 3 ans ; invitation au programme partenaires (80 %, 100 %).
+- **Crédit** : solde client Stripe à l'acquisition (`createBalanceTransaction`), utilisations suivies dans `ReferralCreditUse` (le plus ancien d'abord), y compris ce que Stripe déduit d'une facture (`ending_balance - starting_balance`).
+- **Lien partenaire** `/p/<code>` : route (`app/p/[code]/route.ts`), une page serveur ne pouvant pas poser de cookie.
+
 ## Wallet
 
 - **Google Wallet** (`apps/api/src/cards/google-wallet.ts`), actif seulement si `GOOGLE_WALLET_ISSUER_ID` et `GOOGLE_WALLET_SERVICE_ACCOUNT_JSON` sont définis. Une classe par programme (déclarée dans le JWT, créée par Google au premier ajout), un objet par carte portant le QR personnel. Lien d'ajout signé côté serveur, valable 10 min ; solde mis à jour après chaque opération ; notification à un client ou à tous les clients d'un programme (confirmation avant l'envoi groupé ; limite Google : 3 par carte et par 24 h). Bouton masqué sur iPhone/iPad.

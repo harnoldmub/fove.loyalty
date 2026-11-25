@@ -1,6 +1,6 @@
 # Chantier — Parrainage entre commerçants
 
-> Statut : **validée le 25 novembre 2026**. Rien n'est codé.
+> Statut : **codé le 25 novembre 2026** (P1 à P5), testé en **mode simulé**. Reste à configurer et recetter le mode Stripe (section 8). Validée le 25 novembre 2026.
 
 ## 1. Ce qui existe et ne va pas
 

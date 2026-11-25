@@ -3,6 +3,7 @@ import type { NestExpressApplication } from "@nestjs/platform-express";
 import { agent, db, ownerWithTenant, resetDatabase, startApp, uniq } from "./helpers";
 import { pickAttribution, ReferralService } from "../src/referrals/referral.service";
 import { BillingService } from "../src/billing/billing.service";
+import { hashPassword } from "../src/common/crypto";
 import { PlanService } from "../src/billing/plan.service";
 
 let app: NestExpressApplication;
@@ -277,5 +278,37 @@ describe("invitation au programme partenaires", () => {
     await db.partner.create({ data: { name: "Moi", email: parrain.email, code: uniq("ME").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 12), status: "ACTIVE" } });
     expect(await referrals().partnerInvite(parrain.tenantId)).toBeNull();
     expect((await parrain.client.get("/api/app/referrals")).body.partnerInvite).toBeNull();
+  });
+});
+
+describe("admin Finance > Parrainages", () => {
+  async function superAdmin() {
+    const email = `${uniq("admin")}@test.fove`;
+    await db.user.create({ data: { email, name: "Admin", passwordHash: await hashPassword("motdepasse123"), isSuperAdmin: true, emailVerifiedAt: new Date() } });
+    const c = agent(app);
+    expect((await c.post("/api/auth/login", { email, password: "motdepasse123" })).status).toBe(200);
+    return c;
+  }
+
+  it("liste avec totaux ; l'annulation retire le crédit non utilisé et exige un motif", async () => {
+    const admin = await superAdmin();
+    const { referral } = await referredAndPaid();
+    await referrals().processDue(new Date(Date.now() + 15 * DAY));
+
+    const list = await admin.get("/api/admin/finance/referrals");
+    expect(list.status).toBe(200);
+    expect(list.body.items.find((r: { id: string }) => r.id === referral.id)).toMatchObject({ status: "EARNED", creditRemainingCents: 2000 });
+    expect(list.body.remainingCents).toBeGreaterThanOrEqual(2000);
+
+    expect((await admin.post(`/api/admin/finance/referrals/${referral.id}/cancel`, { reason: "" })).status).toBe(400);
+    const cancel = await admin.post(`/api/admin/finance/referrals/${referral.id}/cancel`, { reason: "Comptes liés (fraude)" });
+    expect(cancel.body).toEqual({ status: "CANCELLED", removedCents: 2000 });
+    expect(await reload(referral.id)).toMatchObject({ status: "CANCELLED", creditRemainingCents: 0, cancelReason: "admin: Comptes liés (fraude)" });
+    expect((await admin.post(`/api/admin/finance/referrals/${referral.id}/cancel`, { reason: "encore" })).status).toBe(400);
+  });
+
+  it("réservé à l'équipe FOVE", async () => {
+    const { client } = await ownerWithTenant(app);
+    expect((await client.get("/api/admin/finance/referrals")).status).toBe(403);
   });
 });
