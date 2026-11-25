@@ -760,7 +760,7 @@
     "referral": {
       "title": "Merchant referral",
       "badge": "Up to 1 year free",
-      "body": "Recommend FOVE to other businesses: <strong>$20 of credit</strong> per subscribed referral, up to one free year every year.",
+      "body": "Recommend FOVE to other businesses: <strong>a credit</strong> per subscribed referral, up to one free year every year.",
       "copied": "Referral link copied to the clipboard!",
       "copy": "Copy my link",
       "message": "Hi, I manage my customers’ loyalty with FOVE on Apple Wallet and Google Wallet. Discover it and try it for free here: {url}",
@@ -953,10 +953,10 @@
   },
   "referralPage": {
     "title": "Referrals",
-    "subtitle": "Recommend FOVE to other businesses: you earn up to one year of subscription for free, they get $20.",
+    "subtitle": "Recommend FOVE to other businesses: you earn up to one year of subscription for free, they get {amount}.",
     "locked": {
       "title": "Referrals are included in paid plans",
-      "body": "Upgrade to a paid plan to refer other businesses: $20 of credit per referral, up to one free year every year. Your referrals get $20 off their first subscription.",
+      "body": "Upgrade to a paid plan to refer other businesses: {amount} of credit per referral, up to one free year every year. Your referrals get {amount} off their first subscription.",
       "cta": "See plans"
     },
     "link": {
@@ -964,7 +964,7 @@
       "copy": "Copy link",
       "copied": "Link copied",
       "share": "Share on WhatsApp",
-      "message": "Hi, I manage my customers' loyalty with FOVE (cards in Apple Wallet and Google Wallet). With my link you get $20 off your first subscription: {url}"
+      "message": "Hi, I manage my customers' loyalty with FOVE (cards in Apple Wallet and Google Wallet). With my link you get {amount} off your first subscription: {url}"
     },
     "gains": {
       "title": "My earnings",
@@ -1008,9 +1008,9 @@
       "items": [
         "Who can refer. Any business subscribed to a paid FOVE plan. Credit is only earned if your business is on a paid plan on the date it is earned.",
         "How to refer. Share your referral link. The business you recommend (the \"referral\") must create its FOVE account within 30 days of clicking your link.",
-        "What the referral gets. USD 20 off its first annual subscription to a paid plan. Once per business.",
-        "What you get. USD 20 of credit per referral, earned 14 days after its first annual payment, provided it has not been refunded or cancelled during that period.",
-        "Cap. Per calendar year (1 January to 31 December), your earnings are capped at the lower of these two amounts: USD 200, or the annual price of your plan when the credit is earned. Examples: Essentiel, USD 99; Business, USD 199; Réseau, USD 200. Beyond that, your referrals keep their discount, but you earn no more credit until the following 1 January. The number of referrals is not limited.",
+        "What the referral gets. A discount on its first annual subscription to a paid plan, in the currency of its invoice: €20, $20, MAD 200, DZD 4,000 or CDF 65,000. Once per business.",
+        "What you get. A credit per referral, in the currency of your subscription (€20, $20, MAD 200, DZD 4,000 or CDF 65,000), earned 14 days after its first annual payment, provided it has not been refunded or cancelled during that period.",
+        "Cap. Per calendar year (1 January to 31 December), your earnings are capped at the lower of these two amounts: €200 ($200, MAD 2,000, DZD 40,000 or CDF 650,000 depending on the currency of your subscription), or the annual price of your plan when the credit is earned. Beyond that, your referrals keep their discount, but you earn no more credit until the following 1 January. The number of referrals is not limited.",
         "Using credit. Your credit is automatically deducted from your next FOVE invoices, oldest first. It cannot be paid out in cash, transferred or exchanged.",
         "Expiry. Each credit expires 3 years after it was earned if it has not been used.",
         "Exclusions. No credit is granted when the referrer and the referral share an owner, use the same payment method, or when the same business is referred more than once. If the referral came through a FOVE sales partner's link before yours, the partner is rewarded.",

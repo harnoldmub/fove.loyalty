@@ -83,7 +83,7 @@ export default function AdminPartnersPage() {
 
   const { data: commissionsData, refetch: refetchCommissions } = useQuery({
     queryKey: ["admin-commissions-all"],
-    queryFn: () => api.get<{ items: any[]; totalPendingCents: number; totalPaidCents: number }>("/admin/finance/commissions"),
+    queryFn: () => api.get<{ currency: string; items: any[]; totalPendingCents: number; totalPaidCents: number }>("/admin/finance/commissions"),
   });
 
   const pendingApplications = partners.filter((p) => p.status === "PENDING" || p.status === "UNDER_REVIEW");
@@ -194,7 +194,7 @@ export default function AdminPartnersPage() {
             <Wallet className="size-4 text-rose-500" />
           </div>
           <div className="mt-2 font-display text-2xl font-bold tabular text-rose-500">
-            {formatFinance(commissionsData?.totalPendingCents ?? 0, "USD")}
+            {formatFinance(commissionsData?.totalPendingCents ?? 0, commissionsData?.currency)}
           </div>
           <p className="mt-1 text-xs text-ink-3">{t("kpi.pendingCommissionsHelp")}</p>
         </Panel>
@@ -205,7 +205,7 @@ export default function AdminPartnersPage() {
             <CheckCircle2 className="size-4 text-emerald-500" />
           </div>
           <div className="mt-2 font-display text-2xl font-bold tabular text-emerald-600 dark:text-emerald-400">
-            {formatFinance(commissionsData?.totalPaidCents ?? 0, "USD")}
+            {formatFinance(commissionsData?.totalPaidCents ?? 0, commissionsData?.currency)}
           </div>
           <p className="mt-1 text-xs text-ink-3">{t("kpi.paidCommissionsHelp")}</p>
         </Panel>
@@ -474,7 +474,7 @@ export default function AdminPartnersPage() {
             <div className="rounded-lg border border-line p-3">
               <span className="text-ink-3">{t("settings.minimumPayout")}</span>
               <div className="mt-1 font-mono text-lg font-bold text-ink">
-                {formatFinance(settings.minimumPayoutThresholdCents, "USD")}
+                {formatFinance(settings.minimumPayoutThresholdCents, "USD")} / {formatFinance(settings.minimumPayoutThresholdCents, "EUR")}
               </div>
             </div>
           </div>

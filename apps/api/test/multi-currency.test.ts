@@ -163,3 +163,24 @@ describe("taux comptables et consolidation", () => {
     expect(after.mrrCents - before.mrrCents).toBe(1_000);
   });
 });
+
+describe("commissions des partenaires dans leur monnaie de versement", () => {
+  it("convertit une commission en dirhams au taux du jour quand elle devient disponible, puis la fige", async () => {
+    const { PartnersService } = await import("../src/partners/partners.service");
+    const o = await merchant("MA");
+    const partner = await db.partner.create({ data: { name: "Agence", email: `agence${Date.now()}@test.fove`, code: `AG${Date.now().toString(36)}`, status: "APPROVED", payoutCurrency: "EUR" } });
+    await db.exchangeRate.upsert({ where: { currency: "MAD" }, update: { unitsPerEur: 10 }, create: { currency: "MAD", unitsPerEur: 10 } });
+    const commission = await db.partnerCommission.create({
+      data: { partnerId: partner.id, tenantId: o.tenantId, amountBaseCents: 99_000, commissionRatePercent: 20, commissionAmountCents: 19_800, currency: "MAD", availableAt: new Date(Date.now() - 1000) },
+    });
+    await app.get(PartnersService).releaseDueCommissions(partner.id);
+    const released = await db.partnerCommission.findUniqueOrThrow({ where: { id: commission.id } });
+    expect(released).toMatchObject({ status: "AVAILABLE", payoutCurrency: "EUR", payoutAmountCents: 1_980 });
+    expect(Number(released.fxRate)).toBeCloseTo(0.1);
+
+    // Un nouveau taux ne change pas une commission déjà disponible.
+    await db.exchangeRate.update({ where: { currency: "MAD" }, data: { unitsPerEur: 11 } });
+    await app.get(PartnersService).releaseDueCommissions(partner.id);
+    expect((await db.partnerCommission.findUniqueOrThrow({ where: { id: commission.id } })).payoutAmountCents).toBe(1_980);
+  });
+});

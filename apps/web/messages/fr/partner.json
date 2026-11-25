@@ -79,7 +79,7 @@
       },
       "payouts": {
         "title": "Paiements flexibles",
-        "desc": "Encaissez par virement bancaire ou par Mobile Money dès 50 $ de gains cumulés."
+        "desc": "Encaissez par virement bancaire ou par Mobile Money dès 50 $ ou 50 € de gains cumulés."
       },
       "attribution": {
         "title": "Attribution first-party 30 jours",
@@ -329,6 +329,7 @@
       "colAvailability": "Disponibilité",
       "colStatus": "Statut",
       "immediate": "Immédiate",
+      "converted": "soit {amount} au versement",
       "paid": "Versée",
       "available": "Disponible",
       "cancelled": "Annulée (Remboursement)",
@@ -337,6 +338,9 @@
     "payouts": {
       "balance": "Solde disponible : {amount}",
       "minimum": "Montant minimum de retrait : {amount}",
+      "currency": "Monnaie de versement :",
+      "currencySaved": "Monnaie de versement enregistrée.",
+      "currencyHelp": "Vos commissions sont calculées dans la monnaie payée par le commerçant, puis converties au taux du jour quand elles deviennent disponibles.",
       "requestPayout": "Demander un virement",
       "history": "Historique des versements",
       "empty": "Aucun virement demandé pour l’instant.",
@@ -366,7 +370,7 @@
       "objectionPaper": "« Mes clients préfèrent le papier »",
       "answerPaper": "En réalité, 70% des clients oublient leur carte papier. Leur smartphone, en revanche, est toujours dans leur poche au moment de régler.",
       "objectionPrice": "« C’est trop cher pour moi »",
-      "answerPrice": "L’offre Essentiel est à seulement 99 $ par an (moins de 9 $ par mois). Un seul client fidélisé de plus par semaine rentabilise l’investissement.",
+      "answerPrice": "L’offre Essentiel est à seulement 89 € par an (99 $ ; 990 MAD au Maroc), soit moins de 8 € par mois. Un seul client fidélisé de plus par semaine rentabilise l’investissement.",
       "objectionTime": "« Je n’ai pas le temps de configurer »",
       "answerTime": "Le compte se configure en 5 minutes chrono sur smartphone ou ordinateur, et l’affiche QR code est générée immédiatement prête à imprimer."
     }
@@ -392,7 +396,7 @@
     "title": "Demander un virement",
     "available": "Disponible au retrait : {amount}",
     "close": "Fermer",
-    "amount": "Montant du retrait (USD) *",
+    "amount": "Montant du retrait ({currency}) *",
     "threshold": "Seuil minimum : {amount}",
     "method": "Méthode de versement *",
     "bankTransfer": "Virement bancaire (IBAN / SWIFT)",

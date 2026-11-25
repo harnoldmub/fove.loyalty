@@ -1135,7 +1135,9 @@ model Partner {
   status                      PartnerStatus       @default(PENDING)
   rejectionReason             String?
   payoutInfo                  Json?               /// Coordonnées bancaires ou Mobile Money
-  minimumPayoutThresholdCents Int                 @default(5000) /// 50.00 USD / EUR par défaut
+  minimumPayoutThresholdCents Int                 @default(5000) /// 50.00 dans la monnaie de versement
+  /// Monnaie de versement des commissions (USD ou EUR) ; les commissions y sont converties quand elles deviennent disponibles.
+  payoutCurrency              String              @default("USD")
   totalClicksCount            Int                 @default(0)
   totalConversionsCount       Int                 @default(0)
 
@@ -1244,6 +1246,10 @@ model PartnerCommission {
   commissionRatePercent Decimal          @db.Decimal(5, 2)
   commissionAmountCents Int              /// Montant de la commission
   currency              String           @default("USD")
+  /// Conversion dans la monnaie de versement du partenaire, figée quand la commission devient disponible.
+  payoutCurrency        String?
+  payoutAmountCents     Int?
+  fxRate                Decimal?         @db.Decimal(18, 8)
   status                CommissionStatus @default(PENDING)
 
   availableAt           DateTime?

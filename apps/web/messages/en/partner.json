@@ -79,7 +79,7 @@
       },
       "payouts": {
         "title": "Flexible payouts",
-        "desc": "Get paid by bank transfer or Mobile Money once you have earned $50."
+        "desc": "Get paid by bank transfer or Mobile Money once you have earned $50 or €50."
       },
       "attribution": {
         "title": "30-day first-party attribution",
@@ -329,6 +329,7 @@
       "colAvailability": "Availability",
       "colStatus": "Status",
       "immediate": "Immediate",
+      "converted": "i.e. {amount} at payout",
       "paid": "Paid out",
       "available": "Available",
       "cancelled": "Cancelled (Refund)",
@@ -337,6 +338,9 @@
     "payouts": {
       "balance": "Available balance: {amount}",
       "minimum": "Minimum withdrawal amount: {amount}",
+      "currency": "Payout currency:",
+      "currencySaved": "Payout currency saved.",
+      "currencyHelp": "Your commissions are calculated in the currency paid by the merchant, then converted at the day’s rate when they become available.",
       "requestPayout": "Request a payout",
       "history": "Payout history",
       "empty": "No payouts requested yet.",
@@ -366,7 +370,7 @@
       "objectionPaper": "“My customers prefer paper”",
       "answerPaper": "In reality, 70% of customers forget their paper card. Their smartphone, on the other hand, is always in their pocket when it’s time to pay.",
       "objectionPrice": "“It’s too expensive for me”",
-      "answerPrice": "The Essentiel plan is only $99 a year (less than $9 a month). Just one extra loyal customer a week pays for the investment.",
+      "answerPrice": "The Essentiel plan is only €89 a year ($99; MAD 990 in Morocco), less than €8 a month. Just one extra loyal customer a week pays for the investment.",
       "objectionTime": "“I don’t have time to set it up”",
       "answerTime": "The account takes just 5 minutes to set up on a smartphone or computer, and the QR code poster is generated instantly, ready to print."
     }
@@ -392,7 +396,7 @@
     "title": "Request a payout",
     "available": "Available to withdraw: {amount}",
     "close": "Close",
-    "amount": "Withdrawal amount (USD) *",
+    "amount": "Withdrawal amount ({currency}) *",
     "threshold": "Minimum threshold: {amount}",
     "method": "Payout method *",
     "bankTransfer": "Bank transfer (IBAN / SWIFT)",

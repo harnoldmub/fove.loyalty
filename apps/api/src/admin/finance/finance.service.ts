@@ -758,6 +758,11 @@ export class FinanceService {
         paidCents,
         balanceDueCents: Math.max(0, balanceDueCents),
         conversionsCount: p.commissions.length,
+        // Noms lus par la page Finance > Partenaires ; montants en euros (taux comptable).
+        totalSalesCount: p.commissions.length,
+        pendingCents: Math.max(0, balanceDueCents),
+        currency: fx.currency,
+        payoutCurrency: p.payoutCurrency,
       };
     });
   }
@@ -799,14 +804,38 @@ export class FinanceService {
     if (query.partnerId) where.partnerId = query.partnerId;
     if (query.status && query.status !== "ALL") where.status = query.status;
 
-    return this.prisma.client.partnerCommission.findMany({
+    const rows = await this.prisma.client.partnerCommission.findMany({
       where,
       include: {
         partner: { select: { id: true, name: true, code: true, email: true } },
         tenant: { select: { id: true, name: true, slug: true } },
+        invoice: { select: { id: true, number: true } },
       },
       orderBy: { createdAt: "desc" },
     });
+    // Chaque commission dans sa monnaie (celle du paiement) ; totaux en euros au taux comptable.
+    const fx = await this.converter();
+    const total = (statuses: string[]) => rows.filter((c) => statuses.includes(c.status)).reduce((sum, c) => sum + fx.to(c.commissionAmountCents, c.currency), 0);
+    return {
+      currency: fx.currency,
+      totalPendingCents: total(["PENDING", "CONFIRMED", "AVAILABLE"]),
+      totalPaidCents: total(["PAID"]),
+      items: rows.map((c) => ({
+        id: c.id,
+        amountCents: c.commissionAmountCents,
+        currency: c.currency,
+        payoutAmountCents: c.payoutAmountCents,
+        payoutCurrency: c.payoutCurrency,
+        ratePercent: Number(c.commissionRatePercent),
+        status: c.status,
+        createdAt: c.createdAt,
+        paidAt: c.paidAt,
+        availableAt: c.availableAt,
+        partner: c.partner,
+        tenant: c.tenant,
+        invoice: { id: c.invoice?.id ?? null, number: c.invoice?.number ?? "—", amountTotalCents: c.amountBaseCents, tenant: { name: c.tenant.name } },
+      })),
+    };
   }
 
   async payCommission(auth: AuthState, commissionId: string) {
@@ -817,11 +846,19 @@ export class FinanceService {
     if (!comm) throw notFound("Commission introuvable");
     if (comm.status === "PAID") throw badRequest("already_paid", "Cette commission a déjà été versée.");
 
+    // Versement dans la monnaie de versement du partenaire (taux figé si déjà disponible, sinon taux du jour).
+    let amountCents = comm.payoutAmountCents;
+    let currency = comm.payoutCurrency;
+    if (amountCents === null || currency === null) {
+      const converted = await this.pricing.convert(comm.commissionAmountCents, comm.currency, comm.partner.payoutCurrency);
+      amountCents = converted?.cents ?? comm.commissionAmountCents;
+      currency = converted ? comm.partner.payoutCurrency : comm.currency;
+    }
     const payout = await this.prisma.client.partnerPayout.create({
       data: {
         partnerId: comm.partnerId,
-        amountCents: comm.commissionAmountCents,
-        currency: comm.currency,
+        amountCents,
+        currency,
         method: "Virement direct",
         status: "PAID",
         reference: `PAYOUT-${Date.now().toString().slice(-6)}`,
@@ -831,7 +868,7 @@ export class FinanceService {
 
     await this.prisma.client.partnerCommission.update({
       where: { id: comm.id },
-      data: { status: "PAID", paidAt: new Date(), payoutId: payout.id },
+      data: { status: "PAID", paidAt: new Date(), payoutId: payout.id, payoutAmountCents: amountCents, payoutCurrency: currency },
     });
 
     await this.prisma.client.financialAuditLog.create({
@@ -841,7 +878,7 @@ export class FinanceService {
         action: "partner.commission_paid",
         entityType: "partner_commission",
         entityId: comm.id,
-        newValue: { payoutId: payout.id, amountCents: comm.commissionAmountCents },
+        newValue: { payoutId: payout.id, amountCents, currency },
         reason: `Paiement commission à ${comm.partner.name}`,
       },
     });
