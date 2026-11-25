@@ -1,6 +1,6 @@
 # Chantier — Prix dans plusieurs monnaies
 
-> Statut : **spécification validée** le 25 novembre 2026. Rien n'est codé. Chantier lié : [chantier-encaissement-hors-ligne.md](chantier-encaissement-hors-ligne.md).
+> Statut : **livré** le 26 novembre 2026 sur la branche `feat/multi-devises` (lots M1 à M7). Référentiel : [fonctionnalites.md](fonctionnalites.md). Écarts et précisions de la réalisation en fin de document.
 
 ## 1. Pourquoi
 
@@ -59,3 +59,13 @@ Les prix en dollars restent ceux d'aujourd'hui. Les prix se modifient dans l'adm
 1. **Taux** : confirmer les taux de la grille au moment de publier.
 2. **Stripe** : créer les tarifs USD et EUR de chaque offre (ou un tarif avec un montant par monnaie) et le coupon de parrainage dans chaque monnaie.
 3. **Expert-comptable** : facturation en MAD, DZD ou CDF par FOVE ; TVA pour les clients hors Union européenne.
+
+## 7. Réalisation (26 novembre 2026)
+
+- **Prix** : table `PlanPrice` (offre × monnaie, tarif Stripe pour EUR et USD) ; les colonnes de prix uniques de l'offre sont supprimées (les prix en dollars et leurs tarifs Stripe sont repris par la migration, les autres monnaies sont ajoutées au démarrage et par le seed).
+- **Monnaie** : `TenantSettings.billingCurrency` (vide = celle du pays), `Subscription.currency` (fixe pendant la période ; un renouvellement simulé ou hors ligne prend la monnaie choisie entre-temps). Un abonnement Stripe en cours garde sa monnaie : un changement s'applique à la prochaine souscription.
+- **Taux comptables** : table `ExchangeRate`, page Finance > Taux comptables (associés et direction financière). Valeurs initiales : USD 1,12 ; MAD 10,8 ; **DZD 150** (taux officiel, pour la comptabilité ; la grille de prix reste calculée sur 200) ; CDF 3 300.
+- **Finance** : tous les totaux sont convertis dans la monnaie du rapport (EUR par défaut) ; les pages Vue d'ensemble, Rapport mensuel, Abonnements et Partenaires ont été réparées au passage (leur format de réponse ne correspondait pas à l'interface).
+- **Partenaires** : `Partner.payoutCurrency` ; la commission garde sa monnaie et reçoit `payoutCurrency`, `payoutAmountCents` et `fxRate` quand elle devient disponible (tâche planifiée).
+- **Parrainage** : grille par monnaie dans `@fove/shared` (`REFERRAL_REWARD`, `REFERRAL_YEARLY_CAP`) ; un crédit n'est utilisé que sur une facture de la même monnaie.
+

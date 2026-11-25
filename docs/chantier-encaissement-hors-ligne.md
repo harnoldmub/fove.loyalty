@@ -1,6 +1,6 @@
 # Chantier — Encaissement hors ligne (virement, espèces, mobile money)
 
-> Statut : **spécification validée** le 25 novembre 2026. Rien n'est codé. Chantier lié : [chantier-multi-devises.md](chantier-multi-devises.md).
+> Statut : **livré** le 26 novembre 2026 sur la branche `feat/multi-devises` (lots H1 à H5). Référentiel : [fonctionnalites.md](fonctionnalites.md). Écarts et précisions de la réalisation en fin de document.
 
 ## 1. Pourquoi
 
@@ -93,3 +93,14 @@ Aujourd'hui : lien et QR personnels, prospects, clients attribués, commissions,
 
 1. **Juridique et comptable** : mandat d'encaissement (le partenaire encaisse au nom de FOVE, qui facture le commerçant — modèle retenu ici) ou revendeur, selon le pays ; entité ou compte local en Algérie.
 2. Taux et montants de la grille (chantier lié).
+
+## 12. Réalisation (26 novembre 2026)
+
+- **Références** : `@fove/shared` (`payment-reference.ts`) ; alphabet sans 0/O/1/I/L, clé de contrôle pondérée (détecte une faute de frappe et la plupart des inversions). Relevé : `FV-RL-XXXXXX-C` aléatoire (le code du partenaire est affiché à côté plutôt que dans la référence, pour garder une saisie courte et un contrôle fiable).
+- **Accès provisoire** : une seule fois par commerce (un accès provisoire expiré sans paiement n'est pas redonné : l'offre s'active alors au paiement). Le paiement par carte remplace un accès provisoire en attente.
+- **Validation** : fournisseur `BANK_TRANSFER`, `MANUAL` (espèces) ou `MOBILE_MONEY` ; un montant inférieur au dû doit être accepté explicitement (frais bancaires) ; le rapprochement bancaire l'accepte après confirmation (l'écart est affiché).
+- **Partenaire** : il encaisse le montant exact ; la facture de ses propres clients est créée sans accès provisoire ni email d'instructions. Frais d'encaissement : commission `COLLECTION_FEE`, compensée dans le relevé.
+- **Relevés** : un par partenaire et par monnaie encaissée ; les commissions disponibles sont déduites du relevé le plus important ; émis par la tâche planifiée dès le 1er du mois, ou depuis le back-office.
+- **Signalement** : page publique `/signalement?token=…` (jeton signé), alerte email à l'équipe, paiement marqué « signalé ».
+- **Non fait** : relance du commerçant avant la fin de l'accès provisoire ; justificatif en pièce jointe (lien seulement) ; écran de saisie d'un versement du partenaire autre que le montant (le rapprochement bancaire et « Paiement reçu » couvrent le cas).
+
