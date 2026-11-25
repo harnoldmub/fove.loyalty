@@ -215,6 +215,12 @@
       "body": "Either your application is awaiting approval by the FOVE team, or you haven’t applied yet.",
       "cta": "Submit an application"
     },
+    "unverified": {
+      "title": "Confirm your email address",
+      "body": "To access your partner space (commissions, payouts, leads), first confirm your email address by opening the link we sent you.",
+      "resend": "Resend the email",
+      "sent": "Email sent. Remember to check your spam folder."
+    },
     "header": {
       "badge": "Partner",
       "code": "Code: <strong>{code}</strong>",

@@ -8,7 +8,7 @@ import type { Locale } from "./locale";
 
 type Content = Omit<EmailMessage, "to">;
 
-const escapeHtml = (value: string) =>
+export const escapeHtml = (value: string) =>
   value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
 
 const FALLBACK: Record<Locale, string> = {

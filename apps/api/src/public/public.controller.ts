@@ -5,10 +5,18 @@ import type { Request, Response } from "express";
 import { verifyOtpSchema, contactMessageSchema } from "@fove/shared";
 import { z } from "zod";
 import { ZodPipe } from "../common/zod.pipe";
-import { notFound } from "../common/errors";
+import { forbidden, notFound } from "../common/errors";
 import { sha256 } from "../common/crypto";
 import { CardsService } from "../cards/cards.service";
 import { PublicService } from "./public.service";
+
+/**
+ * En-tête anti-CSRF sur les routes qui peuvent ouvrir une session client (code de la carte) :
+ * un formulaire d'un autre site ne peut pas l'envoyer.
+ */
+function requireCsrf(req: Request) {
+  if (req.headers["x-fove-csrf"] !== "1") throw forbidden("En-tête anti-CSRF manquant");
+}
 
 const tokenPattern = /^[A-Za-z0-9_-]{3,80}$/;
 const recoverSchema = z.object({ identifier: z.string().trim().min(3).max(160) });
@@ -104,6 +112,7 @@ export class PublicController {
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
   ) {
+    requireCsrf(req);
     return this.service.verify(token, body.code, req, res);
   }
 
@@ -111,6 +120,7 @@ export class PublicController {
   @HttpCode(204)
   @Throttle({ default: { limit: 3, ttl: 60_000 } })
   async resend(@Param("token") token: string, @Req() req: Request) {
+    requireCsrf(req);
     await this.service.resendCode(token, req);
   }
 

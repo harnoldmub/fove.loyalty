@@ -15,7 +15,7 @@ import {
 import { ApiTags } from "@nestjs/swagger";
 import type { Request } from "express";
 import { ZodPipe } from "../common/zod.pipe";
-import { Auth } from "../common/decorators";
+import { Auth, RequireVerified } from "../common/decorators";
 import type { AuthState } from "../common/context";
 import { FinanceRoute, SuperAdminRoute, UserRoute } from "../auth/guards";
 import { PartnersService } from "./partners.service";
@@ -23,6 +23,7 @@ import { requestLocaleOrNull } from "../i18n/locale";
 import {
   partnerApplySchema,
   partnerLeadSchema,
+  partnerLeadUpdateSchema,
   partnerPayoutRequestSchema,
   partnerProfileUpdateSchema,
   adminPartnerUpdateSchema,
@@ -30,6 +31,7 @@ import {
   adminSettingsUpdateSchema,
   type PartnerApplyDto,
   type PartnerLeadDto,
+  type PartnerLeadUpdateDto,
   type PartnerPayoutRequestDto,
   type PartnerProfileUpdateDto,
   type AdminPartnerUpdateDto,
@@ -73,12 +75,14 @@ export class PartnersController {
 
   @Get("partner/me")
   @UserRoute()
+  @RequireVerified()
   getDashboard(@Auth() auth: AuthState) {
     return this.partners.getDashboard(auth.user.id);
   }
 
   @Post("partner/leads")
   @UserRoute()
+  @RequireVerified()
   createLead(
     @Auth() auth: AuthState,
     @Body(new ZodPipe(partnerLeadSchema)) body: PartnerLeadDto,
@@ -88,16 +92,18 @@ export class PartnersController {
 
   @Patch("partner/leads/:id")
   @UserRoute()
+  @RequireVerified()
   updateLead(
     @Auth() auth: AuthState,
     @Param("id", ParseUUIDPipe) id: string,
-    @Body() body: Partial<PartnerLeadDto>,
+    @Body(new ZodPipe(partnerLeadUpdateSchema)) body: PartnerLeadUpdateDto,
   ) {
     return this.partners.updateLead(auth.user.id, id, body);
   }
 
   @Post("partner/payouts/request")
   @UserRoute()
+  @RequireVerified()
   requestPayout(
     @Auth() auth: AuthState,
     @Body(new ZodPipe(partnerPayoutRequestSchema)) body: PartnerPayoutRequestDto,
@@ -107,6 +113,7 @@ export class PartnersController {
 
   @Patch("partner/profile")
   @UserRoute()
+  @RequireVerified()
   updateProfile(
     @Auth() auth: AuthState,
     @Body(new ZodPipe(partnerProfileUpdateSchema)) body: PartnerProfileUpdateDto,

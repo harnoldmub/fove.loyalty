@@ -26,7 +26,9 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
   const json = text ? JSON.parse(text) : null;
   // Session expirée ou révoquée dans l'espace connecté : déconnexion et redirection immédiate vers le login.
   const isAuthArea = typeof window !== "undefined" && /^\/(app|admin|onboarding|partner)(\/|$)/.test(window.location.pathname);
-  if ((res.status === 401 || res.status === 403) && !path.startsWith("/auth/") && isAuthArea) {
+  // « Email non confirmé » n'est pas une session perdue : l'écran affiche quoi faire, sans déconnecter.
+  const emailNotVerified = json?.error?.code === "email_not_verified";
+  if ((res.status === 401 || res.status === 403) && !emailNotVerified && !path.startsWith("/auth/") && isAuthArea) {
     const next = encodeURIComponent(window.location.pathname + window.location.search);
     window.location.replace(`/login?next=${next}`);
     return new Promise(() => {}) as unknown as T;

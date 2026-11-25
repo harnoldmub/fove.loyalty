@@ -215,6 +215,12 @@
       "body": "Votre candidature est soit en attente de validation par l’équipe FOVE, soit vous n’avez pas encore postulé.",
       "cta": "Déposer une candidature"
     },
+    "unverified": {
+      "title": "Confirmez votre adresse email",
+      "body": "Pour accéder à votre espace partenaire (commissions, versements, prospects), confirmez d’abord votre adresse email en ouvrant le lien que nous vous avons envoyé.",
+      "resend": "Renvoyer l’email",
+      "sent": "Email envoyé. Pensez à vérifier vos courriers indésirables."
+    },
     "header": {
       "badge": "Partenaire",
       "code": "Code: <strong>{code}</strong>",

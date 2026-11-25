@@ -1,9 +1,9 @@
-import { applyDecorators, Injectable, UseGuards, type CanActivate, type ExecutionContext } from "@nestjs/common";
+import { applyDecorators, HttpStatus, Injectable, UseGuards, type CanActivate, type ExecutionContext } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
 import { ROLE_PERMISSIONS, type ApiScope, type Permission, type TenantRole } from "@fove/shared";
 import { loadConfig } from "../config";
 import { sha256 } from "../common/crypto";
-import { forbidden, unauthorized, paymentRequired } from "../common/errors";
+import { AppError, forbidden, unauthorized, paymentRequired } from "../common/errors";
 import { PrismaService } from "../common/prisma.service";
 import { PERMISSION_KEY, REQUIRE_VERIFIED_KEY, SCOPE_KEY } from "../common/decorators";
 import type { AppRequest, AuthState } from "../common/context";
@@ -33,7 +33,8 @@ export class SessionGuard implements CanActivate {
     if (!auth) throw unauthorized();
     const needsVerified = this.reflector.getAllAndOverride<boolean>(REQUIRE_VERIFIED_KEY, [context.getHandler(), context.getClass()]);
     if (needsVerified && !auth.user.emailVerifiedAt) {
-      throw forbidden("Vérifiez votre adresse email pour accéder à cette fonction");
+      // Code dédié : le site affiche « confirmez votre email » au lieu de renvoyer vers la connexion.
+      throw new AppError(HttpStatus.FORBIDDEN, "email_not_verified", "Vérifiez votre adresse email pour accéder à cette fonction");
     }
     req.auth = auth;
     return true;
@@ -235,12 +236,11 @@ export class PartnerGuard implements CanActivate {
     if (auth.user.isSuperAdmin) return true;
     if (auth.user.isPartner) return true;
 
+    // Rattachement par email seulement si l'email du compte est confirmé, et à un profil encore libre.
+    const byEmail = auth.user.emailVerifiedAt ? [{ email: { equals: auth.user.email, mode: "insensitive" as const }, userId: null }] : [];
     const partner = await this.prisma.client.partner.findFirst({
       where: {
-        OR: [
-          { userId: auth.user.id },
-          { email: auth.user.email },
-        ],
+        OR: [{ userId: auth.user.id }, ...byEmail],
         status: { in: ["APPROVED", "ACTIVE"] },
       },
       select: { id: true, userId: true },
@@ -251,8 +251,8 @@ export class PartnerGuard implements CanActivate {
     }
 
     if (!partner.userId) {
-      await this.prisma.client.partner.update({
-        where: { id: partner.id },
+      await this.prisma.client.partner.updateMany({
+        where: { id: partner.id, userId: null },
         data: { userId: auth.user.id },
       });
       await this.prisma.client.user.update({

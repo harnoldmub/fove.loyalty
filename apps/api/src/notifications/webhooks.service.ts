@@ -4,6 +4,7 @@ import type { Prisma } from "@fove/database";
 import { loadConfig } from "../config";
 import { decrypt, hmacSha256 } from "../common/crypto";
 import { PrismaService } from "../common/prisma.service";
+import { publicUrlProblem } from "../common/public-url";
 import { PlanService } from "../billing/plan.service";
 
 const MAX_ATTEMPTS = 8;
@@ -53,14 +54,23 @@ export class WebhooksService {
     let statusCode: number | null = null;
     let error: string | null = null;
     try {
-      const res = await fetch(delivery.endpoint.url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", [SIGNATURE_HEADER]: this.sign(secret, body), "User-Agent": "FOVE-Webhooks/1" },
-        body,
-        signal: AbortSignal.timeout(10_000),
-      });
-      statusCode = res.status;
-      if (!res.ok) error = `HTTP ${res.status}`;
+      // Revérifié à chaque envoi : le nom de domaine a pu changer d'adresse depuis la création.
+      const problem = loadConfig().isProd ? await publicUrlProblem(delivery.endpoint.url) : null;
+      if (problem) {
+        error = `Adresse refusée (${problem})`;
+      } else {
+        const res = await fetch(delivery.endpoint.url, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", [SIGNATURE_HEADER]: this.sign(secret, body), "User-Agent": "FOVE-Webhooks/1" },
+          body,
+          signal: AbortSignal.timeout(10_000),
+          // Une redirection pourrait mener vers le réseau interne : elle compte comme un échec.
+          redirect: "manual",
+        });
+        statusCode = res.status;
+        if (res.status >= 300 && res.status < 400) error = `Redirection refusée (HTTP ${res.status})`;
+        else if (!res.ok) error = `HTTP ${res.status}`;
+      }
     } catch (e) {
       error = e instanceof Error ? e.message : String(e);
     }

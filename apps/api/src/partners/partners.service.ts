@@ -1,4 +1,5 @@
 import { Injectable, Logger } from "@nestjs/common";
+import type { Prisma } from "@fove/database";
 import { PrismaService } from "../common/prisma.service";
 import { AuditService } from "../common/audit.service";
 import { EmailService } from "../notifications/email.service";
@@ -9,6 +10,7 @@ import type { AuthState } from "../common/context";
 import type {
   PartnerApplyDto,
   PartnerLeadDto,
+  PartnerLeadUpdateDto,
   PartnerPayoutRequestDto,
   PartnerProfileUpdateDto,
   AdminPartnerUpdateDto,
@@ -16,7 +18,7 @@ import type {
   AdminSettingsUpdateDto,
 } from "./partners.dto";
 import { localeForCountry, normalizeLocale, type Locale } from "../i18n/locale";
-import { partnerApprovedMessage, partnerEmails } from "../i18n/emails";
+import { escapeHtml, partnerApprovedMessage, partnerEmails } from "../i18n/emails";
 
 @Injectable()
 export class PartnersService {
@@ -89,8 +91,9 @@ export class PartnersService {
     const code = `${baseCode || "PARTNER"}${randomSuffix}`;
 
     // Liaison avec un compte utilisateur FOVE si déjà inscrit
-    const existingUser = await this.prisma.client.user.findUnique({
-      where: { email: dto.email.toLowerCase() },
+    // Seul un compte à l'email confirmé est lié : l'adresse saisie dans la candidature n'est pas prouvée.
+    const existingUser = await this.prisma.client.user.findFirst({
+      where: { email: dto.email.toLowerCase(), emailVerifiedAt: { not: null } },
     });
 
     const isAutoApproved = settings.autoApproveApplications;
@@ -135,12 +138,12 @@ export class PartnersService {
         html: locale !== "fr" ? undefined : `
           <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #111; max-width: 580px; margin: 0 auto; padding: 24px;">
             <h2 style="margin-bottom: 12px; color: #000;">Candidature reçue · Programme Partenaires FOVE</h2>
-            <p>Bonjour <strong>${dto.name}</strong>,</p>
+            <p>Bonjour <strong>${escapeHtml(dto.name)}</strong>,</p>
             <p>Nous avons bien reçu votre candidature pour rejoindre le programme de partenaires commerciaux de FOVE.</p>
             <div style="background-color: #f7f7f8; border-radius: 8px; padding: 16px; margin: 20px 0;">
               <p style="margin: 0; font-size: 14px;"><strong>Code envisagé :</strong> <code>${code}</code></p>
               <p style="margin: 4px 0 0; font-size: 14px;"><strong>Profil :</strong> ${dto.partnerType}</p>
-              <p style="margin: 4px 0 0; font-size: 14px;"><strong>Territoire :</strong> ${dto.city}, ${dto.country}</p>
+              <p style="margin: 4px 0 0; font-size: 14px;"><strong>Territoire :</strong> ${escapeHtml(dto.city)}, ${escapeHtml(dto.country)}</p>
             </div>
             <p>Notre équipe commerciale étudie vos informations. Dès approbation, vous recevrez vos accès complets et votre lien commercial.</p>
             <p style="margin-top: 24px; font-size: 13px; color: #666;">L'équipe FOVE · <a href="https://fove.digital" style="color: #1F4FFF;">https://fove.digital</a></p>
@@ -423,21 +426,20 @@ export class PartnersService {
     });
 
     if (!partner) {
-      // Tentative de réconciliation par email
+      // Rattachement par email : seulement si l'email du compte est confirmé (sinon n'importe qui
+      // créerait un compte avec l'adresse d'un partenaire pour prendre son profil et ses versements),
+      // et seulement un profil encore libre (jamais celui d'un autre compte).
       const user = await this.prisma.client.user.findUnique({ where: { id: userId } });
-      if (user) {
-        partner = await this.prisma.client.partner.findFirst({
-          where: { email: user.email.toLowerCase() },
+      if (user?.emailVerifiedAt) {
+        const byEmail = await this.prisma.client.partner.findFirst({
+          where: { email: { equals: user.email, mode: "insensitive" }, userId: null },
         });
-        if (partner && !partner.userId) {
-          await this.prisma.client.partner.update({
-            where: { id: partner.id },
-            data: { userId },
-          });
-          await this.prisma.client.user.update({
-            where: { id: userId },
-            data: { isPartner: true },
-          });
+        if (byEmail) {
+          const linked = await this.prisma.client.partner.updateMany({ where: { id: byEmail.id, userId: null }, data: { userId } });
+          if (linked.count === 1) {
+            await this.prisma.client.user.update({ where: { id: userId }, data: { isPartner: true } });
+            partner = { ...byEmail, userId };
+          }
         }
       }
     }
@@ -608,17 +610,27 @@ export class PartnersService {
     });
   }
 
-  async updateLead(userId: string, leadId: string, dto: Partial<PartnerLeadDto>) {
+  async updateLead(userId: string, leadId: string, dto: PartnerLeadUpdateDto) {
     const partner = await this.getPartnerByUserId(userId);
     const lead = await this.prisma.client.partnerLead.findFirst({
       where: { id: leadId, partnerId: partner.id },
     });
     if (!lead) throw notFound("Prospect introuvable");
 
-    return this.prisma.client.partnerLead.update({
-      where: { id: leadId },
-      data: dto,
-    });
+    // Champs choisis un par un : un objet venu de la requête n'est jamais passé tel quel à Prisma
+    // (sinon il pourrait écrire dans les tables liées, jusqu'au compte utilisateur).
+    const data: Prisma.PartnerLeadUpdateInput = {};
+    if (dto.businessName !== undefined) data.businessName = dto.businessName;
+    if (dto.contactName !== undefined) data.contactName = dto.contactName || null;
+    if (dto.email !== undefined) data.email = dto.email || null;
+    if (dto.phone !== undefined) data.phone = dto.phone || null;
+    if (dto.city !== undefined) data.city = dto.city || null;
+    if (dto.country !== undefined) data.country = dto.country || null;
+    if (dto.sector !== undefined) data.sector = dto.sector || null;
+    if (dto.notes !== undefined) data.notes = dto.notes || null;
+    if (dto.status !== undefined) data.status = dto.status;
+
+    return this.prisma.client.partnerLead.update({ where: { id: leadId }, data });
   }
 
   /**
@@ -729,7 +741,7 @@ export class PartnersService {
     // Rapprochement avec un User existant
     let user = partner.userId
       ? await this.prisma.client.user.findUnique({ where: { id: partner.userId } })
-      : await this.prisma.client.user.findUnique({ where: { email: partner.email.toLowerCase() } });
+      : await this.prisma.client.user.findFirst({ where: { email: partner.email.toLowerCase(), emailVerifiedAt: { not: null } } });
 
     if (user) {
       await this.prisma.client.user.update({
@@ -768,7 +780,7 @@ export class PartnersService {
         html: locale !== "fr" ? translated.html : `
           <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #111; max-width: 580px; margin: 0 auto; padding: 24px;">
             <h2 style="color: #000;">Félicitations · Votre partenariat FOVE est approuvé !</h2>
-            <p>Bonjour <strong>${partner.name}</strong>,</p>
+            <p>Bonjour <strong>${escapeHtml(partner.name)}</strong>,</p>
             <p>Votre statut de partenaire commercial FOVE est désormais actif. Vous pouvez dès à présent recommander FOVE et percevoir vos commissions.</p>
             <div style="background-color: #f7f7f8; border-left: 4px solid #C7FF3D; border-radius: 4px; padding: 16px; margin: 20px 0;">
               <p style="margin: 0; font-size: 14px;"><strong>Votre code partenaire :</strong> <code style="font-size: 16px; font-weight: bold;">${partner.code}</code></p>
@@ -778,7 +790,7 @@ export class PartnersService {
             <div style="margin: 24px 0;">
               <a href="${partnerUrl}" style="display: inline-block; background-color: #000; color: #fff; text-decoration: none; padding: 12px 24px; border-radius: 6px; font-weight: 600; font-size: 14px;">Accéder à mon espace partenaire</a>
             </div>
-            <p style="font-size: 13px; color: #666;">Si vous n'aviez pas encore de compte utilisateur FOVE, connectez-vous avec cette adresse email (${partner.email}).</p>
+            <p style="font-size: 13px; color: #666;">Si vous n'aviez pas encore de compte utilisateur FOVE, connectez-vous avec cette adresse email (${escapeHtml(partner.email)}).</p>
           </div>
         `,
       });

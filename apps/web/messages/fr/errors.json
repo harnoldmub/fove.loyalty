@@ -51,6 +51,7 @@
     "same_plan": "Vous êtes déjà sur cette offre",
     "self": "Vous ne pouvez pas modifier votre propre accès",
     "too_large": "Image trop lourde (512 Ko maximum)",
-    "visit_already_counted": "Le passage d’aujourd’hui est déjà compté pour ce client."
+    "visit_already_counted": "Le passage d’aujourd’hui est déjà compté pour ce client.",
+    "email_not_verified": "Confirmez d’abord votre adresse email : ouvrez le lien que nous vous avons envoyé."
   }
 }

@@ -37,7 +37,7 @@ import { Logo } from "@/components/brand";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { Badge, PageHeader, Panel } from "@/components/ui/misc";
-import { api } from "@/lib/api";
+import { api, ApiError } from "@/lib/api";
 import { useLocale, useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { formatDate, formatNumber, formatPrice } from "@/lib/utils";
@@ -149,10 +149,12 @@ export function PartnerDashboard({ user }: { user: { name: string; email: string
   const [qrModalOpen, setQrModalOpen] = useState(false);
   const [utmModalOpen, setUtmModalOpen] = useState(false);
 
-  const { data, isLoading, refetch } = useQuery({
+  const { data, isLoading, error, refetch } = useQuery({
     queryKey: ["partner-dashboard-data"],
     queryFn: () => api.get<DashboardData>("/partner/me"),
+    retry: (count, e) => !(e instanceof ApiError && e.code === "email_not_verified") && count < 3,
   });
+  const [verificationSent, setVerificationSent] = useState(false);
 
   const partner = data?.partner;
   const kpi = data?.kpi;
@@ -178,6 +180,30 @@ export function PartnerDashboard({ user }: { user: { name: string; email: string
     return (
       <div className="grid min-h-dvh place-items-center bg-paper text-sm text-ink-3">
         {t("loading")}
+      </div>
+    );
+  }
+
+  // Espace partenaire (argent, coordonnées de versement) réservé aux comptes à l'email confirmé.
+  if (error instanceof ApiError && error.code === "email_not_verified") {
+    return (
+      <div className="mx-auto max-w-lg px-4 py-20 text-center">
+        <Panel className="p-8">
+          <h2 className="font-display text-xl font-bold text-ink mb-2">{t("unverified.title")}</h2>
+          <p className="text-xs text-ink-2 mb-6">{t("unverified.body")}</p>
+          {verificationSent ? (
+            <p className="text-sm text-mint">{t("unverified.sent")}</p>
+          ) : (
+            <Button
+              onClick={async () => {
+                await api.post("/auth/resend-verification").catch(() => undefined);
+                setVerificationSent(true);
+              }}
+            >
+              {t("unverified.resend")}
+            </Button>
+          )}
+        </Panel>
       </div>
     );
   }

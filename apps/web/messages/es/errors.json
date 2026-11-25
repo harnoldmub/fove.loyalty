@@ -51,6 +51,7 @@
     "same_plan": "Ya tienes este plan",
     "self": "No puedes modificar tu propio acceso",
     "too_large": "Imagen demasiado pesada (512 KB como máximo)",
-    "visit_already_counted": "La visita de hoy ya se ha contado para este cliente."
+    "visit_already_counted": "La visita de hoy ya se ha contado para este cliente.",
+    "email_not_verified": "Confirma primero tu dirección de correo: abre el enlace que te hemos enviado."
   }
 }

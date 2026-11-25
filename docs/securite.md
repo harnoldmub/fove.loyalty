@@ -12,7 +12,10 @@
 | Clés API | `fove_sk_` (serveur, scopes) et `fove_pk_` (widget, aucun scope, domaines autorisés). Stockées hachées, affichées une seule fois, révocables. Une clé publique ne peut jamais créditer (testé). |
 | Validation | Zod sur chaque entrée ; Prisma (requêtes paramétrées) contre les injections ; `$queryRaw` uniquement en gabarits paramétrés. |
 | Limitation de débit | Global 120 req/min/IP ; auth 10/min ; inscription publique 5/min ; API v1 300/min. Champ piège anti-robot sur l'inscription. |
-| Webhooks sortants | Signature HMAC-SHA256 horodatée, secret chiffré AES-256-GCM au repos, 8 tentatives avec backoff. |
+| Webhooks sortants | Signature HMAC-SHA256 horodatée, secret chiffré AES-256-GCM au repos, 8 tentatives avec backoff. Anti-SSRF : en production, adresse HTTPS dont toutes les IP résolues sont publiques (vérifiée à la création et avant chaque envoi, `common/public-url.ts`) ; redirections jamais suivies. |
+| Écritures en base | Aucun objet de requête n'est passé tel quel à Prisma (`data`) : corps validé par zod, champs choisis un par un (sinon écritures imbriquées possibles jusqu'au compte utilisateur). |
+| Email non confirmé | Espace partenaire et rattachements par email réservés aux comptes à l'email confirmé ; code d'erreur `email_not_verified`. |
+| Redirections après connexion | `safeInternalPath` (`@fove/shared`) : chemins internes uniquement (refuse `//`, `/\`, caractères de contrôle). |
 | Webhooks Stripe | Signature vérifiée sur le corps brut, événements dédupliqués (`BillingEvent`). |
 | Médias | Type déterminé par signature binaire (PNG/JPEG/WebP), SVG refusé, 512 Ko max, servi avec `Content-Security-Policy: default-src 'none'`. |
 | En-têtes | Helmet côté API ; `nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy`, `Permissions-Policy` côté web ; cartes en `no-store` + `noindex`. |
