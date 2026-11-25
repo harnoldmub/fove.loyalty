@@ -487,6 +487,7 @@
     "team": "Equipo",
     "integrations": "Integraciones",
     "billing": "Suscripción",
+    "referral": "Recomendaciones",
     "settings": "Ajustes",
     "home": "Inicio"
   },
@@ -749,12 +750,13 @@
     "whatsapp": "Envío instantáneo del enlace de la tarjeta por WhatsApp a los nuevos clientes.",
     "referral": {
       "title": "Recomendación entre comercios",
-      "badge": "1 mes gratis",
-      "body": "Recomienda FOVE a otro comerciante: recibe <strong>20 $ de crédito</strong> descontados de tu suscripción en cuanto se suscriba por primera vez.",
+      "badge": "Hasta 1 año gratis",
+      "body": "Recomienda FOVE a otros comercios: <strong>20 $ de crédito</strong> por recomendado suscrito, hasta un año gratis cada año.",
       "copied": "¡Enlace de recomendación copiado al portapapeles!",
       "copy": "Copiar mi enlace",
       "message": "Hola, gestiono la fidelidad de mis clientes con FOVE en Apple Wallet y Google Wallet. Descúbrelo y pruébalo gratis aquí: {url}",
-      "share": "Compartir"
+      "share": "Compartir",
+      "open": "Ver mis recomendaciones"
     },
     "links": {
       "programs": "Reglas de fidelidad",
@@ -935,8 +937,78 @@
         "whatsappAuto": "Mensajes de WhatsApp enviados automáticamente",
         "removeBranding": "Tarjeta y widget sin la mención FOVE",
         "integrations": "Conexión con tu tienda en línea",
-        "api": "API y webhooks"
+        "api": "API y webhooks",
+        "referral": "Recomendaciones: hasta un año gratis"
       }
+    }
+  },
+  "referralPage": {
+    "title": "Recomendaciones",
+    "subtitle": "Recomienda FOVE a otros comercios: ganas hasta un año de suscripción gratis y ellos reciben 20 $.",
+    "locked": {
+      "title": "El programa de recomendación está incluido en los planes de pago",
+      "body": "Pásate a un plan de pago para recomendar a otros comercios: 20 $ de crédito por recomendado, hasta un año gratis cada año. Tus recomendados reciben 20 $ en su primera suscripción.",
+      "cta": "Ver los planes"
+    },
+    "link": {
+      "title": "Tu enlace de recomendación",
+      "copy": "Copiar el enlace",
+      "copied": "Enlace copiado",
+      "share": "Compartir por WhatsApp",
+      "message": "Hola, gestiono la fidelidad de mis clientes con FOVE (tarjetas en Apple Wallet y Google Wallet). Con mi enlace tienes 20 $ de descuento en tu primera suscripción: {url}"
+    },
+    "gains": {
+      "title": "Mis ganancias",
+      "available": "Crédito disponible",
+      "availableHint": "Se descuenta automáticamente de tu próxima factura.",
+      "earned": "Ganado en total",
+      "used": "Ya utilizado",
+      "pending": "{count, plural, =0 {Ninguna recomendación pendiente} one {# recomendación pendiente} other {# recomendaciones pendientes}}",
+      "nextExpiry": "Próxima caducidad: {date}",
+      "year": "Límite {year}",
+      "yearProgress": "{earned} ganados de {cap}",
+      "yearReached": "Límite {year} alcanzado: tus próximos recomendados conservan su descuento, pero no ganas más crédito antes del 1 de enero."
+    },
+    "referee": "Te ha recomendado {name}: {amount} de descuento en tu primera suscripción anual.",
+    "partner": {
+      "approachingTitle": "Te acercas al límite de este año",
+      "reachedTitle": "Límite de este año alcanzado",
+      "body": "Estás recomendando FOVE con éxito: únete al programa de socios y cobra una comisión por cada suscripción que aportes, sin límite.",
+      "cta": "Hacerme socio",
+      "strategy": "Soy un comercio cliente de FOVE ({company}) y ya recomiendo FOVE a otros comercios mediante el programa de recomendación."
+    },
+    "list": {
+      "title": "Mis recomendados",
+      "empty": "Aún no tienes recomendados: ¡comparte tu enlace!",
+      "name": "Comercio",
+      "signedUp": "Registrado el",
+      "status": "Estado",
+      "amount": "Crédito"
+    },
+    "status": {
+      "SIGNED_UP": "Registrado, aún sin suscripción",
+      "PENDING": "Pendiente hasta el {date}",
+      "EARNED": "Crédito obtenido",
+      "CAPPED": "Fuera del límite",
+      "NO_PLAN": "Sin plan de pago",
+      "CANCELLED": "Cancelada",
+      "EXPIRED": "Caducado"
+    },
+    "terms": {
+      "title": "Condiciones del programa de recomendación",
+      "items": [
+        "Quién puede recomendar. Cualquier comercio suscrito a un plan de pago de FOVE. El crédito solo se obtiene si tu comercio tiene un plan de pago en la fecha en que se obtiene.",
+        "Cómo recomendar. Comparte tu enlace de recomendación. El comercio que recomiendas (el «recomendado») debe crear su cuenta FOVE en los 30 días siguientes a su clic en tu enlace.",
+        "Lo que recibe el recomendado. 20 USD de descuento en su primera suscripción anual a un plan de pago. Una sola vez por comercio.",
+        "Lo que ganas tú. 20 USD de crédito por recomendado, obtenidos 14 días después de su primer pago anual, siempre que no se haya reembolsado ni cancelado durante ese plazo.",
+        "Límite. Por año natural (del 1 de enero al 31 de diciembre), tus ganancias se limitan al menor de estos dos importes: 200 USD o el precio anual de tu plan en el momento en que se obtiene el crédito. Ejemplos: Essentiel, 99 USD; Business, 199 USD; Réseau, 200 USD. Por encima, tus recomendados conservan su descuento, pero no ganas más crédito hasta el 1 de enero siguiente. El número de recomendados no está limitado.",
+        "Uso del crédito. Tu crédito se descuenta automáticamente de tus próximas facturas de FOVE, empezando por el más antiguo. No puede pagarse en efectivo, transferirse ni canjearse.",
+        "Caducidad. Cada crédito caduca 3 años después de obtenerse si no se ha utilizado.",
+        "Exclusiones. No se concede crédito cuando quien recomienda y el recomendado comparten un propietario, usan el mismo medio de pago o cuando un mismo comercio es recomendado varias veces. Si el recomendado llegó por el enlace de un socio comercial de FOVE antes que por el tuyo, se recompensa al socio.",
+        "Fraude. FOVE puede anular un crédito obtenido de forma abusiva o fraudulenta.",
+        "Programa de socios. Si recomiendas FOVE con regularidad, puedes unirte al programa de socios y cobrar una comisión en lugar de crédito.",
+        "Cambios del programa. FOVE puede modificar o terminar este programa; los créditos ya obtenidos siguen siendo utilizables hasta su caducidad."
+      ]
     }
   }
 }

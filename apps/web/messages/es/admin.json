@@ -206,24 +206,41 @@
       "refunded": "Reemb.: {amount}"
     },
     "referrals": {
-      "title": "Recomendaciones y créditos de comercios",
-      "description": "Créditos concedidos a los comercios embajadores cuando recomiendan otros establecimientos.",
-      "credits": "Total de créditos por recomendación concedidos",
-      "creditsHelp": "Descontados de las facturas de suscripción",
+      "title": "Recomendaciones entre comercios",
+      "description": "Recomendados, créditos de quienes recomiendan y su uso. Reglas: docs/chantier-parrainage.md.",
+      "credits": "Crédito obtenido por quienes recomiendan",
+      "creditsHelp": "Total de créditos obtenidos (tras 14 días, dentro del límite)",
+      "remaining": "Crédito aún disponible",
+      "used": "Ya descontado de las facturas: {amount}",
       "count": "Recomendaciones registradas",
-      "countHelp": "Empresas creadas por recomendación",
+      "countHelp": "Comercios creados por recomendación",
       "loading": "Cargando recomendaciones…",
-      "empty": "Todavía no hay recomendaciones.",
+      "empty": "Aún no hay recomendaciones.",
       "table": {
-        "date": "Fecha",
-        "referrer": "Comercio que recomienda",
-        "referred": "Comercio recomendado",
-        "credit": "Crédito concedido",
-        "status": "Estado"
+        "date": "Registro",
+        "referrer": "Recomienda",
+        "referred": "Recomendado",
+        "status": "Estado",
+        "credit": "Crédito",
+        "used": "Usado"
       },
       "status": {
-        "applied": "Aplicado",
-        "pending": "Pendiente"
+        "SIGNED_UP": "Registrado",
+        "PENDING": "Pendiente ({date})",
+        "EARNED": "Obtenido",
+        "CAPPED": "Fuera del límite",
+        "NO_PLAN": "Sin plan de pago",
+        "CANCELLED": "Cancelada",
+        "EXPIRED": "Caducado"
+      },
+      "cancel": {
+        "action": "Cancelar",
+        "title": "¿Cancelar esta recomendación?",
+        "consequence": "El crédito no utilizado se retira a quien recomienda (incluido el saldo de Stripe). Resérvalo para abusos y fraudes.",
+        "reason": "Motivo (queda registrado)",
+        "reasonRequired": "Indica un motivo.",
+        "confirm": "Cancelar la recomendación",
+        "done": "Recomendación cancelada"
       }
     },
     "refunds": {
@@ -884,7 +901,8 @@
       "exports": "Exportaciones",
       "walletCampaigns": "Campañas Wallet",
       "whatsappAuto": "WhatsApp automático",
-      "removeBranding": "Sin mención FOVE"
+      "removeBranding": "Sin mención FOVE",
+      "referral": "Programa de recomendación"
     },
     "onSale": "Plan a la venta",
     "saved": "Plan guardado",

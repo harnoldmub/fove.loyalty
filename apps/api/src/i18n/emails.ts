@@ -329,6 +329,63 @@ export function clientConfirmMessage(locale: Locale, code: string, link: string)
   };
 }
 
+const PARTNER_INVITE = {
+  fr: {
+    subject: (reached: boolean) => (reached ? "Plafond de parrainage atteint : devenez partenaire FOVE" : "Vous approchez de votre plafond de parrainage"),
+    heading: "Vous recommandez FOVE avec succès",
+    body: (reached: boolean, tenant: string) =>
+      reached
+        ? `${tenant} a atteint son plafond de crédit de parrainage pour cette année. Vos prochains filleuls gardent leur remise, mais vous ne gagnez plus de crédit avant le 1er janvier.`
+        : `${tenant} approche de son plafond de crédit de parrainage pour cette année.`,
+    offer: "Rejoignez le programme partenaires FOVE : vous toucherez une commission sur chaque abonnement de vos recommandations, sans plafond. Votre candidature est pré-remplie depuis votre page Parrainage.",
+    button: "Devenir partenaire",
+    footer: "Vous recevez cet email parce que votre commerce participe au programme de parrainage FOVE.",
+  },
+  en: {
+    subject: (reached: boolean) => (reached ? "Referral cap reached: become a FOVE partner" : "You're approaching your referral cap"),
+    heading: "You're successfully recommending FOVE",
+    body: (reached: boolean, tenant: string) =>
+      reached
+        ? `${tenant} has reached its referral credit cap for this year. Your next referrals keep their discount, but you won't earn more credit before 1 January.`
+        : `${tenant} is approaching its referral credit cap for this year.`,
+    offer: "Join the FOVE partner programme: you'll earn a commission on every subscription you bring in, with no cap. Your application is pre-filled from your Referrals page.",
+    button: "Become a partner",
+    footer: "You're receiving this email because your business takes part in the FOVE referral programme.",
+  },
+  ar: {
+    subject: (reached: boolean) => (reached ? "تم بلوغ سقف الإحالة: كن شريكًا لـ FOVE" : "أنت تقترب من سقف الإحالة"),
+    heading: "أنت توصي بـ FOVE بنجاح",
+    body: (reached: boolean, tenant: string) =>
+      reached
+        ? `بلغ ${tenant} سقف رصيد الإحالة لهذا العام. يحتفظ المُحالون القادمون بخصمهم، لكنك لن تربح رصيدًا إضافيًا قبل 1 يناير.`
+        : `يقترب ${tenant} من سقف رصيد الإحالة لهذا العام.`,
+    offer: "انضم إلى برنامج شركاء FOVE: ستحصل على عمولة عن كل اشتراك تجلبه، دون سقف. طلبك معبأ مسبقًا من صفحة الإحالة.",
+    button: "كن شريكًا",
+    footer: "تتلقى هذه الرسالة لأن متجرك يشارك في برنامج الإحالة من FOVE.",
+  },
+  es: {
+    subject: (reached: boolean) => (reached ? "Límite de recomendaciones alcanzado: hazte socio de FOVE" : "Te acercas a tu límite de recomendaciones"),
+    heading: "Estás recomendando FOVE con éxito",
+    body: (reached: boolean, tenant: string) =>
+      reached
+        ? `${tenant} ha alcanzado su límite de crédito por recomendación de este año. Tus próximos recomendados conservan su descuento, pero no ganas más crédito antes del 1 de enero.`
+        : `${tenant} se acerca a su límite de crédito por recomendación de este año.`,
+    offer: "Únete al programa de socios de FOVE: cobrarás una comisión por cada suscripción que aportes, sin límite. Tu solicitud está rellenada desde tu página de Recomendaciones.",
+    button: "Hacerme socio",
+    footer: "Recibes este correo porque tu comercio participa en el programa de recomendación de FOVE.",
+  },
+} satisfies Record<Locale, unknown>;
+
+/** Invitation au programme partenaires quand un parrain approche (80 %) ou atteint son plafond annuel. */
+export function partnerInviteMessage(locale: Locale, p: { tenantName: string; reached: boolean; link: string }): Content {
+  const t = PARTNER_INVITE[locale];
+  return {
+    subject: t.subject(p.reached),
+    text: `${t.heading}\n\n${t.body(p.reached, p.tenantName)}\n${t.offer}\n\n${p.link}\n\n${t.footer}`,
+    html: emailHtml(locale, { title: t.subject(p.reached), heading: t.heading, paragraphs: [t.body(p.reached, p.tenantName), t.offer], button: { label: t.button, url: p.link }, footer: t.footer }),
+  };
+}
+
 const CLIENT_REMIND = {
   fr: {
     subject: "Confirmez votre email pour garder vos cartes partout — FOVE",

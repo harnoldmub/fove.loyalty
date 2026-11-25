@@ -29,7 +29,7 @@ interface Plan {
 }
 
 const LIMITS = ["customers", "establishments", "staff", "programs"] as const;
-const FEATURES: (keyof PlanFeatures)[] = ["api", "widget", "integrations", "exports", "walletCampaigns", "whatsappAuto", "removeBranding"];
+const FEATURES: (keyof PlanFeatures)[] = ["api", "widget", "integrations", "exports", "walletCampaigns", "whatsappAuto", "removeBranding", "referral"];
 
 function PlanEditor({ plan }: { plan: Plan }) {
   const t = useTranslations("admin.plans");

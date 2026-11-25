@@ -20,6 +20,8 @@ export type PlanFeatures = {
   whatsappAuto: boolean;
   /** Retire la mention « Propulsé par FOVE » du widget et de la carte. */
   removeBranding: boolean;
+  /** Programme de parrainage entre commerçants (docs/chantier-parrainage.md). */
+  referral: boolean;
 };
 
 export type QuotaKey = "customers" | "establishments" | "staff" | "programs";
@@ -32,7 +34,7 @@ export type PlanKindCode = "FREE" | "PAID" | "CUSTOM";
 /** Après un paiement échoué, les droits de l'offre sont gardés ce nombre de jours, puis le Gratuit s'applique. */
 export const PAST_DUE_GRACE_DAYS = 7;
 
-export const PLAN_FEATURE_KEYS = ["api", "widget", "integrations", "exports", "walletCampaigns", "whatsappAuto", "removeBranding"] as const;
+export const PLAN_FEATURE_KEYS = ["api", "widget", "integrations", "exports", "walletCampaigns", "whatsappAuto", "removeBranding", "referral"] as const;
 export const QUOTA_KEYS = ["customers", "establishments", "staff", "programs"] as const;
 
 export interface PlanDefinition {
@@ -49,7 +51,7 @@ export interface PlanDefinition {
   sortOrder: number;
 }
 
-const PAID_FEATURES = { exports: true, widget: true, walletCampaigns: true, whatsappAuto: true, removeBranding: true };
+const PAID_FEATURES = { exports: true, widget: true, walletCampaigns: true, whatsappAuto: true, removeBranding: true, referral: true };
 
 export const FREE_PLAN_FEATURES: PlanFeatures = {
   api: false,
@@ -59,6 +61,7 @@ export const FREE_PLAN_FEATURES: PlanFeatures = {
   walletCampaigns: false,
   whatsappAuto: false,
   removeBranding: false,
+  referral: false,
 };
 
 export const FREE_PLAN_LIMITS: PlanLimits = { customers: 100, establishments: 1, staff: 1, programs: 1 };

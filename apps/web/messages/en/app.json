@@ -487,6 +487,7 @@
     "team": "Team",
     "integrations": "Integrations",
     "billing": "Subscription",
+    "referral": "Referrals",
     "settings": "Settings",
     "home": "Home"
   },
@@ -749,12 +750,13 @@
     "whatsapp": "Instant sending of the card link via WhatsApp to new customers.",
     "referral": {
       "title": "Merchant referral",
-      "badge": "1 month free",
-      "body": "Recommend FOVE to a fellow merchant: get <strong>$20 in credit</strong> off your subscription as soon as they first subscribe.",
+      "badge": "Up to 1 year free",
+      "body": "Recommend FOVE to other businesses: <strong>$20 of credit</strong> per subscribed referral, up to one free year every year.",
       "copied": "Referral link copied to the clipboard!",
       "copy": "Copy my link",
       "message": "Hi, I manage my customers’ loyalty with FOVE on Apple Wallet and Google Wallet. Discover it and try it for free here: {url}",
-      "share": "Share"
+      "share": "Share",
+      "open": "View my referrals"
     },
     "links": {
       "programs": "Loyalty rules",
@@ -935,8 +937,78 @@
         "whatsappAuto": "WhatsApp messages sent automatically",
         "removeBranding": "Card and widget without the FOVE mention",
         "integrations": "Connection to your online shop",
-        "api": "API and webhooks"
+        "api": "API and webhooks",
+        "referral": "Referrals: up to one free year"
       }
+    }
+  },
+  "referralPage": {
+    "title": "Referrals",
+    "subtitle": "Recommend FOVE to other businesses: you earn up to one year of subscription for free, they get $20.",
+    "locked": {
+      "title": "Referrals are included in paid plans",
+      "body": "Upgrade to a paid plan to refer other businesses: $20 of credit per referral, up to one free year every year. Your referrals get $20 off their first subscription.",
+      "cta": "See plans"
+    },
+    "link": {
+      "title": "Your referral link",
+      "copy": "Copy link",
+      "copied": "Link copied",
+      "share": "Share on WhatsApp",
+      "message": "Hi, I manage my customers' loyalty with FOVE (cards in Apple Wallet and Google Wallet). With my link you get $20 off your first subscription: {url}"
+    },
+    "gains": {
+      "title": "My earnings",
+      "available": "Available credit",
+      "availableHint": "Automatically deducted from your next invoice.",
+      "earned": "Total earned",
+      "used": "Already used",
+      "pending": "{count, plural, =0 {No pending referral} one {# pending referral} other {# pending referrals}}",
+      "nextExpiry": "Next expiry: {date}",
+      "year": "{year} cap",
+      "yearProgress": "{earned} earned out of {cap}",
+      "yearReached": "{year} cap reached: your next referrals keep their discount, but you won't earn more credit before 1 January."
+    },
+    "referee": "You were referred by {name}: {amount} off your first annual subscription.",
+    "partner": {
+      "approachingTitle": "You're approaching this year's cap",
+      "reachedTitle": "This year's cap reached",
+      "body": "You're successfully recommending FOVE: join the partner programme and earn a commission on every subscription you bring in, with no cap.",
+      "cta": "Become a partner",
+      "strategy": "I'm a FOVE merchant ({company}) and I already recommend FOVE to other businesses through the referral programme."
+    },
+    "list": {
+      "title": "My referrals",
+      "empty": "No referrals yet: share your link!",
+      "name": "Business",
+      "signedUp": "Signed up",
+      "status": "Status",
+      "amount": "Credit"
+    },
+    "status": {
+      "SIGNED_UP": "Signed up, not subscribed yet",
+      "PENDING": "Pending until {date}",
+      "EARNED": "Credit earned",
+      "CAPPED": "Over the cap",
+      "NO_PLAN": "No paid plan",
+      "CANCELLED": "Cancelled",
+      "EXPIRED": "Expired"
+    },
+    "terms": {
+      "title": "Referral programme terms",
+      "items": [
+        "Who can refer. Any business subscribed to a paid FOVE plan. Credit is only earned if your business is on a paid plan on the date it is earned.",
+        "How to refer. Share your referral link. The business you recommend (the \"referral\") must create its FOVE account within 30 days of clicking your link.",
+        "What the referral gets. USD 20 off its first annual subscription to a paid plan. Once per business.",
+        "What you get. USD 20 of credit per referral, earned 14 days after its first annual payment, provided it has not been refunded or cancelled during that period.",
+        "Cap. Per calendar year (1 January to 31 December), your earnings are capped at the lower of these two amounts: USD 200, or the annual price of your plan when the credit is earned. Examples: Essentiel, USD 99; Business, USD 199; Réseau, USD 200. Beyond that, your referrals keep their discount, but you earn no more credit until the following 1 January. The number of referrals is not limited.",
+        "Using credit. Your credit is automatically deducted from your next FOVE invoices, oldest first. It cannot be paid out in cash, transferred or exchanged.",
+        "Expiry. Each credit expires 3 years after it was earned if it has not been used.",
+        "Exclusions. No credit is granted when the referrer and the referral share an owner, use the same payment method, or when the same business is referred more than once. If the referral came through a FOVE sales partner's link before yours, the partner is rewarded.",
+        "Fraud. FOVE may cancel credit obtained abusively or fraudulently.",
+        "Partner programme. If you recommend FOVE regularly, you can join the partner programme and earn a commission instead of credit.",
+        "Changes. FOVE may change or end this programme; credit already earned remains usable until it expires."
+      ]
     }
   }
 }

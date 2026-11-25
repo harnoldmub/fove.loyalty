@@ -5,9 +5,11 @@ import { loadConfig, stripeSecretKey, stripeWebhookSecret, stripeYearlyPrice } f
 import { PrismaService } from "../common/prisma.service";
 import { AuditService } from "../common/audit.service";
 import { badRequest, notFound } from "../common/errors";
+import { randomToken } from "../common/crypto";
 import type { TenantContext } from "../common/context";
 import { PlanService } from "./plan.service";
 import { PartnersService } from "../partners/partners.service";
+import { ReferralService } from "../referrals/referral.service";
 
 /** Un abonnement payé remplace un éventuel contrat sur-mesure et ses dérogations. */
 const NO_CONTRACT = { limitsOverride: Prisma.DbNull, featuresOverride: Prisma.DbNull, contractPriceYearlyCents: null };
@@ -29,6 +31,7 @@ export class BillingService {
     private readonly plans: PlanService,
     private readonly audit: AuditService,
     private readonly partners: PartnersService,
+    private readonly referrals: ReferralService,
   ) {
     const key = stripeSecretKey();
     this.stripe = key ? new Stripe(key) : null;
@@ -79,6 +82,10 @@ export class BillingService {
         update: { ...data, ...NO_CONTRACT },
         create: { tenantId: ctx.tenantId, ...data },
       });
+      // Paiement simulé enregistré comme un vrai : remise du filleul et crédit de parrainage déduits.
+      const discount = await this.referrals.refereeDiscount(ctx.tenantId);
+      await this.recordMockPayment(ctx.tenantId, plan.priceYearlyCents, discount);
+      if (discount > 0) await this.referrals.markRefereeDiscountUsed(ctx.tenantId);
       await this.audit.forTenant(ctx, "billing.mock_checkout", undefined, { plan: plan.code, interval });
       return { url: `${appUrl}/app/billing?checkout=mock`, mode: "mock" as const };
     }
@@ -103,6 +110,9 @@ export class BillingService {
         ? Math.floor(current.trialEndsAt.getTime() / 1000)
         : undefined;
 
+    // Remise du filleul (parrainage) : coupon Stripe s'il est configuré (incompatible avec la saisie d'un code promo).
+    const referralCoupon = loadConfig().REFERRAL_STRIPE_COUPON_ID;
+    const refereeDiscount = referralCoupon ? await this.referrals.refereeDiscount(tenant.id) : 0;
     const session = await this.stripe.checkout.sessions.create({
       mode: "subscription",
       ...(customerId ? { customer: customerId } : customerEmail ? { customer_email: customerEmail } : {}),
@@ -115,7 +125,7 @@ export class BillingService {
       },
       success_url: `${appUrl}/app/billing?checkout=success`,
       cancel_url: `${appUrl}/app/billing?checkout=cancelled`,
-      allow_promotion_codes: true,
+      ...(refereeDiscount > 0 ? { discounts: [{ coupon: referralCoupon! }] } : { allow_promotion_codes: true }),
     });
     // L'offre en cours (le Gratuit en général) reste active jusqu'au webhook de Stripe.
     await this.prisma.client.subscription.upsert({
@@ -277,6 +287,9 @@ export class BillingService {
       if (sub.provider === "MOCK" && !sub.cancelAtPeriodEnd) {
         const next = sub.scheduledPlanId ? { planId: sub.scheduledPlanId, scheduledPlanId: null } : {};
         await db.subscription.update({ where: { id: sub.id }, data: { currentPeriodEnd: periodEnd(sub.interval), ...next } });
+        const plan = await db.subscriptionPlan.findUniqueOrThrow({ where: { id: sub.scheduledPlanId ?? sub.planId } });
+        const price = sub.contractPriceYearlyCents ?? (sub.interval === "YEAR" ? plan.priceYearlyCents : plan.priceMonthlyCents);
+        if (price > 0) await this.recordMockPayment(sub.tenantId, price, 0);
         renewed += 1;
         continue;
       }
@@ -484,8 +497,73 @@ export class BillingService {
         } catch (e) {
           this.logger.error("Erreur calcul commission partenaire", e);
         }
+        try {
+          await this.onStripeInvoicePaidForReferral(invoice, payment, paymentIntentId);
+        } catch (e) {
+          this.logger.error("Erreur parrainage sur facture payée", e);
+        }
       }
     }
+  }
+
+  /**
+   * Paiement en mode simulé : enregistré comme un paiement réel (finance, commissions, parrainage).
+   * La remise du filleul puis le crédit de parrainage disponible sont déduits du prix.
+   */
+  private async recordMockPayment(tenantId: string, priceCents: number, discountCents: number) {
+    const afterDiscount = Math.max(0, priceCents - discountCents);
+    const credit = Math.min(await this.referrals.availableCredit(tenantId), afterDiscount);
+    const amount = afterDiscount - credit;
+    const payment = await this.prisma.client.payment.create({
+      data: {
+        reference: `MOCK-${randomToken("", 6).toUpperCase()}`,
+        tenantId,
+        provider: "MOCK",
+        amountCents: amount,
+        netCents: amount,
+        currency: "USD",
+        status: "SUCCEEDED",
+        method: "mock",
+        confirmedAt: new Date(),
+      },
+    });
+    if (credit > 0) await this.referrals.consumeCredit(tenantId, credit, payment.id);
+    await this.referrals.onPaymentConfirmed(payment);
+    if (amount > 0) {
+      try {
+        await this.partners.handlePaymentConfirmed(payment);
+      } catch (e) {
+        this.logger.error("Erreur calcul commission partenaire", e);
+      }
+    }
+    return payment;
+  }
+
+  /**
+   * Facture Stripe payée, côté parrainage : empreinte de la carte (anti-abus), attente du crédit du
+   * parrain, remise du filleul consommée, et suivi du crédit déduit par Stripe du solde client.
+   */
+  private async onStripeInvoicePaidForReferral(invoice: Stripe.Invoice, payment: { id: string; tenantId: string; confirmedAt: Date | null }, paymentIntentId?: string) {
+    let cardFingerprint: string | null = null;
+    if (this.stripe && paymentIntentId) {
+      try {
+        const intent = await this.stripe.paymentIntents.retrieve(paymentIntentId, { expand: ["payment_method"] });
+        const method = intent.payment_method;
+        cardFingerprint = typeof method === "object" && method?.card?.fingerprint ? method.card.fingerprint : null;
+      } catch {
+        cardFingerprint = null;
+      }
+    }
+    if (cardFingerprint) await this.prisma.client.payment.update({ where: { id: payment.id }, data: { cardFingerprint } });
+    await this.referrals.onPaymentConfirmed({ ...payment, cardFingerprint });
+
+    const coupon = loadConfig().REFERRAL_STRIPE_COUPON_ID;
+    const discounts = (invoice as unknown as { discounts?: (string | { coupon?: { id?: string } | string })[] }).discounts ?? [];
+    if (coupon && discounts.length > 0) await this.referrals.markRefereeDiscountUsed(payment.tenantId);
+
+    // Solde client négatif = crédit ; ce que Stripe a déduit sur cette facture.
+    const applied = (invoice.ending_balance ?? 0) - (invoice.starting_balance ?? 0);
+    if (applied > 0) await this.referrals.consumeCredit(payment.tenantId, applied, payment.id);
   }
 }
 

@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import { pickAttribution, ReferralService } from "../referrals/referral.service";
 import { CardsService } from "../cards/cards.service";
 import { PartnersService } from "../partners/partners.service";
 import { Injectable } from "@nestjs/common";
@@ -57,6 +58,7 @@ export class TenantsService {
     private readonly plans: PlanService,
     private readonly cards: CardsService,
     private readonly partners: PartnersService,
+    private readonly referrals: ReferralService,
   ) {}
 
   /** Crée l'entreprise, l'adhésion propriétaire, les réglages et l'abonnement à l'offre Gratuite. */
@@ -85,50 +87,19 @@ export class TenantsService {
       });
       await this.audit.log({ tenantId: tenant.id, actorUserId: auth.user.id, action: "tenant.created", targetType: "tenant", targetId: tenant.id });
 
-      if (input.partnerCode) {
+      // Un seul est récompensé : le partenaire ou le parrain dont le lien a été cliqué en premier.
+      const winner = pickAttribution(input);
+      if (winner === "partner") {
         try {
-          await this.partners.attributeTenant(tenant.id, input.partnerCode, "MANUAL_CODE");
+          await this.partners.attributeTenant(tenant.id, input.partnerCode!, "MANUAL_CODE");
         } catch {
-          // attribution non-bloquante
+          // attribution non bloquante
         }
-      }
-
-      if (input.referrerSlug) {
+      } else if (winner === "referral") {
         try {
-          const cleanRefSlug = input.referrerSlug.trim().toLowerCase();
-          const referrer = await this.prisma.client.tenant.findUnique({
-            where: { slug: cleanRefSlug },
-            select: { id: true },
-          });
-          if (referrer && referrer.id !== tenant.id) {
-            await this.prisma.client.referralReward.upsert({
-              where: {
-                referrerTenantId_referredTenantId: {
-                  referrerTenantId: referrer.id,
-                  referredTenantId: tenant.id,
-                },
-              },
-              create: {
-                referrerTenantId: referrer.id,
-                referredTenantId: tenant.id,
-                creditAmountCents: 2000, // 20,00 $ accordés (~ 1 mois offert)
-                creditRemainingCents: 2000,
-                creditUsedCents: 0,
-                currency: "USD",
-                status: "ACTIVE",
-              },
-              update: {},
-            });
-            await this.audit.log({
-              tenantId: referrer.id,
-              actorUserId: auth.user.id,
-              action: "tenant.referred",
-              targetType: "tenant",
-              targetId: tenant.id,
-            });
-          }
+          await this.referrals.recordSignup({ referredTenantId: tenant.id, ownerUserId: auth.user.id, referrerSlug: input.referrerSlug!, clickedAt: input.referrerClickedAt });
         } catch {
-          // non-bloquant
+          // parrainage non bloquant
         }
       }
 

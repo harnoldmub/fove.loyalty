@@ -206,24 +206,41 @@
       "refunded": "Remb. : {amount}"
     },
     "referrals": {
-      "title": "Parrainages et crédits commerçants",
-      "description": "Crédits accordés aux commerçants ambassadeurs lorsqu'ils parrainent d'autres établissements.",
-      "credits": "Total des crédits de parrainage accordés",
-      "creditsHelp": "Déduits des factures d'abonnement",
+      "title": "Parrainages entre commerçants",
+      "description": "Filleuls, crédits des parrains et leur utilisation. Règles : docs/chantier-parrainage.md.",
+      "credits": "Crédit acquis par les parrains",
+      "creditsHelp": "Cumul des crédits acquis (après 14 jours, sous plafond)",
+      "remaining": "Crédit encore disponible",
+      "used": "Déjà déduit des factures : {amount}",
       "count": "Parrainages enregistrés",
-      "countHelp": "Entreprises créées par recommandation",
+      "countHelp": "Commerces créés par recommandation",
       "loading": "Chargement des parrainages…",
       "empty": "Aucun parrainage pour le moment.",
       "table": {
-        "date": "Date",
-        "referrer": "Commerçant parrain",
-        "referred": "Commerçant filleul",
-        "credit": "Crédit accordé",
-        "status": "Statut"
+        "date": "Inscription",
+        "referrer": "Parrain",
+        "referred": "Filleul",
+        "status": "État",
+        "credit": "Crédit",
+        "used": "Utilisé"
       },
       "status": {
-        "applied": "Appliqué",
-        "pending": "En attente"
+        "SIGNED_UP": "Inscrit",
+        "PENDING": "En attente ({date})",
+        "EARNED": "Acquis",
+        "CAPPED": "Hors plafond",
+        "NO_PLAN": "Hors offre payante",
+        "CANCELLED": "Annulé",
+        "EXPIRED": "Expiré"
+      },
+      "cancel": {
+        "action": "Annuler",
+        "title": "Annuler ce parrainage ?",
+        "consequence": "Le crédit non utilisé est retiré au parrain (solde Stripe compris). À réserver aux abus et aux fraudes.",
+        "reason": "Motif (inscrit au journal)",
+        "reasonRequired": "Indiquez un motif.",
+        "confirm": "Annuler le parrainage",
+        "done": "Parrainage annulé"
       }
     },
     "refunds": {
@@ -884,7 +901,8 @@
       "exports": "Exports",
       "walletCampaigns": "Campagnes Wallet",
       "whatsappAuto": "WhatsApp automatique",
-      "removeBranding": "Sans mention FOVE"
+      "removeBranding": "Sans mention FOVE",
+      "referral": "Programme de parrainage"
     },
     "onSale": "Offre proposée à la vente",
     "saved": "Offre enregistrée",

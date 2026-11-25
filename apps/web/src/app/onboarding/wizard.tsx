@@ -142,18 +142,20 @@ export function OnboardingWizard({ userName, tenant, fallbackTenant }: { userNam
     if (step === 0)
       return run(async () => {
         const timezone = getCountryOption(estCountry)?.timezone ?? (currency === "EUR" ? "Europe/Paris" : "Africa/Kinshasa");
-        const partnerCodeCookie = typeof document !== "undefined"
-          ? document.cookie
-              .split("; ")
-              .find((row) => row.startsWith("fove_partner_code="))
-              ?.split("=")[1]
-          : undefined;
-        const referrerCookie = typeof document !== "undefined"
-          ? document.cookie
-              .split("; ")
-              .find((row) => row.startsWith("fove_ref="))
-              ?.split("=")[1]
-          : undefined;
+        const cookie = (name: string) =>
+          typeof document !== "undefined"
+            ? document.cookie
+                .split("; ")
+                .find((row) => row.startsWith(`${name}=`))
+                ?.split("=")[1]
+            : undefined;
+        const partnerCodeCookie = cookie("fove_partner_code");
+        const referrerCookie = cookie("fove_ref");
+        // Dates des clics : si les deux liens ont été suivis, le premier l'emporte (côté API).
+        const clickedAt = (name: string) => {
+          const value = Number(cookie(name));
+          return Number.isFinite(value) && value > 0 ? value : undefined;
+        };
 
         await api.post("/app/tenants", {
           name,
@@ -163,6 +165,8 @@ export function OnboardingWizard({ userName, tenant, fallbackTenant }: { userNam
           timezone,
           partnerCode: partnerCodeCookie ? decodeURIComponent(partnerCodeCookie) : undefined,
           referrerSlug: referrerCookie ? decodeURIComponent(referrerCookie) : undefined,
+          partnerClickedAt: partnerCodeCookie ? clickedAt("fove_partner_at") : undefined,
+          referrerClickedAt: referrerCookie ? clickedAt("fove_ref_at") : undefined,
         });
         setEstName(name);
         setStep(1);

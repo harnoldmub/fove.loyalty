@@ -4,7 +4,8 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Suspense, useEffect, useRef, useState } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
+import type { ReferralSummary } from "@/lib/referral";
 import { toast } from "sonner";
 import { PAST_DUE_GRACE_DAYS } from "@fove/shared";
 import { useCan } from "@/components/app/me-context";
@@ -72,6 +73,11 @@ function BillingView() {
     queryFn: () => api.get<Billing>("/app/billing"),
     refetchInterval: (q) => (awaitingStripe && q.state.data?.subscription?.provider !== "STRIPE" && q.state.dataUpdateCount < 10 ? 3000 : false),
   });
+
+  // Parrainage : remise du filleul sur sa première souscription annuelle, affichée avant le paiement.
+  const tReferral = useTranslations("app.referralPage");
+  const locale = useLocale();
+  const { data: referral } = useQuery({ queryKey: ["referrals"], queryFn: () => api.get<ReferralSummary>("/app/referrals") });
 
   // Offre choisie sur la page tarifs avant l'inscription : on lance son paiement, une seule fois.
   const wanted = params.get("offre");
@@ -175,6 +181,11 @@ function BillingView() {
   return (
     <>
       <PageHeader title={t("title")} description={t("description")} />
+      {referral?.asReferee && (
+        <p className="mb-6 rounded-md bg-mint-soft px-4 py-3 text-sm text-ink">
+          {tReferral("referee", { name: referral.asReferee.referrerName, amount: formatPrice(referral.asReferee.discountCents, referral.currency, locale) })}
+        </p>
+      )}
       {data.mode === "mock" && (
         <p className="mb-6 rounded-md bg-stamp-soft px-4 py-3 text-sm text-stamp-ink dark:text-stamp">
           {t("mockMode")}

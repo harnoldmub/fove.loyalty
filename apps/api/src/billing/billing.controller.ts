@@ -9,15 +9,28 @@ import { RequirePermission, Tenant } from "../common/decorators";
 import type { TenantContext } from "../common/context";
 import { TenantRoute } from "../auth/guards";
 import { BillingService } from "./billing.service";
+import { ReferralService } from "../referrals/referral.service";
+import { loadConfig } from "../config";
 
 @ApiTags("billing")
 @Controller()
 export class BillingController {
-  constructor(private readonly billing: BillingService) {}
+  constructor(
+    private readonly billing: BillingService,
+    private readonly referralService: ReferralService,
+  ) {}
 
   @Get("plans")
   plans() {
     return this.billing.listPlans();
+  }
+
+  /** Page « Parrainage » : lien, gains, plafond de l'année, filleuls, remise reçue en tant que filleul. */
+  @Get("app/referrals")
+  @TenantRoute()
+  @RequirePermission("billing.read")
+  referrals(@Tenant() ctx: TenantContext) {
+    return this.referralService.summary(ctx.tenantId, loadConfig().APP_URL);
   }
 
   @Get("app/billing")

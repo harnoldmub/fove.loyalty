@@ -4,7 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { Copy, Gift, MessageCircle } from "lucide-react";
+import { Gift } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { LOCALE_NAMES, LOCALES } from "@/i18n/config";
 import { toast } from "sonner";
@@ -121,34 +121,9 @@ export default function SettingsPage() {
               </div>
             </div>
 
-            <div className="flex items-center gap-2 w-full sm:w-auto">
-              <Button
-                type="button"
-                variant="secondary"
-                size="sm"
-                className="gap-1.5 text-xs w-full sm:w-auto"
-                onClick={() => {
-                  const url = `https://fove.digital/signup?ref=${data.slug}`;
-                  navigator.clipboard.writeText(url);
-                  toast.success(t("referral.copied"));
-                }}
-              >
-                <Copy className="size-3.5" /> {t("referral.copy")}
-              </Button>
-              <Button
-                asChild
-                size="sm"
-                className="gap-1.5 text-xs bg-[#25D366] text-white hover:bg-[#20ba59] w-full sm:w-auto"
-              >
-                <a
-                  href={`https://wa.me/?text=${encodeURIComponent(t("referral.message", { url: `https://fove.digital/signup?ref=${data.slug}` }))}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  <MessageCircle className="size-3.5" /> {t("referral.share")}
-                </a>
-              </Button>
-            </div>
+            <Button asChild variant="secondary" size="sm" className="w-full sm:w-auto">
+              <Link href="/app/parrainage">{t("referral.open")}</Link>
+            </Button>
           </div>
         </Panel>
       )}

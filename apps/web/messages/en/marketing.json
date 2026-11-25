@@ -239,7 +239,8 @@
       "walletCampaigns": "Wallet campaigns to all your customers",
       "whatsappAuto": "Automatic WhatsApp messages",
       "api": "API and webhooks",
-      "integrations": "Online store connection (via API)"
+      "integrations": "Online store connection (via API)",
+      "referral": "Referral programme (up to one free year)"
     },
     "custom": "Custom",
     "unlimited": "Unlimited",

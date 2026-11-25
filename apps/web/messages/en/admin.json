@@ -206,24 +206,41 @@
       "refunded": "Refunded: {amount}"
     },
     "referrals": {
-      "title": "Referrals and merchant credits",
-      "description": "Credits given to ambassador merchants when they refer other businesses.",
-      "credits": "Total referral credits granted",
-      "creditsHelp": "Deducted from subscription invoices",
-      "count": "Referrals recorded",
-      "countHelp": "Businesses created through a referral",
+      "title": "Merchant referrals",
+      "description": "Referrals, referrer credits and their use. Rules: docs/chantier-parrainage.md.",
+      "credits": "Credit earned by referrers",
+      "creditsHelp": "Total credit earned (after 14 days, within the cap)",
+      "remaining": "Credit still available",
+      "used": "Already deducted from invoices: {amount}",
+      "count": "Recorded referrals",
+      "countHelp": "Businesses created through a recommendation",
       "loading": "Loading referrals…",
       "empty": "No referrals yet.",
       "table": {
-        "date": "Date",
-        "referrer": "Referring merchant",
-        "referred": "Referred merchant",
-        "credit": "Credit granted",
-        "status": "Status"
+        "date": "Signed up",
+        "referrer": "Referrer",
+        "referred": "Referral",
+        "status": "Status",
+        "credit": "Credit",
+        "used": "Used"
       },
       "status": {
-        "applied": "Applied",
-        "pending": "Pending"
+        "SIGNED_UP": "Signed up",
+        "PENDING": "Pending ({date})",
+        "EARNED": "Earned",
+        "CAPPED": "Over the cap",
+        "NO_PLAN": "No paid plan",
+        "CANCELLED": "Cancelled",
+        "EXPIRED": "Expired"
+      },
+      "cancel": {
+        "action": "Cancel",
+        "title": "Cancel this referral?",
+        "consequence": "Unused credit is removed from the referrer (Stripe balance included). Reserve this for abuse and fraud.",
+        "reason": "Reason (logged)",
+        "reasonRequired": "Enter a reason.",
+        "confirm": "Cancel the referral",
+        "done": "Referral cancelled"
       }
     },
     "refunds": {
@@ -884,7 +901,8 @@
       "exports": "Exports",
       "walletCampaigns": "Wallet campaigns",
       "whatsappAuto": "Automatic WhatsApp",
-      "removeBranding": "No FOVE branding"
+      "removeBranding": "No FOVE branding",
+      "referral": "Referral programme"
     },
     "onSale": "Plan offered for sale",
     "saved": "Plan saved",

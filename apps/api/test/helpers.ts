@@ -19,11 +19,11 @@ import { createApp } from "../src/bootstrap";
 
 export const db = createPrismaClient(process.env.TEST_DATABASE_URL);
 
-const PAID = { exports: true, widget: true, walletCampaigns: true, whatsappAuto: true, removeBranding: true };
+const PAID = { exports: true, widget: true, walletCampaigns: true, whatsappAuto: true, removeBranding: true, referral: true };
 const NONE = { customers: null, establishments: null, staff: null, programs: null };
 /** Quotas réduits pour tester les limites sans créer des centaines de clients. */
 export const PLANS = [
-  { code: "free", kind: "FREE" as const, name: "Gratuit", priceMonthlyCents: 0, priceYearlyCents: 0, trialDays: 0, features: { api: false, widget: true, integrations: false, exports: true, walletCampaigns: false, whatsappAuto: false, removeBranding: false }, limits: { customers: 3, establishments: 1, staff: 1, programs: 1 }, sortOrder: 0 },
+  { code: "free", kind: "FREE" as const, name: "Gratuit", priceMonthlyCents: 0, priceYearlyCents: 0, trialDays: 0, features: { api: false, widget: true, integrations: false, exports: true, walletCampaigns: false, whatsappAuto: false, removeBranding: false, referral: false }, limits: { customers: 3, establishments: 1, staff: 1, programs: 1 }, sortOrder: 0 },
   { code: "starter", name: "Starter", priceMonthlyCents: 1290, priceYearlyCents: 12900, features: { ...PAID, api: false, integrations: false }, limits: { customers: 3, establishments: 1, staff: 3, programs: 1 }, sortOrder: 1 },
   { code: "business", name: "Business", priceMonthlyCents: 2490, priceYearlyCents: 24900, features: { ...PAID, api: true, integrations: true }, limits: { customers: 5000, establishments: 5, staff: 15, programs: 3 }, sortOrder: 2, stripePriceMonthlyId: "price_business_m" },
   { code: "premium", name: "Premium", priceMonthlyCents: 4990, priceYearlyCents: 49900, features: { ...PAID, api: true, integrations: true }, limits: NONE, sortOrder: 3 },
