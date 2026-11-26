@@ -17,6 +17,7 @@ import { BUSINESS_PREFILL_KEY } from "@/lib/signup-prefill";
 import { api, ApiError, errorMessage } from "@/lib/api";
 import { useIsNativeApp } from "@/lib/native-app";
 import { afterAuthPath, clearPlanChoice, rememberPlanChoice, withPlanChoice } from "@/lib/plan-choice";
+import { OtpInput } from "@/components/ui/otp-input";
 
 /** Règles de validation reprises de `@fove/shared`, avec des messages traduits. */
 function rules(t: (key: string) => string) {
@@ -105,6 +106,7 @@ function CodeAuth({
   mode,
   next,
   afterSignup,
+  adminHome = false,
   initialName = "",
   initialEmail = "",
 }: {
@@ -113,6 +115,8 @@ function CodeAuth({
   next: string;
   /** Destination d'un compte créé : la création du commerce, sauf retour demandé (invitation…). */
   afterSignup: string;
+  /** Sans destination particulière : un admin FOVE arrive dans l'administration. */
+  adminHome?: boolean;
   initialName?: string;
   initialEmail?: string;
 }) {
@@ -153,7 +157,7 @@ function CodeAuth({
     }
     setBusy(true);
     try {
-      const res = await api.post<{ status: "signed_in" | "profile_required"; created?: boolean }>("/auth/code/verify", {
+      const res = await api.post<{ status: "signed_in" | "profile_required"; created?: boolean; admin?: boolean }>("/auth/code/verify", {
         email: email.trim(),
         code: code.trim(),
         ...(withProfile ? { name: name.trim(), acceptTerms: true } : {}),
@@ -163,7 +167,7 @@ function CodeAuth({
         return;
       }
       setLeaving(true);
-      router.replace(res.created ? afterSignup : next);
+      router.replace(res.created ? afterSignup : res.admin && adminHome ? "/admin" : next);
       router.refresh();
     } catch (e) {
       setError(errorMessage(e));
@@ -203,17 +207,7 @@ function CodeAuth({
           <p className="text-sm text-ink-2">{t("code.sentTo", { email: email.trim() })}</p>
           <Field label={t("code.label")}>
             {(p) => (
-              <Input
-                {...p}
-                inputMode="numeric"
-                autoComplete="one-time-code"
-                maxLength={6}
-                dir="ltr"
-                className="text-center font-mono text-lg tracking-[0.4em]"
-                value={code}
-                onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
-                autoFocus={step === "code"}
-              />
+              <OtpInput {...p} value={code} onChange={setCode} autoFocus={step === "code"} />
             )}
           </Field>
           {step === "profile" && (
@@ -269,6 +263,7 @@ export function LoginForm() {
         mode="login"
         next={safeInternalPath(next, afterAuthPath())}
         afterSignup={next ? safeInternalPath(next, "/onboarding") : "/onboarding"}
+        adminHome={!next && afterAuthPath() === "/app"}
         initialEmail={(searchParams.get("email") ?? "").slice(0, 120)}
       />
       {!native && (

@@ -236,13 +236,16 @@ export function AdminShell({ user, hasMerchantAccess, children }: AdminShellProp
       {/* Bas : Profil Super Admin & Liens rapides */}
       <div className="border-t border-line p-4">
         {hasMerchantAccess && (
-          <Link
+          // Nouvel onglet : l'administration reste ouverte à côté de l'espace commerçant.
+          <a
             href="/app"
+            target="_blank"
+            rel="noopener"
             className="mb-3 flex items-center gap-2 rounded-md px-3 py-2 text-sm text-ink-2 transition-colors hover:bg-surface-2 hover:text-ink"
           >
             <Store className="size-4 text-ink-3" aria-hidden />
             {t("merchantSpace")}
-          </Link>
+          </a>
         )}
 
         <div className="grid gap-2 rounded-md bg-surface-2 p-3">

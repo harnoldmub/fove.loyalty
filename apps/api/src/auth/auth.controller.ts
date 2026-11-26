@@ -67,8 +67,10 @@ export class AuthController {
     const config = loadConfig();
     const result = await finishGoogleOAuth(req, res, googleFlow(), { code, state, error: oauthError });
     if (!result) return res.redirect(303, `${config.APP_URL}/login?oauth_error=failed`);
-    await this.auth.loginWithGoogle({ email: result.profile.email, name: result.profile.name }, req, res);
-    return res.redirect(303, `${config.APP_URL}${safeNext(result.next, "/app")}`);
+    const user = await this.auth.loginWithGoogle({ email: result.profile.email, name: result.profile.name }, req, res);
+    const next = safeNext(result.next, "/app");
+    // Admin FOVE sans destination particulière : l'administration (l'espace commerçant s'ouvre à côté).
+    return res.redirect(303, `${config.APP_URL}${user.admin && next === "/app" ? "/admin" : next}`);
   }
 
   /** Connexion et inscription sans mot de passe : code à 6 chiffres envoyé par email. */

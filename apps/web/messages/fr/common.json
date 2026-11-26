@@ -86,5 +86,6 @@
     "title": "Page introuvable",
     "body": "Le lien est peut-être incomplet ou a été remplacé. Si c’est une carte de fidélité, demandez un nouveau lien au commerçant.",
     "home": "Retour à l’accueil"
-  }
+  },
+  "otp": { "digit": "Chiffre {index} sur {length}" }
 }

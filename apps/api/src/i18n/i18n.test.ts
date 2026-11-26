@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { localeForCountry, localeFromAcceptLanguage, normalizeLocale, plural, requestLocale, tenantLocale, userLocale } from "./locale";
 import { translateError } from "./errors";
 import { emailHtml, otpMessage, quotaAlertMessage, teamInviteMessage, userLoginCodeMessage } from "./emails";
+import { textToBrandedHtml } from "./email-layout";
 import { programRule, recoverCardMessage, rewardSummaryLine, shareCardMessage } from "./notifications";
 import { localizeErrorBody } from "../common/http-exception.filter";
 import { getClubExplanations, getClubMemberSummary, nextRewardValue } from "../cards/club-card";
@@ -121,5 +122,19 @@ describe("cartes et messages clients", () => {
     expect(summary.title).toBe("MY CLUB NTEMBA CARD");
     expect(summary.body).toContain("Only 2 stamps to go");
     expect(getClubExplanations("Café", true, 10)[0]?.title).toBe("BIENVENUE AU CLUB CAFÉ");
+  });
+});
+
+describe("gabarit des emails FOVE", () => {
+  it("met chaque email à l'image de la marque, code en valeur", () => {
+    const login = userLoginCodeMessage("fr", "482913");
+    expect(login.html).toContain("/brand/fove-logo.png");
+    expect(login.html).toContain("#2C55F5");
+    expect(login.html).toMatch(/letter-spacing: 6px;[^>]*>482913</);
+    const ar = textToBrandedHtml("مرحبًا\n\nFV-7KQ4M2-X\n\nhttps://fove.digital/app", "عنوان");
+    expect(ar).toContain('dir="rtl"');
+    expect(ar).toMatch(/>FV-7KQ4M2-X</);
+    expect(ar).toContain('<a href="https://fove.digital/app"');
+    expect(textToBrandedHtml("<script>", "<b>")).not.toContain("<script>");
   });
 });

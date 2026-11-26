@@ -5,63 +5,11 @@
  */
 import type { EmailMessage } from "../notifications/email.service";
 import type { Locale } from "./locale";
+import { emailHtml, textToBrandedHtml } from "./email-layout";
+
+export { emailHtml, escapeHtml } from "./email-layout";
 
 type Content = Omit<EmailMessage, "to">;
-
-export const escapeHtml = (value: string) =>
-  value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
-
-const FALLBACK: Record<Locale, string> = {
-  fr: "Si le bouton ne fonctionne pas, copiez-collez l'adresse suivante dans votre navigateur :",
-  en: "If the button doesn't work, copy and paste this address into your browser:",
-  ar: "إذا لم يعمل الزر، انسخ العنوان التالي والصقه في متصفحك:",
-  es: "Si el botón no funciona, copia y pega esta dirección en tu navegador:",
-};
-
-/** Gabarit HTML commun : titre, paragraphes, bouton, lien de secours et note de bas de page. */
-export function emailHtml(
-  locale: Locale,
-  p: { title: string; heading: string; paragraphs: string[]; button: { label: string; url: string }; footer: string; color?: string },
-): string {
-  const dir = locale === "ar" ? "rtl" : "ltr";
-  const align = locale === "ar" ? "right" : "left";
-  const color = p.color ?? "#2C55F5";
-  const url = escapeHtml(p.button.url);
-  const paragraphs = p.paragraphs
-    .map((text) => `<p style="font-size: 15px; line-height: 24px; color: #4b5563; margin-top: 0; margin-bottom: 16px;">${escapeHtml(text).replace(/\n/g, "<br>")}</p>`)
-    .join("\n        ");
-  return `<!DOCTYPE html>
-<html lang="${locale}" dir="${dir}">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${escapeHtml(p.title)}</title>
-</head>
-<body dir="${dir}" style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f9fafb; margin: 0; padding: 24px; color: #111827; text-align: ${align};">
-  <table width="100%" border="0" cellspacing="0" cellpadding="0" dir="${dir}" style="max-width: 520px; margin: 0 auto; background: #ffffff; border-radius: 12px; border: 1px solid #e5e7eb; overflow: hidden;">
-    <tr>
-      <td style="padding: 32px 32px 24px; text-align: ${align};">
-        <h2 style="font-size: 20px; font-weight: 700; margin-top: 0; margin-bottom: 16px; color: #0d1322;">${escapeHtml(p.heading)}</h2>
-        ${paragraphs}
-        <table border="0" cellspacing="0" cellpadding="0" style="margin: 8px 0 24px;">
-          <tr>
-            <td align="center" style="border-radius: 8px;" bgcolor="${color}">
-              <a href="${url}" target="_blank" rel="noopener noreferrer" style="font-size: 15px; font-weight: 600; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 8px; display: inline-block;">${escapeHtml(p.button.label)}</a>
-            </td>
-          </tr>
-        </table>
-        <p style="font-size: 13px; line-height: 20px; color: #6b7280; margin-bottom: 8px;">${FALLBACK[locale]}</p>
-        <p style="font-size: 12px; line-height: 18px; color: ${color}; word-break: break-all; margin-top: 0; margin-bottom: 24px;" dir="ltr">
-          <a href="${url}" style="color: ${color};">${url}</a>
-        </p>
-        <hr style="border: 0; border-top: 1px solid #e5e7eb; margin: 24px 0;">
-        <p style="font-size: 12px; line-height: 18px; color: #9ca3af; margin: 0;">${escapeHtml(p.footer)}</p>
-      </td>
-    </tr>
-  </table>
-</body>
-</html>`;
-}
 
 // --- Compte ------------------------------------------------------------------
 
@@ -91,7 +39,7 @@ const LOGIN_CODE = {
 
 export function userLoginCodeMessage(locale: Locale, code: string): Content {
   const t = LOGIN_CODE[locale];
-  return { subject: t.subject(code), text: t.text(code) };
+  return { subject: t.subject(code), text: t.text(code), html: textToBrandedHtml(t.text(code), t.subject(code), locale) };
 }
 
 const INVITE = {
@@ -392,7 +340,7 @@ export function clientInactivityMessage(locale: Locale, date: string, link: stri
 
 export function clientLoginCodeMessage(locale: Locale, code: string): Content {
   const t = CLIENT_ACCOUNT[locale];
-  return { subject: t.subject, text: t.text(code) };
+  return { subject: t.subject, text: t.text(code), html: textToBrandedHtml(t.text(code), t.subject, locale) };
 }
 
 // --- Offre et quotas (propriétaire du commerce) -------------------------------

@@ -67,7 +67,7 @@
       "saved": "Moneda de facturación guardada.",
       "savedRenewal": "Guardado: la nueva moneda se aplicará en la renovación, el {date}.",
       "pending": "Su suscripción actual sigue en {current}; pasará a {next} en la renovación, el {date}.",
-      "localNote": "Precios en {currency} para pagar por transferencia, en efectivo o con dinero móvil. El pago en línea con tarjeta se hace en {online}.",
+      "localNote": "Precios en {currency} para pagar por transferencia o depósito en efectivo. El pago en línea con tarjeta se hace en {online}.",
       "online": "En línea: {price}"
     },
     "offline": {

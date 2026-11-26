@@ -12,7 +12,7 @@
       "howItWorks": "Comment ça marche ?",
       "perkFree": "Inscription 100% gratuite",
       "perkCommission": "20% de commission nette",
-      "perkPayment": "Paiement Virement & Mobile Money"
+      "perkPayment": "Versement par virement"
     },
     "steps": {
       "title": "Comment fonctionne le programme ?",
@@ -79,7 +79,7 @@
       },
       "payouts": {
         "title": "Paiements flexibles",
-        "desc": "Encaissez par virement bancaire ou par Mobile Money dès 50 $ ou 50 € de gains cumulés."
+        "desc": "Versement mensuel par virement bancaire dès 50 $ ou 50 € de gains cumulés."
       },
       "attribution": {
         "title": "Attribution first-party 30 jours",
@@ -107,7 +107,7 @@
       },
       "withdraw": {
         "q": "Quand et comment puis-je retirer mes gains ?",
-        "a": "Chaque mois, sans rien demander : le 1er, vos commissions disponibles (après les 30 jours de garantie) sont regroupées en un versement, payé avant le 10 par virement bancaire ou Mobile Money (Airtel Money, Orange Money, M-Pesa selon disponibilité géographique). Frais de transfert à la charge de FOVE. Sous 50 $ ou 50 € (selon votre devise), le montant est reporté au mois suivant."
+        "a": "Chaque mois, sans rien demander : le 1er, vos commissions disponibles (après les 30 jours de garantie) sont regroupées en un versement, payé avant le 10 par virement bancaire. Frais de transfert à la charge de FOVE. Sous 50 $ ou 50 € (selon votre devise), le montant est reporté au mois suivant."
       },
       "fees": {
         "q": "Y a-t-il des frais ou des engagements ?",
@@ -141,7 +141,7 @@
       "annual": "Abonnement annuel 1 an",
       "net": "Commission nette après encaissement",
       "tracking": "Suivi en direct dans votre espace",
-      "fastPayout": "Paiement rapide virement ou mobile",
+      "fastPayout": "Versement mensuel par virement",
       "support": "Accompagnement commercial FOVE"
     },
     "cta": "Rejoindre le réseau partenaire",

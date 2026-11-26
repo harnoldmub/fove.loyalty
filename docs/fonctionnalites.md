@@ -434,7 +434,7 @@ La documentation pour les développeurs est sur la page publique `/developpeurs`
 - Offre en cours, statut, date de renouvellement ou de fin.
 - **Monnaie de facturation** : euro, dollar US, dirham marocain, dinar algérien ou franc congolais. Par défaut celle du pays du commerce (zone euro : euro ; Maroc : dirham ; Algérie : dinar ; RDC et autres pays : dollar). Modifiable : tout de suite sans abonnement payant en cours, sinon au renouvellement (l'abonnement garde sa monnaie jusque-là). Les prix des offres s'affichent dans cette monnaie.
 - **Paiement en ligne** par carte en euros ou en dollars : en dirhams ou en dinars, le commerçant paie le prix en euros ; en francs congolais, le prix en dollars. La page l'indique.
-- **Règlement hors ligne** (virement, espèces, mobile money), proposé si FOVE a renseigné des coordonnées pour le pays du commerce : « Payer par virement ou espèces » crée une **référence de paiement** (ex. `FV-7KQ4M2-X`) à indiquer obligatoirement dans le motif, affichée avec les coordonnées et envoyée par email. Sans abonnement payant, l'offre est **active tout de suite pour 7 jours** (accès provisoire, une seule fois par commerce), confirmée à réception du paiement ; sans paiement à cette date, retour au Gratuit (rien n'est supprimé). Un partenaire FOVE peut accompagner le commerçant, mais n'encaisse jamais : le paiement va toujours à FOVE. Un règlement en attente peut être annulé.
+- **Règlement hors ligne** (virement ou dépôt d'espèces sur le compte de FOVE), proposé si FOVE a renseigné des coordonnées pour le pays du commerce : « Payer par virement ou espèces » crée une **référence de paiement** (ex. `FV-7KQ4M2-X`) à indiquer obligatoirement dans le motif, affichée avec les coordonnées et envoyée par email. Sans abonnement payant, l'offre est **active tout de suite pour 7 jours** (accès provisoire, une seule fois par commerce), confirmée à réception du paiement ; sans paiement à cette date, retour au Gratuit (rien n'est supprimé). Un partenaire FOVE peut accompagner le commerçant, mais n'encaisse jamais : le paiement va toujours à FOVE. Un règlement en attente peut être annulé.
 - **Abonnement réglé hors ligne** : pas de renouvellement automatique ni de résiliation ; l'année suivante se règle de la même façon (« Renouveler <offre> hors ligne »), éventuellement sur une autre offre. Le paiement par carte reste possible une fois l'abonnement terminé.
 - **Utilisation** comparée aux limites de l'offre : clients, établissements, collaborateurs, programmes.
 - **Changer d'offre**, **résilier**, **reprendre l'abonnement**, **annuler un changement programmé** : les règles sont en [4.3](#43-règles-dabonnement).
@@ -504,7 +504,7 @@ Chaque monnaie a son **prix fixe** (référence : l'euro), qui ne suit pas le ch
 ### 4.3 Règles d'abonnement
 
 - **Inscription** : toute nouvelle entreprise démarre sur le Gratuit, sans limite de durée et sans carte bancaire. Il n'y a pas d'essai.
-- **Paiement** : annuel, à l'avance, dans la monnaie du commerce ([3.14](#314-abonnement)) : en ligne par carte en euros ou en dollars, ou hors ligne (virement, dépôt d'espèces, mobile money) dans la monnaie du commerce, **toujours directement à FOVE** (les partenaires n'encaissent pas). Un paiement reçu en espèces au bureau est saisi par FOVE ([6.2](#62-entreprises)). Le paiement est possible avant la confirmation de l'email. **Pas d'argent, pas d'abonnement** : seul l'accès provisoire de 7 jours d'un virement direct précède le paiement.
+- **Paiement** : annuel, à l'avance, dans la monnaie du commerce ([3.14](#314-abonnement)) : en ligne par carte en euros ou en dollars, ou hors ligne (virement ou dépôt d'espèces) dans la monnaie du commerce, **toujours directement à FOVE** (les partenaires n'encaissent pas). Un paiement reçu en espèces au bureau est saisi par FOVE ([6.2](#62-entreprises)). Le paiement est possible avant la confirmation de l'email. **Pas d'argent, pas d'abonnement** : seul l'accès provisoire de 7 jours d'un virement direct précède le paiement.
 - **Choix depuis la page tarifs** : « Choisir <offre> » mène à l'inscription (ou à la connexion), puis à la création du commerce, puis directement au paiement de l'offre choisie. Le choix est retenu 7 jours dans le navigateur ⚠.
 - **Passer à une offre supérieure** : effet immédiat. La différence au prorata, jusqu'à l'échéance, est facturée tout de suite. Si ce paiement échoue, l'offre ne change pas.
 - **Passer à une offre inférieure** : effet **au renouvellement**. L'offre payée reste active jusque-là ; rien n'est remboursé ni crédité. Le changement programmé est annoncé sur la page Abonnement et peut être annulé (« Rester sur <offre> »). Une résiliation ou un passage à une offre supérieure l'annule aussi.
@@ -582,6 +582,7 @@ Le partenaire **n'encaisse jamais d'argent** (décision du 26 novembre 2026) : l
 - **Super admin** : toute l'administration.
 - **Associé** et **responsable financier** : uniquement le centre financier `/admin/finance` ⚠.
 - **Confidentialité** : l'administration n'affiche pas les fiches des clients finaux des commerces. Elle ne montre que des volumes.
+- **Arrivée** : après connexion, un compte d'administration arrive sur `/admin` (sauf destination demandée, comme un achat depuis la page tarifs). S'il a aussi un commerce, « Espace commerçant » ouvre son espace dans **un nouvel onglet** ; les deux restent ouverts côte à côte avec la même session. Un accès support en cours change le commerce affiché dans l'onglet commerçant (bandeau « accès support »).
 
 ### 6.2 Entreprises
 
@@ -695,6 +696,8 @@ Sur l'ensemble du site :
   - relances de confirmation de l'email des clients FOVE (J3/J10) ;
   - prévenance puis suppression des comptes clients FOVE inactifs ;
   - nettoyage des sessions et codes expirés.
+- **Emails au gabarit FOVE** : logo, couleurs de la marque, code ou référence de paiement mis en valeur, bouton, pied de page ; arabe de droite à gauche. Un email sans mise en page propre est mis en forme automatiquement à partir de son texte.
+- **Saisie d'un code à 6 chiffres** (connexion, compte client, validation de carte) : une case par chiffre, collage d'un code entier, remplissage automatique sur mobile.
 - **Emails envoyés par la plateforme** : code de connexion, email de bienvenue et prévenance avant suppression pour inactivité du compte client FOVE, code de connexion (commerçants, équipes, admin, partenaires), invitation d'équipe, code de validation de carte, lien de carte, alertes de quota, candidature partenaire (accusé, validation, refus), commission, versement du mois et versement effectué au partenaire, règlement hors ligne (instructions, paiement reçu, fin de l'accès provisoire), alertes internes à l'équipe FOVE (contact, candidature) ⚠.
 
 ---

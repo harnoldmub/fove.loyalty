@@ -48,7 +48,7 @@ const T = {
     instructionsSubject: (ref: string) => `Votre abonnement FOVE : référence de paiement ${ref}`,
     instructions: (p: { plan: string; amount: string; ref: string; bank: string; provisional: string | null }) =>
       [
-        `Bonjour,\n\nPour régler votre abonnement ${p.plan} (${p.amount}), effectuez un virement, un dépôt en espèces ou un paiement mobile money en indiquant obligatoirement cette référence dans le motif :\n\n${p.ref}`,
+        `Bonjour,\n\nPour régler votre abonnement ${p.plan} (${p.amount}), effectuez un virement ou un dépôt d'espèces en indiquant obligatoirement cette référence dans le motif :\n\n${p.ref}`,
         p.bank,
         p.provisional ? `Votre offre est active dès maintenant, à titre provisoire, jusqu'au ${p.provisional}. Elle sera confirmée dès réception de votre paiement ; sans paiement à cette date, votre commerce reviendra à l'offre Gratuite (rien n'est supprimé).` : `Votre offre sera activée dès réception de votre paiement.`,
         `Un partenaire FOVE peut vous accompagner pour effectuer ce paiement.`,
@@ -66,7 +66,7 @@ const T = {
     instructionsSubject: (ref: string) => `Your FOVE subscription: payment reference ${ref}`,
     instructions: (p: { plan: string; amount: string; ref: string; bank: string; provisional: string | null }) =>
       [
-        `Hello,\n\nTo pay for your ${p.plan} subscription (${p.amount}), make a bank transfer, a cash deposit or a mobile money payment, and always include this reference in the payment description:\n\n${p.ref}`,
+        `Hello,\n\nTo pay for your ${p.plan} subscription (${p.amount}), make a bank transfer or a cash deposit, and always include this reference in the payment description:\n\n${p.ref}`,
         p.bank,
         p.provisional ? `Your plan is active now, provisionally, until ${p.provisional}. It will be confirmed as soon as we receive your payment; without payment by that date, your business returns to the Free plan (nothing is deleted).` : `Your plan will be activated as soon as we receive your payment.`,
         `A FOVE partner can help you make this payment.`,
@@ -84,7 +84,7 @@ const T = {
     instructionsSubject: (ref: string) => `اشتراكك في FOVE: مرجع الدفع ${ref}`,
     instructions: (p: { plan: string; amount: string; ref: string; bank: string; provisional: string | null }) =>
       [
-        `مرحبًا،\n\nلدفع اشتراكك ${p.plan} (${p.amount})، قم بتحويل بنكي أو إيداع نقدي أو دفع عبر الهاتف المحمول، مع ذكر هذا المرجع إلزاميًا في بيان الدفع:\n\n${p.ref}`,
+        `مرحبًا،\n\nلدفع اشتراكك ${p.plan} (${p.amount})، قم بتحويل بنكي أو إيداع نقدي، مع ذكر هذا المرجع إلزاميًا في بيان الدفع:\n\n${p.ref}`,
         p.bank,
         p.provisional ? `باقتك مفعّلة الآن بصفة مؤقتة حتى ${p.provisional}. سيتم تأكيدها فور استلام دفعتك؛ وإذا لم تصل الدفعة حتى ذلك التاريخ، يعود متجرك إلى الباقة المجانية (لا يُحذف أي شيء).` : `ستُفعَّل باقتك فور استلام دفعتك.`,
         `يمكن لأحد شركاء FOVE مساعدتك في إجراء هذا الدفع.`,
@@ -102,7 +102,7 @@ const T = {
     instructionsSubject: (ref: string) => `Tu suscripción a FOVE: referencia de pago ${ref}`,
     instructions: (p: { plan: string; amount: string; ref: string; bank: string; provisional: string | null }) =>
       [
-        `Hola:\n\nPara pagar tu suscripción ${p.plan} (${p.amount}), haz una transferencia, un depósito en efectivo o un pago con dinero móvil indicando obligatoriamente esta referencia en el concepto:\n\n${p.ref}`,
+        `Hola:\n\nPara pagar tu suscripción ${p.plan} (${p.amount}), haz una transferencia o un depósito en efectivo indicando obligatoriamente esta referencia en el concepto:\n\n${p.ref}`,
         p.bank,
         p.provisional ? `Tu plan está activo desde ahora, de forma provisional, hasta el ${p.provisional}. Se confirmará en cuanto recibamos tu pago; sin pago en esa fecha, tu comercio volverá al plan Gratuito (no se borra nada).` : `Tu plan se activará en cuanto recibamos tu pago.`,
         `Un socio de FOVE puede ayudarte a realizar este pago.`,
