@@ -25,6 +25,7 @@ import {
   X,
   Coins,
   Banknote,
+  Handshake,
 } from "lucide-react";
 import { Logo } from "@/components/brand";
 import { LocaleSwitcher } from "@/components/locale-switcher";
@@ -43,6 +44,7 @@ interface AdminShellProps {
     email: string;
   };
   hasMerchantAccess: boolean;
+  hasPartnerAccess: boolean;
   children: ReactNode;
 }
 
@@ -171,7 +173,7 @@ const NAV_GROUPS: { title: NavGroupKey; items: { href: string; label: NavItemKey
   },
 ];
 
-export function AdminShell({ user, hasMerchantAccess, children }: AdminShellProps) {
+export function AdminShell({ user, hasMerchantAccess, hasPartnerAccess, children }: AdminShellProps) {
   const t = useTranslations("admin.shell");
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -245,6 +247,17 @@ export function AdminShell({ user, hasMerchantAccess, children }: AdminShellProp
           >
             <Store className="size-4 text-ink-3" aria-hidden />
             {t("merchantSpace")}
+          </a>
+        )}
+        {hasPartnerAccess && (
+          <a
+            href="/partner"
+            target="_blank"
+            rel="noopener"
+            className="mb-3 flex items-center gap-2 rounded-md px-3 py-2 text-sm text-ink-2 transition-colors hover:bg-surface-2 hover:text-ink"
+          >
+            <Handshake className="size-4 text-ink-3" aria-hidden />
+            {t("partnerSpace")}
           </a>
         )}
 

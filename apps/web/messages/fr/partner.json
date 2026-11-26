@@ -221,6 +221,7 @@
       "resend": "Confirmer avec un code"
     },
     "header": {
+      "createBusiness": "Créer mon programme de fidélité",
       "badge": "Partenaire",
       "code": "Code: <strong>{code}</strong>",
       "merchantSpace": "Espace commerçant",

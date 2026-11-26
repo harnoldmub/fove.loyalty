@@ -5,6 +5,7 @@ import { badRequest, notFound, forbidden } from "../../common/errors";
 import { loadConfig, stripeSecretKey } from "../../config";
 import { convertCents, REFERENCE_CURRENCY } from "@fove/shared";
 import { PricingService, type PlanWithPrices } from "../../billing/pricing.service";
+import { PartnersService } from "../../partners/partners.service";
 import type {
   ExchangeRatesDto,
   ExpenseCreateDto,
@@ -31,6 +32,7 @@ export class FinanceService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly pricing: PricingService,
+    private readonly partnerService: PartnersService,
   ) {}
 
   /**
@@ -795,6 +797,8 @@ export class FinanceService {
         newValue: partner as any,
       },
     });
+    // Le partenaire créé par l'équipe est prévenu : code, lien et accès à son espace.
+    await this.partnerService.welcome(partner.id);
 
     return partner;
   }

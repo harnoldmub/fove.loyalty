@@ -943,6 +943,8 @@
       "approve": "Valider"
     },
     "partners": {
+      "connected": "A rejoint son espace",
+      "invited": "Invité, pas encore connecté",
       "searchLabel": "Rechercher un partenaire",
       "searchPlaceholder": "Nom, e-mail, code ou société",
       "empty": "Aucun partenaire trouvé.",
@@ -1000,6 +1002,7 @@
     "titleTemplate": "%s · Administration FOVE"
   },
   "shell": {
+    "partnerSpace": "Espace partenaire",
     "badge": "Admin",
     "menuLabel": "Menu administration",
     "merchantSpace": "Mon espace commerçant",

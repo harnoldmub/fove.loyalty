@@ -221,6 +221,7 @@
       "resend": "التأكيد برمز"
     },
     "header": {
+      "createBusiness": "إنشاء برنامج الولاء الخاص بي",
       "badge": "شريك",
       "code": "الرمز: <strong>{code}</strong>",
       "merchantSpace": "مساحة التاجر",

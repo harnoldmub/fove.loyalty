@@ -943,6 +943,8 @@
       "approve": "قبول"
     },
     "partners": {
+      "connected": "انضم إلى مساحته",
+      "invited": "مدعو، لم يسجّل الدخول بعد",
       "searchLabel": "البحث عن شريك",
       "searchPlaceholder": "الاسم أو البريد أو الرمز أو الشركة",
       "empty": "لم يتم العثور على أي شريك.",
@@ -1000,6 +1002,7 @@
     "titleTemplate": "%s · إدارة FOVE"
   },
   "shell": {
+    "partnerSpace": "مساحة الشريك",
     "badge": "الإدارة",
     "menuLabel": "قائمة الإدارة",
     "merchantSpace": "مساحتي التجارية",

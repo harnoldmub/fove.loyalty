@@ -524,7 +524,9 @@ Un partenaire (agence, freelance, consultant, réseau de commerçants…) recomm
 - La candidature se fait sur `/partenaires/rejoindre` : identité, entreprise, type de partenaire, pays, stratégie de promotion, réseau estimé.
 - Une candidature par email : FOVE refuse si une candidature est déjà en cours ou si l'email correspond à un partenaire actif.
 - Le candidat reçoit un email de confirmation, l'équipe FOVE une alerte.
-- L'admin **valide** ou **refuse** (avec un motif). Un email informe le candidat. À la validation, il reçoit son code et son taux de commission.
+- L'admin **valide** ou **refuse** (avec un motif). Un email informe le candidat. À la validation, il reçoit son code, son lien et l'accès à son espace.
+- L'admin peut aussi **créer un partenaire directement** (Finance > Nouveau partenaire) : il reçoit le même **email d'invitation**.
+- **Connexion** : avec le compte FOVE de son email (Google ou code par email, aucun mot de passe). Le profil partenaire est rattaché au compte au même email confirmé (dès la validation s'il existe déjà, sinon à la première connexion). Dans l'admin, chaque partenaire est marqué « invité » ou « a rejoint son espace ».
 
 ### 5.2 Son espace
 
@@ -582,7 +584,7 @@ Le partenaire **n'encaisse jamais d'argent** (décision du 26 novembre 2026) : l
 - **Super admin** : toute l'administration.
 - **Associé** et **responsable financier** : uniquement le centre financier `/admin/finance` ⚠.
 - **Confidentialité** : l'administration n'affiche pas les fiches des clients finaux des commerces. Elle ne montre que des volumes.
-- **Arrivée** : après connexion, un compte d'administration arrive sur `/admin` (sauf destination demandée, comme un achat depuis la page tarifs). S'il a aussi un commerce, « Espace commerçant » ouvre son espace dans **un nouvel onglet** ; les deux restent ouverts côte à côte avec la même session. Un accès support en cours change le commerce affiché dans l'onglet commerçant (bandeau « accès support »).
+- **Arrivée après connexion**, selon les espaces du compte : administration (`/admin`), sinon espace commerçant (`/app`), sinon espace partenaire (`/partner`) ; une destination explicite dans le lien l'emporte. Un **même compte** (même email) peut être admin, commerçant et partenaire : chaque espace propose les autres (« Administration », « Espace commerçant », « Espace partenaire »), qui s'ouvrent dans **un nouvel onglet** ; les espaces restent ouverts côte à côte avec la même session. Un partenaire sans commerce peut en créer un depuis son espace. Un accès support en cours change le commerce affiché dans l'onglet commerçant (bandeau « accès support »).
 
 ### 6.2 Entreprises
 

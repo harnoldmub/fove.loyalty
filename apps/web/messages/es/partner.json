@@ -221,6 +221,7 @@
       "resend": "Confirmar con un código"
     },
     "header": {
+      "createBusiness": "Crear mi programa de fidelidad",
       "badge": "Socio",
       "code": "Código: <strong>{code}</strong>",
       "merchantSpace": "Espacio de comercio",
