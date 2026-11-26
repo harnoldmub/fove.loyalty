@@ -23,11 +23,6 @@ function rules(t: (key: string) => string) {
   return {
     name: z.string().trim().min(2, t("validation.nameRequired")),
     email: z.email(t("validation.emailInvalid")),
-    password: z
-      .string()
-      .min(10, t("validation.passwordMin"))
-      .max(200)
-      .refine((v) => /[A-Za-z]/.test(v) && /\d/.test(v), t("validation.passwordLetterDigit")),
   };
 }
 
@@ -102,86 +97,197 @@ function GoogleLogin({ next }: { next: string }) {
   );
 }
 
-export function LoginForm() {
+/**
+ * Connexion et inscription sans mot de passe (docs/chantier-connexion-otp.md) : email, code à 6 chiffres
+ * reçu par email, puis, pour un nouveau compte, nom et acceptation des conditions.
+ */
+function CodeAuth({
+  mode,
+  next,
+  afterSignup,
+  initialName = "",
+  initialEmail = "",
+}: {
+  mode: "login" | "signup";
+  /** Destination d'un compte existant. */
+  next: string;
+  /** Destination d'un compte créé : la création du commerce, sauf retour demandé (invitation…). */
+  afterSignup: string;
+  initialName?: string;
+  initialEmail?: string;
+}) {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const next = searchParams.get("next");
-  const isResetSuccess = searchParams.get("reset") === "1";
-  const oauthError = searchParams.get("oauth_error");
-  const [error, setError] = useState<string | null>(null);
-  const [leaving, setLeaving] = useState(false);
-  const native = useIsNativeApp();
-  const { offre, planName } = usePlanChoice("login");
   const t = useTranslations("auth");
-  const loginSchema = useMemo(
-    () => z.object({ email: z.email(t("validation.emailInvalid")), password: z.string().min(1, t("validation.passwordRequired")).max(200) }),
-    [t],
-  );
-  const form = useForm<z.infer<typeof loginSchema>>({ resolver: zodResolver(loginSchema) });
+  const [step, setStep] = useState<"email" | "code" | "profile">("email");
+  const [email, setEmail] = useState(initialEmail);
+  const [code, setCode] = useState("");
+  const [name, setName] = useState(initialName);
+  const [terms, setTerms] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [leaving, setLeaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
 
-  const onSubmit = form.handleSubmit(async (values) => {
+  const sendCode = async (resend = false) => {
     setError(null);
+    setNotice(null);
+    if (!rules(t).email.safeParse(email.trim()).success) return setError(t("validation.emailInvalid"));
+    setBusy(true);
     try {
-      await api.post("/auth/login", values);
+      await api.post("/auth/code", { email: email.trim() });
+      setStep("code");
+      if (resend) setNotice(t("code.resent"));
+    } catch (e) {
+      setError(errorMessage(e));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const verify = async (withProfile: boolean) => {
+    setError(null);
+    if (!/^\d{6}$/.test(code.trim())) return setError(t("validation.codeInvalid"));
+    if (withProfile) {
+      if (!rules(t).name.safeParse(name).success) return setError(t("validation.nameRequired"));
+      if (!terms) return setError(t("validation.acceptTerms"));
+    }
+    setBusy(true);
+    try {
+      const res = await api.post<{ status: "signed_in" | "profile_required"; created?: boolean }>("/auth/code/verify", {
+        email: email.trim(),
+        code: code.trim(),
+        ...(withProfile ? { name: name.trim(), acceptTerms: true } : {}),
+      });
+      if (res.status === "profile_required") {
+        setStep("profile");
+        return;
+      }
       setLeaving(true);
-      router.replace(safeInternalPath(next, afterAuthPath()));
+      router.replace(res.created ? afterSignup : next);
       router.refresh();
     } catch (e) {
       setError(errorMessage(e));
+    } finally {
+      setBusy(false);
     }
-  });
+  };
 
+  return (
+    <div className="grid gap-5">
+      {error && <ErrorNote>{error}</ErrorNote>}
+      {notice && <SuccessNote>{notice}</SuccessNote>}
+      {step === "email" && (
+        <form
+          className="grid gap-5"
+          noValidate
+          onSubmit={(e) => {
+            e.preventDefault();
+            void sendCode();
+          }}
+        >
+          <Field label={mode === "signup" ? t("fields.workEmail") : t("fields.email")} hint={t("code.emailHelp")}>
+            {(p) => <Input {...p} type="email" autoComplete="email" inputMode="email" value={email} onChange={(e) => setEmail(e.target.value)} />}
+          </Field>
+          <Button type="submit" loading={busy}>{t("code.send")}</Button>
+        </form>
+      )}
+      {step !== "email" && (
+        <form
+          className="grid gap-5"
+          noValidate
+          onSubmit={(e) => {
+            e.preventDefault();
+            void verify(step === "profile");
+          }}
+        >
+          <p className="text-sm text-ink-2">{t("code.sentTo", { email: email.trim() })}</p>
+          <Field label={t("code.label")}>
+            {(p) => (
+              <Input
+                {...p}
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                maxLength={6}
+                dir="ltr"
+                className="text-center font-mono text-lg tracking-[0.4em]"
+                value={code}
+                onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                autoFocus={step === "code"}
+              />
+            )}
+          </Field>
+          {step === "profile" && (
+            <>
+              <p className="text-sm text-ink-2">{t("code.profileText")}</p>
+              <Field label={t("fields.yourName")}>{(p) => <Input {...p} autoComplete="name" value={name} onChange={(e) => setName(e.target.value)} autoFocus />}</Field>
+              <Checkbox
+                checked={terms}
+                onChange={(e) => setTerms(e.target.checked)}
+                label={t.rich("signup.acceptTerms", { terms: () => <TermsDialog />, privacy: () => <PrivacyDialog /> })}
+              />
+            </>
+          )}
+          <Button type="submit" loading={busy || leaving}>
+            {leaving ? (mode === "signup" ? t("signup.leaving") : t("login.leaving")) : step === "profile" ? t("code.create") : t("code.verify")}
+          </Button>
+          <div className="flex flex-wrap justify-between gap-3 text-sm">
+            <button type="button" className="text-cobalt hover:underline" disabled={busy} onClick={() => void sendCode(true)}>{t("code.resend")}</button>
+            <button
+              type="button"
+              className="text-ink-2 hover:text-ink"
+              onClick={() => {
+                setStep("email");
+                setCode("");
+                setError(null);
+                setNotice(null);
+              }}
+            >
+              {t("code.changeEmail")}
+            </button>
+          </div>
+        </form>
+      )}
+    </div>
+  );
+}
+
+export function LoginForm() {
+  const searchParams = useSearchParams();
+  const next = searchParams.get("next");
+  const oauthError = searchParams.get("oauth_error");
+  const native = useIsNativeApp();
+  const { offre, planName } = usePlanChoice("login");
+  const t = useTranslations("auth");
   return (
     <>
       <Heading title={t("login.title")}>
         {planName ? t("login.subtitleWithPlan", { plan: planName }) : t("login.subtitle")}
       </Heading>
       <GoogleLogin next={safeInternalPath(next, afterAuthPath())} />
-      <form onSubmit={onSubmit} className="grid gap-5" noValidate>
-        {isResetSuccess && (
-          <SuccessNote>{t("login.resetSuccess")}</SuccessNote>
-        )}
-        {error && <ErrorNote>{error}</ErrorNote>}
-        {oauthError && <ErrorNote>{t("login.oauthError")}</ErrorNote>}
-        <Field label={t("fields.email")} error={form.formState.errors.email?.message}>
-          {(p) => <Input {...p} type="email" autoComplete="email" inputMode="email" {...form.register("email")} />}
-        </Field>
-        <Field label={t("fields.password")} error={form.formState.errors.password?.message}>
-          {(p) => <Input {...p} type="password" autoComplete="current-password" {...form.register("password")} />}
-        </Field>
-        <Button type="submit" loading={form.formState.isSubmitting || leaving}>{leaving ? t("login.leaving") : t("actions.login")}</Button>
-      </form>
-      <div className="mt-6 flex flex-wrap justify-between gap-3 text-sm">
-        <Link href="/forgot-password" className="text-cobalt hover:underline">{t("login.forgot")}</Link>
-        {!native && <Link href={withPlanChoice("/signup", offre)} className="text-ink-2 hover:text-ink">{t("login.noAccount")}</Link>}
-      </div>
+      {oauthError && <div className="mb-5"><ErrorNote>{t("login.oauthError")}</ErrorNote></div>}
+      <CodeAuth
+        mode="login"
+        next={safeInternalPath(next, afterAuthPath())}
+        afterSignup={next ? safeInternalPath(next, "/onboarding") : "/onboarding"}
+        initialEmail={(searchParams.get("email") ?? "").slice(0, 120)}
+      />
+      {!native && (
+        <p className="mt-6 text-sm text-ink-2">
+          <Link href={withPlanChoice("/signup", offre)} className="hover:text-ink">{t("login.noAccount")}</Link>
+        </p>
+      )}
     </>
   );
 }
 
 export function SignupForm() {
-  const router = useRouter();
+  const searchParams = useSearchParams();
   const { offre, planName } = usePlanChoice("signup");
-  const [error, setError] = useState<string | null>(null);
-  const [leaving, setLeaving] = useState(false);
-
-
   const t = useTranslations("auth");
-  const signupForm = useMemo(
-    () => z.object({ ...rules(t), acceptTerms: z.boolean().refine((v) => v, t("validation.acceptTerms")) }),
-    [t],
-  );
-  const form = useForm<z.infer<typeof signupForm>>({ resolver: zodResolver(signupForm), defaultValues: { acceptTerms: false } });
 
-  // Mémorisation du commerçant parrain (ref) s'il est présent dans l'URL
+  // Lien de parrainage (ref) et lien d'inscription d'un partenaire (nom, email, nom du commerce).
   useEffect(() => {
-    if (typeof window === "undefined") return;
     const params = new URLSearchParams(window.location.search);
-    // Lien d'inscription envoyé par un partenaire FOVE : nom, email et nom du commerce pré-remplis.
-    const name = params.get("name");
-    const email = params.get("email");
-    if (name) form.setValue("name", name.slice(0, 80));
-    if (email) form.setValue("email", email.slice(0, 120));
     const business = params.get("business");
     if (business) {
       try {
@@ -197,192 +303,24 @@ export function SignupForm() {
       // Date du clic : face à un lien partenaire, le premier lien cliqué l'emporte.
       document.cookie = `fove_ref_at=${Date.now()}; path=/; max-age=${maxAge}; SameSite=Lax`;
     }
-  }, [form]);
-  const onSubmit = form.handleSubmit(async (values) => {
-    setError(null);
-    try {
-      await api.post("/auth/signup", values);
-      setLeaving(true);
-      router.replace("/onboarding");
-    } catch (e) {
-      setError(errorMessage(e));
-    }
-  });
-  const e = form.formState.errors;
+  }, []);
+
   return (
     <>
       <Heading title={t("signup.title")}>
         {planName ? t("signup.subtitleWithPlan", { plan: planName }) : t("signup.subtitle")}
       </Heading>
       <GoogleLogin next={afterAuthPath()} />
-      <form onSubmit={onSubmit} className="grid gap-5" noValidate>
-        {error && <ErrorNote>{error}</ErrorNote>}
-        <Field label={t("fields.yourName")} error={e.name?.message}>
-          {(p) => <Input {...p} autoComplete="name" {...form.register("name")} />}
-        </Field>
-        <Field label={t("fields.workEmail")} error={e.email?.message}>
-          {(p) => <Input {...p} type="email" autoComplete="email" inputMode="email" {...form.register("email")} />}
-        </Field>
-        <Field label={t("fields.password")} hint={t("fields.passwordHint")} error={e.password?.message}>
-          {(p) => <Input {...p} type="password" autoComplete="new-password" {...form.register("password")} />}
-        </Field>
-        <div className="grid gap-1.5">
-          <Checkbox
-            {...form.register("acceptTerms")}
-            label={t.rich("signup.acceptTerms", { terms: () => <TermsDialog />, privacy: () => <PrivacyDialog /> })}
-          />
-          {e.acceptTerms && <p className="text-sm text-danger">{e.acceptTerms.message}</p>}
-        </div>
-        <Button type="submit" loading={form.formState.isSubmitting || leaving}>{leaving ? t("signup.leaving") : t("signup.submit")}</Button>
-      </form>
+      <CodeAuth
+        mode="signup"
+        next={afterAuthPath()}
+        afterSignup="/onboarding"
+        initialName={(searchParams.get("name") ?? "").slice(0, 80)}
+        initialEmail={(searchParams.get("email") ?? "").slice(0, 120)}
+      />
       <p className="mt-6 text-sm text-ink-2">
         {t("signup.alreadyRegistered")} <Link href={withPlanChoice("/login", offre)} className="text-cobalt hover:underline">{t("actions.login")}</Link>
       </p>
-    </>
-  );
-}
-
-export function ForgotForm() {
-  const [sent, setSent] = useState(false);
-  const t = useTranslations("auth");
-  const schema = useMemo(() => z.object({ email: rules(t).email }), [t]);
-  const form = useForm<{ email: string }>({ resolver: zodResolver(schema) });
-  const [error, setError] = useState<string | null>(null);
-  const onSubmit = form.handleSubmit(async (values) => {
-    setError(null);
-    try {
-      await api.post("/auth/forgot-password", values);
-      setSent(true);
-    } catch (e) {
-      setError(errorMessage(e));
-    }
-  });
-  if (sent) {
-    return (
-      <div className="grid gap-6">
-        <Heading title={t("forgot.sentTitle")}>{t("forgot.sentText")}</Heading>
-        <Button asChild variant="secondary">
-          <Link href="/login">{t("actions.backToLogin")}</Link>
-        </Button>
-      </div>
-    );
-  }
-  return (
-    <>
-      <Heading title={t("forgot.title")}>{t("forgot.subtitle")}</Heading>
-      <form onSubmit={onSubmit} className="grid gap-5" noValidate>
-        {error && <ErrorNote>{error}</ErrorNote>}
-        <Field label={t("fields.email")} error={form.formState.errors.email?.message}>
-          {(p) => <Input {...p} type="email" autoComplete="email" {...form.register("email")} />}
-        </Field>
-        <Button type="submit" loading={form.formState.isSubmitting}>{t("forgot.submit")}</Button>
-      </form>
-      <div className="mt-6 text-center text-sm">
-        <Link href="/login" className="text-ink-2 hover:text-ink">{t("actions.backToLogin")}</Link>
-      </div>
-    </>
-  );
-}
-
-export function ResetForm() {
-  const token = useSearchParams().get("token")?.trim() ?? "";
-  const router = useRouter();
-  const [error, setError] = useState<string | null>(null);
-  const [isTokenError, setIsTokenError] = useState(false);
-  const t = useTranslations("auth");
-  const schema = useMemo(() => z.object({ password: rules(t).password }), [t]);
-  const form = useForm<{ password: string }>({ resolver: zodResolver(schema) });
-
-  if (!token) {
-    return (
-      <div className="grid gap-6">
-        <Heading title={t("reset.missingTitle")}>{t("reset.missingText")}</Heading>
-        <div className="grid gap-3">
-          <Button asChild>
-            <Link href="/forgot-password">{t("actions.requestNewLink")}</Link>
-          </Button>
-          <Button asChild variant="ghost">
-            <Link href="/login">{t("actions.backToLogin")}</Link>
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
-  const onSubmit = form.handleSubmit(async ({ password }) => {
-    setError(null);
-    setIsTokenError(false);
-    try {
-      await api.post("/auth/reset-password", { token, password });
-      router.replace("/login?reset=1");
-    } catch (e) {
-      if (e instanceof ApiError && (e.code === "invalid_token" || e.status === 400)) {
-        setIsTokenError(true);
-        setError(t("reset.expired"));
-      } else {
-        setError(errorMessage(e));
-      }
-    }
-  });
-
-  return (
-    <>
-      <Heading title={t("reset.title")}>{t("reset.subtitle")}</Heading>
-      <form onSubmit={onSubmit} className="grid gap-5" noValidate>
-        {error && (
-          <div className="grid gap-3">
-            <ErrorNote>{error}</ErrorNote>
-            {isTokenError && (
-              <Button asChild variant="secondary" size="sm">
-                <Link href="/forgot-password">{t("actions.requestNewLink")}</Link>
-              </Button>
-            )}
-          </div>
-        )}
-        <Field label={t("fields.newPassword")} hint={t("fields.passwordHint")} error={form.formState.errors.password?.message}>
-          {(p) => <Input {...p} type="password" autoComplete="new-password" {...form.register("password")} />}
-        </Field>
-        <Button type="submit" loading={form.formState.isSubmitting}>{t("reset.submit")}</Button>
-      </form>
-      <div className="mt-6 text-center text-sm">
-        <Link href="/login" className="text-ink-2 hover:text-ink">{t("actions.backToLogin")}</Link>
-      </div>
-    </>
-  );
-}
-
-export function VerifyEmail() {
-  const token = useSearchParams().get("token") ?? "";
-  const [state, setState] = useState<"pending" | "ok" | "error">("pending");
-  const [message, setMessage] = useState("");
-  const t = useTranslations("auth");
-  useEffect(() => {
-    let cancelled = false;
-    api
-      .post("/auth/verify-email", { token })
-      .then(() => !cancelled && setState("ok"))
-      .catch((e) => {
-        if (cancelled) return;
-        setState("error");
-        setMessage(errorMessage(e));
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [token]);
-  if (state === "pending") return <Heading title={t("verify.pending")} />;
-  if (state === "error") {
-    return (
-      <>
-        <Heading title={t("verify.errorTitle")}>{t("verify.errorText", { message })}</Heading>
-        <Button asChild variant="secondary"><Link href="/app">{t("actions.openSpace")}</Link></Button>
-      </>
-    );
-  }
-  return (
-    <>
-      <Heading title={t("verify.successTitle")}>{t("verify.successText")}</Heading>
-      <Button asChild><Link href="/app">{t("actions.openSpace")}</Link></Button>
     </>
   );
 }
@@ -402,17 +340,15 @@ export function AcceptInvite() {
   const [preview, setPreview] = useState<InvitePreview | null>(null);
   const [error, setError] = useState<string | null>(null);
   const t = useTranslations("auth");
-  const schema = useMemo(() => {
-    const { name, password } = rules(t);
-    return z.object({ name, password });
-  }, [t]);
-  const form = useForm<{ name: string; password: string }>({ resolver: zodResolver(schema) });
+  const schema = useMemo(() => z.object({ name: rules(t).name }), [t]);
+  const form = useForm<{ name: string }>({ resolver: zodResolver(schema) });
 
   useEffect(() => {
     api.get<InvitePreview>(`/auth/invitations/preview?token=${encodeURIComponent(token)}`).then(setPreview).catch((e) => setError(errorMessage(e)));
   }, [token]);
 
-  const accept = async (values?: { name: string; password: string }) => {
+  // Le lien reçu par email prouve l'adresse : pas de mot de passe ; un compte existant est connecté.
+  const accept = async (values?: { name: string }) => {
     setError(null);
     try {
       await api.post("/auth/invitations/accept", { token, ...values });
@@ -434,17 +370,11 @@ export function AcceptInvite() {
       {preview.hasAccount ? (
         <div className="grid gap-3">
           <Button onClick={() => accept()}>{t("invite.accept")}</Button>
-          <Button asChild variant="secondary">
-            <Link href={`/login?next=${encodeURIComponent(`/invite?token=${token}`)}`}>{t("invite.loginFirst")}</Link>
-          </Button>
         </div>
       ) : (
         <form onSubmit={form.handleSubmit(accept)} className="grid gap-5" noValidate>
           <Field label={t("fields.yourName")} error={form.formState.errors.name?.message}>
             {(p) => <Input {...p} autoComplete="name" {...form.register("name")} />}
-          </Field>
-          <Field label={t("fields.choosePassword")} hint={t("fields.passwordHint")} error={form.formState.errors.password?.message}>
-            {(p) => <Input {...p} type="password" autoComplete="new-password" {...form.register("password")} />}
           </Field>
           <Button type="submit" loading={form.formState.isSubmitting}>{t("invite.submit")}</Button>
         </form>

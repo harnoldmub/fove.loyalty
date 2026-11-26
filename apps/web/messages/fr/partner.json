@@ -217,9 +217,8 @@
     },
     "unverified": {
       "title": "Confirmez votre adresse email",
-      "body": "Pour accéder à votre espace partenaire (commissions, versements, prospects), confirmez d’abord votre adresse email en ouvrant le lien que nous vous avons envoyé.",
-      "resend": "Renvoyer l’email",
-      "sent": "Email envoyé. Pensez à vérifier vos courriers indésirables."
+      "body": "Pour accéder à votre espace partenaire (commissions, versements, prospects), confirmez d’abord votre adresse email : reconnectez-vous avec le code que nous vous envoyons.",
+      "resend": "Confirmer avec un code"
     },
     "header": {
       "badge": "Partenaire",

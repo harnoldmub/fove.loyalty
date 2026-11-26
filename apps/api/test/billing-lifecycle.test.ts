@@ -68,37 +68,6 @@ describe("résiliation d'un abonnement", () => {
   });
 });
 
-describe("relance de confirmation de l'email", () => {
-  it("relance à J1, J3 et J7 après l'inscription, puis plus rien, sans bloquer le paiement", async () => {
-    const o = await ownerWithTenant(app, { plan: "free", verified: false });
-    const user = await db.user.findUniqueOrThrow({ where: { email: o.email } });
-    const verifyEmails = () => db.emailOutbox.count({ where: { to: o.email, subject: { contains: "Confirmez votre adresse" } } });
-    const ageTo = (hours: number) => db.user.update({ where: { id: user.id }, data: { createdAt: new Date(Date.now() - hours * 3600 * 1000) } });
-    const atSignup = await verifyEmails();
-    await runJobs();
-    expect(await verifyEmails()).toBe(atSignup);
-
-    await ageTo(25); // J1
-    await runJobs();
-    await runJobs();
-    expect(await verifyEmails()).toBe(atSignup + 1);
-    await ageTo(2 * 24 + 1); // pas encore J3
-    await runJobs();
-    expect(await verifyEmails()).toBe(atSignup + 1);
-    await ageTo(3 * 24 + 1); // J3
-    await runJobs();
-    expect(await verifyEmails()).toBe(atSignup + 2);
-    await ageTo(7 * 24 + 1); // J7
-    await runJobs();
-    await runJobs();
-    expect(await verifyEmails()).toBe(atSignup + 3);
-    await ageTo(7 * 24 + 20); // plus de relance après la troisième
-    await runJobs();
-    expect(await verifyEmails()).toBe(atSignup + 3);
-    expect((await o.client.post("/api/app/billing/checkout", { planCode: "starter", interval: "YEAR" })).status).toBe(201);
-  });
-});
-
 describe("échéances gérées par la tâche planifiée", () => {
   it("un contrat sur-mesure arrivé à son terme repasse au Gratuit", async () => {
     const o = await ownerWithTenant(app, { plan: "free" });

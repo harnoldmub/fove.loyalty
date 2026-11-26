@@ -62,7 +62,7 @@ Première mise en place de la base de production :
 
 ```bash
 DATABASE_URL=<url directe> DIRECT_DATABASE_URL=<url directe> pnpm --filter @fove/database migrate:deploy
-SEED_SUPERADMIN_EMAIL=… SEED_SUPERADMIN_PASSWORD=… DATABASE_URL=<url directe> pnpm db:seed
+SEED_SUPERADMIN_EMAIL=… DATABASE_URL=<url directe> pnpm db:seed
 ```
 
 ## Environnements

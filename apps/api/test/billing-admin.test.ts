@@ -2,8 +2,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { NestExpressApplication } from "@nestjs/platform-express";
 import request from "supertest";
 import Stripe from "stripe";
-import { agent, createPointsProgram, db, ownerWithTenant, randomPhone, resetDatabase, startApp } from "./helpers";
-import { hashPassword } from "../src/common/crypto";
+import { agent, createPointsProgram, db, ownerWithTenant, randomPhone, resetDatabase, startApp, signIn } from "./helpers";
 
 describe("facturation en mode simulé et quotas", () => {
   let app: NestExpressApplication;
@@ -207,9 +206,9 @@ describe("Super Admin FOVE", () => {
 
   async function superAdmin() {
     const email = `admin${Date.now()}@fove.test`;
-    await db.user.create({ data: { email, name: "Admin", passwordHash: await hashPassword("motdepasse123"), isSuperAdmin: true, emailVerifiedAt: new Date() } });
+    await db.user.create({ data: { email, name: "Admin", isSuperAdmin: true, emailVerifiedAt: new Date() } });
     const c = agent(app);
-    await c.post("/api/auth/login", { email, password: "motdepasse123" });
+    await signIn(c, email);
     return c;
   }
 

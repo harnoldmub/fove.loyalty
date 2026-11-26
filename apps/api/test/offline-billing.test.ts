@@ -1,8 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { NestExpressApplication } from "@nestjs/platform-express";
 import { normalizePaymentReference } from "@fove/shared";
-import { agent, db, lastEmail, ownerWithTenant, resetDatabase, startApp } from "./helpers";
-import { hashPassword } from "../src/common/crypto";
+import { agent, db, lastEmail, ownerWithTenant, resetDatabase, startApp, signIn } from "./helpers";
 import { OfflineBillingService } from "../src/billing/offline.service";
 import { PlanService } from "../src/billing/plan.service";
 import { BillingService } from "../src/billing/billing.service";
@@ -15,9 +14,9 @@ beforeAll(async () => {
   await resetDatabase();
   app = await startApp({ STRIPE_SECRET_KEY: undefined });
   const email = `admin${Date.now()}@fove.test`;
-  await db.user.create({ data: { email, name: "Admin", passwordHash: await hashPassword("motdepasse123"), isSuperAdmin: true, emailVerifiedAt: new Date() } });
+  await db.user.create({ data: { email, name: "Admin", isSuperAdmin: true, emailVerifiedAt: new Date() } });
   admin = agent(app);
-  await admin.post("/api/auth/login", { email, password: "motdepasse123" });
+  await signIn(admin, email);
   const res = await admin.post("/api/admin/finance/bank-accounts", { country: "MA", currency: "MAD", beneficiary: "Dizayna Maroc", bankName: "Banque Populaire", accountNumber: "181 810 2111111111111111 00", instructions: "Espèces : au bureau de Casablanca." });
   expect(res.status).toBe(201);
 });

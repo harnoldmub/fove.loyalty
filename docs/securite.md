@@ -2,9 +2,9 @@
 
 | Sujet | Mise en œuvre |
 |---|---|
-| Sessions | Jeton opaque 256 bits dans un cookie `HttpOnly`, `SameSite=Lax`, `Secure` + préfixe `__Host-` en production. Seule l'empreinte SHA-256 est en base. Révocation à la réinitialisation du mot de passe. |
+| Sessions | Jeton opaque 256 bits dans un cookie `HttpOnly`, `SameSite=Lax`, `Secure` + préfixe `__Host-` en production. Seule l'empreinte SHA-256 est en base. Échéance glissante de 90 jours (repoussée à chaque utilisation), cookie de 400 jours dont l'échéance en base fait foi. Révocation quand un compte non confirmé est repris par son titulaire. |
 | CSRF | Cookie `SameSite=Lax` + en-tête `X-Fove-Csrf: 1` exigé sur toute écriture authentifiée par cookie (un site tiers ne peut pas l'envoyer sans passer CORS). |
-| Mots de passe | scrypt (N=16384), comparaison à temps constant, hachage factice si l'email n'existe pas, verrouillage 15 min après 5 échecs. |
+| Connexion | **Aucun mot de passe** (docs/chantier-connexion-otp.md) : Google, ou code à 6 chiffres par email (empreinte SHA-256 en base, comparaison à temps constant, 10 min, 5 essais, consommation atomique, 1 code par minute, 5 par heure et par email, 60 par heure et par adresse IP, même réponse que l'email existe ou non). L'email est prouvé à la création du compte. Double authentification des comptes admin à ajouter. |
 | Permissions | Vérifiées côté serveur à chaque requête (`TenantGuard` + `@RequirePermission`). Rôles : Owner, Manager, Cashier, Viewer ; périmètre par établissement. Super Admin séparé. |
 | Accès support | Super admin uniquement, motif obligatoire, 5 à 120 minutes, **lecture seule**, journalisé dans l'audit de l'entreprise. |
 | Liens de carte | Stables et chiffrés au repos ; « Retrouver ma carte » envoie le lien uniquement à l'email de la fiche, sans le renouveler (pas de coupure de carte par un tiers) ; renouvellement réservé au commerçant, confirmé et audité. Fichiers image/PDF limités à 20 req/min. |

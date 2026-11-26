@@ -5,7 +5,7 @@ import type { z } from "zod";
 import { loadConfig } from "../config";
 import { PrismaService } from "../common/prisma.service";
 import { AuditService } from "../common/audit.service";
-import { hashPassword, randomToken, sha256 } from "../common/crypto";
+import { randomToken, sha256 } from "../common/crypto";
 import { badRequest, conflict, forbidden, notFound } from "../common/errors";
 import type { AuthState, TenantContext } from "../common/context";
 import { EmailService } from "../notifications/email.service";
@@ -117,19 +117,16 @@ export class TeamService {
     let userId: string;
     const existingUser = await this.prisma.client.user.findUnique({ where: { email: invitation.email } });
     if (existingUser) {
-      // Un compte existant doit être connecté pour accepter.
-      if (!state || state.user.id !== existingUser.id) throw forbidden("Connectez-vous avec l'adresse invitée pour accepter");
+      // Connecté avec un autre compte : refus. Non connecté : le lien reçu par email prouve l'adresse,
+      // comme un code de connexion ; la session est ouverte plus bas.
+      if (state && state.user.id !== existingUser.id) throw forbidden("Connectez-vous avec l'adresse invitée pour accepter");
       userId = existingUser.id;
+      if (!existingUser.emailVerifiedAt) await this.prisma.client.user.update({ where: { id: userId }, data: { emailVerifiedAt: new Date() } });
     } else {
-      if (!input.name || !input.password) throw badRequest("account_required", "Nom et mot de passe requis");
+      // Pas de mot de passe : l'accès à la boîte mail est prouvé par le lien d'invitation.
+      if (!input.name) throw badRequest("account_required", "Nom requis");
       const user = await this.prisma.client.user.create({
-        data: {
-          email: invitation.email,
-          name: input.name,
-          passwordHash: await hashPassword(input.password),
-          // L'accès à la boîte mail est prouvé par le lien d'invitation.
-          emailVerifiedAt: new Date(),
-        },
+        data: { email: invitation.email, name: input.name, emailVerifiedAt: new Date() },
       });
       userId = user.id;
     }

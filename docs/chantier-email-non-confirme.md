@@ -1,6 +1,8 @@
 # Chantier — Limites des comptes à l'email non confirmé
 
 > Statut : **codé le 25 novembre 2026** (E1 à E4). Validée le 25 novembre 2026 (grille telle quelle, limite douce à 50 clients, relances J1/J3/J7 et client J3/J10). Rédigée après la revue de sécurité du même jour.
+>
+> **Mise à jour du 26 novembre 2026** : avec la connexion par code ([chantier-connexion-otp.md](chantier-connexion-otp.md)), tout nouveau compte a un email confirmé. Les limites restent comme filet de sécurité pour les comptes antérieurs ; les relances J1/J3/J7 et le lien de confirmation sont supprimés (se reconnecter avec un code confirme l'adresse).
 
 ## 1. Pourquoi
 

@@ -85,6 +85,12 @@ Spec : `docs/chantier-parrainage.md`. Service `apps/api/src/referrals/referral.s
 - **Google Wallet** (`apps/api/src/cards/google-wallet.ts`), actif seulement si `GOOGLE_WALLET_ISSUER_ID` et `GOOGLE_WALLET_SERVICE_ACCOUNT_JSON` sont définis. Une classe par programme (déclarée dans le JWT, créée par Google au premier ajout), un objet par carte portant le QR personnel. Lien d'ajout signé côté serveur, valable 10 min ; solde mis à jour après chaque opération ; notification à un client ou à tous les clients d'un programme (confirmation avant l'envoi groupé ; limite Google : 3 par carte et par 24 h). Bouton masqué sur iPhone/iPad.
 - **Apple Wallet** : à venir derrière la même interface `WalletProvider` (certificat Pass Type ID requis).
 
+## Connexion des commerçants
+
+- **Sans mot de passe** ([chantier-connexion-otp.md](chantier-connexion-otp.md)) : `POST /api/auth/code` (envoi du code, même réponse que l'email existe ou non), `POST /api/auth/code/verify` (`signed_in`, ou `profile_required` sans consommer le code pour un nouvel email, puis création avec nom et CGU). Codes dans `UserLoginCode` (empreinte, 10 min, 5 essais), purgés après 24 h par la tâche planifiée. Google : `GET /api/auth/google`.
+- Invitation d'équipe : le lien prouve l'email (création avec le nom seulement, ou connexion d'un compte existant).
+- Session : cookie opaque, échéance en base glissante de 90 jours (`SessionService`).
+
 ## Abonnements
 
 - Offres (`SubscriptionPlan`) en base : essai, quotas, fonctions ; **prix annuel par monnaie** dans `PlanPrice` (EUR, USD, MAD, DZD, CDF ; tarif Stripe pour EUR et USD). Modifiables dans `/admin/plans`, jamais codés en dur (le seed et le démarrage de l'API ajoutent seulement les valeurs initiales manquantes, `DEFAULT_PLAN_PRICES`).

@@ -1,7 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { NestExpressApplication } from "@nestjs/platform-express";
-import { agent, db, ownerWithTenant, resetDatabase, startApp } from "./helpers";
-import { hashPassword } from "../src/common/crypto";
+import { agent, db, ownerWithTenant, resetDatabase, startApp, signIn } from "./helpers";
 import { parseAmount, parseBankCsv, parseDate } from "../src/admin/finance/bank-csv";
 
 describe("lecture d'un relevé CSV", () => {
@@ -35,9 +34,9 @@ describe("rapprochement bancaire", () => {
     await resetDatabase();
     app = await startApp({ STRIPE_SECRET_KEY: undefined });
     const email = `admin${Date.now()}@fove.test`;
-    await db.user.create({ data: { email, name: "Admin", passwordHash: await hashPassword("motdepasse123"), isSuperAdmin: true, emailVerifiedAt: new Date() } });
+    await db.user.create({ data: { email, name: "Admin", isSuperAdmin: true, emailVerifiedAt: new Date() } });
     admin = agent(app);
-    await admin.post("/api/auth/login", { email, password: "motdepasse123" });
+    await signIn(admin, email);
     await admin.post("/api/admin/finance/bank-accounts", { country: "MA", currency: "MAD", beneficiary: "Dizayna Maroc" });
   });
   afterAll(async () => {

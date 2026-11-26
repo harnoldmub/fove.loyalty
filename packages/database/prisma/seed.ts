@@ -3,7 +3,7 @@
  * admin initial. Les prix sont des valeurs de départ, modifiables ensuite
  * depuis l'administration FOVE (jamais lus en dur par le code).
  */
-import { createHash, randomBytes, scryptSync } from "node:crypto";
+import { createHash } from "node:crypto";
 import { DEFAULT_FX_RATES, DEFAULT_PLAN_PRICES, DEFAULT_PLANS, PERMISSIONS, ROLE_PERMISSIONS, TENANT_ROLES } from "@fove/shared";
 import { createPrismaClient } from "../src/index";
 
@@ -11,11 +11,6 @@ const prisma = createPrismaClient(process.env.DIRECT_DATABASE_URL ?? process.env
 
 const ROLE_NAMES = { OWNER: "Propriétaire", MANAGER: "Manager", CASHIER: "Caissier", VIEWER: "Lecteur" } as const;
 
-function hashPassword(password: string): string {
-  const salt = randomBytes(16);
-  const hash = scryptSync(password, salt, 64, { N: 16384, r: 8, p: 1 });
-  return `scrypt$16384$8$1$${salt.toString("base64")}$${hash.toString("base64")}`;
-}
 
 export async function seedReferenceData(): Promise<void> {
   for (const key of PERMISSIONS) {
@@ -44,16 +39,15 @@ export async function seedReferenceData(): Promise<void> {
 
 async function main() {
   await seedReferenceData();
+  // Connexion par code envoyé par email (aucun mot de passe) ; en local, le code s'affiche dans les journaux.
   const email = process.env.SEED_SUPERADMIN_EMAIL;
-  const password = process.env.SEED_SUPERADMIN_PASSWORD;
-  if (email && password) {
+  if (email) {
     await prisma.user.upsert({
       where: { email: email.toLowerCase() },
       update: { isSuperAdmin: true },
       create: {
         email: email.toLowerCase(),
         name: "Administration FOVE",
-        passwordHash: hashPassword(password),
         emailVerifiedAt: new Date(),
         isSuperAdmin: true,
       },

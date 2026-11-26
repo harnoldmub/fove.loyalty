@@ -217,9 +217,8 @@
     },
     "unverified": {
       "title": "Confirm your email address",
-      "body": "To access your partner space (commissions, payouts, leads), first confirm your email address by opening the link we sent you.",
-      "resend": "Resend the email",
-      "sent": "Email sent. Remember to check your spam folder."
+      "body": "To access your partner space (commissions, payouts, leads), first confirm your email address: sign in again with the code we send you.",
+      "resend": "Confirm with a code"
     },
     "header": {
       "badge": "Partner",

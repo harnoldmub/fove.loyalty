@@ -8,7 +8,6 @@ import { PrismaService } from "../common/prisma.service";
 import { WebhooksService } from "../notifications/webhooks.service";
 import { LoyaltyService } from "../loyalty/loyalty.service";
 import { BillingService } from "../billing/billing.service";
-import { AuthService } from "../auth/auth.service";
 import { ClientAccountService } from "../client-account/client-account.service";
 import { ReferralService } from "../referrals/referral.service";
 import { PartnersService } from "../partners/partners.service";
@@ -27,7 +26,6 @@ export class JobsController {
     private readonly webhooks: WebhooksService,
     private readonly loyalty: LoyaltyService,
     private readonly billing: BillingService,
-    private readonly auth: AuthService,
     private readonly clientAccounts: ClientAccountService,
     private readonly referrals: ReferralService,
     private readonly partners: PartnersService,
@@ -47,11 +45,10 @@ export class JobsController {
     const now = new Date();
     // Accès provisoires (virement) échus d'abord : email dédié, avant la fin de période générique.
     const offlineExpired = await this.offline.expireProvisional(now);
-    const [webhooks, expired, subscriptions, verificationReminders, clientAccounts, clientReminders, referrals, commissionsReleased] = [
+    const [webhooks, expired, subscriptions, clientAccounts, clientReminders, referrals, commissionsReleased] = [
       await this.webhooks.retryDue(),
       await this.loyalty.expireInactive(now),
       await this.billing.closeExpired(now),
-      await this.auth.sendVerificationReminders(now),
       await this.clientAccounts.purgeInactive(now),
       await this.clientAccounts.sendConfirmationReminders(now),
       await this.referrals.processDue(now),
@@ -63,13 +60,14 @@ export class JobsController {
     const db = this.prisma.client;
     const cleanup = await db.$transaction([
       db.session.deleteMany({ where: { expiresAt: { lt: now } } }),
-      db.authToken.deleteMany({ where: { expiresAt: { lt: new Date(now.getTime() - 7 * 86_400_000) } } }),
+      // Codes de connexion gardés 24 h (limites par email et par adresse IP).
+      db.userLoginCode.deleteMany({ where: { createdAt: { lt: new Date(now.getTime() - 86_400_000) } } }),
       db.idempotencyRecord.deleteMany({ where: { createdAt: { lt: new Date(now.getTime() - 86_400_000) } } }),
       db.otpChallenge.deleteMany({ where: { expiresAt: { lt: new Date(now.getTime() - 86_400_000) } } }),
       db.clientSession.deleteMany({ where: { expiresAt: { lt: now } } }),
       // Gardés 24 h : ils servent à limiter le nombre de demandes par email et par adresse IP.
       db.clientLoginCode.deleteMany({ where: { createdAt: { lt: new Date(now.getTime() - 86_400_000) } } }),
     ]);
-    return { webhooksRetried: webhooks, accountsExpired: expired, subscriptions, verificationReminders, clientAccounts, clientReminders, referrals, commissionsReleased, offlineExpired, payoutsScheduled, cleaned: cleanup.map((c) => c.count) };
+    return { webhooksRetried: webhooks, accountsExpired: expired, subscriptions, clientAccounts, clientReminders, referrals, commissionsReleased, offlineExpired, payoutsScheduled, cleaned: cleanup.map((c) => c.count) };
   }
 }

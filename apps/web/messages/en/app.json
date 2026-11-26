@@ -834,6 +834,7 @@
     }
   },
   "shell": {
+    "confirmWithCode": "Confirm with a code",
     "support": "Support",
     "active": "active",
     "addBusiness": "Add a business",
@@ -843,12 +844,9 @@
     "verifyBanner": "Confirm your email ({email}) to invite your team, export or import customers, connect your tools and go beyond 50 customers.",
     "verifyDialog": {
       "title": "Confirm your email address first",
-      "body": "This action is reserved for accounts with a confirmed email: inviting your team, exporting or importing customers, messaging all your customers, connecting a shop or your tools, and signing up more than 50 customers. Open the link sent to {email}.",
+      "body": "This action is reserved for accounts with a confirmed email: inviting your team, exporting or importing customers, messaging all your customers, connecting a shop or your tools, and signing up more than 50 customers. Sign in again with the code sent to {email} to confirm it.",
       "close": "Later"
     },
-    "verificationSent": "Confirmation email sent",
-    "emailSent": "Email sent",
-    "resendEmail": "Resend email",
     "dashboard": "Dashboard",
     "logout": "Log out",
     "openMenu": "Open menu",

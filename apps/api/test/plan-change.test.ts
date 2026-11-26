@@ -2,8 +2,7 @@ import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import type { NestExpressApplication } from "@nestjs/platform-express";
 import request from "supertest";
 import Stripe from "stripe";
-import { agent, db, ownerWithTenant, resetDatabase, startApp } from "./helpers";
-import { hashPassword } from "../src/common/crypto";
+import { agent, db, ownerWithTenant, resetDatabase, startApp, signIn } from "./helpers";
 import { BillingService } from "../src/billing/billing.service";
 
 const subOf = (tenantId: string) => db.subscription.findUniqueOrThrow({ where: { tenantId } });
@@ -192,9 +191,9 @@ describe("changement d'offre avec Stripe", () => {
   it("un contrat attribué par l'admin arrête l'abonnement Stripe, que Stripe ne peut plus écraser", async () => {
     const o = await stripeSubscriber("contract");
     const email = `admin${Date.now()}@fove.test`;
-    await db.user.create({ data: { email, name: "Admin", passwordHash: await hashPassword("motdepasse123"), isSuperAdmin: true, emailVerifiedAt: new Date() } });
+    await db.user.create({ data: { email, name: "Admin", isSuperAdmin: true, emailVerifiedAt: new Date() } });
     const admin = agent(app);
-    await admin.post("/api/auth/login", { email, password: "motdepasse123" });
+    await signIn(admin, email);
 
     const res = await admin.post(`/api/admin/tenants/${o.tenantId}/subscription`, { planCode: "custom", status: "ACTIVE", limitsOverride: { customers: 50 } });
     expect(res.status).toBe(204);

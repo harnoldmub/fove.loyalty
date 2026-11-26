@@ -1,8 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { NestExpressApplication } from "@nestjs/platform-express";
 import request from "supertest";
-import { agent, createPointsProgram, db, ownerWithTenant, randomPhone, resetDatabase, selfEnroll, setPlan, startApp, type Client } from "./helpers";
-import { hashPassword } from "../src/common/crypto";
+import { agent, createPointsProgram, db, ownerWithTenant, randomPhone, resetDatabase, selfEnroll, setPlan, startApp, type Client, signIn } from "./helpers";
 import { PlanService } from "../src/billing/plan.service";
 
 let app: NestExpressApplication;
@@ -28,9 +27,9 @@ async function secretKey(owner: Client) {
 
 async function superAdmin() {
   const email = `admin${Date.now()}@fove.test`;
-  await db.user.create({ data: { email, name: "Admin", passwordHash: await hashPassword("motdepasse123"), isSuperAdmin: true, emailVerifiedAt: new Date() } });
+  await db.user.create({ data: { email, name: "Admin", isSuperAdmin: true, emailVerifiedAt: new Date() } });
   const c = agent(app);
-  await c.post("/api/auth/login", { email, password: "motdepasse123" });
+  await signIn(c, email);
   return c;
 }
 

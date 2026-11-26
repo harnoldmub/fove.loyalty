@@ -194,29 +194,24 @@ function SupportBanner() {
   );
 }
 
+/**
+ * Compte antérieur à la connexion par code, email jamais confirmé : se reconnecter avec le code
+ * reçu par email confirme l'adresse (docs/chantier-connexion-otp.md).
+ */
+async function confirmWithCode(email: string) {
+  await api.post("/auth/logout").catch(() => undefined);
+  window.location.assign(`/login?${new URLSearchParams({ email, next: window.location.pathname })}`);
+}
+
 function VerifyBanner() {
-  const toErrorMessage = useErrorMessage();
   const t = useTranslations("app.shell");
   const me = useMe();
-  const [sent, setSent] = useState(false);
   if (me.user.emailVerifiedAt || me.support) return null;
   return (
     <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 bg-cobalt-soft px-4 py-2 text-center text-sm text-ink">
       {t("verifyBanner", { email: me.user.email })}
-      <button
-        className="font-medium text-cobalt underline disabled:opacity-60"
-        disabled={sent}
-        onClick={async () => {
-          try {
-            await api.post("/auth/resend-verification");
-            setSent(true);
-            toast.success(t("verificationSent"));
-          } catch (e) {
-            toast.error(toErrorMessage(e));
-          }
-        }}
-      >
-        {sent ? t("emailSent") : t("resendEmail")}
+      <button className="font-medium text-cobalt underline" onClick={() => void confirmWithCode(me.user.email)}>
+        {t("confirmWithCode")}
       </button>
     </div>
   );
@@ -227,11 +222,9 @@ function VerifyBanner() {
  * `email_not_verified` (inviter, exporter, importer, envois groupés, intégrations, > 50 clients).
  */
 function VerifyEmailDialog() {
-  const toErrorMessage = useErrorMessage();
   const t = useTranslations("app.shell");
   const me = useMe();
   const [open, setOpen] = useState(false);
-  const [sent, setSent] = useState(false);
   useEffect(() => {
     const onRefused = () => setOpen(true);
     window.addEventListener(EMAIL_NOT_VERIFIED_EVENT, onRefused);
@@ -245,20 +238,7 @@ function VerifyEmailDialog() {
           <Button variant="secondary" onClick={() => setOpen(false)}>
             {t("verifyDialog.close")}
           </Button>
-          <Button
-            disabled={sent}
-            onClick={async () => {
-              try {
-                await api.post("/auth/resend-verification");
-                setSent(true);
-                toast.success(t("verificationSent"));
-              } catch (e) {
-                toast.error(toErrorMessage(e));
-              }
-            }}
-          >
-            {sent ? t("emailSent") : t("resendEmail")}
-          </Button>
+          <Button onClick={() => void confirmWithCode(me.user.email)}>{t("confirmWithCode")}</Button>
         </div>
       </DialogContent>
     </DialogRoot>

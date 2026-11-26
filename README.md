@@ -24,7 +24,7 @@ Prérequis : Node 22, pnpm 9, PostgreSQL local.
 
 ```bash
 pnpm install
-cp .env.example .env              # puis renseigner APP_ENCRYPTION_KEY, CRON_SECRET, SEED_SUPERADMIN_PASSWORD
+cp .env.example .env              # puis renseigner APP_ENCRYPTION_KEY, CRON_SECRET, SEED_SUPERADMIN_EMAIL
 createdb fove_dev && createdb fove_test
 pnpm build
 pnpm db:migrate                   # applique les migrations sur la base de dev

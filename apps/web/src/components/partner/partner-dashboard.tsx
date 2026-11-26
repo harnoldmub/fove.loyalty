@@ -160,7 +160,6 @@ export function PartnerDashboard({ user }: { user: { name: string; email: string
     queryFn: () => api.get<DashboardData>("/partner/me"),
     retry: (count, e) => !(e instanceof ApiError && e.code === "email_not_verified") && count < 3,
   });
-  const [verificationSent, setVerificationSent] = useState(false);
 
   const partner = data?.partner;
   const kpi = data?.kpi;
@@ -197,18 +196,15 @@ export function PartnerDashboard({ user }: { user: { name: string; email: string
         <Panel className="p-8">
           <h2 className="font-display text-xl font-bold text-ink mb-2">{t("unverified.title")}</h2>
           <p className="text-xs text-ink-2 mb-6">{t("unverified.body")}</p>
-          {verificationSent ? (
-            <p className="text-sm text-mint">{t("unverified.sent")}</p>
-          ) : (
-            <Button
-              onClick={async () => {
-                await api.post("/auth/resend-verification").catch(() => undefined);
-                setVerificationSent(true);
-              }}
-            >
-              {t("unverified.resend")}
-            </Button>
-          )}
+          {/* Compte antérieur à la connexion par code : se reconnecter avec le code confirme l'email. */}
+          <Button
+            onClick={async () => {
+              await api.post("/auth/logout").catch(() => undefined);
+              window.location.assign(`/login?${new URLSearchParams({ email: user.email, next: "/partner" })}`);
+            }}
+          >
+            {t("unverified.resend")}
+          </Button>
         </Panel>
       </div>
     );

@@ -1,8 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import request from "supertest";
 import type { NestExpressApplication } from "@nestjs/platform-express";
-import { agent, db, ownerWithTenant, resetDatabase, startApp } from "./helpers";
-import { hashPassword } from "../src/common/crypto";
+import { agent, db, ownerWithTenant, resetDatabase, startApp, signIn } from "./helpers";
 import { BillingService } from "../src/billing/billing.service";
 import { ReferralService } from "../src/referrals/referral.service";
 
@@ -25,9 +24,9 @@ async function merchant(country: string) {
 
 async function superAdmin() {
   const email = `admin${Date.now()}${Math.random().toString(36).slice(2, 6)}@fove.test`;
-  await db.user.create({ data: { email, name: "Admin", passwordHash: await hashPassword("motdepasse123"), isSuperAdmin: true, emailVerifiedAt: new Date() } });
+  await db.user.create({ data: { email, name: "Admin", isSuperAdmin: true, emailVerifiedAt: new Date() } });
   const c = agent(app);
-  await c.post("/api/auth/login", { email, password: "motdepasse123" });
+  await signIn(c, email);
   return c;
 }
 

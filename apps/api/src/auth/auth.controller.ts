@@ -4,13 +4,10 @@ import { Throttle } from "@nestjs/throttler";
 import type { Request, Response } from "express";
 import {
   acceptInviteSchema,
-  forgotPasswordSchema,
   localeSchema,
-  loginSchema,
-  resetPasswordSchema,
-  signupSchema,
+  loginCodeRequestSchema,
+  loginCodeVerifySchema,
   switchTenantSchema,
-  verifyEmailSchema,
 } from "@fove/shared";
 import type { z } from "zod";
 import { ZodPipe } from "../common/zod.pipe";
@@ -74,19 +71,22 @@ export class AuthController {
     return res.redirect(303, `${config.APP_URL}${safeNext(result.next, "/app")}`);
   }
 
-  @Post("signup")
+  /** Connexion et inscription sans mot de passe : code à 6 chiffres envoyé par email. */
+  @Post("code")
+  @HttpCode(204)
   @Throttle(strict)
-  async signup(@Body(new ZodPipe(signupSchema)) body: z.infer<typeof signupSchema>, @Req() req: Request, @Res({ passthrough: true }) res: Response) {
+  async requestCode(@Body(new ZodPipe(loginCodeRequestSchema)) body: z.infer<typeof loginCodeRequestSchema>, @Req() req: Request) {
     requireCsrf(req);
-    return this.auth.signup(body, req, res);
+    await this.auth.requestCode(body.email, req);
   }
 
-  @Post("login")
+  /** Code juste : connecté (compte existant) ; email inconnu : `profile_required`, puis création avec nom et CGU. */
+  @Post("code/verify")
   @HttpCode(200)
   @Throttle(strict)
-  async login(@Body(new ZodPipe(loginSchema)) body: z.infer<typeof loginSchema>, @Req() req: Request, @Res({ passthrough: true }) res: Response) {
+  async verifyCode(@Body(new ZodPipe(loginCodeVerifySchema)) body: z.infer<typeof loginCodeVerifySchema>, @Req() req: Request, @Res({ passthrough: true }) res: Response) {
     requireCsrf(req);
-    return this.auth.login(body.email, body.password, req, res);
+    return this.auth.verifyCode(body, req, res);
   }
 
   @Post("logout")
@@ -111,43 +111,12 @@ export class AuthController {
     await this.auth.switchTenant(auth, body.tenantId);
   }
 
-  @Post("verify-email")
-  @HttpCode(204)
-  @Throttle(strict)
-  async verifyEmail(@Body(new ZodPipe(verifyEmailSchema)) body: z.infer<typeof verifyEmailSchema>) {
-    await this.auth.verifyEmail(body.token);
-  }
-
-  @Post("resend-verification")
-  @HttpCode(204)
-  @Throttle(strict)
-  @UserRoute()
-  async resend(@Auth() auth: AuthState, @Req() req: Request) {
-    await this.auth.resendVerification(auth, requestLocaleOrNull(req));
-  }
-
   /** Langue préférée de l'utilisateur (emails), enregistrée quand il change de langue. */
   @Post("locale")
   @HttpCode(204)
   @UserRoute()
   async setLocale(@Auth() auth: AuthState, @Body(new ZodPipe(localeSchema)) body: z.infer<typeof localeSchema>) {
     await this.auth.setLocale(auth, body.locale);
-  }
-
-  @Post("forgot-password")
-  @HttpCode(204)
-  @Throttle({ default: { limit: 5, ttl: 60_000 } })
-  async forgot(@Body(new ZodPipe(forgotPasswordSchema)) body: z.infer<typeof forgotPasswordSchema>, @Req() req: Request) {
-    requireCsrf(req);
-    await this.auth.forgotPassword(body.email, requestLocaleOrNull(req));
-  }
-
-  @Post("reset-password")
-  @HttpCode(204)
-  @Throttle(strict)
-  async reset(@Body(new ZodPipe(resetPasswordSchema)) body: z.infer<typeof resetPasswordSchema>, @Req() req: Request) {
-    requireCsrf(req);
-    await this.auth.resetPassword(body.token, body.password);
   }
 
   @Get("invitations/preview")
