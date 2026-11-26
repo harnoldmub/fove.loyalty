@@ -99,7 +99,7 @@ export function CodeStep({
       {google}
       {info && <SuccessNote>{info}</SuccessNote>}
       {error && <ErrorNote>{error}</ErrorNote>}
-      <Field label={t("code")} hint={t("checkSpam")}>
+      <Field label={t("code")} hint={t("checkSpam")} className="text-center">
         {(p) => (
           <OtpInput {...p} autoFocus value={code} onChange={setCode} />
         )}

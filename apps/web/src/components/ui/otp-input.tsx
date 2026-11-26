@@ -79,7 +79,7 @@ export function OtpInput({ value, onChange, onComplete, length = 6, autoFocus, d
   };
 
   return (
-    <div dir="ltr" role="group" className={cn("flex justify-between gap-2 sm:justify-start", className)}>
+    <div dir="ltr" role="group" className={cn("flex justify-center gap-2", className)}>
       {digits.map((digit, index) => (
         <input
           key={index}

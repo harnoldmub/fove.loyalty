@@ -66,6 +66,13 @@ describe("connexion par code", () => {
     expect((await c.post("/api/auth/code", { email })).status).toBe(429);
   });
 
+  it("signale un compte d'administration à la connexion", async () => {
+    const email = `${uniq("admin")}@test.fove`;
+    await db.user.create({ data: { email, name: "Admin", isSuperAdmin: true, emailVerifiedAt: new Date() } });
+    expect((await signIn(agent(app), email)).body).toMatchObject({ status: "signed_in", admin: true });
+    expect((await signIn(agent(app), `${uniq("u")}@test.fove`, "Amy")).body).toMatchObject({ admin: false });
+  });
+
   it("confirme l'email d'un compte antérieur non confirmé", async () => {
     const email = `${uniq("u")}@test.fove`;
     await db.user.create({ data: { email, name: "Ancien" } });

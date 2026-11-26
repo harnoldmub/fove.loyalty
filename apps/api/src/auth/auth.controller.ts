@@ -69,8 +69,10 @@ export class AuthController {
     if (!result) return res.redirect(303, `${config.APP_URL}/login?oauth_error=failed`);
     const user = await this.auth.loginWithGoogle({ email: result.profile.email, name: result.profile.name }, req, res);
     const next = safeNext(result.next, "/app");
-    // Admin FOVE sans destination particulière : l'administration (l'espace commerçant s'ouvre à côté).
-    return res.redirect(303, `${config.APP_URL}${user.admin && next === "/app" ? "/admin" : next}`);
+    // Admin FOVE sans destination particulière (ou une offre retenue depuis la page tarifs) :
+    // l'administration ; l'espace commerçant s'ouvre à côté.
+    const adminHome = user.admin && (next === "/app" || next.startsWith("/app/billing?offre="));
+    return res.redirect(303, `${config.APP_URL}${adminHome ? "/admin" : next}`);
   }
 
   /** Connexion et inscription sans mot de passe : code à 6 chiffres envoyé par email. */

@@ -262,7 +262,7 @@ export function CardView({ token, initial }: { token: string; initial: CardData 
               <p className="text-sm text-ink-2">{t("verify.text")}</p>
               {error && <ErrorNote>{error}</ErrorNote>}
               {info && <p className="text-sm text-mint">{info}</p>}
-              <Field label={t("verify.code")}>{(p) => <OtpInput {...p} value={code} onChange={setCode} />}</Field>
+              <Field label={t("verify.code")} className="text-center">{(p) => <OtpInput {...p} value={code} onChange={setCode} />}</Field>
               <Button type="submit" disabled={code.length !== 6}>{t("verify.submit")}</Button>
               <Button
                 type="button"
