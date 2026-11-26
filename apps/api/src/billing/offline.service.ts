@@ -45,10 +45,10 @@ export interface ValidateInput {
   note?: string | null;
   /** Montant inférieur au dû accepté (frais bancaires, arrondi). */
   acceptShortfall?: boolean;
-  collectorPartnerId?: string | null;
 }
 
-export type Actor = { userId: string; email: string } | { partnerId: string; email: string };
+/** Membre de l'équipe FOVE qui valide le paiement (back-office). */
+export type Actor = { userId: string; email: string };
 
 const meta = (invoice: Pick<Invoice, "metadata">) => invoice.metadata as unknown as OfflineMeta;
 
@@ -140,20 +140,12 @@ export class OfflineBillingService {
     return this.prisma.client.invoice.findFirst({ where: { tenantId, status: "OPEN", paymentReference: { not: null } }, orderBy: { createdAt: "desc" } });
   }
 
-  private async newReference(kind: "invoice" | "statement"): Promise<string> {
+  private async newReference(): Promise<string> {
     for (let i = 0; i < 10; i += 1) {
-      const reference = generatePaymentReference(kind, (n) => randomInt(0, n));
-      const taken = kind === "invoice"
-        ? await this.prisma.client.invoice.count({ where: { paymentReference: reference } })
-        : await this.prisma.client.partnerStatement.count({ where: { reference } });
-      if (!taken) return reference;
+      const reference = generatePaymentReference("invoice", (n) => randomInt(0, n));
+      if (!(await this.prisma.client.invoice.count({ where: { paymentReference: reference } }))) return reference;
     }
     throw new Error("Référence de paiement : trop de collisions");
-  }
-
-  /** Référence d'un relevé de partenaire (FV-RL-…), unique. */
-  statementReference() {
-    return this.newReference("statement");
   }
 
   /**
@@ -193,7 +185,7 @@ export class OfflineBillingService {
     // Accès provisoire : une fois par commerce (un accès provisoire expiré sans paiement n'est pas renouvelé).
     const expiredBefore = await db.invoice.count({ where: { tenantId, metadata: { path: ["expired"], equals: true } } });
     const provisional = kind === "new" && opts.withProvisional !== false && (provisionalRunning || expiredBefore === 0);
-    const reference = await this.newReference("invoice");
+    const reference = await this.newReference();
     const periodStart = kind === "renewal" ? sub!.currentPeriodEnd ?? now : now;
     const invoice = await db.invoice.create({
       data: {
@@ -236,7 +228,7 @@ export class OfflineBillingService {
       await db.subscription.upsert({ where: { tenantId }, update: data, create: { tenantId, ...data } });
     }
     await this.audit.log({ tenantId, actorUserId: opts.actorUserId, action: "billing.offline_requested", targetType: "invoice", targetId: invoice.id, metadata: { reference, plan: plan.code, kind, amountCents: amount, currency, provisional } });
-    // Facture créée par un partenaire pour l'encaisser sur place : pas d'email d'instructions.
+    // Paiement déjà reçu et saisi par FOVE (fiche entreprise) : pas d'email d'instructions.
     if (!opts.silent) await this.sendInstructions(tenantId, invoice, plan.name);
     return { invoice, created: true };
   }
@@ -334,7 +326,6 @@ export class OfflineBillingService {
           currency: invoice.currency,
           status: "SUCCEEDED",
           method: input.method.toLowerCase(),
-          collectorPartnerId: input.collectorPartnerId ?? null,
           receiptNumber: input.receiptNumber || null,
           proofUrl: input.proofUrl || null,
           confirmedAt: paidAt,
@@ -376,38 +367,56 @@ export class OfflineBillingService {
     }
     await db.financialAuditLog.create({
       data: {
-        actorUserId: "userId" in actor ? actor.userId : null,
+        actorUserId: actor.userId,
         actorEmail: actor.email,
         action: "billing.offline_validated",
         entityType: "invoice",
         entityId: invoice.id,
-        newValue: { reference: invoice.paymentReference, method: input.method, amountCents: input.amountCents, currency: invoice.currency, collectorPartnerId: input.collectorPartnerId ?? null, receiptNumber: input.receiptNumber ?? null, bankReference: input.bankReference ?? null },
+        newValue: { reference: invoice.paymentReference, method: input.method, amountCents: input.amountCents, currency: invoice.currency, receiptNumber: input.receiptNumber ?? null, bankReference: input.bankReference ?? null },
         reason: input.note ?? null,
       },
     });
-    await this.audit.log({ tenantId: invoice.tenantId, actorUserId: "userId" in actor ? actor.userId : undefined, action: "billing.offline_paid", targetType: "invoice", targetId: invoice.id, metadata: { reference: invoice.paymentReference, collectorPartnerId: input.collectorPartnerId ?? null } });
+    await this.audit.log({ tenantId: invoice.tenantId, actorUserId: actor.userId, action: "billing.offline_paid", targetType: "invoice", targetId: invoice.id, metadata: { reference: invoice.paymentReference } });
 
-    // Encaissement par un partenaire : le commerçant reçoit une confirmation avec un lien de signalement (H3).
-    if (!input.collectorPartnerId) {
-      try {
-        const { to, locale } = await this.recipient(invoice.tenantId);
-        if (to) {
-          await this.email.send({
-            to,
-            ...offlinePaidMessage(locale, {
-              plan: plan.name,
-              amount: formatMoney(input.amountCents, invoice.currency, locale),
-              reference: invoice.paymentReference,
-              until: formatDay(result.periodEnd, locale),
-              billingUrl: `${loadConfig().APP_URL}/app/billing`,
-            }),
-          });
-        }
-      } catch (error) {
-        this.logger.warn(`Confirmation de paiement non envoyée : ${(error as Error).message}`);
+    // Confirmation au commerçant.
+    try {
+      const { to, locale } = await this.recipient(invoice.tenantId);
+      if (to) {
+        await this.email.send({
+          to,
+          ...offlinePaidMessage(locale, {
+            plan: plan.name,
+            amount: formatMoney(input.amountCents, invoice.currency, locale),
+            reference: invoice.paymentReference,
+            until: formatDay(result.periodEnd, locale),
+            billingUrl: `${loadConfig().APP_URL}/app/billing`,
+          }),
+        });
       }
+    } catch (error) {
+      this.logger.warn(`Confirmation de paiement non envoyée : ${(error as Error).message}`);
     }
     return { payment: result.payment, periodEnd: result.periodEnd, plan };
+  }
+
+  /**
+   * « Enregistrer un paiement reçu » (fiche entreprise) : paiement déjà reçu par FOVE (espèces au
+   * bureau, virement, mobile money). La facture est créée sans email d'instructions puis validée.
+   */
+  async recordReceived(
+    tenantId: string,
+    input: Omit<ValidateInput, "amountCents"> & { planCode: string; amountCents?: number },
+    actor: Actor,
+  ) {
+    const { invoice, created } = await this.request(tenantId, input.planCode, { actorUserId: actor.userId, withProvisional: false, silent: true });
+    try {
+      const result = await this.validate(invoice.id, { ...input, amountCents: input.amountCents ?? invoice.amountDueCents }, actor);
+      return { ...result, reference: invoice.paymentReference, currency: invoice.currency };
+    } catch (error) {
+      // Montant insuffisant… : la facture créée pour l'occasion ne reste pas en attente chez le commerçant.
+      if (created) await this.voidInvoice(invoice, { reason: "admin_record_failed", endProvisional: false });
+      throw error;
+    }
   }
 
   /** Annulation d'une facture hors ligne par l'équipe FOVE. */
@@ -455,7 +464,7 @@ export class OfflineBillingService {
     };
     const rows = await this.prisma.client.invoice.findMany({
       where,
-      include: { tenant: { select: { id: true, name: true, slug: true } }, payments: { select: { id: true, provider: true, method: true, amountCents: true, collectorPartner: { select: { name: true, code: true } }, receiptNumber: true, disputeReportedAt: true } } },
+      include: { tenant: { select: { id: true, name: true, slug: true } }, payments: { select: { id: true, provider: true, method: true, amountCents: true, receiptNumber: true } } },
       orderBy: { createdAt: "desc" },
       take: 200,
     });

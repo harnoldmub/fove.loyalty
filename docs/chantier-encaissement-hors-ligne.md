@@ -1,6 +1,21 @@
 # Chantier — Encaissement hors ligne (virement, espèces, mobile money)
 
-> Statut : **livré** le 26 novembre 2026 sur la branche `feat/multi-devises` (lots H1 à H5). Référentiel : [fonctionnalites.md](fonctionnalites.md). Écarts et précisions de la réalisation en fin de document.
+> Statut : H1 (virement direct) et H2 (rapprochement bancaire) **livrés** le 26 novembre 2026. H3 (encaissement par les partenaires) et H4 (relevés mensuels) **livrés puis retirés** le même jour : voir la révision en section 0. Référentiel : [fonctionnalites.md](fonctionnalites.md).
+
+## 0. Révision du 26 novembre 2026 : les partenaires n'encaissent plus
+
+**Décision** : le commerçant paie toujours FOVE directement. Plus d'argent confié à un tiers : un partenaire pouvait encaisser et ne jamais reverser, ou valider un abonnement sans rien encaisser ; les garde-fous (plafond, relevés, blocage, signalement) ajoutaient de la complexité sans supprimer ce risque.
+
+| Avant (H3, H4) | Maintenant |
+|---|---|
+| Le partenaire encaisse en espèces ou en mobile money et valide l'abonnement | Le partenaire **vend et accompagne** : inscription du commerce (lien pré-rempli), aide au paiement (virement avec la référence, carte) ; il n'encaisse jamais |
+| Espèces remises au partenaire | Dépôt d'espèces au guichet de la banque de FOVE avec la référence, mobile money vers un compte marchand FOVE, ou espèces remises à FOVE et saisies dans le back-office (« Enregistrer un paiement reçu », fiche entreprise) |
+| Frais d'encaissement 5 %, plafond d'encours, relevé mensuel et compensation, signalement du commerçant | Retirés (migration `20261126150000_remove_partner_collection`) |
+| Demande de virement par le partenaire, à partir de 50 | **Versement mensuel automatique** : le 1er, regroupement des commissions disponibles (après la garantie de 30 jours), payé avant le 10, frais de transfert à la charge de FOVE ; sous 50 $ ou 50 €, report au mois suivant ; récapitulatif par email ; onglet « Versements » dans Admin > Partenaires |
+
+La commission d'apport naît quand FOVE reçoit le paiement (carte, virement validé, paiement saisi), comme avant. Plus tard, d'autres moyens de paiement directs (mobile money intégré, carte Edahabia en Algérie) pourront s'ajouter sans changer le rôle du partenaire. Si un marché exige un jour des agents qui encaissent, le modèle à retenir est le **prépayé** (le partenaire achète d'avance des activations), jamais le crédit.
+
+Les sections 2, 6, 7 et 8 ci-dessous décrivent la version initiale, retirée pour ce qui concerne l'encaissement par les partenaires.
 
 ## 1. Pourquoi
 

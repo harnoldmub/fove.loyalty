@@ -384,6 +384,7 @@
       }
     },
     "offline": {
+      "receipt": "Receipt no. {number}",
       "title": "Offline payments",
       "description": "Bank transfers, cash and mobile money: invoices with references, validation and bank details by country.",
       "search": "Reference or business",
@@ -401,8 +402,6 @@
         "renewal": "renewal"
       },
       "provisional": "Provisional access running",
-      "collectedBy": "Collected by {name} ({code})",
-      "disputed": "Reported by the merchant",
       "table": {
         "reference": "Reference",
         "tenant": "Business",
@@ -435,25 +434,6 @@
         "cancel": "Cancel",
         "confirm": "Validate payment",
         "done": "Payment validated: the subscription is active."
-      },
-      "statements": {
-        "title": "Partner statements",
-        "help": "Each month, partners' collections are netted against their commissions and fees. Positive balance: the partner pays it within 15 days with the statement reference; negative balance: a payout is created for them.",
-        "issue": "Issue pending statements",
-        "issued": "{count, plural, =0 {No statement to issue} one {# statement issued} other {# statements issued}}",
-        "empty": "No statements.",
-        "detail": "{period} · collected {collected} · commissions and fees {deducted}",
-        "owes": "Still owed by the partner: {amount} (before {due})",
-        "credit": "In the partner's favour: {amount} (payout created)",
-        "status": {
-          "ISSUED": "To pay",
-          "PAID": "Paid",
-          "SETTLED": "Settled"
-        },
-        "overdue": "Unpaid: collections blocked",
-        "amount": "Amount received ({currency})",
-        "markPaid": "Payment received",
-        "paid": "Statement payment recorded."
       },
       "accounts": {
         "title": "Bank details by country",
@@ -677,6 +657,28 @@
     }
   },
   "tenant": {
+    "recordPayment": {
+      "button": "Record a payment received",
+      "title": "Payment received by FOVE",
+      "description": "Cash at the office, transfer or mobile money already received, in {currency}. The plan is activated (or extended by one year) immediately; the partner commission and referral apply.",
+      "plan": "Plan",
+      "method": "Payment method",
+      "methods": {
+        "CASH": "Cash",
+        "BANK_TRANSFER": "Bank transfer",
+        "MOBILE_MONEY": "Mobile money"
+      },
+      "amount": "Amount received ({currency})",
+      "amountHint": "Empty: the amount due (referral discount and credit deducted).",
+      "paidAt": "Date received",
+      "receipt": "Receipt no.",
+      "note": "Internal note",
+      "shortfall": "Accept an amount below what is due",
+      "invalidAmount": "Invalid amount.",
+      "cancel": "Cancel",
+      "submit": "Record",
+      "done": "Payment of {amount} recorded (reference {reference})."
+    },
     "back": "Businesses",
     "createdOn": "created on {date}",
     "publicPage": "Public page",
@@ -882,6 +884,33 @@
     "selectHint": "Select a message in the list to read it and reply."
   },
   "partners": {
+    "payouts": {
+      "help": "On the 1st of each month, each partner's available commissions are grouped into one payout, to be paid before the 10th (transfer fees covered by FOVE). Mark it paid with the transfer reference, or reject it (wrong details): its commissions return to the next month.",
+      "status": "Status",
+      "statuses": {
+        "PENDING": "To pay",
+        "PAID": "Paid",
+        "FAILED": "Rejected",
+        "ALL": "All"
+      },
+      "empty": "No payouts.",
+      "methods": {
+        "BANK_TRANSFER": "Bank transfer",
+        "MOBILE_MONEY": "Mobile money"
+      },
+      "paidOn": "Paid on {date}",
+      "createdOn": "Created on {date}",
+      "reference": "Transfer reference / rejection reason",
+      "referencePlaceholder": "TRF-…",
+      "markPaid": "Mark paid",
+      "markPaidTitle": "Payout of {amount} to {name} sent?",
+      "markPaidBody": "The grouped commissions become “paid” and the partner is notified by email.",
+      "reject": "Reject",
+      "rejectTitle": "Reject this payout?",
+      "rejectBody": "The commissions return to the next monthly payout.",
+      "paid": "Payout marked paid.",
+      "rejected": "Payout rejected."
+    },
     "title": "Partner program",
     "description": "Applications, active partners and affiliate program settings.",
     "create": "New partner",
@@ -896,6 +925,7 @@
       "paidCommissionsHelp": "Total already paid"
     },
     "tabs": {
+      "payouts": "Payouts",
       "applications": "Applications ({count})",
       "partners": "Partners ({count})",
       "settings": "Settings"
@@ -957,10 +987,6 @@
       "defaultReason": "Application not accepted"
     },
     "rate": {
-      "collection": "Offline collection",
-      "collectionEnabled": "Can collect subscriptions",
-      "collectionCap": "Outstanding limit (€)",
-      "collectionCapHint": "Maximum amount collected and not yet paid to FOVE. €300 by default.",
       "title": "Commission rate for {name}",
       "description": "Percentage paid on each payment attributed to this partner.",
       "label": "Rate (%)",

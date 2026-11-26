@@ -107,7 +107,7 @@
       },
       "withdraw": {
         "q": "¿Cuándo y cómo puedo retirar mis ganancias?",
-        "a": "En cuanto tu saldo de comisiones disponibles alcance el umbral mínimo de 50 $ o 50 € (según tu divisa), puedes solicitar una transferencia directamente desde tu espacio de socio. Pagamos por transferencia bancaria o Mobile Money (Airtel Money, Orange Money, M-Pesa según disponibilidad geográfica)."
+        "a": "Cada mes, sin pedirlo: el día 1 tus comisiones disponibles (tras los 30 días de garantía) se agrupan en un pago, abonado antes del día 10 por transferencia bancaria o Mobile Money (Airtel Money, Orange Money, M-Pesa según disponibilidad geográfica). Gastos de transferencia a cargo de FOVE. Por debajo de 50 $ o 50 € (según tu divisa), el importe pasa al mes siguiente."
       },
       "fees": {
         "q": "¿Hay costes o compromisos?",
@@ -246,10 +246,10 @@
       "clients": "Clientes aportados",
       "commissions": "Comisiones",
       "payouts": "Pagos y retiros",
-      "collection": "Cobros",
       "resources": "Recursos de venta"
     },
     "overview": {
+      "seePayouts": "Ver mis pagos",
       "clicks": "Clics en tu enlace",
       "clicksHint": "Visitantes enviados a FOVE",
       "signups": "Registros y conversiones",
@@ -337,6 +337,11 @@
       "pending": "Pendiente (30 días)"
     },
     "payouts": {
+      "monthly": "Pago automático cada mes: el día 1 se agrupan tus comisiones disponibles y se pagan antes del día 10, gastos de transferencia a cargo de FOVE (desde 50 en tu moneda; si no, se pasa al mes siguiente).",
+      "infoTitle": "Datos de pago",
+      "infoHelp": "Dónde te paga FOVE tus comisiones cada mes.",
+      "infoSave": "Guardar",
+      "infoSaved": "Datos de pago guardados.",
       "balance": "Saldo disponible: {amount}",
       "minimum": "Importe mínimo de retiro: {amount}",
       "currency": "Moneda de pago:",
@@ -446,31 +451,7 @@
     "copied": "¡Enlace de campaña copiado!",
     "copy": "Copiar el enlace con UTM"
   },
-  "collection": {
-    "title": "Cobros",
-    "subtitle": "Cobra las suscripciones en efectivo o con dinero móvil y entrégalas cada mes a FOVE (extracto mensual). Gastos de cobro: {fee} % en las renovaciones y en los clientes que no has traído.",
-    "outstanding": "Adeudado a FOVE",
-    "blocked": {
-      "not_approved": "Tu cuenta de socio debe estar validada para cobrar.",
-      "disabled": "El cobro está desactivado para tu cuenta: contacta con FOVE.",
-      "overdue": "Extracto {reference} sin pagar: págalo para volver a cobrar.",
-      "cap": "Límite de saldo alcanzado: entrega tus cobros a FOVE para volver a cobrar."
-    },
-    "byReference": {
-      "title": "Cobrar por referencia",
-      "help": "Para un comercio que no es cliente tuyo: introduce la referencia que te muestra (página Suscripción o correo), comprueba el comercio y el importe y confirma.",
-      "label": "Referencia de pago",
-      "search": "Comprobar"
-    },
-    "clients": {
-      "title": "Mis clientes",
-      "empty": "Aún no has traído clientes.",
-      "until": "{plan} hasta el {date}",
-      "free": "Plan Gratuito",
-      "plan": "Plan",
-      "subscribe": "Cobrar la suscripción",
-      "renew": "Renovar"
-    },
+  "clientsTab": {
     "invite": {
       "title": "Registrar un comercio",
       "help": "El comercio crea su propia cuenta (confirma su correo); se te asigna automáticamente. Envíale el enlace o ábrelo en su teléfono.",
@@ -483,43 +464,18 @@
       "open": "Abrir el enlace",
       "message": "Hola, este es el enlace para crear tu programa de fidelidad FOVE: {url}"
     },
-    "statements": {
-      "title": "Extractos mensuales",
-      "owe": "A pagar: {amount}",
-      "credit": "A tu favor: {amount}",
-      "due": "A pagar antes del {date} con la referencia {reference}.",
-      "status": {
-        "ISSUED": "Por pagar",
-        "PAID": "Pagado",
-        "SETTLED": "Saldado"
-      }
-    },
-    "history": {
-      "title": "Historial",
-      "empty": "Aún no hay cobros.",
-      "disputed": "Señalado",
-      "toSettle": "Por entregar"
-    },
-    "confirm": {
-      "title": "Cobrar: {name}",
-      "description": "{plan} · {kind}",
-      "kind": {
-        "new": "suscripción",
-        "renewal": "renovación"
-      },
-      "amount": "Importe a cobrar",
-      "method": "Medio de pago",
-      "methods": {
-        "CASH": "Efectivo",
-        "MOBILE_MONEY": "Dinero móvil",
-        "BANK_TRANSFER": "Transferencia a tu cuenta"
-      },
-      "receipt": "Número de recibo",
-      "receiptHint": "Opcional: el recibo que entregas al comercio.",
-      "warning": "Confirma solo si has recibido {amount}. La suscripción se activa de inmediato y este importe se suma a lo que debes a FOVE.",
-      "cancel": "Cancelar",
-      "submit": "He recibido el pago"
-    },
-    "collected": "Cobro confirmado: la suscripción de {name} está activa."
+    "title": "Mis clientes",
+    "help": "Acompañas el pago (transferencia con la referencia del comercio, o tarjeta); nunca cobras dinero. Tu comisión nace cuando FOVE recibe el pago.",
+    "empty": "Aún no has traído clientes.",
+    "until": "{plan} hasta el {date}",
+    "registered": "Registrado el {date}",
+    "pendingDetail": "Pago esperado: {amount}, referencia",
+    "payment": {
+      "free": "Plan Gratuito",
+      "pending": "Pago esperado",
+      "provisional": "Acceso provisional, pago esperado",
+      "paid": "Pagado",
+      "expired": "Vencido"
+    }
   }
 }

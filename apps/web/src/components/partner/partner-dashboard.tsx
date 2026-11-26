@@ -32,19 +32,18 @@ import {
   UserPlus,
   Users,
   Wallet,
-  Banknote,
 } from "lucide-react";
 import { Logo } from "@/components/brand";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { Badge, PageHeader, Panel } from "@/components/ui/misc";
 import { api, ApiError, useErrorMessage } from "@/lib/api";
-import { PartnerCollection } from "./partner-collection";
+import { PartnerClients } from "./partner-clients";
+import { PartnerPayoutInfo } from "./partner-payout-info";
 import { useLocale, useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { formatDate, formatNumber, formatPrice } from "@/lib/utils";
 import { PartnerLeadModal } from "./partner-lead-modal";
-import { PartnerPayoutModal } from "./partner-payout-modal";
 import { PartnerQrModal } from "./partner-qr-modal";
 import { PartnerUtmModal } from "./partner-utm-modal";
 
@@ -132,7 +131,6 @@ const TABS = [
   { id: "clients", icon: Store },
   { id: "commissions", icon: Award },
   { id: "payouts", icon: Wallet },
-  { id: "collection", icon: Banknote },
   { id: "resources", icon: FileText },
 ] as const;
 
@@ -154,7 +152,6 @@ export function PartnerDashboard({ user }: { user: { name: string; email: string
   const [activeTab, setActiveTab] = useState<string>("overview");
   const [copiedLink, setCopiedLink] = useState(false);
   const [leadModalOpen, setLeadModalOpen] = useState(false);
-  const [payoutModalOpen, setPayoutModalOpen] = useState(false);
   const [qrModalOpen, setQrModalOpen] = useState(false);
   const [utmModalOpen, setUtmModalOpen] = useState(false);
 
@@ -412,13 +409,8 @@ export function PartnerDashboard({ user }: { user: { name: string; email: string
                   </p>
                 </div>
               </div>
-              <Button
-                onClick={() => setPayoutModalOpen(true)}
-                disabled={!kpi?.canRequestPayout}
-                variant="primary"
-                className="w-full sm:w-auto text-xs"
-              >
-                {t("overview.requestPayout")}
+              <Button onClick={() => setActiveTab("payouts")} variant="secondary" className="w-full sm:w-auto text-xs">
+                {t("overview.seePayouts")}
               </Button>
             </div>
 
@@ -621,53 +613,7 @@ export function PartnerDashboard({ user }: { user: { name: string; email: string
         )}
 
         {/* VUE : CLIENTS APPORTÉS */}
-        {activeTab === "clients" && (
-          <div className="space-y-4">
-            <h2 className="font-display text-lg font-bold text-ink">{t("clients.title")}</h2>
-            {attributions.length === 0 ? (
-              <Panel className="p-12 text-center text-sm text-ink-3">
-                {t("clients.empty")}
-              </Panel>
-            ) : (
-              <Panel className="overflow-x-auto">
-                <table className="w-full min-w-[700px] text-start text-sm">
-                  <thead className="border-b border-line bg-surface-2 text-xs text-ink-3">
-                    <tr>
-                      <th className="py-3 px-4 font-medium">{t("clients.colBusiness")}</th>
-                      <th className="py-3 px-4 font-medium">{t("clients.colRegistered")}</th>
-                      <th className="py-3 px-4 font-medium">{t("clients.colPlan")}</th>
-                      <th className="py-3 px-4 font-medium">{t("clients.colStatus")}</th>
-                      <th className="py-3 px-4 font-medium text-end">{t("clients.colFirstPayment")}</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-line text-xs">
-                    {attributions.map((a) => (
-                      <tr key={a.id} className="hover:bg-surface-2 transition-colors">
-                        <td className="py-3.5 px-4 font-semibold text-ink">{a.tenantName}</td>
-                        <td className="py-3.5 px-4 text-ink-2">{date(a.registeredAt)}</td>
-                        <td className="py-3.5 px-4">
-                          <span className="rounded bg-surface-2 px-2 py-0.5 text-xs font-medium text-ink">
-                            {a.planName}
-                          </span>
-                        </td>
-                        <td className="py-3.5 px-4">
-                          {a.conversionStatus === "CONVERTED" ? (
-                            <Badge tone="mint">{t("clients.paidClient")}</Badge>
-                          ) : (
-                            <Badge tone="neutral">{t("clients.trial")}</Badge>
-                          )}
-                        </td>
-                        <td className="py-3.5 px-4 text-end text-ink-2 font-mono">
-                          {a.firstPaymentAt ? date(a.firstPaymentAt) : "—"}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </Panel>
-            )}
-          </div>
-        )}
+        {activeTab === "clients" && <PartnerClients partnerCode={partner.code} />}
 
         {/* VUE : COMMISSIONS */}
         {activeTab === "commissions" && (
@@ -759,15 +705,10 @@ export function PartnerDashboard({ user }: { user: { name: string; email: string
                 </label>
                 <p className="mt-1 text-[11px] text-ink-3">{t("payouts.currencyHelp")}</p>
               </div>
-              <Button
-                onClick={() => setPayoutModalOpen(true)}
-                disabled={!kpi?.canRequestPayout}
-                variant="primary"
-                className="w-full sm:w-auto"
-              >
-                {t("payouts.requestPayout")}
-              </Button>
+              <p className="max-w-xs text-xs text-ink-2">{t("payouts.monthly")}</p>
             </div>
+
+            <PartnerPayoutInfo initial={partner.payoutInfo} onSaved={() => void refetch()} />
 
             <h3 className="font-display text-sm font-bold text-ink">{t("payouts.history")}</h3>
             {payouts.length === 0 ? (
@@ -810,9 +751,6 @@ export function PartnerDashboard({ user }: { user: { name: string; email: string
             )}
           </div>
         )}
-
-        {/* VUE : ENCAISSEMENTS HORS LIGNE */}
-        {activeTab === "collection" && <PartnerCollection partnerCode={partner.code} />}
 
         {/* VUE : RESSOURCES DE VENTE */}
         {activeTab === "resources" && (
@@ -896,15 +834,7 @@ export function PartnerDashboard({ user }: { user: { name: string; email: string
         onCreated={() => refetch()}
       />
 
-      <PartnerPayoutModal
-        open={payoutModalOpen}
-        availableCents={kpi?.availableCommissionsCents ?? 0}
-        thresholdCents={partner.minimumPayoutThresholdCents}
-        currency={partner.payoutCurrency}
-        existingPayoutInfo={partner.payoutInfo}
-        onClose={() => setPayoutModalOpen(false)}
-        onRequested={() => refetch()}
-      />
+
 
       <PartnerQrModal
         open={qrModalOpen}

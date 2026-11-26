@@ -384,6 +384,7 @@
       }
     },
     "offline": {
+      "receipt": "Reçu n° {number}",
       "title": "Règlements hors ligne",
       "description": "Virements, espèces et mobile money : factures à référence, validation et coordonnées bancaires par pays.",
       "search": "Référence ou commerce",
@@ -401,8 +402,6 @@
         "renewal": "renouvellement"
       },
       "provisional": "Accès provisoire en cours",
-      "collectedBy": "Encaissé par {name} ({code})",
-      "disputed": "Signalée par le commerçant",
       "table": {
         "reference": "Référence",
         "tenant": "Commerce",
@@ -435,25 +434,6 @@
         "cancel": "Annuler",
         "confirm": "Valider le paiement",
         "done": "Paiement validé : l’abonnement est actif."
-      },
-      "statements": {
-        "title": "Relevés des partenaires",
-        "help": "Chaque mois, les encaissements des partenaires sont compensés avec leurs commissions et frais. Solde positif : le partenaire le verse sous 15 jours avec la référence du relevé ; solde négatif : un versement lui est créé.",
-        "issue": "Émettre les relevés en attente",
-        "issued": "{count, plural, =0 {Aucun relevé à émettre} one {# relevé émis} other {# relevés émis}}",
-        "empty": "Aucun relevé.",
-        "detail": "{period} · encaissé {collected} · commissions et frais {deducted}",
-        "owes": "Reste dû par le partenaire : {amount} (avant le {due})",
-        "credit": "En faveur du partenaire : {amount} (versement créé)",
-        "status": {
-          "ISSUED": "À régler",
-          "PAID": "Réglé",
-          "SETTLED": "Soldé"
-        },
-        "overdue": "Impayé : encaissements bloqués",
-        "amount": "Montant reçu ({currency})",
-        "markPaid": "Paiement reçu",
-        "paid": "Paiement du relevé enregistré."
       },
       "accounts": {
         "title": "Coordonnées bancaires par pays",
@@ -677,6 +657,28 @@
     }
   },
   "tenant": {
+    "recordPayment": {
+      "button": "Enregistrer un paiement reçu",
+      "title": "Paiement reçu par FOVE",
+      "description": "Espèces au bureau, virement ou mobile money déjà reçu, en {currency}. L’offre est activée (ou prolongée d’un an) tout de suite ; la commission du partenaire et le parrainage s’appliquent.",
+      "plan": "Offre",
+      "method": "Moyen de paiement",
+      "methods": {
+        "CASH": "Espèces",
+        "BANK_TRANSFER": "Virement",
+        "MOBILE_MONEY": "Mobile money"
+      },
+      "amount": "Montant reçu ({currency})",
+      "amountHint": "Vide : le montant dû (remise et crédit de parrainage déduits).",
+      "paidAt": "Date de réception",
+      "receipt": "N° de reçu",
+      "note": "Note interne",
+      "shortfall": "Accepter un montant inférieur au dû",
+      "invalidAmount": "Montant invalide.",
+      "cancel": "Annuler",
+      "submit": "Enregistrer",
+      "done": "Paiement de {amount} enregistré (référence {reference})."
+    },
     "back": "Entreprises",
     "createdOn": "créée le {date}",
     "publicPage": "Page publique",
@@ -882,6 +884,33 @@
     "selectHint": "Sélectionnez un message dans la liste pour lire son détail et répondre."
   },
   "partners": {
+    "payouts": {
+      "help": "Le 1er de chaque mois, les commissions disponibles de chaque partenaire sont regroupées en un versement, à payer avant le 10 (frais de transfert à la charge de FOVE). Marquez-le payé avec la référence du virement, ou rejetez-le (coordonnées erronées) : ses commissions reviendront au mois suivant.",
+      "status": "État",
+      "statuses": {
+        "PENDING": "À payer",
+        "PAID": "Payé",
+        "FAILED": "Rejeté",
+        "ALL": "Tous"
+      },
+      "empty": "Aucun versement.",
+      "methods": {
+        "BANK_TRANSFER": "Virement bancaire",
+        "MOBILE_MONEY": "Mobile money"
+      },
+      "paidOn": "Payé le {date}",
+      "createdOn": "Créé le {date}",
+      "reference": "Référence du virement / motif du rejet",
+      "referencePlaceholder": "VIR-…",
+      "markPaid": "Marquer payé",
+      "markPaidTitle": "Versement de {amount} à {name} effectué ?",
+      "markPaidBody": "Les commissions regroupées passent à « versées » et le partenaire est prévenu par email.",
+      "reject": "Rejeter",
+      "rejectTitle": "Rejeter ce versement ?",
+      "rejectBody": "Les commissions reviennent au prochain versement mensuel.",
+      "paid": "Versement marqué payé.",
+      "rejected": "Versement rejeté."
+    },
     "title": "Programme partenaires",
     "description": "Candidatures, partenaires actifs et réglages du programme d'affiliation.",
     "create": "Nouveau partenaire",
@@ -896,6 +925,7 @@
       "paidCommissionsHelp": "Total déjà payé"
     },
     "tabs": {
+      "payouts": "Versements",
       "applications": "Candidatures ({count})",
       "partners": "Partenaires ({count})",
       "settings": "Réglages"
@@ -957,10 +987,6 @@
       "defaultReason": "Candidature non retenue"
     },
     "rate": {
-      "collection": "Encaissement hors ligne",
-      "collectionEnabled": "Peut encaisser les abonnements",
-      "collectionCap": "Plafond d’encours (€)",
-      "collectionCapHint": "Montant maximal encaissé et pas encore reversé à FOVE. 300 € par défaut.",
       "title": "Taux de commission de {name}",
       "description": "Pourcentage reversé sur chaque paiement attribué à ce partenaire.",
       "label": "Taux (%)",

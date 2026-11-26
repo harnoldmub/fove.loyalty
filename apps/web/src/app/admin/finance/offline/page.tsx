@@ -30,7 +30,7 @@ interface OfflineInvoice {
   kind: "new" | "renewal";
   provisional: boolean;
   tenant: { id: string; name: string; slug: string };
-  payments: { id: string; method: string | null; amountCents: number; receiptNumber: string | null; disputeReportedAt: string | null; collectorPartner: { name: string; code: string } | null }[];
+  payments: { id: string; method: string | null; amountCents: number; receiptNumber: string | null }[];
 }
 
 interface BankAccount {
@@ -209,122 +209,6 @@ function BankAccounts() {
   );
 }
 
-interface Statement {
-  id: string;
-  reference: string;
-  periodStart: string;
-  currency: string;
-  collectedCents: number;
-  commissionsCents: number;
-  feesCents: number;
-  balanceCents: number;
-  paidCents: number;
-  status: "ISSUED" | "PAID" | "SETTLED";
-  dueAt: string;
-  createdAt: string;
-  partner: { id: string; name: string; code: string };
-}
-
-/** Relevés mensuels des partenaires encaisseurs : solde dû, paiement reçu, émission. */
-function Statements() {
-  const t = useTranslations("admin.finance.offline.statements");
-  const errMsg = useErrorMessage();
-  const { data = [], refetch } = useQuery({ queryKey: ["admin-statements"], queryFn: () => api.get<Statement[]>("/admin/finance/statements?status=ALL") });
-  const [busy, setBusy] = useState(false);
-  const [amounts, setAmounts] = useState<Record<string, string>>({});
-  // Heure de chargement de la page : un relevé impayé 30 jours après son émission bloque les encaissements.
-  const [now] = useState(() => Date.now());
-  const overdue = (s: Statement) => s.status === "ISSUED" && new Date(s.createdAt).getTime() + 30 * 86_400_000 < now;
-  return (
-    <Panel className="grid gap-4 p-5">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h2 className="font-display text-lg font-semibold">{t("title")}</h2>
-          <p className="text-sm text-ink-2">{t("help")}</p>
-        </div>
-        <Button
-          variant="secondary"
-          size="sm"
-          loading={busy}
-          onClick={async () => {
-            setBusy(true);
-            try {
-              const res = await api.post<{ issued: number }>("/admin/finance/statements/issue");
-              toast.success(t("issued", { count: res.issued }));
-              await refetch();
-            } catch (e) {
-              toast.error(errMsg(e));
-            } finally {
-              setBusy(false);
-            }
-          }}
-        >
-          {t("issue")}
-        </Button>
-      </div>
-      {data.length === 0 ? (
-        <p className="text-sm text-ink-3">{t("empty")}</p>
-      ) : (
-        <ul className="divide-y divide-line text-sm">
-          {data.map((st) => (
-            <li key={st.id} className="grid gap-2 py-3 sm:grid-cols-[1fr_auto] sm:items-center">
-              <div>
-                <p className="font-semibold">
-                  <span className="font-mono" dir="ltr">{st.reference}</span> · {st.partner.name} ({st.partner.code})
-                </p>
-                <p className="text-xs text-ink-3">
-                  {t("detail", {
-                    period: formatDate(st.periodStart),
-                    collected: formatFinance(st.collectedCents, st.currency),
-                    deducted: formatFinance(st.feesCents + st.commissionsCents, st.currency),
-                  })}
-                </p>
-                <p className="text-xs">
-                  {st.balanceCents >= 0
-                    ? t("owes", { amount: formatFinance(st.balanceCents - st.paidCents, st.currency), due: formatDate(st.dueAt) })
-                    : t("credit", { amount: formatFinance(-st.balanceCents, st.currency) })}
-                </p>
-              </div>
-              <div className="flex flex-wrap items-center gap-2 sm:justify-end">
-                <Badge tone={st.status === "ISSUED" ? (overdue(st) ? "danger" : "stamp") : "mint"}>{overdue(st) ? t("overdue") : t(`status.${st.status}`)}</Badge>
-                {st.status === "ISSUED" && (
-                  <>
-                    <Input
-                      aria-label={t("amount", { currency: st.currency })}
-                      className="w-32"
-                      inputMode="decimal"
-                      dir="ltr"
-                      placeholder={String((st.balanceCents - st.paidCents) / 100)}
-                      value={amounts[st.id] ?? ""}
-                      onChange={(e) => setAmounts({ ...amounts, [st.id]: e.target.value })}
-                    />
-                    <Button
-                      size="sm"
-                      onClick={async () => {
-                        const raw = amounts[st.id]?.trim();
-                        const cents = raw ? Math.round(Number(raw.replace(/\s/g, "").replace(",", ".")) * 100) : st.balanceCents - st.paidCents;
-                        try {
-                          await api.post(`/admin/finance/statements/${st.id}/pay`, { amountCents: cents });
-                          toast.success(t("paid"));
-                          await refetch();
-                        } catch (e) {
-                          toast.error(errMsg(e));
-                        }
-                      }}
-                    >
-                      {t("markPaid")}
-                    </Button>
-                  </>
-                )}
-              </div>
-            </li>
-          ))}
-        </ul>
-      )}
-    </Panel>
-  );
-}
-
 /** Règlements hors ligne (docs/chantier-encaissement-hors-ligne.md, 5) : factures à référence, validation, coordonnées. */
 export default function OfflinePaymentsPage() {
   const t = useTranslations("admin.finance.offline");
@@ -387,8 +271,7 @@ export default function OfflinePaymentsPage() {
                         <td className="px-3 py-2.5 text-xs text-ink-2">{formatDate(inv.paidAt ?? inv.createdAt)}</td>
                         <td className="px-3 py-2.5">
                           <Badge tone={TONE[inv.status]}>{t(`statuses.${inv.status}`)}</Badge>
-                          {payment?.collectorPartner && <span className="block text-xs text-ink-3">{t("collectedBy", { name: payment.collectorPartner.name, code: payment.collectorPartner.code })}</span>}
-                          {payment?.disputeReportedAt && <span className="block text-xs font-medium text-danger">{t("disputed")}</span>}
+                          {payment?.receiptNumber && <span className="block text-xs text-ink-3">{t("receipt", { number: payment.receiptNumber })}</span>}
                         </td>
                         <td className="px-3 py-2.5 text-end">
                           {inv.status === "OPEN" && (
@@ -421,7 +304,6 @@ export default function OfflinePaymentsPage() {
             </div>
           )}
         </Panel>
-        <Statements />
         <BankAccounts />
       </div>
     </>

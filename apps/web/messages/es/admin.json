@@ -384,6 +384,7 @@
       }
     },
     "offline": {
+      "receipt": "Recibo n.º {number}",
       "title": "Pagos fuera de línea",
       "description": "Transferencias, efectivo y dinero móvil: facturas con referencia, validación y datos bancarios por país.",
       "search": "Referencia o comercio",
@@ -401,8 +402,6 @@
         "renewal": "renovación"
       },
       "provisional": "Acceso provisional en curso",
-      "collectedBy": "Cobrado por {name} ({code})",
-      "disputed": "Señalada por el comercio",
       "table": {
         "reference": "Referencia",
         "tenant": "Comercio",
@@ -435,25 +434,6 @@
         "cancel": "Cancelar",
         "confirm": "Validar el pago",
         "done": "Pago validado: la suscripción está activa."
-      },
-      "statements": {
-        "title": "Extractos de los socios",
-        "help": "Cada mes, los cobros de los socios se compensan con sus comisiones y gastos. Saldo positivo: el socio lo paga en 15 días con la referencia del extracto; saldo negativo: se le crea un pago.",
-        "issue": "Emitir los extractos pendientes",
-        "issued": "{count, plural, =0 {Ningún extracto que emitir} one {# extracto emitido} other {# extractos emitidos}}",
-        "empty": "No hay extractos.",
-        "detail": "{period} · cobrado {collected} · comisiones y gastos {deducted}",
-        "owes": "Pendiente del socio: {amount} (antes del {due})",
-        "credit": "A favor del socio: {amount} (pago creado)",
-        "status": {
-          "ISSUED": "Por pagar",
-          "PAID": "Pagado",
-          "SETTLED": "Saldado"
-        },
-        "overdue": "Impagado: cobros bloqueados",
-        "amount": "Importe recibido ({currency})",
-        "markPaid": "Pago recibido",
-        "paid": "Pago del extracto registrado."
       },
       "accounts": {
         "title": "Datos bancarios por país",
@@ -677,6 +657,28 @@
     }
   },
   "tenant": {
+    "recordPayment": {
+      "button": "Registrar un pago recibido",
+      "title": "Pago recibido por FOVE",
+      "description": "Efectivo en la oficina, transferencia o dinero móvil ya recibido, en {currency}. El plan se activa (o se prolonga un año) de inmediato; se aplican la comisión del socio y la recomendación.",
+      "plan": "Plan",
+      "method": "Medio de pago",
+      "methods": {
+        "CASH": "Efectivo",
+        "BANK_TRANSFER": "Transferencia",
+        "MOBILE_MONEY": "Dinero móvil"
+      },
+      "amount": "Importe recibido ({currency})",
+      "amountHint": "Vacío: el importe adeudado (descuento y crédito de recomendación deducidos).",
+      "paidAt": "Fecha de recepción",
+      "receipt": "N.º de recibo",
+      "note": "Nota interna",
+      "shortfall": "Aceptar un importe inferior al adeudado",
+      "invalidAmount": "Importe no válido.",
+      "cancel": "Cancelar",
+      "submit": "Registrar",
+      "done": "Pago de {amount} registrado (referencia {reference})."
+    },
     "back": "Empresas",
     "createdOn": "creada el {date}",
     "publicPage": "Página pública",
@@ -882,6 +884,33 @@
     "selectHint": "Seleccione un mensaje de la lista para leer su detalle y responder."
   },
   "partners": {
+    "payouts": {
+      "help": "El día 1 de cada mes, las comisiones disponibles de cada socio se agrupan en un pago, a abonar antes del día 10 (gastos de transferencia a cargo de FOVE). Márcalo pagado con la referencia de la transferencia, o recházalo (datos erróneos): sus comisiones vuelven al mes siguiente.",
+      "status": "Estado",
+      "statuses": {
+        "PENDING": "Por pagar",
+        "PAID": "Pagado",
+        "FAILED": "Rechazado",
+        "ALL": "Todos"
+      },
+      "empty": "No hay pagos.",
+      "methods": {
+        "BANK_TRANSFER": "Transferencia bancaria",
+        "MOBILE_MONEY": "Dinero móvil"
+      },
+      "paidOn": "Pagado el {date}",
+      "createdOn": "Creado el {date}",
+      "reference": "Referencia de la transferencia / motivo del rechazo",
+      "referencePlaceholder": "TRF-…",
+      "markPaid": "Marcar pagado",
+      "markPaidTitle": "¿Pago de {amount} a {name} realizado?",
+      "markPaidBody": "Las comisiones agrupadas pasan a «pagadas» y se avisa al socio por correo.",
+      "reject": "Rechazar",
+      "rejectTitle": "¿Rechazar este pago?",
+      "rejectBody": "Las comisiones vuelven al siguiente pago mensual.",
+      "paid": "Pago marcado como pagado.",
+      "rejected": "Pago rechazado."
+    },
     "title": "Programa de socios",
     "description": "Solicitudes, socios activos y ajustes del programa de afiliación.",
     "create": "Nuevo socio",
@@ -896,6 +925,7 @@
       "paidCommissionsHelp": "Total ya pagado"
     },
     "tabs": {
+      "payouts": "Pagos",
       "applications": "Solicitudes ({count})",
       "partners": "Socios ({count})",
       "settings": "Ajustes"
@@ -957,10 +987,6 @@
       "defaultReason": "Solicitud no aceptada"
     },
     "rate": {
-      "collection": "Cobro fuera de línea",
-      "collectionEnabled": "Puede cobrar suscripciones",
-      "collectionCap": "Límite de saldo (€)",
-      "collectionCapHint": "Importe máximo cobrado y aún no entregado a FOVE. 300 € por defecto.",
       "title": "Tasa de comisión de {name}",
       "description": "Porcentaje abonado por cada pago atribuido a este socio.",
       "label": "Tasa (%)",

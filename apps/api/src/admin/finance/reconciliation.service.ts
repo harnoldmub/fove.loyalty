@@ -7,29 +7,17 @@ import type { AuthState } from "../../common/context";
 import { OfflineBillingService } from "../../billing/offline.service";
 import { parseBankCsv } from "./bank-csv";
 
-/** Paiement d'un relevé de partenaire reçu à FOVE (H4), branché par StatementService. */
-export interface StatementPaymentHandler {
-  findOpenByReference(reference: string): Promise<{ id: string; balanceCents: number; paidCents: number; currency: string } | null>;
-  recordPayment(statementId: string, amountCents: number, actor: { userId: string; email: string }, bankReference: string): Promise<void>;
-}
-
 /**
  * Rapprochement bancaire (docs/chantier-encaissement-hors-ligne.md, 5) : import d'un relevé CSV ou
- * saisie d'une ligne, détection des références FV-… dans le libellé, proposition de la facture ou du
- * relevé de partenaire correspondant, validation en un clic ; un écart de montant est signalé.
+ * saisie d'une ligne, détection des références FV-… dans le libellé, proposition de la facture
+ * correspondante, validation en un clic ; un écart de montant est signalé.
  */
 @Injectable()
 export class ReconciliationService {
-  private statements: StatementPaymentHandler | null = null;
-
   constructor(
     private readonly prisma: PrismaService,
     private readonly offline: OfflineBillingService,
   ) {}
-
-  registerStatements(handler: StatementPaymentHandler) {
-    this.statements = handler;
-  }
 
   /** Cherche une référence valide dans le libellé et propose la pièce correspondante. */
   async suggest(entry: Pick<BankStatementEntry, "id" | "label" | "amountCents" | "currency" | "reconciled">): Promise<Prisma.BankStatementEntryUpdateInput | null> {
@@ -39,12 +27,6 @@ export class ReconciliationService {
         const invoice = await this.prisma.client.invoice.findUnique({ where: { paymentReference: ref.reference } });
         if (invoice?.status === "OPEN") {
           return { suggestedType: "INVOICE", suggestedId: invoice.id, amountMismatch: invoice.amountDueCents !== entry.amountCents || invoice.currency !== entry.currency };
-        }
-      } else if (this.statements) {
-        const statement = await this.statements.findOpenByReference(ref.reference);
-        if (statement) {
-          const due = statement.balanceCents - statement.paidCents;
-          return { suggestedType: "STATEMENT", suggestedId: statement.id, amountMismatch: due !== entry.amountCents || statement.currency !== entry.currency };
         }
       }
     }
@@ -124,10 +106,6 @@ export class ReconciliationService {
         actor,
       );
       await db.bankStatementEntry.update({ where: { id: entry.id }, data: { reconciled: true, reconciledType: "PAYMENT", reconciledId: payment.id } });
-    } else if (entry.suggestedType === "STATEMENT") {
-      if (!this.statements) throw badRequest("no_suggestion", "Relevés de partenaires indisponibles");
-      await this.statements.recordPayment(entry.suggestedId, entry.amountCents, actor, entry.label.slice(0, 140));
-      await db.bankStatementEntry.update({ where: { id: entry.id }, data: { reconciled: true, reconciledType: "PARTNER_STATEMENT", reconciledId: entry.suggestedId } });
     }
     await db.financialAuditLog.create({
       data: { actorUserId: actor.userId, actorEmail: actor.email, action: "treasury.match_confirmed", entityType: "bank_entry", entityId: entry.id, newValue: { type: entry.suggestedType, id: entry.suggestedId, amountCents: entry.amountCents, mismatch: entry.amountMismatch } },

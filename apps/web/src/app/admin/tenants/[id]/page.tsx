@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog, DialogContent, DialogRoot } from "@/components/ui/dialog";
-import { Field, Input, Select } from "@/components/ui/field";
+import { Checkbox, Field, Input, Select } from "@/components/ui/field";
 import { ArrowLeft, Palette, ShieldCheck, Store } from "lucide-react";
 import Link from "next/link";
 import { Badge, ErrorNote, Panel, Skeleton } from "@/components/ui/misc";
@@ -163,6 +163,7 @@ export default function AdminTenant() {
             {data.subscription?.contractPriceYearlyCents ? t("subscription.contract", { price: formatPrice(data.subscription.contractPriceYearlyCents, data.subscription.currency) }) : ""}
           </p>
           <BillingCurrencyField tenantId={id} chosen={data.settings?.billingCurrency ?? null} effective={data.billingCurrency} subscriptionCurrency={data.subscription?.status !== "CANCELED" ? (data.subscription?.currency ?? null) : null} />
+          <RecordPaymentDialog tenantId={id} currency={data.billingCurrency} />
           <SubscriptionForm tenantId={id} current={data.subscription} defaultCurrency={data.billingCurrency} />
         </Panel>
         <Panel className="p-5">
@@ -362,6 +363,78 @@ export default function AdminTenant() {
  * négociés, fin de contrat, prix facturé hors Stripe). Chaque envoi redéfinit
  * tout le contrat.
  */
+/**
+ * « Enregistrer un paiement reçu » : paiement déjà reçu par FOVE (espèces au bureau, virement, mobile
+ * money). La facture est créée et validée en une fois ; commission partenaire et parrainage s'appliquent.
+ */
+function RecordPaymentDialog({ tenantId, currency }: { tenantId: string; currency: string }) {
+  const t = useTranslations("admin.tenant.recordPayment");
+  const errMsg = useErrorMessage();
+  const qc = useQueryClient();
+  const { data: plans = [] } = useQuery({ queryKey: ["admin-plans"], queryFn: () => api.get<{ code: string; name: string; kind: string }[]>("/admin/plans") });
+  const [open, setOpen] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [form, setForm] = useState({ planCode: "starter", method: "CASH", amount: "", paidAt: "", receiptNumber: "", note: "", shortfall: false });
+  const submit = async () => {
+    const raw = form.amount.replace(/\s/g, "").replace(",", ".");
+    const amountCents = raw ? Math.round(Number(raw) * 100) : undefined;
+    if (amountCents !== undefined && (!Number.isFinite(amountCents) || amountCents <= 0)) return toast.error(t("invalidAmount"));
+    setBusy(true);
+    try {
+      const res = await api.post<{ amountCents: number; currency: string; reference: string }>(`/admin/finance/tenants/${tenantId}/payment`, {
+        planCode: form.planCode,
+        method: form.method,
+        amountCents,
+        paidAt: form.paidAt ? new Date(`${form.paidAt}T12:00:00`).toISOString() : undefined,
+        receiptNumber: form.receiptNumber || undefined,
+        note: form.note || undefined,
+        acceptShortfall: form.shortfall || undefined,
+      });
+      toast.success(t("done", { amount: formatPrice(res.amountCents, res.currency), reference: res.reference }));
+      setOpen(false);
+      await qc.invalidateQueries({ queryKey: ["admin-tenant", tenantId] });
+    } catch (e) {
+      toast.error(errMsg(e));
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <DialogRoot open={open} onOpenChange={(o) => !busy && setOpen(o)}>
+      <Button variant="secondary" className="justify-self-start" onClick={() => setOpen(true)}>{t("button")}</Button>
+      <DialogContent title={t("title")} description={t("description", { currency })}>
+        <div className="grid gap-3">
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Field label={t("plan")}>
+              {(f) => (
+                <Select {...f} value={form.planCode} onChange={(e) => setForm({ ...form, planCode: e.target.value })}>
+                  {plans.filter((p) => p.kind === "PAID").map((p) => <option key={p.code} value={p.code}>{p.name}</option>)}
+                </Select>
+              )}
+            </Field>
+            <Field label={t("method")}>
+              {(f) => (
+                <Select {...f} value={form.method} onChange={(e) => setForm({ ...form, method: e.target.value })}>
+                  {(["CASH", "BANK_TRANSFER", "MOBILE_MONEY"] as const).map((m) => <option key={m} value={m}>{t(`methods.${m}`)}</option>)}
+                </Select>
+              )}
+            </Field>
+            <Field label={t("amount", { currency })} hint={t("amountHint")}>{(f) => <Input {...f} inputMode="decimal" dir="ltr" value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} />}</Field>
+            <Field label={t("paidAt")}>{(f) => <Input {...f} type="date" value={form.paidAt} onChange={(e) => setForm({ ...form, paidAt: e.target.value })} />}</Field>
+            <Field label={t("receipt")}>{(f) => <Input {...f} value={form.receiptNumber} onChange={(e) => setForm({ ...form, receiptNumber: e.target.value })} />}</Field>
+            <Field label={t("note")}>{(f) => <Input {...f} value={form.note} onChange={(e) => setForm({ ...form, note: e.target.value })} />}</Field>
+          </div>
+          <Checkbox label={t("shortfall")} checked={form.shortfall} onChange={(e) => setForm({ ...form, shortfall: e.target.checked })} />
+          <div className="flex justify-end gap-2">
+            <Button variant="secondary" disabled={busy} onClick={() => setOpen(false)}>{t("cancel")}</Button>
+            <Button loading={busy} onClick={submit}>{t("submit")}</Button>
+          </div>
+        </div>
+      </DialogContent>
+    </DialogRoot>
+  );
+}
+
 /** Monnaie de facturation du commerce : prix affichés, contrats et règlements hors ligne. */
 function BillingCurrencyField({ tenantId, chosen, effective, subscriptionCurrency }: { tenantId: string; chosen: string | null; effective: BillingCurrency; subscriptionCurrency: string | null }) {
   const t = useTranslations("admin.tenant.billingCurrency");

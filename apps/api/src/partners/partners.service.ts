@@ -13,13 +13,12 @@ import type {
   PartnerApplyDto,
   PartnerLeadDto,
   PartnerLeadUpdateDto,
-  PartnerPayoutRequestDto,
   PartnerProfileUpdateDto,
   AdminPartnerUpdateDto,
   AdminPayoutActionDto,
   AdminSettingsUpdateDto,
 } from "./partners.dto";
-import { localeForCountry, normalizeLocale, type Locale } from "../i18n/locale";
+import { INTL_LOCALE, localeForCountry, normalizeLocale, type Locale } from "../i18n/locale";
 import { escapeHtml, partnerApprovedMessage, partnerEmails } from "../i18n/emails";
 
 @Injectable()
@@ -661,64 +660,105 @@ export class PartnersService {
   }
 
   /**
-   * 9. Demande de retrait / versement par le partenaire.
+   * 9. Versements mensuels (décision du 26 novembre 2026) : le 1er du mois, les commissions devenues
+   * disponibles avant le mois en cours sont regroupées en un versement par partenaire, dans sa monnaie
+   * de versement, s'il atteint le seuil (sinon report au mois suivant). FOVE le paie avant le 10 et
+   * prend les frais de transfert à sa charge. Plus de demande de virement par le partenaire.
    */
-  async requestPayout(userId: string, dto: PartnerPayoutRequestDto) {
-    const partner = await this.getPartnerByUserId(userId);
-    await this.releaseDueCommissions(partner.id);
-    const currency = partner.payoutCurrency;
-
-    // Vérification du solde disponible réel, dans la monnaie de versement.
-    const availableCommissions = await this.prisma.client.partnerCommission.findMany({
-      where: {
-        partnerId: partner.id,
-        status: "AVAILABLE",
-      },
+  async scheduleMonthlyPayouts(now = new Date()): Promise<number> {
+    const db = this.prisma.client;
+    await this.releaseDueCommissions(undefined, now);
+    const monthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+    const due = await db.partnerCommission.findMany({
+      where: { status: "AVAILABLE", payoutId: null, availableAt: { lt: monthStart }, partner: { status: { in: ["APPROVED", "ACTIVE"] } } },
+      include: { partner: true, tenant: { select: { name: true } } },
+      orderBy: { availableAt: "asc" },
     });
+    const byPartner = new Map<string, typeof due>();
+    for (const c of due) byPartner.set(c.partnerId, [...(byPartner.get(c.partnerId) ?? []), c]);
 
-    const totalAvailableCents = availableCommissions.reduce((s, c) => s + (c.payoutCurrency === currency ? (c.payoutAmountCents ?? 0) : 0), 0);
-
-    if (totalAvailableCents < partner.minimumPayoutThresholdCents) {
-      throw badRequest(
-        "threshold_not_reached",
-        `Le montant minimum de retrait est de ${(partner.minimumPayoutThresholdCents / 100).toFixed(2)} ${currency}. Solde disponible : ${(totalAvailableCents / 100).toFixed(2)} ${currency}.`
-      );
-    }
-
-    if (dto.amountCents > totalAvailableCents) {
-      throw badRequest("insufficient_balance", "Le montant demandé excède votre solde disponible.");
-    }
-
-    // Mise à jour des coordonnées de paiement dans le profil
-    await this.prisma.client.partner.update({
-      where: { id: partner.id },
-      data: { payoutInfo: dto.payoutDetails },
-    });
-
-    // Création de la demande de virement
-    const payout = await this.prisma.client.partnerPayout.create({
-      data: {
-        partnerId: partner.id,
-        amountCents: dto.amountCents,
-        currency,
-        method: dto.method,
-        status: "PENDING",
-      },
-    });
-
-    // Notification administrateur
-    const adminEmail = loadConfig().EMAIL_FROM || "contact@fove.digital";
-    try {
-      await this.email.send({
-        to: adminEmail,
-        subject: `[Demande de retrait partenaire] ${partner.name} (${(dto.amountCents / 100).toFixed(2)} ${currency})`,
-        text: `Le partenaire ${partner.name} (${partner.code}) a demandé un versement de ${(dto.amountCents / 100).toFixed(2)} ${currency}.\n\nMéthode : ${dto.method}\nCoordonnées : ${JSON.stringify(dto.payoutDetails, null, 2)}\n\nValidez ou traitez le paiement dans le back-office :\n${loadConfig().APP_URL}/admin/finance/commissions`,
+    let created = 0;
+    for (const [partnerId, list] of byPartner) {
+      const partner = list[0]!.partner;
+      const reference = `VERS-${monthStart.toISOString().slice(0, 7)}-${partner.code}`;
+      // Un seul versement mensuel par partenaire (la tâche tourne toutes les 5 minutes).
+      if (await db.partnerPayout.count({ where: { partnerId, reference } })) continue;
+      const currency = partner.payoutCurrency;
+      // Commission convertie dans une autre monnaie (changement de monnaie de versement) : reconvertie.
+      for (const c of list.filter((c) => c.payoutCurrency !== currency || c.payoutAmountCents === null)) {
+        const data = await this.convertForPayout(c, currency);
+        Object.assign(c, data);
+      }
+      const commissions = list.filter((c) => c.payoutCurrency === currency);
+      const amountCents = commissions.reduce((sum, c) => sum + (c.payoutAmountCents ?? 0), 0);
+      if (amountCents <= 0 || amountCents < partner.minimumPayoutThresholdCents) continue;
+      const method = typeof (partner.payoutInfo as { method?: unknown } | null)?.method === "string" ? String((partner.payoutInfo as { method: string }).method) : "Virement";
+      const payout = await db.$transaction(async (tx) => {
+        const p = await tx.partnerPayout.create({ data: { partnerId, amountCents, currency, method, status: "PENDING", reference, paidAt: null } });
+        await tx.partnerCommission.updateMany({ where: { id: { in: commissions.map((c) => c.id) } }, data: { payoutId: p.id } });
+        return p;
       });
-    } catch (e) {
-      this.logger.error("Erreur notification admin retrait partenaire", e);
+      created += 1;
+      await this.audit.log({ action: "partner.payout_scheduled", targetType: "partner_payout", targetId: payout.id, metadata: { partner: partner.code, amountCents, currency, commissions: commissions.length } });
+      try {
+        const locale = await this.partnerLocale(partner);
+        const t = partnerEmails(locale);
+        const money = (cents: number, cur: string) => new Intl.NumberFormat(INTL_LOCALE[locale], { style: "currency", currency: cur }).format(cents / 100);
+        const lines = commissions.map((c) => `- ${c.tenant.name} : ${money(c.payoutAmountCents ?? 0, currency)}`).join("\n");
+        await this.email.send({ to: partner.email, subject: t.scheduledSubject(money(amountCents, currency)), text: t.scheduled(partner.name, money(amountCents, currency), lines, `${loadConfig().APP_URL}/partner`) });
+      } catch (e) {
+        this.logger.error("Erreur envoi récapitulatif de versement", e);
+      }
     }
+    return created;
+  }
 
-    return payout;
+  /** Versements à faire et faits (admin) : les plus récents d'abord, filtrables par état. */
+  adminListPayouts(status?: string) {
+    return this.prisma.client.partnerPayout.findMany({
+      where: status && status !== "ALL" ? { status } : {},
+      include: { partner: { select: { id: true, name: true, code: true, email: true, payoutInfo: true } }, commissions: { select: { id: true, payoutAmountCents: true, tenant: { select: { name: true } } } } },
+      orderBy: { createdAt: "desc" },
+      take: 200,
+    });
+  }
+
+  /**
+   * Clients apportés avec leur abonnement, leur échéance et l'état de leur paiement (référence en
+   * attente, payé, échu) : le partenaire accompagne le paiement sans jamais encaisser.
+   */
+  async partnerClients(userId: string) {
+    const partner = await this.getPartnerByUserId(userId);
+    const now = new Date();
+    const attributions = await this.prisma.client.acquisitionAttribution.findMany({
+      where: { partnerId: partner.id },
+      include: {
+        tenant: {
+          select: {
+            id: true,
+            name: true,
+            subscription: { select: { status: true, provider: true, currentPeriodEnd: true, provisionalUntil: true, plan: { select: { code: true, name: true, kind: true } } } },
+            invoices: { where: { status: "OPEN", paymentReference: { not: null } }, select: { paymentReference: true, amountDueCents: true, currency: true, createdAt: true }, orderBy: { createdAt: "desc" }, take: 1 },
+          },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+    return attributions.map((a) => {
+      const sub = a.tenant.subscription;
+      const pending = a.tenant.invoices[0] ?? null;
+      const running = sub && sub.plan.kind !== "FREE" && sub.status !== "CANCELED" && sub.status !== "INCOMPLETE" && (!sub.currentPeriodEnd || sub.currentPeriodEnd > now);
+      const payment = pending ? (sub?.provisionalUntil ? "provisional" : "pending") : running ? "paid" : sub && sub.plan.kind !== "FREE" ? "expired" : "free";
+      return {
+        tenantId: a.tenant.id,
+        name: a.tenant.name,
+        planName: sub && sub.plan.kind !== "FREE" ? sub.plan.name : null,
+        periodEnd: running ? (sub!.provisionalUntil ?? sub!.currentPeriodEnd) : null,
+        payment,
+        pending: pending ? { reference: pending.paymentReference, amountCents: pending.amountDueCents, currency: pending.currency } : null,
+        registeredAt: a.createdAt,
+      };
+    });
   }
 
   /**
@@ -891,8 +931,6 @@ export class PartnersService {
         minimumPayoutThresholdCents: dto.minimumPayoutThresholdCents !== undefined ? dto.minimumPayoutThresholdCents : undefined,
         rejectionReason: dto.rejectionReason !== undefined ? dto.rejectionReason : undefined,
         payoutCurrency: dto.payoutCurrency,
-        collectionEnabled: dto.collectionEnabled,
-        collectionCapEurCents: dto.collectionCapEurCents,
       },
     });
     if (dto.payoutCurrency) await this.reconvertAvailable(partner.id, dto.payoutCurrency);
@@ -916,29 +954,11 @@ export class PartnersService {
 
     if (!payout) throw notFound("Demande de virement introuvable");
 
-    if (dto.status === "PAID") {
-      // Marque les commissions disponibles les plus anciennes comme payées jusqu'à concurrence du montant
-      const availableCommissions = await this.prisma.client.partnerCommission.findMany({
-        where: {
-          partnerId: payout.partnerId,
-          status: "AVAILABLE",
-        },
-        orderBy: { createdAt: "asc" },
-      });
+    if (payout.status !== "PENDING") throw badRequest("payout_closed", "Ce versement est déjà traité");
 
-      let remaining = payout.amountCents;
-      for (const c of availableCommissions) {
-        if (remaining <= 0) break;
-        await this.prisma.client.partnerCommission.update({
-          where: { id: c.id },
-          data: {
-            status: "PAID",
-            paidAt: new Date(),
-            payoutId: payout.id,
-          },
-        });
-        remaining -= c.payoutCurrency === payout.currency ? (c.payoutAmountCents ?? 0) : c.commissionAmountCents;
-      }
+    if (dto.status === "PAID") {
+      // Les commissions regroupées dans ce versement passent à « versées ».
+      await this.prisma.client.partnerCommission.updateMany({ where: { payoutId: payout.id }, data: { status: "PAID", paidAt: new Date() } });
 
       await this.prisma.client.partnerPayout.update({
         where: { id: payoutId },
@@ -965,7 +985,8 @@ export class PartnersService {
         this.logger.error("Erreur envoi notification virement effectué", e);
       }
     } else {
-      // Rejet
+      // Rejet (coordonnées erronées…) : les commissions reviennent au prochain versement mensuel.
+      await this.prisma.client.partnerCommission.updateMany({ where: { payoutId: payout.id }, data: { payoutId: null } });
       await this.prisma.client.partnerPayout.update({
         where: { id: payoutId },
         data: {

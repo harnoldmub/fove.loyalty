@@ -164,15 +164,5 @@
     "knownTitle": "Vous avez déjà un compte FOVE",
     "knownText": "Un code vient d'être envoyé à {email}. Saisissez-le pour ajouter cette carte à votre compte.",
     "loadError": "Impossible de charger cette page. Vérifiez votre connexion."
-  },
-  "collectionReport": {
-    "title": "Signaler un problème d’encaissement",
-    "intro": "Un partenaire FOVE a déclaré avoir reçu votre paiement. Si le montant, la date ou le paiement lui-même ne sont pas exacts, dites-le-nous : l’équipe FOVE vous recontacte.",
-    "note": "Que s’est-il passé ?",
-    "noteHint": "Facultatif, mais utile : montant réellement payé, date…",
-    "submit": "Envoyer le signalement",
-    "doneTitle": "Merci, c’est noté",
-    "doneText": "L’équipe FOVE a été prévenue et vous recontacte rapidement.",
-    "invalid": "Ce lien n’est pas valide."
   }
 }

@@ -24,7 +24,6 @@ import {
   partnerApplySchema,
   partnerLeadSchema,
   partnerLeadUpdateSchema,
-  partnerPayoutRequestSchema,
   partnerProfileUpdateSchema,
   adminPartnerUpdateSchema,
   adminPayoutActionSchema,
@@ -32,7 +31,6 @@ import {
   type PartnerApplyDto,
   type PartnerLeadDto,
   type PartnerLeadUpdateDto,
-  type PartnerPayoutRequestDto,
   type PartnerProfileUpdateDto,
   type AdminPartnerUpdateDto,
   type AdminPayoutActionDto,
@@ -101,14 +99,12 @@ export class PartnersController {
     return this.partners.updateLead(auth.user.id, id, body);
   }
 
-  @Post("partner/payouts/request")
+  /** Clients apportés : abonnement, échéance et état du paiement (le partenaire n'encaisse jamais). */
+  @Get("partner/clients")
   @UserRoute()
   @RequireVerified()
-  requestPayout(
-    @Auth() auth: AuthState,
-    @Body(new ZodPipe(partnerPayoutRequestSchema)) body: PartnerPayoutRequestDto,
-  ) {
-    return this.partners.requestPayout(auth.user.id, body);
+  clients(@Auth() auth: AuthState) {
+    return this.partners.partnerClients(auth.user.id);
   }
 
   @Patch("partner/profile")
@@ -153,6 +149,13 @@ export class PartnersController {
     @Body(new ZodPipe(adminPartnerUpdateSchema)) body: AdminPartnerUpdateDto,
   ) {
     return this.partners.adminUpdatePartner(id, body, auth);
+  }
+
+  /** Versements mensuels des partenaires (à payer avant le 10, puis payés). */
+  @Get("admin/partners/payouts")
+  @FinanceRoute()
+  adminListPayouts(@Query("status") status?: string) {
+    return this.partners.adminListPayouts(status);
   }
 
   @Post("admin/partners/payouts/:id/process")
