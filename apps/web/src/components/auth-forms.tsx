@@ -204,8 +204,8 @@ function CodeAuth({
             void verify(step === "profile");
           }}
         >
-          <p className="text-sm text-ink-2">{t("code.sentTo", { email: email.trim() })}</p>
-          <Field label={t("code.label")}>
+          <p className="text-center text-sm text-ink-2">{t("code.sentTo", { email: email.trim() })}</p>
+          <Field label={t("code.label")} className="text-center">
             {(p) => (
               <OtpInput {...p} value={code} onChange={setCode} autoFocus={step === "code"} />
             )}
@@ -263,7 +263,9 @@ export function LoginForm() {
         mode="login"
         next={safeInternalPath(next, afterAuthPath())}
         afterSignup={next ? safeInternalPath(next, "/onboarding") : "/onboarding"}
-        adminHome={!next && afterAuthPath() === "/app"}
+        // Un admin FOVE arrive dans l'administration, même avec une offre retenue depuis la page tarifs
+        // (il paie depuis l'espace commerçant, ouvert à côté) ; seule une destination explicite l'emporte.
+        adminHome={!next}
         initialEmail={(searchParams.get("email") ?? "").slice(0, 120)}
       />
       {!native && (

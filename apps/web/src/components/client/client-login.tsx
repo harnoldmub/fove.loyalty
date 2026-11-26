@@ -131,7 +131,7 @@ export function ClientLogin() {
         <form onSubmit={onCode} className="grid gap-5" noValidate>
           {info && <SuccessNote>{info}</SuccessNote>}
           {error && <ErrorNote>{error}</ErrorNote>}
-          <Field label={t("code")} hint={t("checkSpam")} error={fieldError ?? undefined}>
+          <Field label={t("code")} hint={t("checkSpam")} error={fieldError ?? undefined} className="text-center">
             {(p) => (
               <OtpInput {...p} autoFocus value={code} onChange={setCode} />
             )}

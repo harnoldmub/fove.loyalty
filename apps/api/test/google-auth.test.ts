@@ -68,6 +68,15 @@ describe("connexion Google des commerçants", () => {
     expect((await first.get("/api/auth/me")).status).toBe(200);
   });
 
+  it("mène un admin FOVE à l'administration, sauf destination explicite", async () => {
+    const email = `${uniq("admin")}@test.fove`;
+    await db.user.create({ data: { email, name: "Admin", isSuperAdmin: true, emailVerifiedAt: new Date() } });
+    mockGoogle({ email });
+    expect((await googleLogin(agent(app))).headers.location).toMatch(/\/admin$/);
+    expect((await googleLogin(agent(app), "/app/billing?offre=business")).headers.location).toMatch(/\/admin$/);
+    expect((await googleLogin(agent(app), "/app/customers")).headers.location).toMatch(/\/app\/customers$/);
+  });
+
   it("refuse un email que Google n'a pas vérifié", async () => {
     const email = `${uniq("g")}@test.fove`;
     mockGoogle({ email, email_verified: false });
