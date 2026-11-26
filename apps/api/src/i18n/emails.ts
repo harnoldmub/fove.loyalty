@@ -18,6 +18,13 @@ const FALLBACK: Record<Locale, string> = {
   es: "Si el botón no funciona, copia y pega esta dirección en tu navegador:",
 };
 
+const BRAND_FOOTER: Record<Locale, string> = {
+  fr: "FOVE · La fidélité qui rapproche",
+  en: "FOVE · Loyalty that brings people closer",
+  ar: "FOVE · ولاء يجمعنا",
+  es: "FOVE · La fidelidad que nos acerca",
+};
+
 /** Gabarit HTML commun : titre, paragraphes, bouton, lien de secours et note de bas de page. */
 export function emailHtml(
   locale: Locale,
@@ -25,37 +32,66 @@ export function emailHtml(
 ): string {
   const dir = locale === "ar" ? "rtl" : "ltr";
   const align = locale === "ar" ? "right" : "left";
-  const color = p.color ?? "#2C55F5";
+  const color = p.color && /^#[0-9a-f]{6}$/i.test(p.color) ? p.color : "#2C55F5";
   const url = escapeHtml(p.button.url);
   const paragraphs = p.paragraphs
-    .map((text) => `<p style="font-size: 15px; line-height: 24px; color: #4b5563; margin-top: 0; margin-bottom: 16px;">${escapeHtml(text).replace(/\n/g, "<br>")}</p>`)
+    .map((text) => `<p style="font-size: 16px; line-height: 26px; color: #4A5579; margin: 0 0 16px;">${escapeHtml(text).replace(/\n/g, "<br>")}</p>`)
     .join("\n        ");
   return `<!DOCTYPE html>
 <html lang="${locale}" dir="${dir}">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light">
+  <meta name="supported-color-schemes" content="light">
   <title>${escapeHtml(p.title)}</title>
+  <style>
+    @media only screen and (max-width: 620px) {
+      .fove-page { padding: 16px 10px !important; }
+      .fove-content { padding: 30px 22px 26px !important; }
+      .fove-header { padding: 22px !important; }
+      .fove-button { display: block !important; text-align: center !important; }
+    }
+  </style>
 </head>
-<body dir="${dir}" style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f9fafb; margin: 0; padding: 24px; color: #111827; text-align: ${align};">
-  <table width="100%" border="0" cellspacing="0" cellpadding="0" dir="${dir}" style="max-width: 520px; margin: 0 auto; background: #ffffff; border-radius: 12px; border: 1px solid #e5e7eb; overflow: hidden;">
+<body dir="${dir}" style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #F6F7FB; margin: 0; padding: 0; color: #14204A; text-align: ${align}; -webkit-text-size-adjust: 100%;">
+  <div style="display: none; max-height: 0; overflow: hidden; opacity: 0; color: transparent; mso-hide: all;">${escapeHtml(p.heading)}&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;</div>
+  <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" bgcolor="#F6F7FB">
     <tr>
-      <td style="padding: 32px 32px 24px; text-align: ${align};">
-        <h2 style="font-size: 20px; font-weight: 700; margin-top: 0; margin-bottom: 16px; color: #0d1322;">${escapeHtml(p.heading)}</h2>
-        ${paragraphs}
-        <table border="0" cellspacing="0" cellpadding="0" style="margin: 8px 0 24px;">
+      <td class="fove-page" style="padding: 32px 16px;">
+        <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" dir="${dir}" style="width: 100%; max-width: 600px; margin: 0 auto; background-color: #ffffff; border: 1px solid #DCE1EC; border-radius: 18px; overflow: hidden; box-shadow: 0 12px 32px rgba(20, 32, 74, 0.08);">
           <tr>
-            <td align="center" style="border-radius: 8px;" bgcolor="${color}">
-              <a href="${url}" target="_blank" rel="noopener noreferrer" style="font-size: 15px; font-weight: 600; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 8px; display: inline-block;">${escapeHtml(p.button.label)}</a>
+            <td class="fove-header" bgcolor="#14204A" style="padding: 24px 34px; text-align: ${align}; border-bottom: 4px solid #F5B82E;">
+              <span style="display: inline-block; font-size: 22px; line-height: 26px; font-weight: 800; letter-spacing: 3px; color: #ffffff;">FOVE</span>
+            </td>
+          </tr>
+          <tr>
+            <td class="fove-content" style="padding: 38px 34px 30px; text-align: ${align};">
+        <h1 style="font-size: 25px; line-height: 32px; font-weight: 700; margin: 0 0 20px; color: #14204A; letter-spacing: -0.3px;">${escapeHtml(p.heading)}</h1>
+        ${paragraphs}
+        <table role="presentation" border="0" cellspacing="0" cellpadding="0" style="margin: 10px 0 28px;">
+          <tr>
+            <td align="center" style="border-radius: 10px; box-shadow: 0 6px 16px rgba(44, 85, 245, 0.22);" bgcolor="${color}">
+              <a class="fove-button" href="${url}" target="_blank" rel="noopener noreferrer" style="font-size: 15px; line-height: 20px; font-weight: 700; color: #ffffff; text-decoration: none; padding: 14px 24px; border: 1px solid ${color}; border-radius: 10px; display: inline-block;">${escapeHtml(p.button.label)}</a>
             </td>
           </tr>
         </table>
-        <p style="font-size: 13px; line-height: 20px; color: #6b7280; margin-bottom: 8px;">${FALLBACK[locale]}</p>
-        <p style="font-size: 12px; line-height: 18px; color: ${color}; word-break: break-all; margin-top: 0; margin-bottom: 24px;" dir="ltr">
-          <a href="${url}" style="color: ${color};">${url}</a>
-        </p>
-        <hr style="border: 0; border-top: 1px solid #e5e7eb; margin: 24px 0;">
-        <p style="font-size: 12px; line-height: 18px; color: #9ca3af; margin: 0;">${escapeHtml(p.footer)}</p>
+        <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #F6F7FB; border-radius: 10px;">
+          <tr>
+            <td style="padding: 15px 17px;">
+              <p style="font-size: 12px; line-height: 18px; color: #687394; margin: 0 0 6px;">${FALLBACK[locale]}</p>
+              <p style="font-size: 12px; line-height: 18px; color: ${color}; word-break: break-all; margin: 0;" dir="ltr">
+                <a href="${url}" style="color: ${color}; text-decoration: underline;">${url}</a>
+              </p>
+            </td>
+          </tr>
+        </table>
+        <div style="height: 1px; line-height: 1px; background-color: #E5E8F0; margin: 28px 0 20px;">&nbsp;</div>
+        <p style="font-size: 12px; line-height: 19px; color: #7A849F; margin: 0;">${escapeHtml(p.footer)}</p>
+            </td>
+          </tr>
+        </table>
+        <p style="font-size: 11px; line-height: 17px; color: #8B94AA; text-align: center; margin: 16px 0 0;">${BRAND_FOOTER[locale]}</p>
       </td>
     </tr>
   </table>
