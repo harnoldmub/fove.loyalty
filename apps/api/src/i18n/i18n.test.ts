@@ -88,6 +88,14 @@ describe("emails traduits", () => {
     expect(html).toContain("a=1&amp;b=2");
   });
 
+  it("applique l'identité visuelle FOVE au gabarit HTML", () => {
+    const html = emailHtml("fr", { title: "Titre", heading: "Bienvenue", paragraphs: ["Bonjour"], button: { label: "Continuer", url: "https://fove.digital" }, footer: "À bientôt" });
+    expect(html).toContain('bgcolor="#14204A"');
+    expect(html).toContain("#F5B82E");
+    expect(html).toContain("FOVE · La fidélité qui rapproche");
+    expect(html).toContain("@media only screen and (max-width: 620px)");
+  });
+
   it("garde le texte français d'origine de l'alerte de quota", () => {
     const fr = quotaAlertMessage("fr", { reason: "reached", tenantName: "Café", limit: 50, billingUrl: "https://app.test/app/billing" });
     expect(fr.subject).toBe("Café a atteint 50 clients");
@@ -128,8 +136,8 @@ describe("cartes et messages clients", () => {
 describe("gabarit des emails FOVE", () => {
   it("met chaque email à l'image de la marque, code en valeur", () => {
     const login = userLoginCodeMessage("fr", "482913");
-    expect(login.html).toContain("/brand/fove-logo.png");
-    expect(login.html).toContain("#2C55F5");
+    expect(login.html).toContain('bgcolor="#14204A"');
+    expect(login.html).toContain("FOVE · La fidélité qui rapproche");
     expect(login.html).toMatch(/letter-spacing: 6px;[^>]*>482913</);
     const ar = textToBrandedHtml("مرحبًا\n\nFV-7KQ4M2-X\n\nhttps://fove.digital/app", "عنوان");
     expect(ar).toContain('dir="rtl"');
