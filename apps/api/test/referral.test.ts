@@ -1,9 +1,8 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { NestExpressApplication } from "@nestjs/platform-express";
-import { agent, db, ownerWithTenant, resetDatabase, startApp, uniq } from "./helpers";
+import { agent, db, ownerWithTenant, resetDatabase, startApp, uniq, signIn } from "./helpers";
 import { pickAttribution, ReferralService } from "../src/referrals/referral.service";
 import { BillingService } from "../src/billing/billing.service";
-import { hashPassword } from "../src/common/crypto";
 import { PlanService } from "../src/billing/plan.service";
 
 let app: NestExpressApplication;
@@ -16,7 +15,7 @@ afterAll(() => app.close());
 /** Un commerçant qui s'inscrit et crée son commerce avec ce qu'il a dans ses cookies d'attribution. */
 async function newTenant(attribution: Record<string, unknown> = {}, client = agent(app)) {
   const email = `${uniq("filleul")}@test.fove`;
-  if (!attribution.reuse) expect((await client.post("/api/auth/signup", { name: "Filleul", email, password: "motdepasse123", acceptTerms: true })).status).toBe(201);
+  if (!attribution.reuse) await signIn(client, email, "Filleul");
   const slug = uniq("shop-");
   const { reuse: _reuse, ...payload } = attribution;
   const res = await client.post("/api/app/tenants", { name: `Commerce ${slug}`, slug, ...payload });
@@ -283,9 +282,9 @@ describe("invitation au programme partenaires", () => {
 describe("admin Finance > Parrainages", () => {
   async function superAdmin() {
     const email = `${uniq("admin")}@test.fove`;
-    await db.user.create({ data: { email, name: "Admin", passwordHash: await hashPassword("motdepasse123"), isSuperAdmin: true, emailVerifiedAt: new Date() } });
+    await db.user.create({ data: { email, name: "Admin", isSuperAdmin: true, emailVerifiedAt: new Date() } });
     const c = agent(app);
-    expect((await c.post("/api/auth/login", { email, password: "motdepasse123" })).status).toBe(200);
+    await signIn(c, email);
     return c;
   }
 

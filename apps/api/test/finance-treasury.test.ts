@@ -1,7 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { NestExpressApplication } from "@nestjs/platform-express";
-import { agent, db, ownerWithTenant, resetDatabase, startApp, uniq } from "./helpers";
-import { hashPassword } from "../src/common/crypto";
+import { agent, db, ownerWithTenant, resetDatabase, startApp, uniq, signIn } from "./helpers";
 
 describe("trésorerie de la plateforme", () => {
   let app: NestExpressApplication;
@@ -13,9 +12,9 @@ describe("trésorerie de la plateforme", () => {
 
   async function superAdmin() {
     const email = `admin${Date.now()}@fove.test`;
-    await db.user.create({ data: { email, name: "Admin", passwordHash: await hashPassword("motdepasse123"), isSuperAdmin: true, emailVerifiedAt: new Date() } });
+    await db.user.create({ data: { email, name: "Admin", isSuperAdmin: true, emailVerifiedAt: new Date() } });
     const c = agent(app);
-    await c.post("/api/auth/login", { email, password: "motdepasse123" });
+    await signIn(c, email);
     return c;
   }
 

@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { NestExpressApplication } from "@nestjs/platform-express";
 import request from "supertest";
-import { agent, db, lastEmail, resetDatabase, startApp, uniq, type Client } from "./helpers";
+import { agent, db, lastEmail, resetDatabase, startApp, uniq, type Client, signIn } from "./helpers";
 
 let app: NestExpressApplication;
 beforeAll(async () => {
@@ -15,8 +15,9 @@ const newEmail = () => `${uniq("partner")}@test.fove`;
 /** Inscription commerçant : session ouverte, email non confirmé. */
 async function signup(email: string, verified = false) {
   const c = agent(app);
-  expect((await c.post("/api/auth/signup", { name: "Test", email, password: "motdepasse123", acceptTerms: true })).status).toBe(201);
-  if (verified) await db.user.update({ where: { email }, data: { emailVerifiedAt: new Date() } });
+  await signIn(c, email, "Test");
+  // Le code confirme l'email : un compte non confirmé est simulé (compte antérieur à la connexion par code).
+  if (!verified) await db.user.update({ where: { email }, data: { emailVerifiedAt: null } });
   return c;
 }
 

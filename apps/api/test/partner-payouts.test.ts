@@ -1,7 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { NestExpressApplication } from "@nestjs/platform-express";
-import { agent, db, lastEmail, ownerWithTenant, resetDatabase, startApp, uniq } from "./helpers";
-import { hashPassword } from "../src/common/crypto";
+import { agent, db, lastEmail, ownerWithTenant, resetDatabase, startApp, uniq, signIn } from "./helpers";
 import { PartnersService } from "../src/partners/partners.service";
 import { PlanService } from "../src/billing/plan.service";
 
@@ -19,9 +18,9 @@ beforeAll(async () => {
   await db.bankAccount.create({ data: { country: "MA", currency: "MAD", beneficiary: "Dizayna Maroc" } });
   await db.exchangeRate.create({ data: { currency: "MAD", unitsPerEur: 10 } });
   const email = `admin${Date.now()}@fove.test`;
-  await db.user.create({ data: { email, name: "Admin", passwordHash: await hashPassword("motdepasse123"), isSuperAdmin: true, emailVerifiedAt: new Date() } });
+  await db.user.create({ data: { email, name: "Admin", isSuperAdmin: true, emailVerifiedAt: new Date() } });
   admin = agent(app);
-  await admin.post("/api/auth/login", { email, password: "motdepasse123" });
+  await signIn(admin, email);
 });
 afterAll(async () => {
   await app.close();
@@ -29,10 +28,10 @@ afterAll(async () => {
 
 async function partner(extra: object = {}) {
   const email = `${uniq("agent")}@test.fove`;
-  const user = await db.user.create({ data: { email, name: "Agent", passwordHash: await hashPassword("motdepasse123"), emailVerifiedAt: new Date(), isPartner: true, locale: "fr" } });
+  const user = await db.user.create({ data: { email, name: "Agent", emailVerifiedAt: new Date(), isPartner: true, locale: "fr" } });
   const record = await db.partner.create({ data: { name: "Agent Casa", email, code: uniq("AG").toUpperCase(), status: "ACTIVE", userId: user.id, country: "MA", payoutCurrency: "EUR", ...extra } });
   const c = agent(app);
-  await c.post("/api/auth/login", { email, password: "motdepasse123" });
+  await signIn(c, email);
   return { c, partner: record, email };
 }
 

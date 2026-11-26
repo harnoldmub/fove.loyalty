@@ -834,6 +834,7 @@
     }
   },
   "shell": {
+    "confirmWithCode": "Confirmer avec un code",
     "support": "Support",
     "active": "actif",
     "addBusiness": "Ajouter une entreprise",
@@ -843,12 +844,9 @@
     "verifyBanner": "Confirmez votre email ({email}) pour inviter votre équipe, exporter ou importer vos clients, relier vos outils et dépasser 50 clients.",
     "verifyDialog": {
       "title": "Confirmez d’abord votre adresse email",
-      "body": "Cette action est réservée aux comptes dont l’email est confirmé : inviter votre équipe, exporter ou importer des clients, écrire à tous vos clients, relier une boutique ou vos outils, et inscrire plus de 50 clients. Ouvrez le lien envoyé à {email}.",
+      "body": "Cette action est réservée aux comptes dont l’email est confirmé : inviter votre équipe, exporter ou importer des clients, écrire à tous vos clients, relier une boutique ou vos outils, et inscrire plus de 50 clients. Reconnectez-vous avec le code envoyé à {email} pour la confirmer.",
       "close": "Plus tard"
     },
-    "verificationSent": "Email de confirmation envoyé",
-    "emailSent": "Email envoyé",
-    "resendEmail": "Renvoyer l’email",
     "dashboard": "Tableau de bord",
     "logout": "Déconnexion",
     "openMenu": "Ouvrir le menu",

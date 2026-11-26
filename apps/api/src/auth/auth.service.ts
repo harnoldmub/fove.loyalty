@@ -1,23 +1,34 @@
-import { Injectable } from "@nestjs/common";
+import { HttpStatus, Injectable } from "@nestjs/common";
 import type { Request, Response } from "express";
-import { normalizeEmail, type SignupInput } from "@fove/shared";
-import { loadConfig } from "../config";
-import { DUMMY_PASSWORD_HASH, hashPassword, randomToken, sha256, verifyPassword } from "../common/crypto";
-import { badRequest, conflict, forbidden, isUniqueViolation, unauthorized } from "../common/errors";
+import { normalizeEmail } from "@fove/shared";
+import { randomDigits, safeEqual, sha256 } from "../common/crypto";
+import { AppError, badRequest, forbidden } from "../common/errors";
 import { PrismaService } from "../common/prisma.service";
 import { AuditService } from "../common/audit.service";
 import { EmailService } from "../notifications/email.service";
 import type { AuthState } from "../common/context";
 import { SessionService } from "./session.service";
-import { requestLocaleOrNull, userLocale, type Locale } from "../i18n/locale";
-import { passwordResetMessage, verifyEmailMessage } from "../i18n/emails";
+import { requestLocale, requestLocaleOrNull, normalizeLocale, type Locale } from "../i18n/locale";
+import { userLoginCodeMessage } from "../i18n/emails";
 
-const MAX_FAILED_LOGINS = 5;
-const LOCK_MINUTES = 15;
+/** Code de connexion : validité, essais, délai entre deux codes, quotas par email et par adresse IP. */
+const CODE_TTL_MS = 10 * 60_000;
+const CODE_MAX_ATTEMPTS = 5;
+const RESEND_DELAY_MS = 60_000;
+const HOUR_MS = 3_600_000;
+const MAX_CODES_PER_EMAIL_HOUR = 5;
+// Large : un bureau ou un réseau mobile partage une même adresse entre beaucoup de personnes.
+const MAX_CODES_PER_IP_HOUR = 60;
 
-/** Jours après l'inscription où l'on relance un compte à l'email non confirmé. */
-export const VERIFICATION_REMINDER_DAYS = [1, 3, 7];
+const codeHash = (email: string, code: string) => sha256(`user:${email}:${code}`);
 
+export type CodeVerifyResult = { status: "signed_in"; id: string; created: boolean } | { status: "profile_required" };
+
+/**
+ * Connexion à l'espace FOVE sans mot de passe (docs/chantier-connexion-otp.md) : Google, ou code à
+ * 6 chiffres envoyé par email. Le code prouve l'email ; un email inconnu crée le compte (nom et CGU).
+ * Aucune réponse à la demande de code ne révèle si un email a un compte.
+ */
 @Injectable()
 export class AuthService {
   constructor(
@@ -27,56 +38,64 @@ export class AuthService {
     private readonly audit: AuditService,
   ) {}
 
-  async signup(input: SignupInput, req: Request, res: Response) {
-    const email = normalizeEmail(input.email);
-    try {
-      const user = await this.prisma.client.user.create({
-        data: { email, name: input.name, passwordHash: await hashPassword(input.password), locale: requestLocaleOrNull(req) },
-      });
-      await this.sendVerification(user.id, user.email);
-      await this.sessions.create(user.id, req, res);
-      await this.audit.log({ actorUserId: user.id, action: "auth.signup", ip: req.ip });
-      return { id: user.id };
-    } catch (error) {
-      if (isUniqueViolation(error)) throw conflict("email_taken", "Un compte existe déjà avec cet email");
-      throw error;
+  /** Envoie un code à 6 chiffres. Même réponse que l'email ait un compte ou non. */
+  async requestCode(emailRaw: string, req: Request): Promise<void> {
+    const email = normalizeEmail(emailRaw);
+    const ip = req.ip ?? null;
+    const db = this.prisma.client;
+    const now = Date.now();
+    const last = await db.userLoginCode.findFirst({ where: { email }, orderBy: { createdAt: "desc" } });
+    if (last && now - last.createdAt.getTime() < RESEND_DELAY_MS) {
+      throw badRequest("too_soon", "Patientez une minute avant de redemander un code");
     }
+    const since = new Date(now - HOUR_MS);
+    const [perEmail, perIp] = await Promise.all([
+      db.userLoginCode.count({ where: { email, createdAt: { gt: since } } }),
+      ip ? db.userLoginCode.count({ where: { ip, createdAt: { gt: since } } }) : Promise.resolve(0),
+    ]);
+    if (perEmail >= MAX_CODES_PER_EMAIL_HOUR || perIp >= MAX_CODES_PER_IP_HOUR) {
+      throw new AppError(HttpStatus.TOO_MANY_REQUESTS, "too_many_codes", "Trop de codes demandés : réessayez dans une heure");
+    }
+    const code = randomDigits(6);
+    await db.userLoginCode.create({ data: { email, codeHash: codeHash(email, code), ip, expiresAt: new Date(now + CODE_TTL_MS) } });
+    const user = await db.user.findUnique({ where: { email }, select: { locale: true } });
+    const locale: Locale = normalizeLocale(user?.locale) ?? requestLocale(req);
+    await this.email.send({ to: email, ...userLoginCodeMessage(locale, code) });
   }
 
-  async login(emailRaw: string, password: string, req: Request, res: Response) {
-    const email = normalizeEmail(emailRaw);
-    const user = await this.prisma.client.user.findUnique({ where: { email } });
-    if (!user) {
-      await verifyPassword(password, DUMMY_PASSWORD_HASH);
-      throw unauthorized("Email ou mot de passe incorrect");
+  /**
+   * Vérifie le code. Compte existant : connecté. Email inconnu : sans nom ni CGU, le code n'est pas
+   * consommé et l'écran demande le profil ; avec, le compte est créé (email confirmé) et connecté.
+   */
+  async verifyCode(input: { email: string; code: string; name?: string; acceptTerms?: true }, req: Request, res: Response): Promise<CodeVerifyResult> {
+    const email = normalizeEmail(input.email);
+    const db = this.prisma.client;
+    const challenge = await db.userLoginCode.findFirst({ where: { email, consumedAt: null, expiresAt: { gt: new Date() } }, orderBy: { createdAt: "desc" } });
+    if (!challenge || challenge.attempts >= CODE_MAX_ATTEMPTS) throw badRequest("code_expired", "Code expiré : demandez-en un nouveau");
+    if (!safeEqual(challenge.codeHash, codeHash(email, input.code))) {
+      await db.userLoginCode.update({ where: { id: challenge.id }, data: { attempts: { increment: 1 } } });
+      throw badRequest("invalid_code", "Code incorrect");
     }
-    if (user.lockedUntil && user.lockedUntil > new Date()) {
-      throw forbidden("Trop de tentatives : compte bloqué quelques minutes");
-    }
-    if (!(await verifyPassword(password, user.passwordHash))) {
-      const failed = user.failedLoginCount + 1;
-      await this.prisma.client.user.update({
-        where: { id: user.id },
-        data: {
-          failedLoginCount: failed >= MAX_FAILED_LOGINS ? 0 : failed,
-          lockedUntil: failed >= MAX_FAILED_LOGINS ? new Date(Date.now() + LOCK_MINUTES * 60_000) : null,
-        },
-      });
-      if (failed >= MAX_FAILED_LOGINS) await this.audit.log({ actorUserId: user.id, action: "auth.locked", ip: req.ip });
-      throw unauthorized("Email ou mot de passe incorrect");
-    }
+    let user = await db.user.findUnique({ where: { email } });
+    if (!user && (!input.name || input.acceptTerms !== true)) return { status: "profile_required" };
+
+    // Consommation atomique : deux saisies simultanées du même code n'ouvrent qu'une session.
+    const consumed = await db.userLoginCode.updateMany({ where: { id: challenge.id, consumedAt: null }, data: { consumedAt: new Date() } });
+    if (consumed.count !== 1) throw badRequest("code_expired", "Code expiré : demandez-en un nouveau");
+
     const locale = requestLocaleOrNull(req);
-    await this.prisma.client.user.update({
-      where: { id: user.id },
-      data: { failedLoginCount: 0, lockedUntil: null, ...(locale ? { locale } : {}) },
-    });
-    const membership = await this.prisma.client.tenantMembership.findFirst({
-      where: { userId: user.id, status: "ACTIVE" },
-      orderBy: { createdAt: "asc" },
-    });
+    let created = false;
+    if (!user) {
+      user = await db.user.create({ data: { email, name: input.name!, emailVerifiedAt: new Date(), locale } });
+      created = true;
+    } else if (!user.emailVerifiedAt || locale) {
+      // Email prouvé par le code (comptes antérieurs non confirmés) ; langue de l'écran retenue pour les emails.
+      user = await db.user.update({ where: { id: user.id }, data: { emailVerifiedAt: user.emailVerifiedAt ?? new Date(), ...(locale ? { locale } : {}) } });
+    }
+    const membership = await db.tenantMembership.findFirst({ where: { userId: user.id, status: "ACTIVE" }, orderBy: { createdAt: "asc" } });
     await this.sessions.create(user.id, req, res, membership?.tenantId ?? null);
-    await this.audit.log({ actorUserId: user.id, action: "auth.login", ip: req.ip });
-    return { id: user.id };
+    await this.audit.log({ actorUserId: user.id, action: created ? "auth.signup" : "auth.login", ip: req.ip });
+    return { status: "signed_in", id: user.id, created };
   }
 
   async loginWithGoogle(profile: { email: string; name: string }, req: Request, res: Response) {
@@ -89,27 +108,14 @@ export class AuthService {
         data: {
           email,
           name: profile.name.trim() || email.split("@")[0] || "Utilisateur FOVE",
-          // Secret aléatoire inconnu : Google reste le moyen de connexion, sauf
-          // si l'utilisateur définit ensuite un mot de passe via « mot de passe oublié ».
-          passwordHash: await hashPassword(randomToken("google_", 32)),
           emailVerifiedAt: new Date(),
           locale: requestLocaleOrNull(req),
         },
       });
       created = true;
     } else if (!user.emailVerifiedAt) {
-      // Compte jamais confirmé : n'importe qui a pu le créer avec cet email et en connaître le mot de passe.
-      // Google prouve que l'email appartient à cette personne : on invalide ce mot de passe et toutes les
-      // sessions ouvertes avant de lui confier le compte.
-      user = await this.prisma.client.user.update({
-        where: { id: user.id },
-        data: {
-          emailVerifiedAt: new Date(),
-          passwordHash: await hashPassword(randomToken("google_", 32)),
-          failedLoginCount: 0,
-          lockedUntil: null,
-        },
-      });
+      // Compte antérieur jamais confirmé : Google prouve l'email, les sessions ouvertes avant sont fermées.
+      user = await this.prisma.client.user.update({ where: { id: user.id }, data: { emailVerifiedAt: new Date() } });
       await this.sessions.revokeAllForUser(user.id);
     }
 
@@ -180,98 +186,7 @@ export class AuthService {
     });
   }
 
-  async sendVerification(userId: string, email: string, locale?: Locale | null): Promise<void> {
-    const token = randomToken("", 32);
-    await this.prisma.client.authToken.create({
-      data: { type: "EMAIL_VERIFY", tokenHash: sha256(token), userId, expiresAt: new Date(Date.now() + 2 * 86_400_000) },
-    });
-    const link = `${loadConfig().APP_URL}/verify-email?token=${token}`;
-    const user = await this.prisma.client.user.findUnique({ where: { id: userId }, select: { locale: true } });
-    await this.email.send({ to: email, ...verifyEmailMessage(locale ?? userLocale(user), link) });
-  }
-
   async setLocale(auth: AuthState, locale: Locale) {
     await this.prisma.client.user.update({ where: { id: auth.user.id }, data: { locale } });
-  }
-
-  async resendVerification(auth: AuthState, locale?: Locale | null) {
-    if (auth.user.emailVerifiedAt) return;
-    const recent = await this.prisma.client.authToken.count({
-      where: { userId: auth.user.id, type: "EMAIL_VERIFY", createdAt: { gt: new Date(Date.now() - 60_000) } },
-    });
-    if (recent > 0) throw badRequest("too_soon", "Patientez une minute avant de renvoyer l'email");
-    await this.sendVerification(auth.user.id, auth.user.email, locale);
-  }
-
-  /**
-   * Tâche planifiée : une seule relance, 24 h après l'inscription, pour un email
-   * toujours pas confirmé. Rien n'est bloqué (l'abonnement payé reste actif) ;
-   * seules les clés API et les webhooks attendent la confirmation.
-   */
-  /**
-   * Relances de confirmation de l'email (docs/chantier-email-non-confirme.md) : à J1, J3 et J7
-   * après l'inscription, puis plus rien. Chaque relance contient un nouveau lien de confirmation.
-   */
-  async sendVerificationReminders(now = new Date()): Promise<number> {
-    const DAY = 86_400_000;
-    const users = await this.prisma.client.user.findMany({
-      where: {
-        emailVerifiedAt: null,
-        isSuperAdmin: false,
-        createdAt: { lt: new Date(now.getTime() - VERIFICATION_REMINDER_DAYS[0]! * DAY), gt: new Date(now.getTime() - (VERIFICATION_REMINDER_DAYS.at(-1)! + 1) * DAY) },
-      },
-      select: { id: true, email: true, createdAt: true },
-      take: 200,
-    });
-    let sent = 0;
-    for (const user of users) {
-      const already = await this.prisma.client.auditLog.count({ where: { actorUserId: user.id, action: "auth.verification_reminder" } });
-      const dueDay = VERIFICATION_REMINDER_DAYS[already];
-      if (dueDay === undefined || now.getTime() - user.createdAt.getTime() < dueDay * DAY) continue;
-      await this.sendVerification(user.id, user.email);
-      await this.audit.log({ actorUserId: user.id, action: "auth.verification_reminder" });
-      sent += 1;
-    }
-    return sent;
-  }
-
-  private async consumeToken(type: "EMAIL_VERIFY" | "PASSWORD_RESET", token: string) {
-    const record = await this.prisma.client.authToken.findUnique({ where: { tokenHash: sha256(token) } });
-    if (!record || record.type !== type || record.usedAt || record.expiresAt < new Date()) {
-      throw badRequest("invalid_token", "Lien invalide ou expiré");
-    }
-    const { count } = await this.prisma.client.authToken.updateMany({
-      where: { id: record.id, usedAt: null },
-      data: { usedAt: new Date() },
-    });
-    if (count === 0) throw badRequest("invalid_token", "Lien déjà utilisé");
-    return record;
-  }
-
-  async verifyEmail(token: string) {
-    const record = await this.consumeToken("EMAIL_VERIFY", token);
-    await this.prisma.client.user.update({ where: { id: record.userId }, data: { emailVerifiedAt: new Date() } });
-  }
-
-  async forgotPassword(emailRaw: string, locale?: Locale | null) {
-    const user = await this.prisma.client.user.findUnique({ where: { email: normalizeEmail(emailRaw) } });
-    // Réponse identique que l'email existe ou non.
-    if (!user) return;
-    const token = randomToken("", 32);
-    await this.prisma.client.authToken.create({
-      data: { type: "PASSWORD_RESET", tokenHash: sha256(token), userId: user.id, expiresAt: new Date(Date.now() + 3_600_000) },
-    });
-    const resetUrl = `${loadConfig().APP_URL}/reset-password?token=${token}`;
-    await this.email.send({ to: user.email, ...passwordResetMessage(locale ?? userLocale(user), resetUrl) });
-  }
-
-  async resetPassword(token: string, password: string) {
-    const record = await this.consumeToken("PASSWORD_RESET", token);
-    await this.prisma.client.user.update({
-      where: { id: record.userId },
-      data: { passwordHash: await hashPassword(password), failedLoginCount: 0, lockedUntil: null, emailVerifiedAt: new Date() },
-    });
-    await this.sessions.revokeAllForUser(record.userId);
-    await this.audit.log({ actorUserId: record.userId, action: "auth.password_reset" });
   }
 }

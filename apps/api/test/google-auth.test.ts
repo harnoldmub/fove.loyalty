@@ -1,6 +1,6 @@
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import type { NestExpressApplication } from "@nestjs/platform-express";
-import { agent, db, resetDatabase, startApp, uniq, type Client } from "./helpers";
+import { agent, db, resetDatabase, startApp, uniq, type Client, signIn } from "./helpers";
 
 let app: NestExpressApplication;
 beforeAll(async () => {
@@ -42,10 +42,11 @@ describe("connexion Google des commerçants", () => {
     expect(me.body.user.emailVerifiedAt).not.toBeNull();
   });
 
-  it("reprend un compte non confirmé créé par un tiers : mot de passe et sessions invalidés", async () => {
+  it("reprend un compte antérieur non confirmé : sessions ouvertes avant invalidées", async () => {
     const email = `${uniq("g")}@test.fove`;
     const intrus = agent(app);
-    await intrus.post("/api/auth/signup", { name: "Intrus", email, password: "motdepasse123", acceptTerms: true });
+    await signIn(intrus, email, "Intrus");
+    await db.user.update({ where: { email }, data: { emailVerifiedAt: null } });
     expect((await intrus.get("/api/auth/me")).status).toBe(200);
 
     mockGoogle({ email });
@@ -54,20 +55,17 @@ describe("connexion Google des commerçants", () => {
 
     expect((await proprietaire.get("/api/auth/me")).body.user.emailVerifiedAt).not.toBeNull();
     expect((await intrus.get("/api/auth/me")).status).toBe(401);
-    expect((await agent(app).post("/api/auth/login", { email, password: "motdepasse123" })).status).toBe(401);
   });
 
-  it("ne touche ni au mot de passe ni aux sessions d'un compte déjà confirmé", async () => {
+  it("ne touche pas aux sessions d'un compte déjà confirmé", async () => {
     const email = `${uniq("g")}@test.fove`;
     const first = agent(app);
-    await first.post("/api/auth/signup", { name: "Amy", email, password: "motdepasse123", acceptTerms: true });
-    await db.user.update({ where: { email }, data: { emailVerifiedAt: new Date() } });
+    await signIn(first, email, "Amy");
 
     mockGoogle({ email });
     expect((await googleLogin(agent(app))).status).toBe(303);
 
     expect((await first.get("/api/auth/me")).status).toBe(200);
-    expect((await agent(app).post("/api/auth/login", { email, password: "motdepasse123" })).status).toBe(200);
   });
 
   it("refuse un email que Google n'a pas vérifié", async () => {

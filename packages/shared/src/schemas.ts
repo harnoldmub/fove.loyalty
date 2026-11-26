@@ -44,23 +44,16 @@ const slug = z
   .max(48)
   .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Lettres minuscules, chiffres et tirets uniquement")
   .refine((v) => !RESERVED_SLUGS.has(v), "Ce sous-domaine est réservé par FOVE");
-export const password = z
-  .string()
-  .min(10, "10 caractères minimum")
-  .max(200)
-  .refine((v) => /[A-Za-z]/.test(v) && /\d/.test(v), "Au moins une lettre et un chiffre");
-
 // --- Auth -----------------------------------------------------------------
-export const signupSchema = z.object({
-  name: z.string().trim().min(2).max(80),
+/** Connexion sans mot de passe (docs/chantier-connexion-otp.md) : code à 6 chiffres envoyé par email. */
+export const loginCodeRequestSchema = z.object({ email: z.email().max(254) });
+/** Nom et CGU seulement à la création du compte (email inconnu). */
+export const loginCodeVerifySchema = z.object({
   email: z.email().max(254),
-  password,
-  acceptTerms: z.literal(true, { error: "Vous devez accepter les conditions" }),
+  code: z.string().trim().regex(/^\d{6}$/, "Code à 6 chiffres"),
+  name: z.string().trim().min(2).max(80).optional(),
+  acceptTerms: z.literal(true).optional(),
 });
-export const loginSchema = z.object({ email: z.email(), password: z.string().min(1).max(200) });
-export const forgotPasswordSchema = z.object({ email: z.email() });
-export const resetPasswordSchema = z.object({ token: z.string().min(20).max(200), password });
-export const verifyEmailSchema = z.object({ token: z.string().min(20).max(200) });
 export const switchTenantSchema = z.object({ tenantId: z.uuid() });
 /** Langues de l'interface, des emails et des cartes Wallet. */
 export const SUPPORTED_LOCALES = ["fr", "en", "ar", "es"] as const;
@@ -308,7 +301,6 @@ export const updateMemberSchema = z.object({
 export const acceptInviteSchema = z.object({
   token: z.string().min(20).max(200),
   name: z.string().trim().min(2).max(80).optional(),
-  password: password.optional(),
 });
 
 // --- Intégrations ----------------------------------------------------------
@@ -365,7 +357,6 @@ export const paginationSchema = z.object({
   q: z.string().trim().max(120).optional(),
 });
 
-export type SignupInput = z.infer<typeof signupSchema>;
 export type ProgramInput = z.infer<typeof programSchema>;
 export type CustomerInput = z.infer<typeof customerSchema>;
 export type PublicEnrollInput = z.infer<typeof publicEnrollSchema>;

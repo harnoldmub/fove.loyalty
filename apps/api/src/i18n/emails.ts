@@ -65,120 +65,33 @@ export function emailHtml(
 
 // --- Compte ------------------------------------------------------------------
 
-const VERIFY = {
+/** Code de connexion à l'espace FOVE (commerçants, équipes, admin, partenaires) : aucun mot de passe. */
+const LOGIN_CODE = {
   fr: {
-    subject: "Confirmez votre adresse email — FOVE",
-    title: "Confirmez votre adresse email",
-    heading: "Bienvenue sur FOVE",
-    intro: "Bienvenue sur FOVE.",
-    body: "Confirmez votre adresse email en cliquant sur le bouton ci-dessous pour activer toutes les fonctionnalités de votre commerce (valable 48 h) :",
-    textBody: "Confirmez votre adresse en ouvrant ce lien (valable 48 h) :",
-    button: "Confirmer mon adresse email",
-    footer: "Si vous n'êtes pas à l'origine de cette inscription, vous pouvez ignorer cet email.",
-    textFooter: "Si vous n'êtes pas à l'origine de cette inscription, ignorez ce message.",
+    subject: (code: string) => `${code} : votre code de connexion FOVE`,
+    text: (code: string) =>
+      `Bonjour,\n\nVoici votre code de connexion à FOVE :\n\n${code}\n\nIl est valable 10 minutes. Si vous n'avez rien demandé, ignorez ce message : personne ne peut se connecter sans ce code.\n\nL'équipe FOVE`,
   },
   en: {
-    subject: "Confirm your email address — FOVE",
-    title: "Confirm your email address",
-    heading: "Welcome to FOVE",
-    intro: "Welcome to FOVE.",
-    body: "Confirm your email address with the button below to unlock every feature for your business (valid for 48 hours):",
-    textBody: "Confirm your address by opening this link (valid for 48 hours):",
-    button: "Confirm my email address",
-    footer: "If you didn't sign up, you can ignore this email.",
-    textFooter: "If you didn't sign up, ignore this message.",
+    subject: (code: string) => `${code}: your FOVE sign-in code`,
+    text: (code: string) =>
+      `Hello,\n\nHere is your FOVE sign-in code:\n\n${code}\n\nIt is valid for 10 minutes. If you didn't ask for it, ignore this message: nobody can sign in without this code.\n\nThe FOVE team`,
   },
   ar: {
-    subject: "أكّد عنوان بريدك الإلكتروني — FOVE",
-    title: "أكّد عنوان بريدك الإلكتروني",
-    heading: "مرحبًا بك في FOVE",
-    intro: "مرحبًا بك في FOVE.",
-    body: "أكّد عنوان بريدك الإلكتروني بالضغط على الزر أدناه لتفعيل جميع ميزات متجرك (صالح لمدة 48 ساعة):",
-    textBody: "أكّد عنوانك بفتح هذا الرابط (صالح لمدة 48 ساعة):",
-    button: "تأكيد بريدي الإلكتروني",
-    footer: "إذا لم تقم بهذا التسجيل، يمكنك تجاهل هذه الرسالة.",
-    textFooter: "إذا لم تقم بهذا التسجيل، تجاهل هذه الرسالة.",
+    subject: (code: string) => `${code}: رمز الدخول إلى FOVE`,
+    text: (code: string) =>
+      `مرحبًا،\n\nإليك رمز الدخول إلى FOVE:\n\n${code}\n\nالرمز صالح لمدة 10 دقائق. إذا لم تطلبه، تجاهل هذه الرسالة: لا يمكن لأحد الدخول دون هذا الرمز.\n\nفريق FOVE`,
   },
   es: {
-    subject: "Confirma tu dirección de correo — FOVE",
-    title: "Confirma tu dirección de correo",
-    heading: "Bienvenido a FOVE",
-    intro: "Bienvenido a FOVE.",
-    body: "Confirma tu dirección de correo con el botón de abajo para activar todas las funciones de tu negocio (válido 48 h):",
-    textBody: "Confirma tu dirección abriendo este enlace (válido 48 h):",
-    button: "Confirmar mi correo",
-    footer: "Si no te has registrado, puedes ignorar este correo.",
-    textFooter: "Si no te has registrado, ignora este mensaje.",
+    subject: (code: string) => `${code}: tu código de acceso a FOVE`,
+    text: (code: string) =>
+      `Hola:\n\nEste es tu código de acceso a FOVE:\n\n${code}\n\nEs válido durante 10 minutos. Si no lo has pedido, ignora este mensaje: nadie puede entrar sin este código.\n\nEl equipo de FOVE`,
   },
 } satisfies Record<Locale, unknown>;
 
-export function verifyEmailMessage(locale: Locale, link: string): Content {
-  const t = VERIFY[locale];
-  return {
-    subject: t.subject,
-    text: `${t.intro}\n\n${t.textBody}\n${link}\n\n${t.textFooter}`,
-    html: emailHtml(locale, { title: t.title, heading: t.heading, paragraphs: [t.body], button: { label: t.button, url: link }, footer: t.footer }),
-  };
-}
-
-const RESET = {
-  fr: {
-    subject: "Réinitialisation de votre mot de passe — FOVE",
-    title: "Réinitialisation de votre mot de passe",
-    heading: "Réinitialisation de mot de passe",
-    hello: "Bonjour,",
-    body: "Vous avez demandé à réinitialiser le mot de passe de votre compte FOVE. Cliquez sur le bouton ci-dessous pour choisir votre nouveau mot de passe (ce lien est valable 1 heure) :",
-    textBody: "Vous avez demandé la réinitialisation de votre mot de passe pour votre compte FOVE.\n\nPour choisir un nouveau mot de passe, ouvrez ce lien (valable 1 heure) :",
-    button: "Réinitialiser mon mot de passe",
-    footer: "Si vous n'êtes pas à l'origine de cette demande, vous pouvez ignorer cet email. Votre mot de passe actuel reste inchangé.",
-    textFooter: "Si vous n'êtes pas à l'origine de cette demande, vous pouvez ignorer cet email en toute sécurité.",
-    sign: "L'équipe FOVE",
-  },
-  en: {
-    subject: "Reset your password — FOVE",
-    title: "Reset your password",
-    heading: "Password reset",
-    hello: "Hello,",
-    body: "You asked to reset the password of your FOVE account. Use the button below to choose a new password (this link is valid for 1 hour):",
-    textBody: "You asked to reset the password of your FOVE account.\n\nTo choose a new password, open this link (valid for 1 hour):",
-    button: "Reset my password",
-    footer: "If you didn't ask for this, you can ignore this email. Your current password stays the same.",
-    textFooter: "If you didn't ask for this, you can safely ignore this email.",
-    sign: "The FOVE team",
-  },
-  ar: {
-    subject: "إعادة تعيين كلمة المرور — FOVE",
-    title: "إعادة تعيين كلمة المرور",
-    heading: "إعادة تعيين كلمة المرور",
-    hello: "مرحبًا،",
-    body: "طلبت إعادة تعيين كلمة مرور حسابك على FOVE. اضغط على الزر أدناه لاختيار كلمة مرور جديدة (الرابط صالح لمدة ساعة واحدة):",
-    textBody: "طلبت إعادة تعيين كلمة مرور حسابك على FOVE.\n\nلاختيار كلمة مرور جديدة، افتح هذا الرابط (صالح لمدة ساعة واحدة):",
-    button: "إعادة تعيين كلمة المرور",
-    footer: "إذا لم تطلب ذلك، يمكنك تجاهل هذه الرسالة. تبقى كلمة مرورك الحالية دون تغيير.",
-    textFooter: "إذا لم تطلب ذلك، يمكنك تجاهل هذه الرسالة بأمان.",
-    sign: "فريق FOVE",
-  },
-  es: {
-    subject: "Restablece tu contraseña — FOVE",
-    title: "Restablece tu contraseña",
-    heading: "Restablecer contraseña",
-    hello: "Hola:",
-    body: "Has pedido restablecer la contraseña de tu cuenta FOVE. Pulsa el botón de abajo para elegir una nueva contraseña (este enlace es válido 1 hora):",
-    textBody: "Has pedido restablecer la contraseña de tu cuenta FOVE.\n\nPara elegir una nueva contraseña, abre este enlace (válido 1 hora):",
-    button: "Restablecer mi contraseña",
-    footer: "Si no lo has pedido tú, puedes ignorar este correo. Tu contraseña actual no cambia.",
-    textFooter: "Si no lo has pedido tú, puedes ignorar este correo con total tranquilidad.",
-    sign: "El equipo de FOVE",
-  },
-} satisfies Record<Locale, unknown>;
-
-export function passwordResetMessage(locale: Locale, link: string): Content {
-  const t = RESET[locale];
-  return {
-    subject: t.subject,
-    text: `${t.hello}\n\n${t.textBody}\n${link}\n\n${t.textFooter}\n\n${t.sign}`,
-    html: emailHtml(locale, { title: t.title, heading: t.heading, paragraphs: [t.hello, t.body], button: { label: t.button, url: link }, footer: t.footer }),
-  };
+export function userLoginCodeMessage(locale: Locale, code: string): Content {
+  const t = LOGIN_CODE[locale];
+  return { subject: t.subject(code), text: t.text(code) };
 }
 
 const INVITE = {

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { localeForCountry, localeFromAcceptLanguage, normalizeLocale, plural, requestLocale, tenantLocale, userLocale } from "./locale";
 import { translateError } from "./errors";
-import { emailHtml, otpMessage, passwordResetMessage, quotaAlertMessage, verifyEmailMessage } from "./emails";
+import { emailHtml, otpMessage, quotaAlertMessage, teamInviteMessage, userLoginCodeMessage } from "./emails";
 import { programRule, recoverCardMessage, rewardSummaryLine, shareCardMessage } from "./notifications";
 import { localizeErrorBody } from "../common/http-exception.filter";
 import { getClubExplanations, getClubMemberSummary, nextRewardValue } from "../cards/club-card";
@@ -44,7 +44,7 @@ describe("détection de la langue", () => {
 
 describe("erreurs traduites", () => {
   it("traduit les messages exacts et laisse le français intact", () => {
-    expect(translateError("en", "Email ou mot de passe incorrect")).toBe("Incorrect email or password");
+    expect(translateError("en", "Code expiré : demandez-en un nouveau")).toBe("Code expired: request a new one");
     expect(translateError("es", "Code incorrect")).toBe("Código incorrecto");
     expect(translateError("fr", "Code incorrect")).toBe("Code incorrect");
     expect(translateError("en", "Message inconnu")).toBe("Message inconnu");
@@ -70,13 +70,13 @@ describe("erreurs traduites", () => {
 
 describe("emails traduits", () => {
   it("produit sujet, texte et HTML dans la langue demandée", () => {
-    const en = verifyEmailMessage("en", "https://app.test/verify-email?token=abc");
-    expect(en.subject).toBe("Confirm your email address — FOVE");
-    expect(en.text).toContain("https://app.test/verify-email?token=abc");
+    const en = teamInviteMessage("en", "Café", "https://app.test/invite?token=abc");
+    expect(en.subject).toBe("Invitation to join Café on FOVE");
+    expect(en.text).toContain("https://app.test/invite?token=abc");
     expect(en.html).toContain('lang="en"');
-    const ar = passwordResetMessage("ar", "https://app.test/reset");
+    const ar = teamInviteMessage("ar", "Café", "https://app.test/invite");
     expect(ar.html).toContain('dir="rtl"');
-    expect(ar.subject).toContain("FOVE");
+    expect(userLoginCodeMessage("ar", "654321").subject).toContain("654321");
     expect(otpMessage("es", "Café", "123456").text).toContain("123456");
   });
 

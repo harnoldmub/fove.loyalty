@@ -217,9 +217,8 @@
     },
     "unverified": {
       "title": "Confirma tu dirección de correo",
-      "body": "Para acceder a tu espacio de socio (comisiones, pagos, prospectos), confirma primero tu correo abriendo el enlace que te hemos enviado.",
-      "resend": "Reenviar el correo",
-      "sent": "Correo enviado. Revisa también la carpeta de correo no deseado."
+      "body": "Para acceder a tu espacio de socio (comisiones, pagos, prospectos), confirma primero tu correo: vuelve a entrar con el código que te enviamos.",
+      "resend": "Confirmar con un código"
     },
     "header": {
       "badge": "Socio",

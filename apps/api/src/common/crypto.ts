@@ -5,17 +5,8 @@ import {
   createHmac,
   randomBytes,
   randomInt,
-  scrypt,
   timingSafeEqual,
 } from "node:crypto";
-import { promisify } from "node:util";
-
-const scryptAsync = promisify(scrypt) as (
-  password: string,
-  salt: Buffer,
-  keylen: number,
-  options: { N: number; r: number; p: number; maxmem: number },
-) => Promise<Buffer>;
 
 export function sha256(value: string): string {
   return createHash("sha256").update(value).digest("hex");
@@ -43,34 +34,6 @@ export function cardNumber(prefix = "FV"): string {
   }
   return `${cleanPrefix}-${blocks}`;
 }
-
-// --- Mots de passe (scrypt, format auto-descriptif) ------------------------
-const N = 16384;
-const r = 8;
-const p = 1;
-
-export async function hashPassword(password: string): Promise<string> {
-  const salt = randomBytes(16);
-  const hash = await scryptAsync(password, salt, 64, { N, r, p, maxmem: 64 * 1024 * 1024 });
-  return `scrypt$${N}$${r}$${p}$${salt.toString("base64")}$${hash.toString("base64")}`;
-}
-
-export async function verifyPassword(password: string, stored: string): Promise<boolean> {
-  const [algo, n, rr, pp, salt, hash] = stored.split("$");
-  if (algo !== "scrypt" || !salt || !hash) return false;
-  const expected = Buffer.from(hash, "base64");
-  const actual = await scryptAsync(password, Buffer.from(salt, "base64"), expected.length, {
-    N: Number(n),
-    r: Number(rr),
-    p: Number(pp),
-    maxmem: 64 * 1024 * 1024,
-  });
-  return actual.length === expected.length && timingSafeEqual(actual, expected);
-}
-
-/** Hachage factice pour égaliser le temps de réponse quand l'email n'existe pas. */
-export const DUMMY_PASSWORD_HASH =
-  "scrypt$16384$8$1$AAAAAAAAAAAAAAAAAAAAAA==$" + Buffer.alloc(64).toString("base64");
 
 // --- Chiffrement des secrets au repos (AES-256-GCM) ------------------------
 function key(rawKey: string): Buffer {

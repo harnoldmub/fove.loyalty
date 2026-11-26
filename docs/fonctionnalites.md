@@ -175,13 +175,12 @@ La page de la carte affiche :
 
 ### 3.1 Créer son compte et démarrer
 
-1. **Inscription** : nom, email, mot de passe (10 caractères minimum), acceptation des CGU.
-   - Un email de confirmation est envoyé (lien valable 2 jours), avec des **relances à J1, J3 et J7**. Un bandeau et la fenêtre « Confirmez d'abord votre adresse email » rappellent ce que la confirmation débloque.
-   - **Sans email confirmé** ([chantier-email-non-confirme.md](chantier-email-non-confirme.md)), l'usage simple reste libre : programmes, caisse, crédits, récompenses, paramètres, paiement d'un abonnement. Sont réservés aux comptes confirmés :
+1. **Inscription sans mot de passe** ([chantier-connexion-otp.md](chantier-connexion-otp.md)) : « Continuer avec Google », ou email puis **code à 6 chiffres** reçu par email ; pour un nouvel email, nom et acceptation des CGU après le code. **L'email est donc confirmé dès la création du compte.**
+   - Comptes antérieurs à la connexion par code restés **sans email confirmé** ([chantier-email-non-confirme.md](chantier-email-non-confirme.md)) : un bandeau et la fenêtre « Confirmez d'abord votre adresse email » proposent de se reconnecter avec un code, ce qui confirme l'adresse. D'ici là, l'usage simple reste libre : programmes, caisse, crédits, récompenses, paramètres, paiement d'un abonnement. Sont réservés aux comptes confirmés :
      - inviter ou gérer l'équipe, exporter les données d'un client, importer un fichier, envois groupés Wallet ;
      - clés API, webhooks, connecteur boutique, espace partenaire ;
      - **au-delà de 50 clients**, toute nouvelle inscription (caisse, import, QR, boutique, API) tant qu'aucun propriétaire n'a confirmé son email. Au QR, le client lit « inscriptions momentanément fermées » et le commerçant reçoit un email. Crédits et récompenses ne sont jamais bloqués.
-   - Les collaborateurs invités et les connexions Google ont d'office un email confirmé.
+   - Les collaborateurs invités (le lien reçu prouve l'adresse) et les connexions Google ont d'office un email confirmé.
    - Si la personne avait choisi une offre sur la page tarifs, ce choix est retenu jusqu'au paiement ([4.3](#43-règles-dabonnement)).
 2. **Assistant de création du commerce**, que l'on peut interrompre et reprendre plus tard :
    - nom du commerce, adresse de sa page publique, pays (la devise se règle selon le pays) ;
@@ -192,8 +191,8 @@ La page de la carte affiche :
 3. Le commerce démarre sur l'**offre Gratuite**. Il est rattaché à un partenaire commercial si la personne est arrivée par un lien partenaire ([5.2](#52-son-espace)), ou à un commerçant parrain si elle est arrivée par un lien de parrainage ([3.16](#316-parrainage-entre-commerçants)). Si les deux liens ont été suivis, **seul le premier cliqué** est retenu.
 
 **Accès**
-- Connexion par email et mot de passe ; session de 30 jours ; déconnexion automatique quand la session expire.
-- Mot de passe oublié : réinitialisation par email.
+- Connexion par **Google** ou par **code à 6 chiffres** envoyé par email : aucun mot de passe. Code valable 10 minutes, 5 essais, nouveau code après une minute, au plus 5 codes par heure et par email ; même réponse que l'email ait un compte ou non.
+- **Session de 90 jours glissants** : chaque utilisation repousse l'échéance ; déconnexion automatique quand elle expire.
 - **Plusieurs entreprises** pour une même personne : un sélecteur permet de passer de l'une à l'autre.
 
 ### 3.2 Rôles de l'équipe
@@ -445,9 +444,8 @@ La documentation pour les développeurs est sur la page publique `/developpeurs`
 
 ### 3.15 Emails reçus par le commerçant et son équipe
 
-- Confirmation de l'adresse email, et relance à 24 h.
-- Réinitialisation du mot de passe.
-- Invitation à rejoindre une entreprise.
+- Code de connexion.
+- Invitation à rejoindre une entreprise (le lien suffit : pas de mot de passe, et un compte existant est connecté).
 - Alertes de quota.
 - Règlement hors ligne : instructions avec la référence et les coordonnées, paiement reçu, fin de l'accès provisoire sans paiement.
 
@@ -694,10 +692,10 @@ Sur l'ensemble du site :
   - fin des accès provisoires de 7 jours sans paiement (retour au Gratuit, email) ;
   - commissions partenaires arrivées au bout du délai de garantie : disponibles et converties dans la monnaie de versement ;
   - versements mensuels des commissions partenaires (le 1er du mois) ;
-  - relances de confirmation de l'email (commerçants J1/J3/J7, clients J3/J10) ;
+  - relances de confirmation de l'email des clients FOVE (J3/J10) ;
   - prévenance puis suppression des comptes clients FOVE inactifs ;
   - nettoyage des sessions et codes expirés.
-- **Emails envoyés par la plateforme** : code de connexion, email de bienvenue et prévenance avant suppression pour inactivité du compte client FOVE, confirmation d'email et relance, mot de passe oublié, invitation d'équipe, code de validation de carte, lien de carte, alertes de quota, candidature partenaire (accusé, validation, refus), commission, versement du mois et versement effectué au partenaire, règlement hors ligne (instructions, paiement reçu, fin de l'accès provisoire), alertes internes à l'équipe FOVE (contact, candidature) ⚠.
+- **Emails envoyés par la plateforme** : code de connexion, email de bienvenue et prévenance avant suppression pour inactivité du compte client FOVE, code de connexion (commerçants, équipes, admin, partenaires), invitation d'équipe, code de validation de carte, lien de carte, alertes de quota, candidature partenaire (accusé, validation, refus), commission, versement du mois et versement effectué au partenaire, règlement hors ligne (instructions, paiement reçu, fin de l'accès provisoire), alertes internes à l'équipe FOVE (contact, candidature) ⚠.
 
 ---
 

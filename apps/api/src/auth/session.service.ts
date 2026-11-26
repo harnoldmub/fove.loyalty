@@ -5,7 +5,10 @@ import { randomToken, sha256 } from "../common/crypto";
 import { PrismaService } from "../common/prisma.service";
 import type { AuthState } from "../common/context";
 
-const SESSION_DAYS = 30;
+/** Session glissante : 90 jours après la dernière utilisation (docs/chantier-connexion-otp.md). */
+const SESSION_DAYS = 90;
+/** Le cookie vit plus longtemps (maximum des navigateurs) : c'est l'échéance en base qui fait foi. */
+const COOKIE_DAYS = 400;
 const TOUCH_INTERVAL_MS = 5 * 60 * 1000;
 
 export function sessionCookieName(): string {
@@ -34,7 +37,7 @@ export class SessionService {
       secure: loadConfig().isProd,
       sameSite: "lax",
       path: "/",
-      maxAge: SESSION_DAYS * 86_400_000,
+      maxAge: COOKIE_DAYS * 86_400_000,
     });
   }
 
@@ -50,7 +53,8 @@ export class SessionService {
     });
     if (!session || session.expiresAt < new Date()) return null;
     if (Date.now() - session.lastSeenAt.getTime() > TOUCH_INTERVAL_MS) {
-      await this.prisma.client.session.update({ where: { id: session.id }, data: { lastSeenAt: new Date() } });
+      // Chaque utilisation repousse l'échéance : on ne retape presque jamais de code sur son appareil.
+      await this.prisma.client.session.update({ where: { id: session.id }, data: { lastSeenAt: new Date(), expiresAt: new Date(Date.now() + SESSION_DAYS * 86_400_000) } });
     }
     return {
       sessionId: session.id,

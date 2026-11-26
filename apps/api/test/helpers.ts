@@ -15,6 +15,7 @@ import { createPrismaClient } from "@fove/database";
 import { ROLE_PERMISSIONS, TENANT_ROLES, PERMISSIONS } from "@fove/shared";
 import { createHash } from "node:crypto";
 import { resetConfigCache } from "../src/config";
+import { sha256 } from "../src/common/crypto";
 import { createApp } from "../src/bootstrap";
 
 export const db = createPrismaClient(process.env.TEST_DATABASE_URL);
@@ -73,6 +74,22 @@ export function agent(app: NestExpressApplication) {
 }
 export type Client = ReturnType<typeof agent>;
 
+/** Code de test, créé directement en base : les tests ne dépendent ni de l'email ni des limites de demande. */
+export const TEST_LOGIN_CODE = "123456";
+
+/**
+ * Connexion par code (docs/chantier-connexion-otp.md) sans passer par l'email : le code est créé en base
+ * puis vérifié par la vraie route. Email inconnu : le compte est créé avec `name` (CGU acceptées).
+ */
+export async function signIn(client: Client, email: string, name?: string) {
+  const normalized = email.trim().toLowerCase();
+  // Daté de 2 minutes : une vraie demande de code reste possible juste après (délai d'une minute).
+  await db.userLoginCode.create({ data: { email: normalized, codeHash: sha256(`user:${normalized}:${TEST_LOGIN_CODE}`), expiresAt: new Date(Date.now() + 600_000), createdAt: new Date(Date.now() - 120_000) } });
+  const res = await client.post("/api/auth/code/verify", { email, code: TEST_LOGIN_CODE, ...(name ? { name, acceptTerms: true } : {}) });
+  if (res.status !== 200 || res.body.status !== "signed_in") throw new Error(`signIn ${res.status} ${JSON.stringify(res.body)}`);
+  return res;
+}
+
 let counter = 0;
 export function uniq(prefix: string) {
   counter += 1;
@@ -87,10 +104,9 @@ export function uniq(prefix: string) {
 export async function ownerWithTenant(app: NestExpressApplication, opts: { slug?: string; plan?: string; verified?: boolean } = {}) {
   const client = agent(app);
   const email = `${uniq("owner")}@test.fove`;
-  const signup = await client.post("/api/auth/signup", { name: "Owner Test", email, password: "motdepasse123", acceptTerms: true });
-  if (signup.status !== 201) throw new Error(`signup ${signup.status} ${JSON.stringify(signup.body)}`);
-  // Propriétaire à l'email confirmé par défaut (cas courant) ; `verified: false` pour tester les limites.
-  if (opts.verified !== false) await db.user.update({ where: { email }, data: { emailVerifiedAt: new Date() } });
+  await signIn(client, email, "Owner Test");
+  // Le code confirme l'email ; `verified: false` simule un compte antérieur non confirmé (limites).
+  if (opts.verified === false) await db.user.update({ where: { email }, data: { emailVerifiedAt: null } });
   const slug = opts.slug ?? uniq("shop-");
   const tenant = await client.post("/api/app/tenants", { name: `Commerce ${slug}`, slug });
   if (tenant.status !== 201) throw new Error(`tenant ${tenant.status} ${JSON.stringify(tenant.body)}`);
@@ -138,7 +154,7 @@ export async function addMember(app: NestExpressApplication, owner: Client, role
   const mail = await lastEmail(email);
   const token = /token=([A-Za-z0-9_-]+)/.exec(mail!.text)![1]!;
   const member = agent(app);
-  const accept = await member.post("/api/auth/invitations/accept", { token, name: "Membre", password: "motdepasse123" });
+  const accept = await member.post("/api/auth/invitations/accept", { token, name: "Membre" });
   if (accept.status !== 201) throw new Error(`accept ${accept.status} ${JSON.stringify(accept.body)}`);
   return member;
 }
