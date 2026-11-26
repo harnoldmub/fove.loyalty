@@ -12,7 +12,7 @@
       "howItWorks": "¿Cómo funciona?",
       "perkFree": "Registro 100% gratuito",
       "perkCommission": "20% de comisión neta",
-      "perkPayment": "Pago por transferencia y Mobile Money"
+      "perkPayment": "Pago por transferencia"
     },
     "steps": {
       "title": "¿Cómo funciona el programa?",
@@ -79,7 +79,7 @@
       },
       "payouts": {
         "title": "Pagos flexibles",
-        "desc": "Cobra por transferencia bancaria o Mobile Money a partir de 50 $ o 50 € de ganancias acumuladas."
+        "desc": "Pago mensual por transferencia bancaria a partir de 50 $ o 50 € de ganancias acumuladas."
       },
       "attribution": {
         "title": "Atribución first-party de 30 días",
@@ -107,7 +107,7 @@
       },
       "withdraw": {
         "q": "¿Cuándo y cómo puedo retirar mis ganancias?",
-        "a": "Cada mes, sin pedirlo: el día 1 tus comisiones disponibles (tras los 30 días de garantía) se agrupan en un pago, abonado antes del día 10 por transferencia bancaria o Mobile Money (Airtel Money, Orange Money, M-Pesa según disponibilidad geográfica). Gastos de transferencia a cargo de FOVE. Por debajo de 50 $ o 50 € (según tu divisa), el importe pasa al mes siguiente."
+        "a": "Cada mes, sin pedirlo: el día 1 tus comisiones disponibles (tras los 30 días de garantía) se agrupan en un pago, abonado antes del día 10 por transferencia bancaria. Gastos de transferencia a cargo de FOVE. Por debajo de 50 $ o 50 € (según tu divisa), el importe pasa al mes siguiente."
       },
       "fees": {
         "q": "¿Hay costes o compromisos?",
@@ -141,7 +141,7 @@
       "annual": "Suscripción anual de 1 año",
       "net": "Comisión neta tras el cobro",
       "tracking": "Seguimiento en directo en tu espacio",
-      "fastPayout": "Pago rápido por transferencia o móvil",
+      "fastPayout": "Pago mensual por transferencia",
       "support": "Acompañamiento comercial de FOVE"
     },
     "cta": "Unirme a la red de socios",

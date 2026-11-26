@@ -86,5 +86,6 @@
     "title": "Page not found",
     "body": "The link may be incomplete or may have been replaced. If it is a loyalty card, ask the merchant for a new link.",
     "home": "Back to home"
-  }
+  },
+  "otp": { "digit": "Digit {index} of {length}" }
 }

@@ -86,5 +86,6 @@
     "title": "Página no encontrada",
     "body": "Puede que el enlace esté incompleto o haya sido sustituido. Si es una tarjeta de fidelidad, pide un nuevo enlace al comercio.",
     "home": "Volver al inicio"
-  }
+  },
+  "otp": { "digit": "Cifra {index} de {length}" }
 }

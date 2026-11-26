@@ -67,7 +67,7 @@
       "saved": "Billing currency saved.",
       "savedRenewal": "Saved: the new currency will apply at renewal, on {date}.",
       "pending": "Your current subscription stays in {current}; it will switch to {next} at renewal, on {date}.",
-      "localNote": "Prices in {currency} for payment by bank transfer, in cash or by mobile money. Online card payment is made in {online}.",
+      "localNote": "Prices in {currency} for payment by bank transfer or cash deposit. Online card payment is made in {online}.",
       "online": "Online: {price}"
     },
     "offline": {

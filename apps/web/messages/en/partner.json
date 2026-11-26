@@ -12,7 +12,7 @@
       "howItWorks": "How does it work?",
       "perkFree": "100% free to join",
       "perkCommission": "20% net commission",
-      "perkPayment": "Paid by bank transfer & Mobile Money"
+      "perkPayment": "Paid by bank transfer"
     },
     "steps": {
       "title": "How does the program work?",
@@ -79,7 +79,7 @@
       },
       "payouts": {
         "title": "Flexible payouts",
-        "desc": "Get paid by bank transfer or Mobile Money once you have earned $50 or €50."
+        "desc": "Monthly payout by bank transfer once you have earned $50 or €50."
       },
       "attribution": {
         "title": "30-day first-party attribution",
@@ -107,7 +107,7 @@
       },
       "withdraw": {
         "q": "When and how can I withdraw my earnings?",
-        "a": "Every month, without asking: on the 1st, your available commissions (after the 30-day guarantee) are grouped into one payout, paid before the 10th by bank transfer or Mobile Money (Airtel Money, Orange Money, M-Pesa depending on availability). Transfer fees are covered by FOVE. Below $50 or €50 (depending on your currency), the amount is carried over to the next month."
+        "a": "Every month, without asking: on the 1st, your available commissions (after the 30-day guarantee) are grouped into one payout, paid before the 10th by bank transfer. Transfer fees are covered by FOVE. Below $50 or €50 (depending on your currency), the amount is carried over to the next month."
       },
       "fees": {
         "q": "Are there any fees or commitments?",
@@ -141,7 +141,7 @@
       "annual": "1-year annual subscription",
       "net": "Net commission after payment is collected",
       "tracking": "Live tracking in your space",
-      "fastPayout": "Fast payout by transfer or mobile",
+      "fastPayout": "Monthly payout by transfer",
       "support": "FOVE sales support"
     },
     "cta": "Join the partner network",

@@ -67,7 +67,7 @@
       "saved": "Monnaie de facturation enregistrée.",
       "savedRenewal": "Enregistré : la nouvelle monnaie s’appliquera au renouvellement, le {date}.",
       "pending": "Votre abonnement en cours reste en {current} ; il passera en {next} au renouvellement, le {date}.",
-      "localNote": "Prix en {currency} pour un règlement par virement, en espèces ou par mobile money. Le paiement en ligne par carte se fait en {online}.",
+      "localNote": "Prix en {currency} pour un règlement par virement ou dépôt d’espèces. Le paiement en ligne par carte se fait en {online}.",
       "online": "En ligne : {price}"
     },
     "offline": {

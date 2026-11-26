@@ -1,6 +1,7 @@
 import { Injectable, Logger } from "@nestjs/common";
 import { loadConfig } from "../config";
 import { PrismaService } from "../common/prisma.service";
+import { textToBrandedHtml } from "../i18n/email-layout";
 
 export interface EmailMessage {
   to: string;
@@ -21,8 +22,10 @@ export class EmailService {
 
   constructor(private readonly prisma: PrismaService) {}
 
-  async send(message: EmailMessage): Promise<void> {
+  async send(input: EmailMessage): Promise<void> {
     const config = loadConfig();
+    // Tous les emails partent au gabarit FOVE : sans version HTML, le texte est mis en page.
+    const message = { ...input, html: input.html ?? textToBrandedHtml(input.text, input.subject) };
     const record = await this.prisma.client.emailOutbox.create({
       data: { ...message, provider: config.EMAIL_PROVIDER },
     });

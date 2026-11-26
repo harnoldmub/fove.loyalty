@@ -18,6 +18,7 @@ import { ErrorNote } from "@/components/ui/misc";
 import { api, errorMessage } from "@/lib/api";
 import { playChime } from "@/lib/sound";
 import { cn, formatDate, formatNumber } from "@/lib/utils";
+import { OtpInput } from "@/components/ui/otp-input";
 
 const KINDS = new Set(["EARN", "ADJUSTMENT", "REDEMPTION", "REDEMPTION_REVERSAL", "REVERSAL", "REFUND", "EXPIRATION"]);
 
@@ -261,7 +262,7 @@ export function CardView({ token, initial }: { token: string; initial: CardData 
               <p className="text-sm text-ink-2">{t("verify.text")}</p>
               {error && <ErrorNote>{error}</ErrorNote>}
               {info && <p className="text-sm text-mint">{info}</p>}
-              <Field label={t("verify.code")}>{(p) => <Input {...p} dir="ltr" inputMode="numeric" autoComplete="one-time-code" maxLength={6} className="text-center text-2xl tracking-[0.4em] tabular" value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))} />}</Field>
+              <Field label={t("verify.code")}>{(p) => <OtpInput {...p} value={code} onChange={setCode} />}</Field>
               <Button type="submit" disabled={code.length !== 6}>{t("verify.submit")}</Button>
               <Button
                 type="button"

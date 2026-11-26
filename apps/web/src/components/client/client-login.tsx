@@ -10,6 +10,7 @@ import { ErrorNote, SuccessNote } from "@/components/ui/misc";
 import { api, useErrorMessage } from "@/lib/api";
 import { ClientGoogleButton } from "@/components/client/client-google-button";
 import { ClientTermsNotice } from "@/components/client/client-terms-notice";
+import { OtpInput } from "@/components/ui/otp-input";
 
 const RESEND_SECONDS = 60;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -132,17 +133,7 @@ export function ClientLogin() {
           {error && <ErrorNote>{error}</ErrorNote>}
           <Field label={t("code")} hint={t("checkSpam")} error={fieldError ?? undefined}>
             {(p) => (
-              <Input
-                {...p}
-                autoComplete="one-time-code"
-                inputMode="numeric"
-                maxLength={6}
-                autoFocus
-                dir="ltr"
-                className="text-center font-mono text-2xl tracking-[0.5em]"
-                value={code}
-                onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
-              />
+              <OtpInput {...p} autoFocus value={code} onChange={setCode} />
             )}
           </Field>
           <Button type="submit" loading={busy}>

@@ -22,7 +22,12 @@ const MAX_CODES_PER_IP_HOUR = 60;
 
 const codeHash = (email: string, code: string) => sha256(`user:${email}:${code}`);
 
-export type CodeVerifyResult = { status: "signed_in"; id: string; created: boolean } | { status: "profile_required" };
+export type CodeVerifyResult = { status: "signed_in"; id: string; created: boolean; admin: boolean } | { status: "profile_required" };
+
+/** Accès à l'administration FOVE : son espace d'arrivée après connexion (l'espace commerçant s'ouvre à côté). */
+export function isAdminUser(user: { isSuperAdmin: boolean; adminRole: string | null }): boolean {
+  return user.isSuperAdmin || user.adminRole === "SUPER_ADMIN" || user.adminRole === "ASSOCIATE" || user.adminRole === "FINANCE_MANAGER";
+}
 
 /**
  * Connexion à l'espace FOVE sans mot de passe (docs/chantier-connexion-otp.md) : Google, ou code à
@@ -95,7 +100,7 @@ export class AuthService {
     const membership = await db.tenantMembership.findFirst({ where: { userId: user.id, status: "ACTIVE" }, orderBy: { createdAt: "asc" } });
     await this.sessions.create(user.id, req, res, membership?.tenantId ?? null);
     await this.audit.log({ actorUserId: user.id, action: created ? "auth.signup" : "auth.login", ip: req.ip });
-    return { status: "signed_in", id: user.id, created };
+    return { status: "signed_in", id: user.id, created, admin: isAdminUser(user) };
   }
 
   async loginWithGoogle(profile: { email: string; name: string }, req: Request, res: Response) {
@@ -125,7 +130,7 @@ export class AuthService {
     });
     await this.sessions.create(user.id, req, res, membership?.tenantId ?? null);
     await this.audit.log({ actorUserId: user.id, action: created ? "auth.signup_google" : "auth.login_google", ip: req.ip });
-    return { id: user.id, created };
+    return { id: user.id, created, admin: isAdminUser(user) };
   }
 
   async me(auth: AuthState) {

@@ -35,8 +35,13 @@ export async function requireMe(next: string): Promise<Me> {
  */
 export async function redirectIfSignedIn(params: { next?: string | string[]; offre?: string | string[] }): Promise<void> {
   if (params.offre) return;
-  const { status } = await serverGet<Me>("/auth/me", true);
-  if (status === 200) redirect(safeInternalPath(typeof params.next === "string" ? params.next : null, "/app"));
+  const { status, data } = await serverGet<Me>("/auth/me", true);
+  if (status === 200) redirect(safeInternalPath(typeof params.next === "string" ? params.next : null, data && isAdmin(data.user) ? "/admin" : "/app"));
+}
+
+/** Accès à l'administration FOVE (super admin, associé, direction financière). */
+export function isAdmin(user: Pick<Me["user"], "isSuperAdmin" | "adminRole">): boolean {
+  return user.isSuperAdmin || user.adminRole === "SUPER_ADMIN" || user.adminRole === "ASSOCIATE" || user.adminRole === "FINANCE_MANAGER";
 }
 
 /**

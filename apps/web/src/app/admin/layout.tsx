@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { AdminShell } from "@/components/admin/admin-shell";
-import { requireMe } from "@/lib/session";
+import { isAdmin, requireMe } from "@/lib/session";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("admin.layout");
@@ -11,13 +11,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const me = await requireMe("/admin");
-  const canAccessAdmin =
-    me.user.isSuperAdmin ||
-    me.user.adminRole === "SUPER_ADMIN" ||
-    me.user.adminRole === "ASSOCIATE" ||
-    me.user.adminRole === "FINANCE_MANAGER";
-
-  if (!canAccessAdmin) notFound();
+  if (!isAdmin(me.user)) notFound();
 
   return (
     <AdminShell
