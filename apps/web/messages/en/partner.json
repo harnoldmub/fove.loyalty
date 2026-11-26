@@ -107,7 +107,7 @@
       },
       "withdraw": {
         "q": "When and how can I withdraw my earnings?",
-        "a": "As soon as your available commission balance reaches the minimum threshold of $50 or €50 (depending on your currency), you can request a payout directly from your partner space. We pay by bank transfer or Mobile Money (Airtel Money, Orange Money, M-Pesa depending on availability in your area)."
+        "a": "Every month, without asking: on the 1st, your available commissions (after the 30-day guarantee) are grouped into one payout, paid before the 10th by bank transfer or Mobile Money (Airtel Money, Orange Money, M-Pesa depending on availability). Transfer fees are covered by FOVE. Below $50 or €50 (depending on your currency), the amount is carried over to the next month."
       },
       "fees": {
         "q": "Are there any fees or commitments?",
@@ -246,10 +246,10 @@
       "clients": "Referred clients",
       "commissions": "Commissions",
       "payouts": "Payments & Withdrawals",
-      "collection": "Collections",
       "resources": "Sales resources"
     },
     "overview": {
+      "seePayouts": "See my payouts",
       "clicks": "Clicks on your link",
       "clicksHint": "Visitors sent to FOVE",
       "signups": "Sign-ups & conversions",
@@ -337,6 +337,11 @@
       "pending": "Pending (30 days)"
     },
     "payouts": {
+      "monthly": "Automatic monthly payout: on the 1st, your available commissions are grouped and paid before the 10th, transfer fees covered by FOVE (from 50 in your currency, otherwise carried over to the next month).",
+      "infoTitle": "Payout details",
+      "infoHelp": "Where FOVE pays your commissions each month.",
+      "infoSave": "Save",
+      "infoSaved": "Payout details saved.",
       "balance": "Available balance: {amount}",
       "minimum": "Minimum withdrawal amount: {amount}",
       "currency": "Payout currency:",
@@ -446,31 +451,7 @@
     "copied": "Campaign link copied!",
     "copy": "Copy link with UTM"
   },
-  "collection": {
-    "title": "Collections",
-    "subtitle": "Collect subscriptions in cash or by mobile money and pay them to FOVE each month (monthly statement). Collection fee: {fee}% on renewals and on customers you did not bring.",
-    "outstanding": "Owed to FOVE",
-    "blocked": {
-      "not_approved": "Your partner account must be approved to collect.",
-      "disabled": "Collection is disabled for your account: contact FOVE.",
-      "overdue": "Statement {reference} unpaid: settle it to collect again.",
-      "cap": "Outstanding limit reached: pay your collections to FOVE to collect again."
-    },
-    "byReference": {
-      "title": "Collect by reference",
-      "help": "For a merchant who is not your customer: enter the reference they show you (Subscription page or email), check the business and the amount, then confirm.",
-      "label": "Payment reference",
-      "search": "Check"
-    },
-    "clients": {
-      "title": "My customers",
-      "empty": "No customers brought in yet.",
-      "until": "{plan} until {date}",
-      "free": "Free plan",
-      "plan": "Plan",
-      "subscribe": "Collect the subscription",
-      "renew": "Renew"
-    },
+  "clientsTab": {
     "invite": {
       "title": "Sign up a business",
       "help": "The merchant creates their own account (they confirm their email); it is assigned to you automatically. Send them the link or open it on their phone.",
@@ -483,43 +464,18 @@
       "open": "Open link",
       "message": "Hello, here is the link to create your FOVE loyalty programme: {url}"
     },
-    "statements": {
-      "title": "Monthly statements",
-      "owe": "To pay: {amount}",
-      "credit": "In your favour: {amount}",
-      "due": "To pay before {date} with the reference {reference}.",
-      "status": {
-        "ISSUED": "To pay",
-        "PAID": "Paid",
-        "SETTLED": "Settled"
-      }
-    },
-    "history": {
-      "title": "History",
-      "empty": "No collections yet.",
-      "disputed": "Reported",
-      "toSettle": "To pay over"
-    },
-    "confirm": {
-      "title": "Collect: {name}",
-      "description": "{plan} · {kind}",
-      "kind": {
-        "new": "subscription",
-        "renewal": "renewal"
-      },
-      "amount": "Amount to collect",
-      "method": "Payment method",
-      "methods": {
-        "CASH": "Cash",
-        "MOBILE_MONEY": "Mobile money",
-        "BANK_TRANSFER": "Transfer to your account"
-      },
-      "receipt": "Receipt number",
-      "receiptHint": "Optional: the receipt you give the merchant.",
-      "warning": "Only confirm if you have received {amount}. The subscription is activated immediately, and this amount is added to what you owe FOVE.",
-      "cancel": "Cancel",
-      "submit": "I received the payment"
-    },
-    "collected": "Collection confirmed: {name}'s subscription is active."
+    "title": "My customers",
+    "help": "You help with the payment (transfer with the merchant's reference, or card); you never collect money. Your commission is created when FOVE receives the payment.",
+    "empty": "No customers brought in yet.",
+    "until": "{plan} until {date}",
+    "registered": "Signed up on {date}",
+    "pendingDetail": "Payment expected: {amount}, reference",
+    "payment": {
+      "free": "Free plan",
+      "pending": "Payment expected",
+      "provisional": "Provisional access, payment expected",
+      "paid": "Paid",
+      "expired": "Expired"
+    }
   }
 }

@@ -2,7 +2,7 @@
 
 Ce document décrit **tout ce que l'application permet de faire**, pour chaque type d'utilisateur, avec les règles métier qui s'appliquent. Il se lit sans ouvrir le code ni l'application.
 
-- **État décrit** : branche `main` au commit `483f3bc` (10 novembre 2026), complétée le 24 novembre 2026 par le **compte client FOVE** (branche `feat/compte-fove` : sections 1, 2, 8 et 9), le 25 novembre par le **parrainage** (3.16), et le 26 novembre par les **prix dans plusieurs monnaies** et l'**encaissement hors ligne** (branche `feat/multi-devises` : sections 3.14 à 3.16, 4, 5, 6, 7, 8 et 9 ; 263 tests API au vert ; specs [chantier-multi-devises.md](chantier-multi-devises.md) et [chantier-encaissement-hors-ligne.md](chantier-encaissement-hors-ligne.md)).
+- **État décrit** : branche `main` au commit `483f3bc` (10 novembre 2026), complétée le 24 novembre 2026 par le **compte client FOVE** (branche `feat/compte-fove` : sections 1, 2, 8 et 9), le 25 novembre par le **parrainage** (3.16), et le 26 novembre par les **prix dans plusieurs monnaies** et l'**encaissement hors ligne** (branche `feat/multi-devises` : sections 3.14 à 3.16, 4, 5, 6, 7, 8 et 9), puis les **partenaires sans encaissement** et les **versements mensuels** (branche `feat/partenaires-sans-encaissement` : sections 3.14, 4.3, 5, 6, 8 et 9 ; 261 tests API au vert ; specs [chantier-multi-devises.md](chantier-multi-devises.md) et [chantier-encaissement-hors-ligne.md](chantier-encaissement-hors-ligne.md)).
 - **Ce qui est décrit** : les fonctions présentes dans le code et accessibles dans l'application. Quand une fonction dépend d'une configuration externe, n'a pas de test automatisé ou est incomplète, elle porte le repère **⚠** et le détail est donné en [section 9](#9-partiel-ou-pas-encore-disponible).
 - **Ce qui n'est pas décrit** : l'architecture technique ([architecture.md](architecture.md)), la sécurité ([securite.md](securite.md)), le RGPD ([rgpd.md](rgpd.md)) et la recette de paiement ([recette-facturation.md](recette-facturation.md)).
 
@@ -435,7 +435,7 @@ La documentation pour les développeurs est sur la page publique `/developpeurs`
 - Offre en cours, statut, date de renouvellement ou de fin.
 - **Monnaie de facturation** : euro, dollar US, dirham marocain, dinar algérien ou franc congolais. Par défaut celle du pays du commerce (zone euro : euro ; Maroc : dirham ; Algérie : dinar ; RDC et autres pays : dollar). Modifiable : tout de suite sans abonnement payant en cours, sinon au renouvellement (l'abonnement garde sa monnaie jusque-là). Les prix des offres s'affichent dans cette monnaie.
 - **Paiement en ligne** par carte en euros ou en dollars : en dirhams ou en dinars, le commerçant paie le prix en euros ; en francs congolais, le prix en dollars. La page l'indique.
-- **Règlement hors ligne** (virement, espèces, mobile money), proposé si FOVE a renseigné des coordonnées pour le pays du commerce : « Payer par virement ou espèces » crée une **référence de paiement** (ex. `FV-7KQ4M2-X`) à indiquer obligatoirement dans le motif, affichée avec les coordonnées et envoyée par email. Sans abonnement payant, l'offre est **active tout de suite pour 7 jours** (accès provisoire, une seule fois par commerce), confirmée à réception du paiement ; sans paiement à cette date, retour au Gratuit (rien n'est supprimé). Le règlement peut aussi se faire auprès d'un partenaire FOVE avec la même référence. Un règlement en attente peut être annulé.
+- **Règlement hors ligne** (virement, espèces, mobile money), proposé si FOVE a renseigné des coordonnées pour le pays du commerce : « Payer par virement ou espèces » crée une **référence de paiement** (ex. `FV-7KQ4M2-X`) à indiquer obligatoirement dans le motif, affichée avec les coordonnées et envoyée par email. Sans abonnement payant, l'offre est **active tout de suite pour 7 jours** (accès provisoire, une seule fois par commerce), confirmée à réception du paiement ; sans paiement à cette date, retour au Gratuit (rien n'est supprimé). Un partenaire FOVE peut accompagner le commerçant, mais n'encaisse jamais : le paiement va toujours à FOVE. Un règlement en attente peut être annulé.
 - **Abonnement réglé hors ligne** : pas de renouvellement automatique ni de résiliation ; l'année suivante se règle de la même façon (« Renouveler <offre> hors ligne »), éventuellement sur une autre offre. Le paiement par carte reste possible une fois l'abonnement terminé.
 - **Utilisation** comparée aux limites de l'offre : clients, établissements, collaborateurs, programmes.
 - **Changer d'offre**, **résilier**, **reprendre l'abonnement**, **annuler un changement programmé** : les règles sont en [4.3](#43-règles-dabonnement).
@@ -449,7 +449,7 @@ La documentation pour les développeurs est sur la page publique `/developpeurs`
 - Réinitialisation du mot de passe.
 - Invitation à rejoindre une entreprise.
 - Alertes de quota.
-- Règlement hors ligne : instructions avec la référence et les coordonnées, paiement reçu, fin de l'accès provisoire sans paiement, confirmation d'un encaissement par un partenaire avec un lien « Signaler un problème ».
+- Règlement hors ligne : instructions avec la référence et les coordonnées, paiement reçu, fin de l'accès provisoire sans paiement.
 
 ### 3.16 Parrainage entre commerçants
 
@@ -506,7 +506,7 @@ Chaque monnaie a son **prix fixe** (référence : l'euro), qui ne suit pas le ch
 ### 4.3 Règles d'abonnement
 
 - **Inscription** : toute nouvelle entreprise démarre sur le Gratuit, sans limite de durée et sans carte bancaire. Il n'y a pas d'essai.
-- **Paiement** : annuel, à l'avance, dans la monnaie du commerce ([3.14](#314-abonnement)) : en ligne par carte en euros ou en dollars, ou hors ligne (virement, espèces, mobile money) dans la monnaie du commerce, auprès de FOVE ou d'un partenaire. Le paiement est possible avant la confirmation de l'email. **Pas d'argent, pas d'abonnement** : seul l'accès provisoire de 7 jours d'un virement direct précède le paiement.
+- **Paiement** : annuel, à l'avance, dans la monnaie du commerce ([3.14](#314-abonnement)) : en ligne par carte en euros ou en dollars, ou hors ligne (virement, dépôt d'espèces, mobile money) dans la monnaie du commerce, **toujours directement à FOVE** (les partenaires n'encaissent pas). Un paiement reçu en espèces au bureau est saisi par FOVE ([6.2](#62-entreprises)). Le paiement est possible avant la confirmation de l'email. **Pas d'argent, pas d'abonnement** : seul l'accès provisoire de 7 jours d'un virement direct précède le paiement.
 - **Choix depuis la page tarifs** : « Choisir <offre> » mène à l'inscription (ou à la connexion), puis à la création du commerce, puis directement au paiement de l'offre choisie. Le choix est retenu 7 jours dans le navigateur ⚠.
 - **Passer à une offre supérieure** : effet immédiat. La différence au prorata, jusqu'à l'échéance, est facturée tout de suite. Si ce paiement échoue, l'offre ne change pas.
 - **Passer à une offre inférieure** : effet **au renouvellement**. L'offre payée reste active jusque-là ; rien n'est remboursé ni crédité. Le changement programmé est annoncé sur la page Abonnement et peut être annulé (« Rester sur <offre> »). Une résiliation ou un passage à une offre supérieure l'annule aussi.
@@ -543,6 +543,10 @@ Un partenaire (agence, freelance, consultant, réseau de commerçants…) recomm
 - Clics, inscriptions, clients payants, taux de conversion.
 - Commerces apportés, avec leur offre et la date du premier paiement.
 
+**Clients** (le partenaire vend et accompagne le paiement, il n'encaisse jamais)
+- **Inscrire un commerce** : lien d'inscription pré-rempli (nom, nom du commerce, email) à copier, envoyer par WhatsApp ou ouvrir sur le téléphone du commerçant. Le commerçant crée lui-même son compte et confirme son email ; il est attribué au partenaire.
+- **Suivi** de chaque client : offre, échéance, état du paiement (Gratuit, paiement attendu avec sa référence `FV-…` et son montant, accès provisoire, payé, échu), pour l'aider à payer et à renouveler.
+
 **Prospects**
 - Enregistrer et suivre les commerces à démarcher : enseigne, contact, téléphone, email, secteur, ville, notes.
 - Un commerce déjà client de FOVE ne peut pas être revendiqué.
@@ -550,19 +554,11 @@ Un partenaire (agence, freelance, consultant, réseau de commerçants…) recomm
 **Commissions**
 - Journal des commissions : en attente, disponibles, versées, annulées. Chaque commission est calculée dans la monnaie payée par le commerçant, avec son équivalent dans la monnaie de versement.
 
-**Encaissements** (onglet dédié, tout partenaire validé)
-- **Encaisser par référence** : le commerçant montre sa référence `FV-…` ; le partenaire vérifie le commerce, l'offre et le montant, puis confirme avoir reçu l'argent (espèces, mobile money ou virement sur son compte, numéro de reçu facultatif). L'abonnement est activé tout de suite.
-- **Mes clients** : souscription ou renouvellement d'un commerce qu'il a apporté, avec son offre et son échéance ; la facture est créée puis encaissée de la même façon.
-- **Inscrire un commerce** : lien d'inscription pré-rempli (nom, nom du commerce, email) à copier, envoyer par WhatsApp ou ouvrir sur le téléphone du commerçant. Le commerçant crée lui-même son compte et confirme son email ; il est attribué au partenaire.
-- **Encours** dû à FOVE et plafond, raison d'un blocage éventuel, **relevés mensuels** et historique des encaissements.
-
-**Virements**
+**Versements**
+- **Automatiques chaque mois**, sans demande : le 1er, les commissions devenues disponibles le mois précédent sont regroupées en un versement, payé **avant le 10**, frais de transfert à la charge de FOVE. Sous **50 $ ou 50 €**, report au mois suivant. Le partenaire reçoit un récapitulatif par email.
 - Monnaie de versement au choix : dollar US ou euro. Les commissions disponibles sont converties au taux comptable du jour où elles deviennent disponibles (taux figé) ; un changement de monnaie reconvertit celles qui ne sont pas encore versées.
-- Demande de virement, à partir de **50 $ ou 50 €** disponibles.
-- Par virement bancaire (IBAN, BIC) ou Mobile Money : M-Pesa, Airtel Money, Orange Money, MTN Mobile Money.
-- Historique des virements.
-
-**Profil** : coordonnées de paiement.
+- **Coordonnées de versement** : virement bancaire (titulaire, IBAN, BIC, banque) ou Mobile Money (M-Pesa, Airtel Money, Orange Money, MTN Mobile Money).
+- Historique des versements.
 
 ### 5.3 Règles de commission
 
@@ -573,13 +569,11 @@ Un partenaire (agence, freelance, consultant, réseau de commerçants…) recomm
 | Paiements concernés | Le **premier paiement** seulement (réglable) |
 | Délai de garantie | La commission devient disponible **30 jours** après le paiement |
 | Remboursement | Un paiement remboursé annule la commission correspondante, si elle n'a pas encore été versée |
-| Seuil de virement | 50 dans la monnaie de versement (dollar US ou euro) |
-| Frais d'encaissement | **5 %** du montant encaissé pour un renouvellement, ou pour la première souscription d'un commerce apporté par un autre partenaire ou venu seul. La première souscription d'un client qu'il a apporté donne la commission d'apport, sans frais. |
-| Plafond d'encours | **300 €** par défaut (encaissements pas encore reversés et relevés impayés), réglable ou désactivable par partenaire. Au-delà, plus d'encaissement possible ; les abonnements déjà validés restent actifs. |
-| Relevé mensuel | Le 1er du mois, par monnaie encaissée : encaissé − frais d'encaissement − commissions disponibles (y compris celles des paiements en ligne) = solde. Solde positif : à verser à FOVE **sous 15 jours** avec la référence du relevé (`FV-RL-…`), paiement partiel accepté. Solde négatif : versement créé au partenaire. Un relevé impayé **30 jours** après son émission bloque les encaissements. |
+| Seuil de versement | 50 dans la monnaie de versement (dollar US ou euro) ; en dessous, report au mois suivant |
+| Versement | Mensuel : le 1er pour les commissions disponibles avant ce jour, payé avant le 10, frais de transfert pris en charge par FOVE |
 | Validation des candidatures | Manuelle (une validation automatique peut être activée) |
 
-Le partenaire est prévenu par email à chaque commission enregistrée, à chaque virement effectué et à chaque relevé émis. Le commerçant reçoit une confirmation de chaque encaissement fait par un partenaire, avec un lien « Signaler un problème » qui alerte l'équipe FOVE (le paiement est marqué « signalé » dans le back-office).
+Le partenaire **n'encaisse jamais d'argent** (décision du 26 novembre 2026) : le commerçant paie toujours FOVE (carte, virement avec sa référence, dépôt, mobile money, ou espèces saisies par FOVE). La commission naît quand FOVE reçoit le paiement. Le partenaire est prévenu par email à chaque commission enregistrée, du versement du mois et de chaque versement effectué.
 
 ---
 
@@ -607,6 +601,7 @@ Le partenaire est prévenu par email à chaque commission enregistrée, à chaqu
 - Volumétrie : clients, cartes actives, passages, programmes, établissements.
 - Collaborateurs, établissements, intégrations.
 - **Journal d'audit** de l'entreprise.
+- **Enregistrer un paiement reçu** : paiement déjà reçu par FOVE (espèces au bureau, virement, mobile money) pour une offre ; la facture est créée et validée en une fois, l'offre est activée ou prolongée d'un an, la commission du partenaire et le parrainage s'appliquent. Montant dû par défaut, montant inférieur à accepter explicitement, n° de reçu et note.
 - **Abonnement manuel** : choisir l'offre, le statut (actif, essai, résilié), la date de fin, le prix annuel du contrat et sa **monnaie** (facturé hors paiement en ligne) et, pour le Sur-mesure, les limites négociées. Si l'entreprise payait en ligne, son abonnement en ligne est **arrêté immédiatement**, sans remboursement automatique. Un bouton rapide « Passer en Pro » active l'offre Business sans paiement ⚠.
 - **Suspendre ou réactiver** l'entreprise, avec un motif. Une entreprise suspendue perd l'accès à son espace et sa page d'inscription ne fonctionne plus. Ses données sont conservées.
 - **Accès support** : ouverture d'un accès en **lecture seule à l'espace du commerçant, pendant 30 minutes**, avec un motif obligatoire. L'accès est inscrit dans le journal de l'entreprise.
@@ -637,8 +632,8 @@ Le nombre d'entreprises abonnées à chaque offre est affiché.
 ### 6.6 Partenaires
 
 - Candidatures à examiner : valider, ou refuser avec un motif.
-- Liste des partenaires : statut, code, taux, clients apportés, commissions en attente et versées. Le taux, le statut, l'**encaissement hors ligne** (autorisé ou non) et le **plafond d'encours** sont modifiables (par exemple, suspendre un partenaire).
-- **Virements demandés** : marquer comme payé (les commissions disponibles les plus anciennes passent à « versées » jusqu'à hauteur du montant) ou rejeter.
+- Liste des partenaires : statut, code, taux, clients apportés, commissions en attente et versées. Le taux et le statut sont modifiables (par exemple, suspendre un partenaire).
+- **Versements** du mois : montant, coordonnées du partenaire et commissions regroupées ; marquer comme payé avec la référence du virement (les commissions passent à « versées », email au partenaire) ou rejeter (coordonnées erronées : les commissions reviennent au mois suivant).
 - **Paramètres globaux** : taux par défaut, délai de garantie, seuil de virement, premier paiement seulement, validation automatique des candidatures. La durée du cookie et la fenêtre de conversion s'affichent aussi, mais n'ont pas d'effet ⚠.
 
 ### 6.7 Centre financier
@@ -654,7 +649,7 @@ Le nombre d'entreprises abonnées à chaque offre est affiché.
 | **Clients** | Fiche financière de chaque commerce : cumul facturé, encaissé (valeur vie), dernier paiement, partenaire apporteur |
 | **Factures** | Factures émises, avec les documents téléchargeables |
 | **Dépenses** | Saisie et suppression des coûts de FOVE par poste (hébergement, base de données, domaines, emails, outils, publicités, prestations, juridique, frais bancaires…), avec justificatif |
-| **Règlements hors ligne** | Factures à référence (en attente, payées, annulées), recherche par référence (saisie tolérante) ou commerce ; **validation** d'un paiement reçu (virement, espèces, mobile money ; montant, date, référence bancaire, justificatif ; montant inférieur accepté explicitement) qui active ou prolonge l'abonnement ; annulation ; encaissement par un partenaire et signalement du commerçant ; **relevés des partenaires** (émission, paiement reçu, impayés) ; **coordonnées bancaires par pays** (« * » par défaut ; Algérie : compte local) |
+| **Règlements hors ligne** | Factures à référence (en attente, payées, annulées), recherche par référence (saisie tolérante) ou commerce ; **validation** d'un paiement reçu (virement, espèces, mobile money ; montant, date, référence bancaire, justificatif ; montant inférieur accepté explicitement) qui active ou prolonge l'abonnement ; annulation ; **coordonnées bancaires par pays** (« * » par défaut ; Algérie : compte local) |
 | **Taux comptables** | Unités de chaque monnaie pour 1 € : consolidation et conversion des commissions, jamais le prix payé. Date et auteur de la dernière modification. |
 | **Trésorerie** | Position nette, solde estimé du prestataire de paiement, **import d'un relevé bancaire CSV** (doublons ignorés) ou saisie d'une ligne, **rapprochement automatique** : les références `FV-…` du libellé proposent la facture ou le relevé de partenaire, avec un écart de montant signalé, à confirmer en un clic |
 | **Rapports associés** | Rapport mensuel : facturé, taxes, frais, remboursements, commissions dues, net disponible, résultat du mois |
@@ -698,11 +693,11 @@ Sur l'ensemble du site :
   - fin des contrats et des abonnements arrivés à échéance (dont les abonnements réglés hors ligne) ;
   - fin des accès provisoires de 7 jours sans paiement (retour au Gratuit, email) ;
   - commissions partenaires arrivées au bout du délai de garantie : disponibles et converties dans la monnaie de versement ;
-  - relevés mensuels des partenaires encaisseurs ;
+  - versements mensuels des commissions partenaires (le 1er du mois) ;
   - relances de confirmation de l'email (commerçants J1/J3/J7, clients J3/J10) ;
   - prévenance puis suppression des comptes clients FOVE inactifs ;
   - nettoyage des sessions et codes expirés.
-- **Emails envoyés par la plateforme** : code de connexion, email de bienvenue et prévenance avant suppression pour inactivité du compte client FOVE, confirmation d'email et relance, mot de passe oublié, invitation d'équipe, code de validation de carte, lien de carte, alertes de quota, candidature partenaire (accusé, validation, refus), commission et virement partenaire, relevé mensuel partenaire, règlement hors ligne (instructions, paiement reçu, fin de l'accès provisoire, confirmation d'encaissement), alertes internes (dont un encaissement signalé) à l'équipe FOVE (contact, candidature, demande de virement) ⚠.
+- **Emails envoyés par la plateforme** : code de connexion, email de bienvenue et prévenance avant suppression pour inactivité du compte client FOVE, confirmation d'email et relance, mot de passe oublié, invitation d'équipe, code de validation de carte, lien de carte, alertes de quota, candidature partenaire (accusé, validation, refus), commission, versement du mois et versement effectué au partenaire, règlement hors ligne (instructions, paiement reçu, fin de l'accès provisoire), alertes internes à l'équipe FOVE (contact, candidature) ⚠.
 
 ---
 
@@ -722,11 +717,11 @@ Cette section liste ce qui **existe dans l'application mais n'est pas garanti à
 | **Envoi WhatsApp automatique** : lien de carte, retrouver sa carte | Configuration · Non testé | Il faut un compte WhatsApp Business (Meta). L'envoi de messages libres hors fenêtre de 24 h exige des modèles approuvés par Meta : non vérifié. Les liens `wa.me` manuels, eux, fonctionnent partout. |
 | **Emails** | Configuration | Sans fournisseur d'email configuré (Resend), les emails sont seulement écrits dans les journaux du serveur. |
 | **Parrainage entre commerçants** : remise du filleul et crédit du parrain via Stripe | Configuration · Non testé | Testé en mode simulé uniquement. En mode Stripe, il faut le coupon « 20, une fois » en dollars avec une option en euros (`REFERRAL_STRIPE_COUPON_ID`) ; le crédit du parrain passe par le solde client Stripe ; l'empreinte de carte (anti-abus) n'existe que pour les paiements par carte. Les conditions du programme sont à faire relire par le juriste. |
-| **Programme partenaires** : attribution, commissions, virements | Non testé | Encaissement, frais, plafond, relevés et conversion des commissions sont testés ; l'attribution par lien et les virements ne le sont pas. Les commissions naissent des paiements en ligne et hors ligne : un contrat attribué à la main (Sur-mesure, par exemple) ne génère pas de commission. |
+| **Programme partenaires** : attribution, commissions, versements | Non testé | Versements mensuels, suivi des clients et conversion des commissions sont testés ; l'attribution par lien ne l'est pas. Les commissions naissent des paiements en ligne et hors ligne : un contrat attribué à la main (Sur-mesure, par exemple) ne génère pas de commission. |
 | **Centre financier** | Non testé | Testés : trésorerie, rapprochement, règlements hors ligne, consolidation. Les autres pages n'ont pas de test automatisé. |
 | **Taux et grille des monnaies** | Configuration | Prix et taux comptables initiaux approximatifs, à confirmer avant publication (grille dans l'admin > Offres, taux dans Finance > Taux comptables ; dinar algérien comptable initialisé au taux officiel ≈ 150). |
 | **Paiement en ligne en euros** | Configuration | Créer dans Stripe les tarifs en euros de chaque offre et les saisir dans l'admin (ou `STRIPE_TEST_PRICE_<OFFRE>_YEARLY_EUR_ID` en mode test), et ajouter une option en euros (`currency_options`) au coupon de parrainage. |
-| **Règlement hors ligne** | Configuration · À valider | Coordonnées bancaires à saisir par pays (sans coordonnées, l'option n'apparaît pas). À faire valider : mandat d'encaissement des partenaires (ou revendeur), compte ou entité locale en Algérie, facturation en MAD, DZD ou CDF et mentions de TVA hors Union européenne. |
+| **Règlement hors ligne** | Configuration · À valider | Coordonnées bancaires à saisir par pays (sans coordonnées, l'option n'apparaît pas). À faire valider : compte ou entité locale en Algérie, comptes de FOVE pour les dépôts d'espèces et le mobile money (RDC), facturation en MAD, DZD ou CDF et mentions de TVA hors Union européenne. |
 | **Réglages partenaires « durée du cookie » et « fenêtre de conversion »** | Code incomplet | Modifiables dans l'admin, mais lus nulle part : le cookie du lien partenaire est fixé à 30 jours dans le code, et aucune fenêtre de conversion n'est appliquée. |
 | **Accès associé et responsable financier** | Code incomplet | Aucun écran ne permet d'attribuer ces rôles : il faut modifier la base de données. Le rôle « support » existe mais ne donne aucun accès. |
 | **Connexion Google des clients** | Configuration | Ajouter l'adresse de retour `…/api/client/auth/google/callback` (local et production) sur l'identifiant OAuth Google. Testé avec des réponses de Google simulées, jamais avec un vrai compte Google. |

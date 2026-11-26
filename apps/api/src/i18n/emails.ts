@@ -586,6 +586,9 @@ const PARTNER = {
     payout: (name: string, amount: string, reference: string) =>
       `Bonjour ${name},\n\nVotre virement de ${amount} a été effectué avec succès.\n\nRéférence de transaction : ${reference}\n\nMerci de votre partenariat avec FOVE !\nhttps://fove.digital/partner`,
     bankTransfer: "Règlement bancaire",
+    scheduledSubject: (amount: string) => `Votre versement du mois · ${amount}`,
+    scheduled: (name: string, amount: string, lines: string, url: string) =>
+      `Bonjour ${name},\n\nVos commissions devenues disponibles le mois dernier ont été regroupées en un versement de ${amount}, que vous recevrez avant le 10 du mois (frais de transfert pris en charge par FOVE).\n\n${lines}\n\nDétail et historique dans votre espace :\n${url}\n\nL'équipe FOVE`,
   },
   en: {
     receivedSubject: "Application received · FOVE Partner Programme",
@@ -608,6 +611,9 @@ const PARTNER = {
     payout: (name: string, amount: string, reference: string) =>
       `Hello ${name},\n\nYour payout of ${amount} has been sent.\n\nTransaction reference: ${reference}\n\nThank you for partnering with FOVE!\nhttps://fove.digital/partner`,
     bankTransfer: "Bank transfer",
+    scheduledSubject: (amount: string) => `Your payout this month · ${amount}`,
+    scheduled: (name: string, amount: string, lines: string, url: string) =>
+      `Hello ${name},\n\nThe commissions that became available last month have been grouped into a payout of ${amount}, which you will receive before the 10th of the month (transfer fees covered by FOVE).\n\n${lines}\n\nDetails and history in your space:\n${url}\n\nThe FOVE team`,
   },
   ar: {
     receivedSubject: "تم استلام طلبك · برنامج شركاء FOVE",
@@ -630,6 +636,9 @@ const PARTNER = {
     payout: (name: string, amount: string, reference: string) =>
       `مرحبًا ${name}،\n\nتم تحويل مبلغ ${amount} بنجاح.\n\nمرجع العملية: ${reference}\n\nشكرًا لشراكتك مع FOVE!\nhttps://fove.digital/partner`,
     bankTransfer: "تحويل بنكي",
+    scheduledSubject: (amount: string) => `دفعتك لهذا الشهر · ${amount}`,
+    scheduled: (name: string, amount: string, lines: string, url: string) =>
+      `مرحبًا ${name}،\n\nجُمعت عمولاتك التي أصبحت متاحة الشهر الماضي في دفعة بقيمة ${amount}، ستصلك قبل اليوم العاشر من الشهر (رسوم التحويل على حساب FOVE).\n\n${lines}\n\nالتفاصيل والسجل في مساحتك:\n${url}\n\nفريق FOVE`,
   },
   es: {
     receivedSubject: "Solicitud recibida · Programa de Socios FOVE",
@@ -652,6 +661,9 @@ const PARTNER = {
     payout: (name: string, amount: string, reference: string) =>
       `Hola ${name}:\n\nTu transferencia de ${amount} se ha realizado correctamente.\n\nReferencia de la operación: ${reference}\n\n¡Gracias por colaborar con FOVE!\nhttps://fove.digital/partner`,
     bankTransfer: "Transferencia bancaria",
+    scheduledSubject: (amount: string) => `Tu pago de este mes · ${amount}`,
+    scheduled: (name: string, amount: string, lines: string, url: string) =>
+      `Hola ${name}:\n\nLas comisiones que pasaron a estar disponibles el mes pasado se han agrupado en un pago de ${amount}, que recibirás antes del día 10 del mes (gastos de transferencia a cargo de FOVE).\n\n${lines}\n\nDetalle e historial en tu espacio:\n${url}\n\nEl equipo de FOVE`,
   },
 } satisfies Record<Locale, unknown>;
 

@@ -13,7 +13,6 @@ import { ClientAccountService } from "../client-account/client-account.service";
 import { ReferralService } from "../referrals/referral.service";
 import { PartnersService } from "../partners/partners.service";
 import { OfflineBillingService } from "../billing/offline.service";
-import { StatementService } from "../partners/statement.service";
 
 /**
  * Tâches périodiques déclenchées par un cron Railway (toutes les 5 minutes)
@@ -33,7 +32,6 @@ export class JobsController {
     private readonly referrals: ReferralService,
     private readonly partners: PartnersService,
     private readonly offline: OfflineBillingService,
-    private readonly statements: StatementService,
   ) {}
 
   @Get("health")
@@ -60,8 +58,8 @@ export class JobsController {
       // Commissions arrivées au bout du délai de validation : disponibles et converties (monnaie de versement).
       await this.partners.releaseDueCommissions(undefined, now),
     ];
-    // Relevés mensuels des partenaires encaisseurs (encaissements antérieurs au mois en cours).
-    const statementsIssued = await this.statements.issueMonthly(now);
+    // Versements mensuels des commissions partenaires (le 1er du mois, payés avant le 10).
+    const payoutsScheduled = await this.partners.scheduleMonthlyPayouts(now);
     const db = this.prisma.client;
     const cleanup = await db.$transaction([
       db.session.deleteMany({ where: { expiresAt: { lt: now } } }),
@@ -72,6 +70,6 @@ export class JobsController {
       // Gardés 24 h : ils servent à limiter le nombre de demandes par email et par adresse IP.
       db.clientLoginCode.deleteMany({ where: { createdAt: { lt: new Date(now.getTime() - 86_400_000) } } }),
     ]);
-    return { webhooksRetried: webhooks, accountsExpired: expired, subscriptions, verificationReminders, clientAccounts, clientReminders, referrals, commissionsReleased, offlineExpired, statementsIssued, cleaned: cleanup.map((c) => c.count) };
+    return { webhooksRetried: webhooks, accountsExpired: expired, subscriptions, verificationReminders, clientAccounts, clientReminders, referrals, commissionsReleased, offlineExpired, payoutsScheduled, cleaned: cleanup.map((c) => c.count) };
   }
 }

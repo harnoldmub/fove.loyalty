@@ -37,11 +37,11 @@ interface TreasuryResponse {
     reconciledType: string | null;
     amountMismatch: boolean;
     /** Pièce proposée d'après la référence trouvée dans le libellé. */
-    suggestion: { type: "INVOICE" | "STATEMENT"; reference: string; name: string; expectedCents: number; currency: string } | null;
+    suggestion: { type: "INVOICE"; reference: string; name: string; expectedCents: number; currency: string } | null;
   }[];
 }
 
-const RECONCILED_TYPES = ["PAYMENT", "EXPENSE", "PARTNER_PAYOUT", "PARTNER_STATEMENT"] as const;
+const RECONCILED_TYPES = ["PAYMENT", "EXPENSE", "PARTNER_PAYOUT"] as const;
 
 /** Import d'un relevé CSV et saisie d'une ligne (références FV-… détectées automatiquement). */
 function BankImport({ onDone }: { onDone: () => void }) {

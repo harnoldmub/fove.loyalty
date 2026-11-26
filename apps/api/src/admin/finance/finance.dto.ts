@@ -67,7 +67,7 @@ export const refundCreateSchema = z.object({
 export type RefundCreateDto = z.infer<typeof refundCreateSchema>;
 
 export const reconcileSchema = z.object({
-  reconciledType: z.enum(["PAYMENT", "EXPENSE", "PARTNER_PAYOUT", "PARTNER_STATEMENT"]),
+  reconciledType: z.enum(["PAYMENT", "EXPENSE", "PARTNER_PAYOUT"]),
   reconciledId: z.string().uuid(),
   notes: z.string().optional(),
 });

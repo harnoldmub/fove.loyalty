@@ -8,9 +8,7 @@ import type { AuthState } from "../../common/context";
 import { FinanceRoute } from "../../auth/guards";
 import { OFFLINE_METHODS, OfflineBillingService, type OfflineMethod } from "../../billing/offline.service";
 import { ReconciliationService } from "./reconciliation.service";
-import { StatementService } from "../../partners/statement.service";
 
-const statementPaySchema = z.object({ amountCents: z.int().positive().max(100_000_000_000), bankReference: z.string().trim().max(140).optional() });
 
 const importSchema = z.object({
   csv: z.string().min(10).max(2_000_000),
@@ -35,6 +33,12 @@ const validateSchema = z.object({
   proofUrl: z.url().max(500).optional().or(z.literal("")),
   note: z.string().trim().max(500).optional(),
   acceptShortfall: z.boolean().optional(),
+});
+
+const recordSchema = validateSchema.omit({ amountCents: true }).extend({
+  planCode: z.string().min(2).max(40),
+  /** Vide : le montant dû (prix dans la monnaie du commerce, remise et crédit de parrainage déduits). */
+  amountCents: z.int().positive().max(100_000_000_000).optional(),
 });
 
 const voidSchema = z.object({ reason: z.string().trim().min(3).max(300) });
@@ -73,27 +77,7 @@ export class OfflineFinanceController {
   constructor(
     private readonly offline: OfflineBillingService,
     private readonly reconciliation: ReconciliationService,
-    private readonly statements: StatementService,
   ) {}
-
-  /** Relevés mensuels des partenaires encaisseurs. */
-  @Get("statements")
-  statementList(@Query("status") status?: string, @Query("partnerId") partnerId?: string) {
-    return this.statements.list({ status, partnerId });
-  }
-
-  /** Émission immédiate des relevés des encaissements antérieurs au mois en cours (sinon : tâche planifiée). */
-  @Post("statements/issue")
-  async issueStatements() {
-    return { issued: await this.statements.issueMonthly() };
-  }
-
-  /** Versement du partenaire reçu hors rapprochement bancaire (espèces au bureau…). */
-  @Post("statements/:id/pay")
-  @HttpCode(204)
-  async payStatement(@Auth() auth: AuthState, @Param("id", ParseUUIDPipe) id: string, @Body(new ZodPipe(statementPaySchema)) body: z.infer<typeof statementPaySchema>) {
-    await this.statements.recordPayment(id, body.amountCents, { userId: auth.user.id, email: auth.user.email }, body.bankReference ?? "manuel");
-  }
 
   /** Import d'un relevé bancaire CSV : références FV-… détectées et pièces proposées. */
   @Post("treasury/import")
@@ -130,6 +114,17 @@ export class OfflineFinanceController {
       { userId: auth.user.id, email: auth.user.email },
     );
     return { paymentId: payment.id, periodEnd };
+  }
+
+  /** Paiement déjà reçu (espèces au bureau, virement…) : facture créée et validée en une fois. */
+  @Post("tenants/:tenantId/payment")
+  async record(@Auth() auth: AuthState, @Param("tenantId", ParseUUIDPipe) tenantId: string, @Body(new ZodPipe(recordSchema)) body: z.infer<typeof recordSchema>) {
+    const { payment, periodEnd, reference, currency } = await this.offline.recordReceived(
+      tenantId,
+      { ...body, paidAt: body.paidAt ? new Date(body.paidAt) : undefined, proofUrl: body.proofUrl || null },
+      { userId: auth.user.id, email: auth.user.email },
+    );
+    return { paymentId: payment.id, amountCents: payment.amountCents, currency, reference, periodEnd };
   }
 
   @Post("offline-invoices/:id/void")

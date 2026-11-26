@@ -107,7 +107,7 @@
       },
       "withdraw": {
         "q": "Quand et comment puis-je retirer mes gains ?",
-        "a": "Dès que votre solde de commissions disponibles atteint le seuil minimum de 50 $ ou 50 € (selon votre devise), vous pouvez déclencher une demande de virement directement depuis votre espace partenaire. Nous réglons par virement bancaire ou Mobile Money (Airtel Money, Orange Money, M-Pesa selon disponibilité géographique)."
+        "a": "Chaque mois, sans rien demander : le 1er, vos commissions disponibles (après les 30 jours de garantie) sont regroupées en un versement, payé avant le 10 par virement bancaire ou Mobile Money (Airtel Money, Orange Money, M-Pesa selon disponibilité géographique). Frais de transfert à la charge de FOVE. Sous 50 $ ou 50 € (selon votre devise), le montant est reporté au mois suivant."
       },
       "fees": {
         "q": "Y a-t-il des frais ou des engagements ?",
@@ -246,10 +246,10 @@
       "clients": "Clients apportés",
       "commissions": "Commissions",
       "payouts": "Paiements & Retraits",
-      "collection": "Encaissements",
       "resources": "Ressources de vente"
     },
     "overview": {
+      "seePayouts": "Voir mes versements",
       "clicks": "Clics sur votre lien",
       "clicksHint": "Visiteurs envoyés sur FOVE",
       "signups": "Inscriptions & conversions",
@@ -337,6 +337,11 @@
       "pending": "En attente (30j)"
     },
     "payouts": {
+      "monthly": "Versement automatique chaque mois : le 1er, vos commissions disponibles sont regroupées et versées avant le 10, frais de transfert à la charge de FOVE (dès 50 dans votre monnaie, sinon report au mois suivant).",
+      "infoTitle": "Coordonnées de versement",
+      "infoHelp": "Où FOVE vous verse vos commissions chaque mois.",
+      "infoSave": "Enregistrer",
+      "infoSaved": "Coordonnées de versement enregistrées.",
       "balance": "Solde disponible : {amount}",
       "minimum": "Montant minimum de retrait : {amount}",
       "currency": "Monnaie de versement :",
@@ -446,31 +451,7 @@
     "copied": "Lien de campagne copié !",
     "copy": "Copier le lien avec UTM"
   },
-  "collection": {
-    "title": "Encaissements",
-    "subtitle": "Encaissez les abonnements en espèces ou en mobile money et reversez-les chaque mois à FOVE (relevé mensuel). Frais d’encaissement : {fee} % sur les renouvellements et sur les clients que vous n’avez pas apportés.",
-    "outstanding": "Encours dû à FOVE",
-    "blocked": {
-      "not_approved": "Votre compte partenaire doit être validé pour encaisser.",
-      "disabled": "L’encaissement est désactivé pour votre compte : contactez FOVE.",
-      "overdue": "Relevé {reference} impayé : réglez-le pour encaisser à nouveau.",
-      "cap": "Plafond d’encours atteint : reversez vos encaissements à FOVE pour encaisser à nouveau."
-    },
-    "byReference": {
-      "title": "Encaisser par référence",
-      "help": "Pour un commerçant qui n’est pas votre client : saisissez la référence qu’il vous montre (page Abonnement ou email), vérifiez le commerce et le montant, puis confirmez.",
-      "label": "Référence de paiement",
-      "search": "Vérifier"
-    },
-    "clients": {
-      "title": "Mes clients",
-      "empty": "Aucun client apporté pour l’instant.",
-      "until": "{plan} jusqu’au {date}",
-      "free": "Offre Gratuite",
-      "plan": "Offre",
-      "subscribe": "Encaisser la souscription",
-      "renew": "Renouveler"
-    },
+  "clientsTab": {
     "invite": {
       "title": "Inscrire un commerce",
       "help": "Le commerçant crée lui-même son compte (il confirme son email) ; il vous est attribué automatiquement. Envoyez-lui le lien ou ouvrez-le sur son téléphone.",
@@ -483,43 +464,18 @@
       "open": "Ouvrir le lien",
       "message": "Bonjour, voici le lien pour créer votre programme de fidélité FOVE : {url}"
     },
-    "statements": {
-      "title": "Relevés mensuels",
-      "owe": "À verser : {amount}",
-      "credit": "En votre faveur : {amount}",
-      "due": "À verser avant le {date} avec la référence {reference}.",
-      "status": {
-        "ISSUED": "À régler",
-        "PAID": "Réglé",
-        "SETTLED": "Soldé"
-      }
-    },
-    "history": {
-      "title": "Historique",
-      "empty": "Aucun encaissement pour l’instant.",
-      "disputed": "Signalé",
-      "toSettle": "À reverser"
-    },
-    "confirm": {
-      "title": "Encaisser : {name}",
-      "description": "{plan} · {kind}",
-      "kind": {
-        "new": "souscription",
-        "renewal": "renouvellement"
-      },
-      "amount": "Montant à encaisser",
-      "method": "Moyen de paiement",
-      "methods": {
-        "CASH": "Espèces",
-        "MOBILE_MONEY": "Mobile money",
-        "BANK_TRANSFER": "Virement sur votre compte"
-      },
-      "receipt": "Numéro de reçu",
-      "receiptHint": "Facultatif : le reçu que vous remettez au commerçant.",
-      "warning": "Confirmez seulement si vous avez reçu {amount}. L’abonnement est activé tout de suite, et ce montant s’ajoute à votre encours dû à FOVE.",
-      "cancel": "Annuler",
-      "submit": "J’ai reçu le paiement"
-    },
-    "collected": "Encaissement confirmé : l’abonnement de {name} est actif."
+    "title": "Mes clients",
+    "help": "Vous accompagnez le paiement (virement avec la référence du commerçant, ou carte) ; vous n’encaissez jamais d’argent. Votre commission naît quand FOVE reçoit le paiement.",
+    "empty": "Aucun client apporté pour l’instant.",
+    "until": "{plan} jusqu’au {date}",
+    "registered": "Inscrit le {date}",
+    "pendingDetail": "Paiement attendu : {amount}, référence",
+    "payment": {
+      "free": "Offre Gratuite",
+      "pending": "Paiement attendu",
+      "provisional": "Accès provisoire, paiement attendu",
+      "paid": "Payé",
+      "expired": "Échu"
+    }
   }
 }

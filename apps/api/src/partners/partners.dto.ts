@@ -56,18 +56,21 @@ export const partnerLeadUpdateSchema = z.object({
 
 export type PartnerLeadUpdateDto = z.infer<typeof partnerLeadUpdateSchema>;
 
-export const partnerPayoutRequestSchema = z.object({
-  amountCents: z.number().int().positive().min(5000, "Le seuil minimum de retrait est de 50.00 USD/EUR"),
-  method: z.enum(["BANK_TRANSFER", "MOBILE_MONEY", "OTHER"]).default("BANK_TRANSFER"),
-  payoutDetails: z.record(z.string(), z.any()),
-});
-
-export type PartnerPayoutRequestDto = z.infer<typeof partnerPayoutRequestSchema>;
-
 export const partnerProfileUpdateSchema = z.object({
   phone: z.string().trim().max(30).optional(),
   company: z.string().trim().max(100).optional(),
-  payoutInfo: z.record(z.string(), z.any()).optional(),
+  /** Coordonnées de versement : moyen (BANK_TRANSFER, MOBILE_MONEY) et détails (IBAN, numéro…). */
+  payoutInfo: z
+    .object({
+      method: z.enum(["BANK_TRANSFER", "MOBILE_MONEY"]),
+      accountHolder: z.string().trim().max(120).optional(),
+      iban: z.string().trim().max(60).optional(),
+      bic: z.string().trim().max(20).optional(),
+      bankName: z.string().trim().max(120).optional(),
+      mobileProvider: z.string().trim().max(60).optional(),
+      mobileNumber: z.string().trim().max(30).optional(),
+    })
+    .optional(),
   /** Monnaie de versement des commissions. */
   payoutCurrency: z.enum(PAYOUT_CURRENCIES).optional(),
 });
@@ -80,9 +83,6 @@ export const adminPartnerUpdateSchema = z.object({
   minimumPayoutThresholdCents: z.number().int().positive().optional(),
   rejectionReason: z.string().trim().max(500).optional(),
   payoutCurrency: z.enum(PAYOUT_CURRENCIES).optional(),
-  /** Encaissement hors ligne : autorisé, et plafond d'encours dû à FOVE (centimes d'euro). */
-  collectionEnabled: z.boolean().optional(),
-  collectionCapEurCents: z.number().int().min(0).max(100_000_000).optional(),
 });
 
 export type AdminPartnerUpdateDto = z.infer<typeof adminPartnerUpdateSchema>;
