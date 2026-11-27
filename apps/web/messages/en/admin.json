@@ -386,7 +386,7 @@
     "offline": {
       "receipt": "Receipt no. {number}",
       "title": "Offline payments",
-      "description": "Bank transfers, cash and mobile money: invoices with references, validation and bank details by country.",
+      "description": "Bank transfers and cash: invoices with references, validation and bank details by country.",
       "search": "Reference or business",
       "searchButton": "Search",
       "status": "Status",
@@ -421,8 +421,7 @@
         "method": "Payment method",
         "methods": {
           "BANK_TRANSFER": "Bank transfer",
-          "CASH": "Cash",
-          "MOBILE_MONEY": "Mobile money"
+          "CASH": "Cash"
         },
         "amount": "Amount received ({currency})",
         "paidAt": "Date received",
@@ -451,7 +450,7 @@
         "bankName": "Bank",
         "accountNumber": "Account number",
         "instructions": "Other methods",
-        "instructionsHint": "Cash at the office, mobile money number… Shown as is.",
+        "instructionsHint": "Cash at the office, opening hours, address… Shown as is.",
         "active": "Active",
         "add": "Add",
         "update": "Save",
@@ -660,13 +659,12 @@
     "recordPayment": {
       "button": "Record a payment received",
       "title": "Payment received by FOVE",
-      "description": "Cash at the office, transfer or mobile money already received, in {currency}. The plan is activated (or extended by one year) immediately; the partner commission and referral apply.",
+      "description": "Cash at the office or transfer already received, in {currency}. The plan is activated (or extended by one year) immediately; the partner commission and referral apply.",
       "plan": "Plan",
       "method": "Payment method",
       "methods": {
         "CASH": "Cash",
-        "BANK_TRANSFER": "Bank transfer",
-        "MOBILE_MONEY": "Mobile money"
+        "BANK_TRANSFER": "Bank transfer"
       },
       "amount": "Amount received ({currency})",
       "amountHint": "Empty: the amount due (referral discount and credit deducted).",
@@ -895,8 +893,7 @@
       },
       "empty": "No payouts.",
       "methods": {
-        "BANK_TRANSFER": "Bank transfer",
-        "MOBILE_MONEY": "Mobile money"
+        "BANK_TRANSFER": "Bank transfer"
       },
       "paidOn": "Paid on {date}",
       "createdOn": "Created on {date}",

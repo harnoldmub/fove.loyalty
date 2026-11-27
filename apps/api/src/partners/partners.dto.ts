@@ -59,16 +59,14 @@ export type PartnerLeadUpdateDto = z.infer<typeof partnerLeadUpdateSchema>;
 export const partnerProfileUpdateSchema = z.object({
   phone: z.string().trim().max(30).optional(),
   company: z.string().trim().max(100).optional(),
-  /** Coordonnées de versement : moyen (BANK_TRANSFER, MOBILE_MONEY) et détails (IBAN, numéro…). */
+  /** Coordonnées de versement : virement bancaire (le mobile money n'est pas proposé). */
   payoutInfo: z
     .object({
-      method: z.enum(["BANK_TRANSFER", "MOBILE_MONEY"]),
+      method: z.literal("BANK_TRANSFER"),
       accountHolder: z.string().trim().max(120).optional(),
       iban: z.string().trim().max(60).optional(),
       bic: z.string().trim().max(20).optional(),
       bankName: z.string().trim().max(120).optional(),
-      mobileProvider: z.string().trim().max(60).optional(),
-      mobileNumber: z.string().trim().max(30).optional(),
     })
     .optional(),
   /** Monnaie de versement des commissions. */

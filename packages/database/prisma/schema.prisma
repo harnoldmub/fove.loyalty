@@ -648,7 +648,7 @@ enum BillingProvider {
   STRIPE
   MOCK
   MANUAL
-  /// Réglé hors ligne (virement, espèces, mobile money), validé par FOVE ou un partenaire (docs/chantier-encaissement-hors-ligne.md).
+  /// Réglé hors ligne (virement, espèces), validé par FOVE ou un partenaire (docs/chantier-encaissement-hors-ligne.md).
   OFFLINE
 }
 
@@ -1043,7 +1043,6 @@ enum PaymentProvider {
   MANUAL
   MOCK
   BANK_TRANSFER
-  MOBILE_MONEY
 }
 
 model Payment {
@@ -1062,7 +1061,7 @@ model Payment {
   netCents             Int             /// Montant net reçu (amountCents - feeCents)
   currency             String          @default("USD")
   status               PaymentStatus   @default(PENDING)
-  method               String?         /// card, bank_transfer, airtel_money, orange_money, mpesa, cash
+  method               String?         /// card, bank_transfer, cash
   /// Empreinte de la carte (Stripe) : repère une même carte d'un commerce à l'autre (anti-abus du parrainage).
   cardFingerprint      String?
   failureCode          String?
@@ -1138,7 +1137,7 @@ model Partner {
   commissionRatePercent       Decimal             @default(20.00) @db.Decimal(5, 2)
   status                      PartnerStatus       @default(PENDING)
   rejectionReason             String?
-  payoutInfo                  Json?               /// Coordonnées bancaires ou Mobile Money
+  payoutInfo                  Json?               /// Coordonnées bancaires de versement
   minimumPayoutThresholdCents Int                 @default(5000) /// 50.00 dans la monnaie de versement
   /// Monnaie de versement des commissions (USD ou EUR) ; les commissions y sont converties quand elles deviennent disponibles.
   payoutCurrency              String              @default("USD")
@@ -1274,7 +1273,7 @@ model PartnerPayout {
   partner           Partner             @relation(fields: [partnerId], references: [id], onDelete: Cascade)
   amountCents       Int
   currency          String              @default("USD")
-  method            String              /// Virement, Mobile Money, Cash
+  method            String              /// Virement bancaire
   status            String              @default("PAID") /// PENDING, PAID, FAILED
   reference         String?
   proofFileUrl      String?
@@ -1530,7 +1529,7 @@ model BankAccount {
   /// RIB local, numéro de compte, SWIFT/BIC…
   accountNumber String?
   swift        String?
-  /// Autres moyens (espèces au bureau, mobile money) : texte libre affiché tel quel.
+  /// Autres moyens (espèces au bureau) : texte libre affiché tel quel.
   instructions String?
   active       Boolean  @default(true)
   createdAt    DateTime @default(now())

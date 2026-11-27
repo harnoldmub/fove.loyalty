@@ -82,7 +82,7 @@ export class BillingService {
         /** Monnaie de l'abonnement en cours, fixe jusqu'au renouvellement. */
         subscription: running ? subscription!.currency : null,
       },
-      /** Règlement hors ligne (virement, espèces, mobile money) : coordonnées et facture en attente. */
+      /** Règlement hors ligne (virement, espèces) : coordonnées et facture en attente. */
       offline,
     };
   }

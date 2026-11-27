@@ -415,7 +415,7 @@ function RecordPaymentDialog({ tenantId, currency }: { tenantId: string; currenc
             <Field label={t("method")}>
               {(f) => (
                 <Select {...f} value={form.method} onChange={(e) => setForm({ ...form, method: e.target.value })}>
-                  {(["CASH", "BANK_TRANSFER", "MOBILE_MONEY"] as const).map((m) => <option key={m} value={m}>{t(`methods.${m}`)}</option>)}
+                  {(["CASH", "BANK_TRANSFER"] as const).map((m) => <option key={m} value={m}>{t(`methods.${m}`)}</option>)}
                 </Select>
               )}
             </Field>

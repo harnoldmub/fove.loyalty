@@ -74,7 +74,7 @@ export function PartnerPayouts() {
                 <p className="font-semibold text-ink">
                   {p.partner.name} <span className="font-mono text-xs text-cobalt">{p.partner.code}</span>
                 </p>
-                <p className="text-xs text-ink-3">{p.partner.email} · {t(`methods.${p.method === "MOBILE_MONEY" ? "MOBILE_MONEY" : "BANK_TRANSFER"}`)}</p>
+                <p className="text-xs text-ink-3">{p.partner.email} · {t("methods.BANK_TRANSFER")}</p>
                 <p className="text-xs text-ink-2" dir="auto">{payoutDetails(p.partner.payoutInfo)}</p>
               </div>
               <div className="text-end">

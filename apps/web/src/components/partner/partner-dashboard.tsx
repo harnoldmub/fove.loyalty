@@ -135,7 +135,7 @@ const TABS = [
 ] as const;
 
 const LEAD_STATUSES = ["NEW", "CONTACTED", "INTERESTED", "REGISTERED", "CONVERTED", "LOST"] as const;
-const PAYOUT_METHODS = ["BANK_TRANSFER", "MOBILE_MONEY"] as const;
+const PAYOUT_METHODS = ["BANK_TRANSFER"] as const;
 
 export function PartnerDashboard({ user, spaces }: { user: { name: string; email: string; isSuperAdmin?: boolean }; spaces: { admin: boolean; merchant: boolean; partner: boolean } }) {
   const t = useTranslations("partner.dashboard");

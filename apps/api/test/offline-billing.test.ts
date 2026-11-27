@@ -84,7 +84,7 @@ describe("virement direct", () => {
     const invoice = await db.invoice.findFirstOrThrow({ where: { paymentReference: renewal.body.reference } });
     expect(invoice.periodStart!.getTime()).toBe(sub.currentPeriodEnd!.getTime());
     expect((await plan(o.tenantId)).code).toBe("starter");
-    await app.get(OfflineBillingService).validate(invoice.id, { method: "MOBILE_MONEY", amountCents: invoice.amountDueCents }, { userId: (await db.user.findFirstOrThrow({ where: { isSuperAdmin: true } })).id, email: "admin@fove.test" });
+    await app.get(OfflineBillingService).validate(invoice.id, { method: "CASH", amountCents: invoice.amountDueCents }, { userId: (await db.user.findFirstOrThrow({ where: { isSuperAdmin: true } })).id, email: "admin@fove.test" });
     const renewed = await db.subscription.findUniqueOrThrow({ where: { tenantId: o.tenantId } });
     expect(renewed.currentPeriodEnd!.getTime()).toBe(invoice.periodEnd!.getTime());
     expect((await plan(o.tenantId)).code).toBe("business");

@@ -1,4 +1,4 @@
-# Chantier — Encaissement hors ligne (virement, espèces, mobile money)
+# Chantier — Encaissement hors ligne (virement, espèces)
 
 > Statut : H1 (virement direct) et H2 (rapprochement bancaire) **livrés** le 26 novembre 2026. H3 (encaissement par les partenaires) et H4 (relevés mensuels) **livrés puis retirés** le même jour : voir la révision en section 0. Référentiel : [fonctionnalites.md](fonctionnalites.md).
 
@@ -9,11 +9,13 @@
 | Avant (H3, H4) | Maintenant |
 |---|---|
 | Le partenaire encaisse en espèces ou en mobile money et valide l'abonnement | Le partenaire **vend et accompagne** : inscription du commerce (lien pré-rempli), aide au paiement (virement avec la référence, carte) ; il n'encaisse jamais |
-| Espèces remises au partenaire | Dépôt d'espèces au guichet de la banque de FOVE avec la référence, mobile money vers un compte marchand FOVE, ou espèces remises à FOVE et saisies dans le back-office (« Enregistrer un paiement reçu », fiche entreprise) |
+| Espèces remises au partenaire | Dépôt d'espèces au guichet de la banque de FOVE avec la référence, ou espèces remises à FOVE et saisies dans le back-office (« Enregistrer un paiement reçu », fiche entreprise) |
 | Frais d'encaissement 5 %, plafond d'encours, relevé mensuel et compensation, signalement du commerçant | Retirés (migration `20261126150000_remove_partner_collection`) |
 | Demande de virement par le partenaire, à partir de 50 | **Versement mensuel automatique** : le 1er, regroupement des commissions disponibles (après la garantie de 30 jours), payé avant le 10, frais de transfert à la charge de FOVE ; sous 50 $ ou 50 €, report au mois suivant ; récapitulatif par email ; onglet « Versements » dans Admin > Partenaires |
 
 La commission d'apport naît quand FOVE reçoit le paiement (carte, virement validé, paiement saisi), comme avant. Plus tard, d'autres moyens de paiement directs (mobile money intégré, carte Edahabia en Algérie) pourront s'ajouter sans changer le rôle du partenaire. Si un marché exige un jour des agents qui encaissent, le modèle à retenir est le **prépayé** (le partenaire achète d'avance des activations), jamais le crédit.
+
+**Mobile money (27 novembre 2026)** : rien n'est décidé, c'est un projet futur. Il est retiré de l'application : moyens de paiement saisis par l'admin (virement ou espèces), coordonnées de versement des partenaires (virement bancaire uniquement), textes (migration `20261127100000_remove_mobile_money`). Les mentions du mobile money plus bas décrivent la version initiale.
 
 Les sections 2, 6, 7 et 8 ci-dessous décrivent la version initiale, retirée pour ce qui concerne l'encaissement par les partenaires.
 

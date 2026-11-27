@@ -53,7 +53,7 @@ interface Billing {
     /** Monnaie de l'abonnement en cours, fixe jusqu'au renouvellement. */
     subscription: string | null;
   };
-  /** Règlement hors ligne (virement, espèces, mobile money) : coordonnées du pays et facture en attente. */
+  /** Règlement hors ligne (virement, espèces) : coordonnées du pays et facture en attente. */
   offline: {
     available: boolean;
     accounts: { id: string; beneficiary: string; bankName: string | null; iban: string | null; accountNumber: string | null; swift: string | null; instructions: string | null; currency: string }[];
@@ -482,7 +482,7 @@ function BillingView() {
                     </Button>
                   )}
                   {data.offline.available && !stripeSubscriber && (!isCurrent || offlinePaid) && pendingOffline?.planCode !== p.code && (
-                    // Virement, espèces ou mobile money ; abonnement hors ligne en cours : année suivante.
+                    // Virement ou espèces ; abonnement hors ligne en cours : année suivante.
                     <Button variant="secondary" loading={pending === `offline-${p.code}`} onClick={() => payOffline(p.code)}>
                       {offlinePaid ? t("offline.renew", { name: p.name }) : t("offline.pay")}
                     </Button>
