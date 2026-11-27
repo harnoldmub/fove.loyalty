@@ -639,6 +639,11 @@ Le nombre d'entreprises abonnées à chaque offre est affiché.
 
 ### 6.5 Système
 
+- **Notifications de l'équipe FOVE** :
+  - interrupteur général, **désactivé par défaut** (phase de test : aucun email interne consommé) ; les candidatures et les messages restent visibles dans l'administration ;
+  - types d'envoi : nouvelle candidature partenaire, nouveau message de contact, récapitulatif quotidien ;
+  - destinataires (10 au plus ; vide : `TEAM_ALERT_EMAIL`) ;
+  - email de test, envoyé même si les notifications sont désactivées ; dernière modification (date, auteur), inscrite au journal d'audit.
 - Erreurs serveur récentes.
 - Intégrations de toutes les entreprises, avec leurs dernières erreurs de synchronisation.
 
@@ -714,7 +719,7 @@ Sur l'ensemble du site :
   - nettoyage des sessions et codes expirés.
 - **Deux gabarits d'emails** :
   - **clients de FOVE** (commerçants, équipes, partenaires, clients finaux) : gabarit de la marque (en-tête bleu nuit, liseré jaune, code ou référence mis en valeur, bouton, pied de page « FOVE · La fidélité qui rapproche ») ; arabe de droite à gauche. Un email sans mise en page propre est mis en forme automatiquement, dans la langue du destinataire ;
-  - **équipe FOVE** (notifications internes) : gabarit d'outil interne, en français. Fond gris, étiquette « FOVE · Équipe » et rubrique de couleur (Partenaires, Contact, Encaissements, À surveiller, Récapitulatif), tableau libellé / valeur, bouton vers l'administration, mention « Ne pas transférer à un client ». L'objet commence par « [FOVE · Rubrique] » pour trier la boîte de réception. Destinataire : `TEAM_ALERT_EMAIL` (par défaut contact@fove.digital).
+  - **équipe FOVE** (notifications internes) : gabarit d'outil interne, en français. Fond gris, étiquette « FOVE · Équipe » et rubrique de couleur (Partenaires, Contact, Encaissements, À surveiller, Récapitulatif), tableau libellé / valeur, bouton vers l'administration, mention « Ne pas transférer à un client ». L'objet commence par « [FOVE · Rubrique] » pour trier la boîte de réception. Destinataires et activation réglables dans Admin > Système (voir 6.5) ; désactivées par défaut.
 - **Notifications à l'équipe FOVE** :
   - en temps réel : nouvelle candidature partenaire, message de contact ;
   - **récapitulatif quotidien** : virements à rapprocher, accès provisoires qui se terminent sous 48 h, impayés par carte, échéances sous 30 jours (virement, espèces, contrats), candidatures à examiner, versements partenaires à payer, partenaires sans coordonnées bancaires, messages de contact non traités.

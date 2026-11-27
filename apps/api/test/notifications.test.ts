@@ -26,6 +26,8 @@ beforeAll(async () => {
   await db.user.create({ data: { email, name: "Admin", isSuperAdmin: true, emailVerifiedAt: new Date() } });
   admin = agent(app);
   await signIn(admin, email);
+  // Notifications de l'équipe désactivées par défaut : activées pour ces tests.
+  await db.teamNotificationSettings.create({ data: { id: "default", enabled: true } });
 });
 afterAll(async () => {
   await app.close();
@@ -182,5 +184,51 @@ describe("récapitulatif quotidien de l'équipe", () => {
     const mail = await db.emailOutbox.findFirstOrThrow({ where: { to: TEAM, subject: { startsWith: "[FOVE · Récapitulatif]" } }, orderBy: { createdAt: "desc" } });
     expect(mail.text).toContain("Messages de contact non traités");
     expect(mail.text).toContain("Prospect");
+  });
+});
+
+describe("réglages des notifications de l'équipe (Admin > Système)", () => {
+  const contact = (from: string) =>
+    request(app.getHttpServer()).post("/api/public/contact").send({ name: "Visiteur", email: from, message: "Bonjour, une question sur FOVE.", subject: "Question" });
+  const teamMails = (from: string) => db.emailOutbox.findMany({ where: { text: { contains: from }, subject: { startsWith: "[FOVE · Contact]" } } });
+  const put = (body: object) => admin.put("/api/admin/team-notifications", { enabled: true, recipients: [], partners: true, contact: true, digest: true, ...body });
+
+  it("désactivées : rien ne part ; un type coupé ne part pas ; plusieurs destinataires", async () => {
+    expect((await put({ enabled: false })).status).toBe(200);
+    const a = `${uniq("v")}@test.fove`;
+    await contact(a);
+    expect(await teamMails(a)).toHaveLength(0);
+
+    await put({ contact: false });
+    const b = `${uniq("v")}@test.fove`;
+    await contact(b);
+    expect(await teamMails(b)).toHaveLength(0);
+
+    const res = await put({ recipients: ["Ops@Fove.digital", "direction@fove.digital", "ops@fove.digital"] });
+    expect(res.body.effectiveRecipients).toEqual(["ops@fove.digital", "direction@fove.digital"]);
+    const c = `${uniq("v")}@test.fove`;
+    await contact(c);
+    expect((await teamMails(c)).map((m) => m.to).sort()).toEqual(["direction@fove.digital", "ops@fove.digital"]);
+    await put({});
+  });
+
+  it("récapitulatif coupé : pas d'envoi, il reprend à la réactivation", async () => {
+    const digest = app.get(TeamDigestService);
+    await put({ digest: false });
+    expect(await digest.sendDaily(new Date(Date.UTC(2031, 2, 3, 8)))).toBeNull();
+    await put({});
+    expect(await digest.sendDaily(new Date(Date.UTC(2031, 2, 3, 9)))).not.toBeNull();
+  });
+
+  it("email de test envoyé même désactivé ; réservé au super admin ; adresses vérifiées", async () => {
+    await put({ enabled: false });
+    const res = await admin.post("/api/admin/team-notifications/test", {});
+    expect(res.status).toBe(200);
+    expect(res.body.sentTo).toEqual([TEAM]);
+    expect((await lastEmail(TEAM))?.subject).toBe("[FOVE · Récapitulatif] Email de test");
+    expect((await put({ recipients: ["pas-une-adresse"] })).status).toBe(400);
+    const { client } = await ownerWithTenant(app, { plan: "free" });
+    expect((await client.get("/api/admin/team-notifications")).status).toBe(403);
+    await put({});
   });
 });

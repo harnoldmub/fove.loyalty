@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { Badge, PageHeader, Panel } from "@/components/ui/misc";
 import { api } from "@/lib/api";
 import { formatDate } from "@/lib/utils";
+import { TeamNotifications } from "@/components/admin/team-notifications";
 
 interface Conn { id: string; name: string; provider: string; lastSyncAt: string | null; lastError: string | null; tenant: { name: string }; syncLogs: { id: string; externalId: string; error: string | null; createdAt: string }[] }
 interface ErrorRow { id: string; method: string | null; path: string | null; message: string; createdAt: string; requestId: string | null }
@@ -16,6 +17,7 @@ export default function AdminSystem() {
   return (
     <>
       <PageHeader title={t("title")} />
+      <TeamNotifications />
       <h2 className="mb-3 font-display text-xl font-semibold">{t("integrations")}</h2>
       <div className="mb-10 grid gap-3">
         {conns.length === 0 && <p className="text-ink-2">{t("noIntegrations")}</p>}

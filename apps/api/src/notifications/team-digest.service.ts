@@ -26,6 +26,8 @@ export class TeamDigestService {
   /** Envoi du jour, à partir de 6 h UTC ; renvoie le nombre d'actions signalées (null : pas d'envoi). */
   async sendDaily(now = new Date()): Promise<number | null> {
     if (now.getUTCHours() < DIGEST_HOUR_UTC) return null;
+    // Désactivé dans Admin > Système : rien n'est calculé ni noté, l'envoi reprend dès la réactivation.
+    if (!(await this.team.isEnabled("digest"))) return null;
     const day = now.toISOString().slice(0, 10);
     if (await this.prisma.client.auditLog.count({ where: { action: "team.digest", metadata: { path: ["key"], equals: day } } })) return null;
     const sections = await this.sections(now);

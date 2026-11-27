@@ -119,6 +119,7 @@ describe("espace partenaire : rattachement d'un profil par email", () => {
 
 describe("candidature partenaire : email de confirmation", () => {
   it("échappe le HTML saisi par le candidat", async () => {
+    await db.teamNotificationSettings.upsert({ where: { id: "default" }, create: { id: "default", enabled: true }, update: { enabled: true } });
     const email = newEmail();
     const res = await apply(email, { name: "X</strong><a href=https://evil.example>Compte suspendu</a>", city: "<b>Ville</b>" });
     expect(res.status).toBeLessThan(300);
