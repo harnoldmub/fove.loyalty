@@ -29,7 +29,7 @@ afterAll(async () => {
 async function partner(extra: object = {}) {
   const email = `${uniq("agent")}@test.fove`;
   const user = await db.user.create({ data: { email, name: "Agent", emailVerifiedAt: new Date(), isPartner: true, locale: "fr" } });
-  const record = await db.partner.create({ data: { name: "Agent Casa", email, code: uniq("AG").toUpperCase(), status: "ACTIVE", userId: user.id, country: "MA", payoutCurrency: "EUR", ...extra } });
+  const record = await db.partner.create({ data: { name: "Agent Casa", email, code: uniq("AG").toUpperCase(), status: "ACTIVE", userId: user.id, country: "MA", payoutCurrency: "EUR", payoutInfo: { method: "BANK_TRANSFER", accountHolder: "Agent Casa", iban: "MA64011519000001205000534921" }, ...extra } });
   const c = agent(app);
   await signIn(c, email);
   return { c, partner: record, email };

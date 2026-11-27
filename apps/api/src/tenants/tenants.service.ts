@@ -21,6 +21,10 @@ import { AuditService } from "../common/audit.service";
 import { conflict, forbidden, isUniqueViolation, notFound } from "../common/errors";
 import type { AuthState, TenantContext } from "../common/context";
 import { PlanService } from "../billing/plan.service";
+import { EmailService } from "../notifications/email.service";
+import { merchantWelcomeMessage } from "../i18n/lifecycle-emails";
+import { localeForCountry, userLocale } from "../i18n/locale";
+import { loadConfig } from "../config";
 
 const ROLE_NAMES = { OWNER: "Propriétaire", MANAGER: "Manager", CASHIER: "Caissier", VIEWER: "Lecteur" } as const;
 
@@ -68,6 +72,7 @@ export class TenantsService {
     private readonly cards: CardsService,
     private readonly partners: PartnersService,
     private readonly referrals: ReferralService,
+    private readonly email: EmailService,
   ) {}
 
   /** Crée l'entreprise, l'adhésion propriétaire, les réglages et l'abonnement à l'offre Gratuite. */
@@ -95,6 +100,13 @@ export class TenantsService {
         return tenant;
       });
       await this.audit.log({ tenantId: tenant.id, actorUserId: auth.user.id, action: "tenant.created", targetType: "tenant", targetId: tenant.id });
+      try {
+        const owner = await this.prisma.client.user.findUnique({ where: { id: auth.user.id }, select: { locale: true } });
+        const locale = userLocale(owner, localeForCountry(input.country));
+        await this.email.send({ to: auth.user.email, ...merchantWelcomeMessage(locale, { business: tenant.name }, `${loadConfig().APP_URL}/app`) });
+      } catch {
+        // email de bienvenue non bloquant
+      }
 
       // Un seul est récompensé : le partenaire ou le parrain dont le lien a été cliqué en premier.
       const winner = pickAttribution(input);

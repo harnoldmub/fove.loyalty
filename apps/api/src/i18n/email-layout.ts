@@ -33,8 +33,12 @@ const FONT = "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, 
 
 /** Texte en HTML sûr : échappement, liens cliquables, retours à la ligne. */
 function richText(text: string, color: string): string {
+  // Un lien s'arrête aux caractères échappés (<, >, guillemets) : un texte saisi ne peut pas prolonger une adresse.
   return escapeHtml(text)
-    .replace(/(https?:\/\/[^\s<]+[^\s<.,;:!?)])/g, `<a href="$1" style="color: ${color}; word-break: break-all;">$1</a>`)
+    .replace(/https?:\/\/(?:(?!&(?:lt|gt|quot|#39);)[^\s<])+/g, (match) => {
+      const url = match.replace(/[.,;:!?)]+$/, "");
+      return `<a href="${url}" style="color: ${color}; word-break: break-all;">${url}</a>${match.slice(url.length)}`;
+    })
     .replace(/\n/g, "<br>");
 }
 
@@ -133,4 +137,100 @@ export function textToBrandedHtml(text: string, subject: string, lang?: Locale):
     ...blocks.map((block) => (CODE_LINE.test(block.trim()) ? codeHtml(block.trim(), BRAND.cobalt) : paragraphHtml(block, BRAND.cobalt))),
   ].join("\n");
   return brandLayout(locale, { title: subject, body });
+}
+
+// --- Notifications internes à l'équipe FOVE ---------------------------------------------------
+
+/** Rubriques des notifications internes : une couleur par rubrique, pour trier d'un coup d'œil. */
+export const TEAM_TOPICS = {
+  partners: { label: "Partenaires", color: "#7C3AED" },
+  contact: { label: "Contact", color: "#2C55F5" },
+  billing: { label: "Encaissements", color: "#12936B" },
+  watch: { label: "À surveiller", color: "#C2410C" },
+  digest: { label: "Récapitulatif", color: "#14204A" },
+} as const;
+export type TeamTopic = keyof typeof TEAM_TOPICS;
+
+/** Ligne d'une section : texte seul, ou texte cliquable vers une page de l'administration. */
+export type TeamRow = string | { text: string; url: string };
+
+export interface TeamSection {
+  title: string;
+  /** Lignes déjà rédigées ; vide : la section affiche « Rien à signaler ». */
+  rows: TeamRow[];
+}
+
+const rowText = (row: TeamRow) => (typeof row === "string" ? row : `${row.text} (${row.url})`);
+
+export interface TeamMessage {
+  topic: TeamTopic;
+  /** Objet de l'email, sans le préfixe de rubrique. */
+  subject: string;
+  heading: string;
+  intro?: string;
+  /** Paires libellé / valeur (les valeurs vides sont ignorées). */
+  fields?: Array<[string, string | null | undefined]>;
+  sections?: TeamSection[];
+  button?: { label: string; url: string };
+}
+
+const TEAM = { bg: "#EEF0F4", card: "#FFFFFF", ink: "#14204A", muted: "#5B6582", line: "#E2E6EE", mono: "'SFMono-Regular', Menlo, Consolas, monospace" };
+
+/** Objet d'une notification interne : préfixe de rubrique pour filtrer la boîte de réception. */
+export const teamSubject = (m: Pick<TeamMessage, "topic" | "subject">) => `[FOVE · ${TEAM_TOPICS[m.topic].label}] ${m.subject}`;
+
+/** Version texte d'une notification interne. */
+export function teamText(m: TeamMessage): string {
+  const fields = (m.fields ?? []).filter(([, v]) => v).map(([k, v]) => `${k} : ${v}`);
+  const sections = (m.sections ?? []).map((s) => `${s.title}\n${s.rows.length ? s.rows.map((r) => `- ${rowText(r)}`).join("\n") : "- Rien à signaler"}`);
+  return [m.heading, m.intro, fields.join("\n"), ...sections, m.button ? `${m.button.label} : ${m.button.url}` : null].filter(Boolean).join("\n\n");
+}
+
+/**
+ * Gabarit des notifications internes, volontairement distinct des emails envoyés aux clients :
+ * fond gris, carte sobre à liseré de couleur de rubrique, étiquette « Équipe FOVE », tableau
+ * libellé / valeur, bouton vers l'administration. En français uniquement.
+ */
+export function teamHtml(m: TeamMessage, recipient: string): string {
+  const topic = TEAM_TOPICS[m.topic];
+  const fields = (m.fields ?? []).filter(([, v]) => v);
+  const fieldRows = fields
+    .map(
+      ([k, v]) =>
+        `<tr><td style="padding: 7px 12px 7px 0; width: 150px; vertical-align: top; font-size: 13px; color: ${TEAM.muted};">${escapeHtml(k)}</td><td style="padding: 7px 0; font-size: 14px; color: ${TEAM.ink}; word-break: break-word;">${richText(v!, topic.color)}</td></tr>`,
+    )
+    .join("");
+  const sections = (m.sections ?? [])
+    .map(
+      (s) =>
+        `<p style="margin: 22px 0 8px; font-size: 12px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: ${TEAM.muted};">${escapeHtml(s.title)} <span style="color: ${topic.color};">(${s.rows.length})</span></p>` +
+        (s.rows.length
+          ? `<table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0">${s.rows.map((r) => `<tr><td style="padding: 6px 0; border-top: 1px solid ${TEAM.line}; font-size: 14px; color: ${TEAM.ink};">${typeof r === "string" ? richText(r, topic.color) : `<a href="${escapeHtml(r.url)}" style="color: ${TEAM.ink}; text-decoration: underline;">${escapeHtml(r.text)}</a>`}</td></tr>`).join("")}</table>`
+          : `<p style="margin: 0; font-size: 13px; color: ${TEAM.muted};">Rien à signaler</p>`),
+    )
+    .join("");
+  return `<!DOCTYPE html>
+<html lang="fr">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>${escapeHtml(teamSubject(m))}</title></head>
+<body style="margin: 0; padding: 0; background-color: ${TEAM.bg}; font-family: ${FONT}; color: ${TEAM.ink};">
+  <div style="display: none; max-height: 0; overflow: hidden;">${escapeHtml(m.heading)}</div>
+  <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" bgcolor="${TEAM.bg}">
+    <tr><td style="padding: 24px 12px;">
+      <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="max-width: 640px; margin: 0 auto;">
+        <tr><td style="padding: 0 4px 10px; font-family: ${TEAM.mono}; font-size: 11px; letter-spacing: 1.5px; color: ${TEAM.muted};">
+          FOVE · ÉQUIPE &nbsp;<span style="display: inline-block; padding: 2px 8px; border-radius: 4px; background-color: ${topic.color}; color: #ffffff; letter-spacing: 1px;">${escapeHtml(topic.label.toUpperCase())}</span>
+        </td></tr>
+        <tr><td style="background-color: ${TEAM.card}; border: 1px solid ${TEAM.line}; border-left: 4px solid ${topic.color}; border-radius: 6px; padding: 22px 24px;">
+          <h1 style="margin: 0 0 6px; font-size: 19px; line-height: 26px; font-weight: 700; color: ${TEAM.ink};">${escapeHtml(m.heading)}</h1>
+          ${m.intro ? `<p style="margin: 0 0 12px; font-size: 14px; line-height: 21px; color: ${TEAM.muted};">${richText(m.intro, topic.color)}</p>` : ""}
+          ${fieldRows ? `<table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="margin-top: 8px; border-top: 1px solid ${TEAM.line};">${fieldRows}</table>` : ""}
+          ${sections}
+          ${m.button ? `<table role="presentation" border="0" cellspacing="0" cellpadding="0" style="margin-top: 22px;"><tr><td bgcolor="${TEAM.ink}" style="border-radius: 6px;"><a href="${escapeHtml(m.button.url)}" target="_blank" rel="noopener noreferrer" style="display: inline-block; padding: 10px 18px; font-size: 14px; font-weight: 600; color: #ffffff; text-decoration: none;">${escapeHtml(m.button.label)} →</a></td></tr></table>` : ""}
+        </td></tr>
+        <tr><td style="padding: 12px 4px 0; font-size: 11px; line-height: 16px; color: ${TEAM.muted};">Notification interne envoyée automatiquement à ${escapeHtml(recipient)}. Ne pas transférer à un client.</td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`;
 }

@@ -4,6 +4,9 @@ import { PrismaService } from "../common/prisma.service";
 import { AuditService } from "../common/audit.service";
 import { PricingService } from "../billing/pricing.service";
 import { EmailService } from "../notifications/email.service";
+import { TeamAlertService } from "../notifications/team-alert.service";
+import { partnerMessage } from "../i18n/lifecycle-emails";
+import { formatMoney } from "../i18n/format";
 import { loadConfig } from "../config";
 import { convertCents } from "@fove/shared";
 import { badRequest, forbidden, notFound } from "../common/errors";
@@ -30,6 +33,7 @@ export class PartnersService {
     private readonly audit: AuditService,
     private readonly email: EmailService,
     private readonly pricing: PricingService,
+    private readonly team: TeamAlertService,
   ) {}
 
   /**
@@ -155,41 +159,29 @@ export class PartnersService {
     try {
       const locale = requestLocale ?? localeForCountry(dto.country);
       const t = partnerEmails(locale);
-      await this.email.send({
-        to: dto.email,
-        subject: t.receivedSubject,
-        text: t.received(dto.name, code),
-        // Version mise en forme disponible en français ; texte seul dans les autres langues.
-        html: locale !== "fr" ? undefined : `
-          <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #111; max-width: 580px; margin: 0 auto; padding: 24px;">
-            <h2 style="margin-bottom: 12px; color: #000;">Candidature reçue · Programme Partenaires FOVE</h2>
-            <p>Bonjour <strong>${escapeHtml(dto.name)}</strong>,</p>
-            <p>Nous avons bien reçu votre candidature pour rejoindre le programme de partenaires commerciaux de FOVE.</p>
-            <div style="background-color: #f7f7f8; border-radius: 8px; padding: 16px; margin: 20px 0;">
-              <p style="margin: 0; font-size: 14px;"><strong>Code envisagé :</strong> <code>${code}</code></p>
-              <p style="margin: 4px 0 0; font-size: 14px;"><strong>Profil :</strong> ${dto.partnerType}</p>
-              <p style="margin: 4px 0 0; font-size: 14px;"><strong>Territoire :</strong> ${escapeHtml(dto.city)}, ${escapeHtml(dto.country)}</p>
-            </div>
-            <p>Notre équipe commerciale étudie vos informations. Dès approbation, vous recevrez vos accès complets et votre lien commercial.</p>
-            <p style="margin-top: 24px; font-size: 13px; color: #666;">L'équipe FOVE · <a href="https://fove.digital" style="color: #1F4FFF;">https://fove.digital</a></p>
-          </div>
-        `,
-      });
+      await this.email.send({ to: dto.email, locale, subject: t.receivedSubject, text: t.received(dto.name, code) });
     } catch (e) {
       this.logger.error("Erreur envoi email candidature candidat", e);
     }
 
-    // Email de notification à l'administrateur
-    const adminEmail = loadConfig().EMAIL_FROM || "contact@fove.digital";
-    try {
-      await this.email.send({
-        to: adminEmail,
-        subject: `[Nouveau Partenaire] Candidature de ${dto.name} (${dto.company || "Indépendant"})`,
-        text: `Nouvelle candidature partenaire :\n\nNom: ${dto.name}\nEmail: ${dto.email}\nTéléphone: ${dto.phone}\nEntreprise: ${dto.company ?? "—"}\nType: ${dto.partnerType}\nPays: ${dto.country} / ${dto.city}\nStratégie: ${dto.promotionStrategy}\n\nExaminez la candidature dans le back-office :\n${loadConfig().APP_URL}/admin/finance/commissions`,
-      });
-    } catch (e) {
-      this.logger.error("Erreur envoi notification admin candidature", e);
-    }
+    // Notification interne à l'équipe FOVE (gabarit interne).
+    await this.team.send({
+      topic: "partners",
+      subject: `Candidature de ${dto.name}${dto.company ? ` (${dto.company})` : ""}`,
+      heading: "Nouvelle candidature partenaire",
+      intro: isAutoApproved ? "Validée automatiquement (validation automatique activée dans les réglages partenaires)." : "À examiner : validation ou refus depuis Admin > Partenaires.",
+      fields: [
+        ["Nom", dto.name],
+        ["Email", dto.email],
+        ["Téléphone", dto.phone],
+        ["Entreprise", dto.company ?? "Indépendant"],
+        ["Profil", dto.partnerType],
+        ["Territoire", `${dto.city}, ${dto.country}`],
+        ["Code proposé", code],
+        ["Stratégie", dto.promotionStrategy],
+      ],
+      button: { label: "Examiner la candidature", url: this.team.adminUrl("/partners") },
+    });
 
     await this.audit.log({
       action: "partner.application_submitted",
@@ -314,6 +306,12 @@ export class PartnersService {
           registeredTenantId: tenant.id,
         },
       });
+      try {
+        const locale = await this.partnerLocale(partner);
+        await this.email.send({ to: partner.email, ...partnerMessage(locale, "leadRegistered", { name: partner.name, business: tenant.name }, `${loadConfig().APP_URL}/partner`) });
+      } catch (e) {
+        this.logger.error("Erreur envoi notification inscription d'un commerce", e);
+      }
     }
 
     return attribution;
@@ -411,10 +409,12 @@ export class PartnersService {
 
     // Email de notification de commission au partenaire
     try {
-      const t = partnerEmails(await this.partnerLocale(partner));
-      const amount = `${(commissionAmount / 100).toFixed(2)} ${payment.currency}`;
+      const locale = await this.partnerLocale(partner);
+      const t = partnerEmails(locale);
+      const amount = formatMoney(commissionAmount, payment.currency, locale);
       await this.email.send({
         to: partner.email,
+        locale,
         subject: t.commissionSubject(amount),
         text: t.commission(partner.name, amount, String(rate), settings.validationDelayDays, `${loadConfig().APP_URL}/partner`),
       });
@@ -439,6 +439,15 @@ export class PartnersService {
         data: { status: "CANCELLED" },
       });
       this.logger.warn(`Commission ${comm.id} annulée suite au remboursement du paiement ${paymentId}`);
+      try {
+        const partner = await this.prisma.client.partner.findUnique({ where: { id: comm.partnerId } });
+        if (partner) {
+          const locale = await this.partnerLocale(partner);
+          await this.email.send({ to: partner.email, ...partnerMessage(locale, "commissionCancelled", { name: partner.name, amount: formatMoney(comm.commissionAmountCents, comm.currency, locale) }, `${loadConfig().APP_URL}/partner`) });
+        }
+      } catch (e) {
+        this.logger.error("Erreur envoi notification commission annulée", e);
+      }
     }
   }
 
@@ -692,7 +701,13 @@ export class PartnersService {
       const commissions = list.filter((c) => c.payoutCurrency === currency);
       const amountCents = commissions.reduce((sum, c) => sum + (c.payoutAmountCents ?? 0), 0);
       if (amountCents <= 0 || amountCents < partner.minimumPayoutThresholdCents) continue;
-      const method = typeof (partner.payoutInfo as { method?: unknown } | null)?.method === "string" ? String((partner.payoutInfo as { method: string }).method) : "Virement";
+      // Sans coordonnées bancaires, rien n'est versé : les commissions attendent le mois suivant
+      // et le partenaire est invité (une fois par mois) à compléter son espace.
+      if (!hasBankDetails(partner.payoutInfo)) {
+        await this.askPayoutInfo(partner, amountCents, currency, reference);
+        continue;
+      }
+      const method = "BANK_TRANSFER";
       const payout = await db.$transaction(async (tx) => {
         const p = await tx.partnerPayout.create({ data: { partnerId, amountCents, currency, method, status: "PENDING", reference, paidAt: null } });
         await tx.partnerCommission.updateMany({ where: { id: { in: commissions.map((c) => c.id) } }, data: { payoutId: p.id } });
@@ -705,12 +720,25 @@ export class PartnersService {
         const t = partnerEmails(locale);
         const money = (cents: number, cur: string) => new Intl.NumberFormat(INTL_LOCALE[locale], { style: "currency", currency: cur }).format(cents / 100);
         const lines = commissions.map((c) => `- ${c.tenant.name} : ${money(c.payoutAmountCents ?? 0, currency)}`).join("\n");
-        await this.email.send({ to: partner.email, subject: t.scheduledSubject(money(amountCents, currency)), text: t.scheduled(partner.name, money(amountCents, currency), lines, `${loadConfig().APP_URL}/partner`) });
+        await this.email.send({ to: partner.email, locale, subject: t.scheduledSubject(money(amountCents, currency)), text: t.scheduled(partner.name, money(amountCents, currency), lines, `${loadConfig().APP_URL}/partner`) });
       } catch (e) {
         this.logger.error("Erreur envoi récapitulatif de versement", e);
       }
     }
     return created;
+  }
+
+  /** Coordonnées bancaires manquantes au moment du versement : un email par mois. */
+  private async askPayoutInfo(partner: { id: string; name: string; email: string; userId: string | null; country: string | null }, amountCents: number, currency: string, reference: string) {
+    const key = `${reference}:missing-bank`;
+    if (await this.prisma.client.auditLog.count({ where: { action: "partner.payout_info_missing", metadata: { path: ["key"], equals: key } } })) return;
+    await this.audit.log({ action: "partner.payout_info_missing", targetType: "partner", targetId: partner.id, metadata: { key, amountCents, currency } });
+    try {
+      const locale = await this.partnerLocale(partner);
+      await this.email.send({ to: partner.email, ...partnerMessage(locale, "payoutInfoMissing", { name: partner.name, amount: formatMoney(amountCents, currency, locale) }, `${loadConfig().APP_URL}/partner`) });
+    } catch (e) {
+      this.logger.error("Erreur envoi demande de coordonnées bancaires", e);
+    }
   }
 
   /** Versements à faire et faits (admin) : les plus récents d'abord, filtrables par état. */
@@ -875,11 +903,8 @@ export class PartnersService {
     });
 
     try {
-      await this.email.send({
-        to: partner.email,
-        subject: partnerEmails(await this.partnerLocale(partner)).rejectedSubject,
-        text: partnerEmails(await this.partnerLocale(partner)).rejected(partner.name, reason),
-      });
+      const locale = await this.partnerLocale(partner);
+      await this.email.send({ to: partner.email, locale, subject: partnerEmails(locale).rejectedSubject, text: partnerEmails(locale).rejected(partner.name, reason) });
     } catch (e) {
       this.logger.error("Erreur envoi email rejet partenaire", e);
     }
@@ -946,14 +971,10 @@ export class PartnersService {
 
       // Notification de virement effectué
       try {
-        await this.email.send({
-          to: payout.partner.email,
-          ...(await (async () => {
-            const t = partnerEmails(await this.partnerLocale(payout.partner));
-            const amount = `${(payout.amountCents / 100).toFixed(2)} ${payout.currency}`;
-            return { subject: t.payoutSubject(amount), text: t.payout(payout.partner.name, amount, dto.reference ?? t.bankTransfer) };
-          })()),
-        });
+        const locale = await this.partnerLocale(payout.partner);
+        const t = partnerEmails(locale);
+        const amount = formatMoney(payout.amountCents, payout.currency, locale);
+        await this.email.send({ to: payout.partner.email, locale, subject: t.payoutSubject(amount), text: t.payout(payout.partner.name, amount, dto.reference || t.bankTransfer) });
       } catch (e) {
         this.logger.error("Erreur envoi notification virement effectué", e);
       }
@@ -967,6 +988,15 @@ export class PartnersService {
           reference: dto.rejectionReason || "Demande rejetée",
         },
       });
+      try {
+        const locale = await this.partnerLocale(payout.partner);
+        await this.email.send({
+          to: payout.partner.email,
+          ...partnerMessage(locale, "payoutRejected", { name: payout.partner.name, amount: formatMoney(payout.amountCents, payout.currency, locale), reason: dto.rejectionReason || "—" }, `${loadConfig().APP_URL}/partner`),
+        });
+      } catch (e) {
+        this.logger.error("Erreur envoi notification versement rejeté", e);
+      }
     }
 
     await this.audit.log({
@@ -997,4 +1027,10 @@ export class PartnersService {
 
     return settings;
   }
+}
+
+/** Coordonnées de versement utilisables : titulaire et IBAN (ou numéro de compte) renseignés. */
+export function hasBankDetails(info: unknown): boolean {
+  const i = (info ?? {}) as { accountHolder?: unknown; iban?: unknown };
+  return typeof i.accountHolder === "string" && i.accountHolder.trim() !== "" && typeof i.iban === "string" && i.iban.trim() !== "";
 }

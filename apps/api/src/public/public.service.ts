@@ -15,6 +15,7 @@ import { CardsService, cardUrl } from "../cards/cards.service";
 import { tenantLocale, type Locale } from "../i18n/locale";
 import { recoverCardMessage } from "../i18n/notifications";
 import { cardLinkSubject, otpMessage } from "../i18n/emails";
+import { TeamAlertService } from "../notifications/team-alert.service";
 
 const OTP_TTL_MS = 10 * 60_000;
 const OTP_MAX_ATTEMPTS = 5;
@@ -34,6 +35,7 @@ export class PublicService {
     private readonly audit: AuditService,
     private readonly cards: CardsService,
     private readonly clientAccounts: ClientAccountService,
+    private readonly team: TeamAlertService,
   ) { }
 
   /** Lien d'inscription d'un commerce, par jeton de QR ou par adresse publique. */
@@ -137,6 +139,7 @@ export class PublicService {
     if (email) {
       await this.email.send({
         to: email,
+        locale,
         subject: cardLinkSubject(locale, link.tenant.name),
         text,
       });
@@ -290,10 +293,21 @@ export class PublicService {
       ip,
       metadata: { subject: input.subject, companyName: input.companyName },
     });
-    await this.email.send({
-      to: "contact@fove.digital",
-      subject: `[FOVE Contact] ${input.subject ?? "Demande"} — ${input.name}${input.companyName ? ` (${input.companyName})` : ""}`,
-      text: `Nouveau message reçu sur fove.digital :\n\nNom : ${input.name}\nEmail : ${input.email}\nTéléphone : ${input.phone ?? "Non renseigné"}\nEntreprise : ${input.companyName ?? "Non renseignée"}\nSujet : ${input.subject ?? "Demande d'information"}\n\nMessage :\n${input.message}\n\nConsultez et traitez cette demande dans l'espace Super-Admin : /admin/messages`,
+    await this.team.send({
+      topic: "contact",
+      subject: `${input.subject ?? "Demande"} — ${input.name}${input.companyName ? ` (${input.companyName})` : ""}`,
+      heading: "Nouveau message de contact",
+      intro: "Reçu depuis le formulaire de contact du site. Répondez directement à l'adresse de l'expéditeur.",
+      fields: [
+        ["Nom", input.name],
+        ["Email", input.email],
+        ["Téléphone", input.phone ?? "Non renseigné"],
+        ["Entreprise", input.companyName ?? "Non renseignée"],
+        ["Sujet", input.subject ?? "Demande d'information"],
+        ["Provenance", input.source],
+        ["Message", input.message],
+      ],
+      button: { label: "Traiter le message", url: this.team.adminUrl("/messages") },
     });
     return { id: msg.id, status: msg.status };
   }

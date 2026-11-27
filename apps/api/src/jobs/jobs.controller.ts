@@ -12,6 +12,8 @@ import { ClientAccountService } from "../client-account/client-account.service";
 import { ReferralService } from "../referrals/referral.service";
 import { PartnersService } from "../partners/partners.service";
 import { OfflineBillingService } from "../billing/offline.service";
+import { BillingEmailService } from "../billing/billing-emails.service";
+import { TeamDigestService } from "../notifications/team-digest.service";
 
 /**
  * Tâches périodiques déclenchées par un cron Railway (toutes les 5 minutes)
@@ -30,6 +32,8 @@ export class JobsController {
     private readonly referrals: ReferralService,
     private readonly partners: PartnersService,
     private readonly offline: OfflineBillingService,
+    private readonly billingEmails: BillingEmailService,
+    private readonly teamDigest: TeamDigestService,
   ) {}
 
   @Get("health")
@@ -55,8 +59,16 @@ export class JobsController {
       // Commissions arrivées au bout du délai de validation : disponibles et converties (monnaie de versement).
       await this.partners.releaseDueCommissions(undefined, now),
     ];
+    // Emails d'échéance au commerçant : renouvellement J-30/J-7, accès provisoire J-2, fin de grâce d'un impayé.
+    const reminders = {
+      renewals: await this.billingEmails.remindRenewals(now),
+      provisional: await this.billingEmails.remindProvisional(now),
+      graceEnded: await this.billingEmails.notifyGraceEnded(now),
+    };
     // Versements mensuels des commissions partenaires (le 1er du mois, payés avant le 10).
     const payoutsScheduled = await this.partners.scheduleMonthlyPayouts(now);
+    // Récapitulatif quotidien des actions à mener par l'équipe FOVE (une fois par jour, à partir de 6 h UTC).
+    const teamDigest = await this.teamDigest.sendDaily(now);
     const db = this.prisma.client;
     const cleanup = await db.$transaction([
       db.session.deleteMany({ where: { expiresAt: { lt: now } } }),
@@ -68,6 +80,6 @@ export class JobsController {
       // Gardés 24 h : ils servent à limiter le nombre de demandes par email et par adresse IP.
       db.clientLoginCode.deleteMany({ where: { createdAt: { lt: new Date(now.getTime() - 86_400_000) } } }),
     ]);
-    return { webhooksRetried: webhooks, accountsExpired: expired, subscriptions, clientAccounts, clientReminders, referrals, commissionsReleased, offlineExpired, payoutsScheduled, cleaned: cleanup.map((c) => c.count) };
+    return { webhooksRetried: webhooks, accountsExpired: expired, subscriptions, clientAccounts, clientReminders, referrals, commissionsReleased, offlineExpired, reminders, payoutsScheduled, teamDigest, cleaned: cleanup.map((c) => c.count) };
   }
 }

@@ -1,7 +1,7 @@
 /**
  * Emails transactionnels traduits. Chaque fonction renvoie sujet, texte et,
  * pour les emails avec bouton, une version HTML (sens de lecture inversé pour l'arabe).
- * Les alertes internes à l'équipe FOVE restent en français et ne passent pas ici.
+ * Les notifications internes à l'équipe FOVE ont leur propre gabarit (TeamAlertService, teamHtml).
  */
 import type { EmailMessage } from "../notifications/email.service";
 import type { Locale } from "./locale";
@@ -117,7 +117,7 @@ export const cardLinkSubject = (locale: Locale, tenantName: string) => CUSTOMER[
 
 export function otpMessage(locale: Locale, tenantName: string, code: string): Content {
   const t = CUSTOMER[locale];
-  return { subject: t.otpSubject(tenantName), text: t.otp(code) };
+  return { locale, subject: t.otpSubject(tenantName), text: t.otp(code) };
 }
 
 // --- Compte client FOVE -------------------------------------------------------
@@ -389,6 +389,7 @@ export function quotaAlertMessage(locale: Locale, p: { reason: "blocked" | "reac
   const t = QUOTA[locale];
   const blocked = p.reason === "blocked";
   return {
+    locale,
     subject: blocked ? t.blockedSubject(p.tenantName) : t.reachedSubject(p.tenantName, p.limit),
     text: t.body(blocked ? t.blocked(p.limit) : t.reached(p.limit), p.billingUrl),
   };
@@ -420,7 +421,7 @@ const UNVERIFIED_LIMIT = {
 /** Inscription refusée par la limite douce : le propriétaire n'a pas confirmé son email. */
 export function unverifiedLimitMessage(locale: Locale, p: { tenantName: string; limit: number; appUrl: string }): Content {
   const t = UNVERIFIED_LIMIT[locale];
-  return { subject: t.subject(p.tenantName), text: t.body(p.limit, p.appUrl) };
+  return { locale, subject: t.subject(p.tenantName), text: t.body(p.limit, p.appUrl) };
 }
 
 // --- Partenaires --------------------------------------------------------------
