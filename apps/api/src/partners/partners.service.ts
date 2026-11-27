@@ -813,71 +813,44 @@ export class PartnersService {
     });
   }
 
+  /**
+   * Profil partenaire validé (candidature approuvée ou création par l'admin) : rattaché au compte FOVE
+   * au même email confirmé s'il existe, puis email d'invitation (code, lien, accès à l'espace partenaire
+   * en se connectant avec cette adresse).
+   */
+  async welcome(partnerId: string) {
+    const partner = await this.prisma.client.partner.findUniqueOrThrow({ where: { id: partnerId } });
+    const user = partner.userId
+      ? await this.prisma.client.user.findUnique({ where: { id: partner.userId } })
+      : await this.prisma.client.user.findFirst({ where: { email: partner.email.toLowerCase(), emailVerifiedAt: { not: null } } });
+    if (user) {
+      await this.prisma.client.user.update({ where: { id: user.id }, data: { isPartner: true } });
+      if (!partner.userId) await this.prisma.client.partner.updateMany({ where: { id: partner.id, userId: null }, data: { userId: user.id } });
+    }
+    try {
+      const appUrl = loadConfig().APP_URL;
+      await this.email.send({
+        to: partner.email,
+        ...partnerApprovedMessage(await this.partnerLocale(partner), {
+          name: partner.name,
+          code: partner.code,
+          publicLink: `${appUrl}/p/${partner.code}`,
+          dashboardUrl: `${appUrl}/partner`,
+        }),
+      });
+    } catch (e) {
+      this.logger.error("Erreur envoi email d'invitation partenaire", e);
+    }
+  }
+
   async adminApprove(partnerId: string, auth: AuthState) {
     const partner = await this.prisma.client.partner.findUnique({
       where: { id: partnerId },
     });
     if (!partner) throw notFound("Partenaire introuvable");
 
-    // Rapprochement avec un User existant
-    let user = partner.userId
-      ? await this.prisma.client.user.findUnique({ where: { id: partner.userId } })
-      : await this.prisma.client.user.findFirst({ where: { email: partner.email.toLowerCase(), emailVerifiedAt: { not: null } } });
-
-    if (user) {
-      await this.prisma.client.user.update({
-        where: { id: user.id },
-        data: { isPartner: true },
-      });
-      await this.prisma.client.partner.update({
-        where: { id: partner.id },
-        data: {
-          status: "APPROVED",
-          userId: user.id,
-        },
-      });
-    } else {
-      await this.prisma.client.partner.update({
-        where: { id: partner.id },
-        data: { status: "APPROVED" },
-      });
-    }
-
-    // Email d'approbation officiel
-    const loginUrl = `${loadConfig().APP_URL}/login`;
-    const partnerUrl = `${loadConfig().APP_URL}/partner`;
-    try {
-      const locale = await this.partnerLocale(partner);
-      const translated = partnerApprovedMessage(locale, {
-        name: partner.name,
-        code: partner.code,
-        publicLink: `${loadConfig().APP_URL}/p/${partner.code}`,
-        dashboardUrl: partnerUrl,
-      });
-      await this.email.send({
-        to: partner.email,
-        subject: translated.subject,
-        text: translated.text,
-        html: locale !== "fr" ? translated.html : `
-          <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #111; max-width: 580px; margin: 0 auto; padding: 24px;">
-            <h2 style="color: #000;">Félicitations · Votre partenariat FOVE est approuvé !</h2>
-            <p>Bonjour <strong>${escapeHtml(partner.name)}</strong>,</p>
-            <p>Votre statut de partenaire commercial FOVE est désormais actif. Vous pouvez dès à présent recommander FOVE et percevoir vos commissions.</p>
-            <div style="background-color: #f7f7f8; border-left: 4px solid #C7FF3D; border-radius: 4px; padding: 16px; margin: 20px 0;">
-              <p style="margin: 0; font-size: 14px;"><strong>Votre code partenaire :</strong> <code style="font-size: 16px; font-weight: bold;">${partner.code}</code></p>
-              <p style="margin: 6px 0 0; font-size: 14px;"><strong>Votre lien de recommandation :</strong><br/><a href="${loadConfig().APP_URL}/p/${partner.code}" style="color: #1F4FFF; font-weight: 500;">${loadConfig().APP_URL}/p/${partner.code}</a></p>
-              <p style="margin: 6px 0 0; font-size: 14px;"><strong>Taux de commission :</strong> ${Number(partner.commissionRatePercent)}% sur les abonnements éligibles</p>
-            </div>
-            <div style="margin: 24px 0;">
-              <a href="${partnerUrl}" style="display: inline-block; background-color: #000; color: #fff; text-decoration: none; padding: 12px 24px; border-radius: 6px; font-weight: 600; font-size: 14px;">Accéder à mon espace partenaire</a>
-            </div>
-            <p style="font-size: 13px; color: #666;">Si vous n'aviez pas encore de compte utilisateur FOVE, connectez-vous avec cette adresse email (${escapeHtml(partner.email)}).</p>
-          </div>
-        `,
-      });
-    } catch (e) {
-      this.logger.error("Erreur envoi email approbation partenaire", e);
-    }
+    await this.prisma.client.partner.update({ where: { id: partner.id }, data: { status: "APPROVED" } });
+    await this.welcome(partner.id);
 
     await this.audit.log({
       actorUserId: auth.user.id,

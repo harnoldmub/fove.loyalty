@@ -22,6 +22,7 @@ import {
   UserCog,
   Users,
   X,
+  Handshake,
 } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 import { useTranslations } from "next-intl";
@@ -120,11 +121,19 @@ function TenantSwitcher() {
           <Menu.Item asChild className="block cursor-pointer rounded-sm px-2.5 py-2 text-sm outline-none data-[highlighted]:bg-surface-2">
             <Link href="/onboarding?new=1">{t("addBusiness")}</Link>
           </Menu.Item>
-          {me.user.isSuperAdmin && (
+          {/* Autres espaces du compte : nouvel onglet, l'espace commerçant reste ouvert. */}
+          {me.spaces.partner && (
             <Menu.Item asChild className="flex cursor-pointer items-center gap-2 rounded-sm px-2.5 py-2 text-sm outline-none data-[highlighted]:bg-surface-2">
-              <Link href="/admin">
+              <a href="/partner" target="_blank" rel="noopener">
+                <Handshake className="size-4" aria-hidden /> {t("partnerSpace")}
+              </a>
+            </Menu.Item>
+          )}
+          {me.spaces.admin && (
+            <Menu.Item asChild className="flex cursor-pointer items-center gap-2 rounded-sm px-2.5 py-2 text-sm outline-none data-[highlighted]:bg-surface-2">
+              <a href="/admin" target="_blank" rel="noopener">
                 <ShieldCheck className="size-4" aria-hidden /> {t("foveAdmin")}
-              </Link>
+              </a>
             </Menu.Item>
           )}
         </Menu.Content>

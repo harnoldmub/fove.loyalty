@@ -10,5 +10,5 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function PartnerPortalPage() {
   const me = await requireMe("/partner");
-  return <PartnerDashboard user={me.user} />;
+  return <PartnerDashboard user={me.user} spaces={me.spaces} />;
 }

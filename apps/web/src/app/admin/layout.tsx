@@ -17,6 +17,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     <AdminShell
       user={{ name: me.user.name, email: me.user.email }}
       hasMerchantAccess={me.tenants.length > 0}
+      hasPartnerAccess={me.spaces.partner}
     >
       {children}
     </AdminShell>

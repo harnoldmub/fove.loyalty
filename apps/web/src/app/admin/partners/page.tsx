@@ -40,6 +40,8 @@ interface AdminPartnerRow {
   country: string | null;
   city: string | null;
   commissionRatePercent: number;
+  /** Compte FOVE rattaché : le partenaire s'est déjà connecté (sinon il est seulement invité). */
+  userId: string | null;
   status: string;
   rejectionReason: string | null;
   promotionStrategy: string | null;
@@ -390,6 +392,9 @@ export default function AdminPartnersPage() {
                         </button>
                         <div className="text-ink-3">{p.email} · {p.phone ?? ""}</div>
                         {p.company && <div className="text-[11px] text-cobalt">{p.company}</div>}
+                        <div className="mt-1">
+                          {p.userId ? <Badge tone="mint">{t("partners.connected")}</Badge> : <Badge tone="neutral">{t("partners.invited")}</Badge>}
+                        </div>
                       </td>
                       <td className="py-3.5 px-4 font-mono font-bold text-cobalt" dir="ltr">
                         {p.code}

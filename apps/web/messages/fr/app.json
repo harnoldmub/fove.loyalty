@@ -834,6 +834,7 @@
     }
   },
   "shell": {
+    "partnerSpace": "Espace partenaire",
     "confirmWithCode": "Confirmer avec un code",
     "support": "Support",
     "active": "actif",

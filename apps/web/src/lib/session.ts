@@ -14,6 +14,9 @@ export interface Me {
     isPartner?: boolean;
     adminRole?: "SUPER_ADMIN" | "ASSOCIATE" | "FINANCE_MANAGER" | "SUPPORT" | null;
   };
+  /** Espaces accessibles et espace d'arrivée (administration, puis commerce, puis partenaire). */
+  spaces: { admin: boolean; merchant: boolean; partner: boolean };
+  home: "/admin" | "/app" | "/partner";
   activeTenantId: string | null;
   support: boolean;
   role: "OWNER" | "MANAGER" | "CASHIER" | "VIEWER" | "SUPPORT" | null;
@@ -36,7 +39,7 @@ export async function requireMe(next: string): Promise<Me> {
 export async function redirectIfSignedIn(params: { next?: string | string[]; offre?: string | string[] }): Promise<void> {
   if (params.offre) return;
   const { status, data } = await serverGet<Me>("/auth/me", true);
-  if (status === 200) redirect(safeInternalPath(typeof params.next === "string" ? params.next : null, data && isAdmin(data.user) ? "/admin" : "/app"));
+  if (status === 200) redirect(safeInternalPath(typeof params.next === "string" ? params.next : null, data?.home ?? "/app"));
 }
 
 /** Accès à l'administration FOVE (super admin, associé, direction financière). */

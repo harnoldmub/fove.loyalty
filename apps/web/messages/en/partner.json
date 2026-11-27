@@ -221,6 +221,7 @@
       "resend": "Confirm with a code"
     },
     "header": {
+      "createBusiness": "Create my loyalty programme",
       "badge": "Partner",
       "code": "Code: <strong>{code}</strong>",
       "merchantSpace": "Merchant space",

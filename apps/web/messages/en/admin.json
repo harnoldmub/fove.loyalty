@@ -943,6 +943,8 @@
       "approve": "Approve"
     },
     "partners": {
+      "connected": "Has joined their space",
+      "invited": "Invited, not signed in yet",
       "searchLabel": "Search for a partner",
       "searchPlaceholder": "Name, email, code or company",
       "empty": "No partners found.",
@@ -1000,6 +1002,7 @@
     "titleTemplate": "%s · FOVE Administration"
   },
   "shell": {
+    "partnerSpace": "Partner space",
     "badge": "Admin",
     "menuLabel": "Administration menu",
     "merchantSpace": "My merchant space",

@@ -106,7 +106,7 @@ function CodeAuth({
   mode,
   next,
   afterSignup,
-  adminHome = false,
+  useHome = false,
   initialName = "",
   initialEmail = "",
 }: {
@@ -115,8 +115,11 @@ function CodeAuth({
   next: string;
   /** Destination d'un compte créé : la création du commerce, sauf retour demandé (invitation…). */
   afterSignup: string;
-  /** Sans destination particulière : un admin FOVE arrive dans l'administration. */
-  adminHome?: boolean;
+  /**
+   * Sans destination particulière : l'espace d'arrivée du compte, renvoyé par l'API (administration,
+   * ou espace partenaire pour un partenaire sans commerce).
+   */
+  useHome?: boolean;
   initialName?: string;
   initialEmail?: string;
 }) {
@@ -157,7 +160,7 @@ function CodeAuth({
     }
     setBusy(true);
     try {
-      const res = await api.post<{ status: "signed_in" | "profile_required"; created?: boolean; admin?: boolean }>("/auth/code/verify", {
+      const res = await api.post<{ status: "signed_in" | "profile_required"; created?: boolean; home?: "/admin" | "/app" | "/partner" }>("/auth/code/verify", {
         email: email.trim(),
         code: code.trim(),
         ...(withProfile ? { name: name.trim(), acceptTerms: true } : {}),
@@ -167,7 +170,8 @@ function CodeAuth({
         return;
       }
       setLeaving(true);
-      router.replace(res.created ? afterSignup : res.admin && adminHome ? "/admin" : next);
+      const home = useHome && (res.home === "/admin" || res.home === "/partner") ? res.home : null;
+      router.replace(home ?? (res.created ? afterSignup : next));
       router.refresh();
     } catch (e) {
       setError(errorMessage(e));
@@ -263,9 +267,9 @@ export function LoginForm() {
         mode="login"
         next={safeInternalPath(next, afterAuthPath())}
         afterSignup={next ? safeInternalPath(next, "/onboarding") : "/onboarding"}
-        // Un admin FOVE arrive dans l'administration, même avec une offre retenue depuis la page tarifs
-        // (il paie depuis l'espace commerçant, ouvert à côté) ; seule une destination explicite l'emporte.
-        adminHome={!next}
+        // Un admin arrive dans l'administration, un partenaire sans commerce dans son espace, même avec une
+        // offre retenue depuis la page tarifs ; seule une destination explicite l'emporte.
+        useHome={!next}
         initialEmail={(searchParams.get("email") ?? "").slice(0, 120)}
       />
       {!native && (
@@ -312,6 +316,7 @@ export function SignupForm() {
         mode="signup"
         next={afterAuthPath()}
         afterSignup="/onboarding"
+        useHome={!offre}
         initialName={(searchParams.get("name") ?? "").slice(0, 80)}
         initialEmail={(searchParams.get("email") ?? "").slice(0, 120)}
       />

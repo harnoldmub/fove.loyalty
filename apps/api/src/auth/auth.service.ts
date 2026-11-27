@@ -22,7 +22,19 @@ const MAX_CODES_PER_IP_HOUR = 60;
 
 const codeHash = (email: string, code: string) => sha256(`user:${email}:${code}`);
 
-export type CodeVerifyResult = { status: "signed_in"; id: string; created: boolean; admin: boolean } | { status: "profile_required" };
+/** Espaces d'un compte et espace d'arrivée après connexion (administration, puis commerce, puis partenaire). */
+export interface Spaces {
+  admin: boolean;
+  merchant: boolean;
+  partner: boolean;
+}
+export type Home = "/admin" | "/app" | "/partner";
+
+export function homeFor(spaces: Spaces): Home {
+  return spaces.admin ? "/admin" : spaces.merchant ? "/app" : spaces.partner ? "/partner" : "/app";
+}
+
+export type CodeVerifyResult = { status: "signed_in"; id: string; created: boolean; admin: boolean; home: Home } | { status: "profile_required" };
 
 /** Accès à l'administration FOVE : son espace d'arrivée après connexion (l'espace commerçant s'ouvre à côté). */
 export function isAdminUser(user: { isSuperAdmin: boolean; adminRole: string | null }): boolean {
@@ -100,7 +112,8 @@ export class AuthService {
     const membership = await db.tenantMembership.findFirst({ where: { userId: user.id, status: "ACTIVE" }, orderBy: { createdAt: "asc" } });
     await this.sessions.create(user.id, req, res, membership?.tenantId ?? null);
     await this.audit.log({ actorUserId: user.id, action: created ? "auth.signup" : "auth.login", ip: req.ip });
-    return { status: "signed_in", id: user.id, created, admin: isAdminUser(user) };
+    const spaces = await this.spaces(user);
+    return { status: "signed_in", id: user.id, created, admin: spaces.admin, home: homeFor(spaces) };
   }
 
   async loginWithGoogle(profile: { email: string; name: string }, req: Request, res: Response) {
@@ -130,7 +143,29 @@ export class AuthService {
     });
     await this.sessions.create(user.id, req, res, membership?.tenantId ?? null);
     await this.audit.log({ actorUserId: user.id, action: created ? "auth.signup_google" : "auth.login_google", ip: req.ip });
-    return { id: user.id, created, admin: isAdminUser(user) };
+    const spaces = await this.spaces(user);
+    return { id: user.id, created, admin: spaces.admin, home: homeFor(spaces) };
+  }
+
+  /**
+   * Espaces accessibles : administration (rôle admin), commerçant (au moins une entreprise active),
+   * partenaire (profil rattaché au compte, ou profil libre au même email confirmé : il sera rattaché
+   * à la première visite de l'espace partenaire).
+   */
+  async spaces(user: { id: string; email: string; emailVerifiedAt: Date | null; isSuperAdmin: boolean; adminRole: string | null; isPartner: boolean }): Promise<Spaces> {
+    const db = this.prisma.client;
+    const [memberships, partner] = await Promise.all([
+      db.tenantMembership.count({ where: { userId: user.id, status: "ACTIVE" } }),
+      user.isPartner
+        ? Promise.resolve(1)
+        : db.partner.count({
+            where: {
+              status: { notIn: ["REJECTED", "INACTIVE"] },
+              OR: [{ userId: user.id }, ...(user.emailVerifiedAt ? [{ userId: null, email: { equals: user.email, mode: "insensitive" as const } }] : [])],
+            },
+          }),
+    ]);
+    return { admin: isAdminUser(user), merchant: memberships > 0, partner: partner > 0 };
   }
 
   async me(auth: AuthState) {
@@ -170,8 +205,11 @@ export class AuthService {
       }
     }
 
+    const spaces = await this.spaces({ ...auth.user, isPartner: auth.user.isPartner ?? false, adminRole: auth.user.adminRole ?? null });
     return {
       user: auth.user,
+      spaces,
+      home: homeFor(spaces),
       activeTenantId: auth.activeTenantId,
       support: auth.supportGrantId !== null,
       role: active?.role.key ?? (auth.supportGrantId ? "SUPPORT" : null),

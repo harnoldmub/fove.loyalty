@@ -4,6 +4,7 @@ import { createContext, useContext, type ReactNode } from "react";
 
 export interface MeData {
   user: { id: string; email: string; name: string; emailVerifiedAt: string | null; isSuperAdmin: boolean };
+  spaces: { admin: boolean; merchant: boolean; partner: boolean };
   activeTenantId: string | null;
   support: boolean;
   role: string | null;

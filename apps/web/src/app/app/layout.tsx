@@ -12,7 +12,8 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const me = await requireMe("/app");
-  if (!me.activeTenantId) redirect(me.user.isSuperAdmin && me.tenants.length === 0 ? "/admin" : "/onboarding");
+  // Sans commerce : l'espace d'arrivée du compte (administration ou partenaire), sinon la création du commerce.
+  if (!me.activeTenantId) redirect(me.tenants.length === 0 && me.home !== "/app" ? me.home : "/onboarding");
   const active = me.tenants.find((t) => t.id === me.activeTenantId);
   if (active && !active.onboardingCompleted && (me.role === "OWNER" || me.role === "MANAGER")) redirect("/onboarding");
   return (

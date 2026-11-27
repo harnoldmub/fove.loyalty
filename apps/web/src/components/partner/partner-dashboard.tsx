@@ -137,7 +137,7 @@ const TABS = [
 const LEAD_STATUSES = ["NEW", "CONTACTED", "INTERESTED", "REGISTERED", "CONVERTED", "LOST"] as const;
 const PAYOUT_METHODS = ["BANK_TRANSFER", "MOBILE_MONEY"] as const;
 
-export function PartnerDashboard({ user }: { user: { name: string; email: string; isSuperAdmin?: boolean } }) {
+export function PartnerDashboard({ user, spaces }: { user: { name: string; email: string; isSuperAdmin?: boolean }; spaces: { admin: boolean; merchant: boolean; partner: boolean } }) {
   const t = useTranslations("partner.dashboard");
   const locale = useLocale();
   const toErrorMessage = useErrorMessage();
@@ -246,14 +246,22 @@ export function PartnerDashboard({ user }: { user: { name: string; email: string
         </div>
 
         <div className="flex items-center gap-3">
-          <Link href="/app" className="hidden sm:flex items-center gap-1.5 text-xs text-ink-2 hover:text-ink">
-            <Store className="size-3.5 text-ink-3" />
-            {t("header.merchantSpace")}
-          </Link>
-          {user.isSuperAdmin && (
-            <Link href="/admin" className="hidden sm:flex items-center gap-1.5 text-xs text-cobalt hover:underline">
-              {t("header.admin")}
+          {/* Autres espaces du compte, dans un nouvel onglet ; sans commerce : en créer un. */}
+          {spaces.merchant ? (
+            <a href="/app" target="_blank" rel="noopener" className="hidden sm:flex items-center gap-1.5 text-xs text-ink-2 hover:text-ink">
+              <Store className="size-3.5 text-ink-3" />
+              {t("header.merchantSpace")}
+            </a>
+          ) : (
+            <Link href="/onboarding?new=1" className="hidden sm:flex items-center gap-1.5 text-xs text-ink-2 hover:text-ink">
+              <Store className="size-3.5 text-ink-3" />
+              {t("header.createBusiness")}
             </Link>
+          )}
+          {spaces.admin && (
+            <a href="/admin" target="_blank" rel="noopener" className="hidden sm:flex items-center gap-1.5 text-xs text-cobalt hover:underline">
+              {t("header.admin")}
+            </a>
           )}
           <ThemeToggle />
           <div className="text-end hidden md:block">
