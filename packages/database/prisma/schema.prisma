@@ -1225,6 +1225,20 @@ model PartnerSettings {
   updatedAt                   DateTime @updatedAt
 }
 
+/// Notifications internes à l'équipe FOVE (réglage unique, id "default") : interrupteur général,
+/// destinataires et types d'envoi. Désactivées par défaut (phase de test : pas d'emails consommés).
+model TeamNotificationSettings {
+  id             String   @id @default("default")
+  enabled        Boolean  @default(false)
+  /// Destinataires ; vide : TEAM_ALERT_EMAIL.
+  recipients     String[] @default([])
+  partners       Boolean  @default(true) /// Candidatures partenaires
+  contact        Boolean  @default(true) /// Messages de contact
+  digest         Boolean  @default(true) /// Récapitulatif quotidien
+  updatedByEmail String?
+  updatedAt      DateTime @updatedAt
+}
+
 enum CommissionStatus {
   PENDING
   CONFIRMED

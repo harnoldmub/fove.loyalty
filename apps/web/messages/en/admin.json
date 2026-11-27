@@ -1029,11 +1029,11 @@
       "tenants": "Businesses",
       "messages": "Messages and leads",
       "plans": "Plans and subscriptions",
-      "system": "Integrations and errors"
+      "system": "System"
     }
   },
   "system": {
-    "title": "Integrations and errors",
+    "title": "System",
     "integrations": "Integrations",
     "noIntegrations": "No integrations configured.",
     "status": {
@@ -1045,7 +1045,27 @@
     "syncError": "{id}: {error}",
     "recentErrors": "Recent server errors",
     "noErrors": "No errors recorded.",
-    "errorMeta": "{date} · request {requestId}"
+    "errorMeta": "{date} · request {requestId}",
+    "team": {
+      "title": "FOVE team notifications",
+      "description": "Internal emails to the team: partner applications, contact messages and a daily summary of actions to take. Emails sent to customers are not affected.",
+      "on": "On",
+      "off": "Off",
+      "enabled": "Send notifications to the team",
+      "enabledHint": "Off: no internal email is sent. Applications and messages remain visible in the admin.",
+      "types": "Emails",
+      "partners": "New partner application",
+      "contact": "New contact message",
+      "digest": "Daily summary (every morning, only when there are actions to take)",
+      "recipients": "Recipients",
+      "recipientsHint": "One address per line, 10 at most. Empty: {email}.",
+      "save": "Save",
+      "saved": "Settings saved",
+      "invalidEmail": "Invalid address: {email}",
+      "test": "Send a test email",
+      "testSent": "Test email sent to {to}",
+      "updated": "Updated on {date} by {by}"
+    }
   },
   "plans": {
     "title": "Plans",

@@ -13,6 +13,8 @@ const schema = z.object({
   EMAIL_PROVIDER: z.enum(["console", "resend"]).default("console"),
   EMAIL_FROM: z.string().default("FOVE <no-reply@fove.digital>"),
   RESEND_API_KEY: z.string().optional(),
+  /** Destinataire des notifications internes à l'équipe FOVE (candidatures, contact, récapitulatif quotidien). */
+  TEAM_ALERT_EMAIL: z.string().default("contact@fove.digital"),
   /** OAuth Google du compte client (distinct de Google Wallet et des comptes commerçants). */
   GOOGLE_OAUTH_CLIENT_ID: z.string().optional(),
   GOOGLE_OAUTH_CLIENT_SECRET: z.string().optional(),

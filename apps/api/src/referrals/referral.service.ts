@@ -10,7 +10,11 @@ import { badRequest, notFound } from "../common/errors";
 import { loadConfig, stripeSecretKey } from "../config";
 import { EmailService } from "../notifications/email.service";
 import { partnerInviteMessage } from "../i18n/emails";
-import { tenantLocale } from "../i18n/locale";
+import { tenantLocale, type Locale } from "../i18n/locale";
+import { referralEarnedMessage, referralPendingMessage } from "../i18n/lifecycle-emails";
+import { BillingEmailService } from "../billing/billing-emails.service";
+import { formatDay, formatMoney } from "../i18n/format";
+import type { EmailMessage } from "../notifications/email.service";
 
 /**
  * Récompense du parrain, remise du filleul et plafond annuel : grille par monnaie de @fove/shared
@@ -68,6 +72,7 @@ export class ReferralService {
     private readonly plans: PlanService,
     private readonly email: EmailService,
     private readonly pricing: PricingService,
+    private readonly billingEmails: BillingEmailService,
   ) {
     const key = stripeSecretKey();
     this.stripe = key ? new Stripe(key) : null;
@@ -203,6 +208,22 @@ export class ReferralService {
       data: { status: "PENDING", triggerPaymentId: payment.id, pendingUntil: new Date(paidAt.getTime() + REFERRAL_PENDING_DAYS * DAY) },
     });
     await this.audit.log({ tenantId: referral.referrerTenantId, action: "referral.pending", targetType: "referral", targetId: referral.id });
+    const referee = await db.tenant.findUnique({ where: { id: payment.tenantId }, select: { name: true } });
+    const currency = await this.referrerCurrency(referral.referrerTenantId);
+    const pendingUntil = new Date(paidAt.getTime() + REFERRAL_PENDING_DAYS * DAY);
+    await this.notifyReferrer(referral.referrerTenantId, (locale, url) =>
+      referralPendingMessage(locale, { referee: referee?.name ?? "—", amount: formatMoney(referralRewardCents(currency), currency, locale), date: formatDay(pendingUntil, locale) }, url),
+    );
+  }
+
+  /** Email au parrain (contact du commerce), dans sa langue ; lien vers sa page Parrainage. */
+  private async notifyReferrer(tenantId: string, build: (locale: Locale, url: string) => Omit<EmailMessage, "to">): Promise<void> {
+    try {
+      const { to, locale } = await this.billingEmails.recipient(tenantId);
+      if (to) await this.email.send({ to, ...build(locale, `${loadConfig().APP_URL}/app/parrainage`) });
+    } catch (error) {
+      this.logger.warn(`Email de parrainage non envoyé (${tenantId}) : ${(error as Error).message}`);
+    }
   }
 
   /** Tâche planifiée : acquisition des crédits arrivés au bout de l'attente, puis expiration des anciens. */
@@ -271,6 +292,7 @@ export class ReferralService {
       data: { status: "EARNED", earnedAt: now, expiresAt, currency, creditAmountCents: amount, creditRemainingCents: amount, stripeBalanceTxId },
     });
     await this.audit.log({ tenantId: referral.referrerTenantId, action: "referral.earned", targetType: "referral", targetId: referral.id, metadata: { amountCents: amount, currency } });
+    await this.notifyReferrer(referral.referrerTenantId, (locale, url) => referralEarnedMessage(locale, { amount: formatMoney(amount, currency, locale), expires: formatDay(expiresAt, locale) }, url));
     await this.maybeInvitePartner(referral.referrerTenantId, now);
     return "EARNED";
   }

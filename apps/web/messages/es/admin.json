@@ -1029,11 +1029,11 @@
       "tenants": "Empresas",
       "messages": "Mensajes y prospectos",
       "plans": "Planes y suscripciones",
-      "system": "Integraciones y errores"
+      "system": "Sistema"
     }
   },
   "system": {
-    "title": "Integraciones y errores",
+    "title": "Sistema",
     "integrations": "Integraciones",
     "noIntegrations": "No hay integraciones configuradas.",
     "status": {
@@ -1045,7 +1045,27 @@
     "syncError": "{id}: {error}",
     "recentErrors": "Errores recientes del servidor",
     "noErrors": "No hay errores registrados.",
-    "errorMeta": "{date} · solicitud {requestId}"
+    "errorMeta": "{date} · solicitud {requestId}",
+    "team": {
+      "title": "Notificaciones del equipo FOVE",
+      "description": "Correos internos para el equipo: solicitudes de socios, mensajes de contacto y resumen diario de las acciones pendientes. Los correos enviados a los clientes no se ven afectados.",
+      "on": "Activadas",
+      "off": "Desactivadas",
+      "enabled": "Enviar las notificaciones al equipo",
+      "enabledHint": "Desactivado: no sale ningún correo interno. Las solicitudes y los mensajes siguen visibles en la administración.",
+      "types": "Envíos",
+      "partners": "Nueva solicitud de socio",
+      "contact": "Nuevo mensaje de contacto",
+      "digest": "Resumen diario (cada mañana, solo si hay acciones pendientes)",
+      "recipients": "Destinatarios",
+      "recipientsHint": "Una dirección por línea, 10 como máximo. Vacío: {email}.",
+      "save": "Guardar",
+      "saved": "Ajustes guardados",
+      "invalidEmail": "Dirección no válida: {email}",
+      "test": "Enviar un correo de prueba",
+      "testSent": "Correo de prueba enviado a {to}",
+      "updated": "Modificado el {date} por {by}"
+    }
   },
   "plans": {
     "title": "Planes",

@@ -5,6 +5,7 @@ import { ZodPipe } from "../common/zod.pipe";
 import { Auth } from "../common/decorators";
 import type { AuthState } from "../common/context";
 import { SuperAdminRoute, UserRoute } from "../auth/guards";
+import { TeamAlertService, teamNotificationSettingsSchema, type TeamNotificationSettingsInput } from "../notifications/team-alert.service";
 import { AdminService, setSubscriptionSchema, tenantCurrencySchema, supportAccessSchema, updateMessageSchema, updatePlanSchema } from "./admin.service";
 
 const statusSchema = z.object({ status: z.enum(["ACTIVE", "SUSPENDED"]), reason: z.string().trim().min(5).max(300) });
@@ -12,7 +13,10 @@ const statusSchema = z.object({ status: z.enum(["ACTIVE", "SUSPENDED"]), reason:
 @ApiTags("admin")
 @Controller("admin")
 export class AdminController {
-  constructor(private readonly admin: AdminService) {}
+  constructor(
+    private readonly admin: AdminService,
+    private readonly team: TeamAlertService,
+  ) {}
 
   @Get("stats")
   @SuperAdminRoute()
@@ -100,5 +104,25 @@ export class AdminController {
   @SuperAdminRoute()
   errors() {
     return this.admin.errors();
+  }
+
+  /** Notifications internes à l'équipe FOVE : interrupteur, destinataires, types d'envoi. */
+  @Get("team-notifications")
+  @SuperAdminRoute()
+  teamNotifications() {
+    return this.team.view();
+  }
+
+  @Put("team-notifications")
+  @SuperAdminRoute()
+  updateTeamNotifications(@Auth() auth: AuthState, @Body(new ZodPipe(teamNotificationSettingsSchema)) body: TeamNotificationSettingsInput) {
+    return this.team.update(body, { userId: auth.user.id, email: auth.user.email });
+  }
+
+  @Post("team-notifications/test")
+  @SuperAdminRoute()
+  @HttpCode(200)
+  testTeamNotifications(@Auth() auth: AuthState) {
+    return this.team.sendTest({ email: auth.user.email });
   }
 }

@@ -11,6 +11,7 @@ import type { TenantContext } from "../common/context";
 import { PlanService } from "./plan.service";
 import { PricingService, type PlanWithPrices } from "./pricing.service";
 import { OfflineBillingService } from "./offline.service";
+import { BillingEmailService, unpaidKey } from "./billing-emails.service";
 import { PartnersService } from "../partners/partners.service";
 import { ReferralService } from "../referrals/referral.service";
 
@@ -37,6 +38,7 @@ export class BillingService {
     private readonly referrals: ReferralService,
     private readonly pricing: PricingService,
     private readonly offline: OfflineBillingService,
+    private readonly emails: BillingEmailService,
   ) {
     const key = stripeSecretKey();
     this.stripe = key ? new Stripe(key) : null;
@@ -158,6 +160,7 @@ export class BillingService {
       await this.recordMockPayment(ctx.tenantId, amount, currency, discount);
       if (discount > 0) await this.referrals.markRefereeDiscountUsed(ctx.tenantId, Math.min(discount, amount));
       await this.audit.forTenant(ctx, "billing.mock_checkout", undefined, { plan: plan.code, interval, currency });
+      await this.emails.activated(ctx.tenantId, plan.name, data.currentPeriodEnd);
       return { url: `${appUrl}/app/billing?checkout=mock`, mode: "mock" as const };
     }
 
@@ -271,6 +274,9 @@ export class BillingService {
     await this.prisma.client.subscription.update({ where: { id: sub.id }, data });
     const effective = upgrade ? ("now" as const) : ("renewal" as const);
     await this.audit.forTenant(ctx, "billing.plan_changed", undefined, { plan: plan.code, from: sub.plan.code, effective });
+    // Stripe : l'email de passage à une offre supérieure part à la confirmation (webhook), une fois le prorata payé.
+    if (!upgrade) await this.emails.downgradeScheduled(ctx.tenantId, sub.plan.name, plan.name, sub.currentPeriodEnd);
+    else if (sub.provider === "MOCK") await this.emails.upgraded(ctx.tenantId, sub.plan.name, plan.name);
     return { url: `${appUrl}/app/billing?checkout=${upgrade ? "updated" : "scheduled"}`, mode: this.mode, effective };
   }
 
@@ -327,6 +333,7 @@ export class BillingService {
     }
     await this.prisma.client.subscription.update({ where: { id: sub.id }, data: { cancelAtPeriodEnd: true, scheduledPlanId: null } });
     await this.audit.forTenant(ctx, "billing.cancel_requested");
+    await this.emails.cancelRequested(ctx.tenantId, sub.plan.name, sub.currentPeriodEnd);
   }
 
   /** Annule une résiliation demandée, tant que la période payée n'est pas terminée. */
@@ -353,6 +360,7 @@ export class BillingService {
   async closeExpired(now = new Date()) {
     const db = this.prisma.client;
     const due = await db.subscription.findMany({
+      include: { plan: true },
       where: { provider: { in: ["MANUAL", "MOCK", "OFFLINE"] }, status: { in: ["ACTIVE", "TRIALING", "PAST_DUE"] }, currentPeriodEnd: { lt: now }, provisionalUntil: null },
     });
     // Renouvellement simulé : la monnaie choisie entre-temps par le commerçant s'applique (paiement en ligne : USD ou EUR).
@@ -371,6 +379,7 @@ export class BillingService {
       }
       await db.subscription.update({ where: { id: sub.id }, data: { status: "CANCELED", cancelAtPeriodEnd: false, scheduledPlanId: null } });
       await this.audit.log({ tenantId: sub.tenantId, action: "billing.subscription_ended", metadata: { provider: sub.provider } });
+      if (sub.plan.kind !== "FREE") await this.emails.ended(sub.tenantId, sub.plan.name, false, `${sub.id}:ended:${sub.currentPeriodEnd!.toISOString()}`);
       ended += 1;
     }
     return { ended, renewed };
@@ -408,10 +417,15 @@ export class BillingService {
         const invoice = event.data.object as Stripe.Invoice & { customer: string | null };
         if (typeof invoice.customer === "string") {
           // provider STRIPE : une facture d'un ancien abonnement ne touche pas un contrat attribué par l'admin.
-          await this.prisma.client.subscription.updateMany({
+          const failed = await this.prisma.client.subscription.updateMany({
             where: { stripeCustomerId: invoice.customer, provider: "STRIPE", status: { in: ["ACTIVE", "TRIALING"] } },
             data: { status: "PAST_DUE", pastDueSince: new Date() },
           });
+          // Premier échec seulement : Stripe retente plusieurs fois, un seul email.
+          if (failed.count > 0) {
+            const sub = await this.prisma.client.subscription.findFirst({ where: { stripeCustomerId: invoice.customer, provider: "STRIPE", status: "PAST_DUE" }, include: { plan: true } });
+            if (sub?.pastDueSince) await this.emails.paymentFailed(sub.tenantId, sub.plan.name, sub.pastDueSince);
+          }
           this.logger.warn(`Paiement échoué pour ${invoice.customer}`);
           try {
             await this.recordStripeInvoice(invoice, false);
@@ -459,7 +473,7 @@ export class BillingService {
       this.logger.error(`Abonnement ${remote.id} : tenant ou offre introuvable (price ${priceId})`);
       return;
     }
-    const local = await this.prisma.client.subscription.findUnique({ where: { tenantId } });
+    const local = await this.prisma.client.subscription.findUnique({ where: { tenantId }, include: { plan: true } });
     const status = mapStatus(remote.status);
     // Événement d'un autre abonnement que celui en cours (ancien abonnement, ou abonnement
     // arrêté lors du passage à un contrat) : il ne doit pas écraser l'abonnement en cours.
@@ -488,6 +502,30 @@ export class BillingService {
     };
     await this.prisma.client.subscription.upsert({ where: { tenantId }, update: data, create: { tenantId, ...data } });
     await this.audit.log({ tenantId, action: "billing.subscription_synced", metadata: { status, plan: plan.code } });
+    await this.notifySync(local, remote.id, status, plan, data.currentPeriodEnd);
+  }
+
+  /** Emails au commerçant selon le changement constaté : activation, offre supérieure, fin d'abonnement. */
+  private async notifySync(local: (Subscription & { plan: SubscriptionPlan }) | null, remoteId: string, status: SubscriptionStatus, plan: SubscriptionPlan, periodEnd: Date | null) {
+    const tenantId = local?.tenantId;
+    const sameSub = Boolean(local && local.stripeSubscriptionId === remoteId);
+    const wasRunning = sameSub && (local!.status === "ACTIVE" || local!.status === "TRIALING" || local!.status === "PAST_DUE");
+    const isRunning = (status === "ACTIVE" || status === "TRIALING") && plan.kind !== "FREE";
+    if (isRunning && !wasRunning) {
+      const target = tenantId ?? (await this.prisma.client.subscription.findFirst({ where: { stripeSubscriptionId: remoteId }, select: { tenantId: true } }))?.tenantId;
+      if (target) await this.emails.activated(target, plan.name, periodEnd);
+      return;
+    }
+    if (!local || !sameSub) return;
+    // Offre supérieure confirmée (pas l'offre inférieure programmée qui s'applique au renouvellement).
+    if (wasRunning && isRunning && local.planId !== plan.id && local.scheduledPlanId !== plan.id) {
+      await this.emails.upgraded(local.tenantId, local.plan.name, plan.name);
+      return;
+    }
+    if (status === "CANCELED" && local.status !== "CANCELED" && local.plan.kind !== "FREE") {
+      const key = local.pastDueSince ? unpaidKey(local.id, local.pastDueSince) : `${local.id}:stripe-canceled:${remoteId}`;
+      await this.emails.ended(local.tenantId, local.plan.name, Boolean(local.pastDueSince), key);
+    }
   }
 
   private async recordStripeInvoice(invoice: Stripe.Invoice, isPaid: boolean) {

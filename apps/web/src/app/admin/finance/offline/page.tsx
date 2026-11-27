@@ -2,6 +2,7 @@
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { BILLING_CURRENCIES } from "@fove/shared";
@@ -214,8 +215,10 @@ export default function OfflinePaymentsPage() {
   const t = useTranslations("admin.finance.offline");
   const errMsg = useErrorMessage();
   const [status, setStatus] = useState<(typeof STATUSES)[number]>("OPEN");
-  const [q, setQ] = useState("");
-  const [search, setSearch] = useState("");
+  // ?q= : recherche pré-remplie (lien du récapitulatif quotidien de l'équipe).
+  const initial = useSearchParams().get("q") ?? "";
+  const [q, setQ] = useState(initial);
+  const [search, setSearch] = useState(initial);
   const { data = [], refetch } = useQuery({
     queryKey: ["admin-offline-invoices", status, search],
     queryFn: () => api.get<OfflineInvoice[]>(`/admin/finance/offline-invoices?status=${status}&q=${encodeURIComponent(search)}`),

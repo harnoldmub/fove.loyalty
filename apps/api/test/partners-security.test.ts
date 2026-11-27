@@ -119,12 +119,19 @@ describe("espace partenaire : rattachement d'un profil par email", () => {
 
 describe("candidature partenaire : email de confirmation", () => {
   it("échappe le HTML saisi par le candidat", async () => {
+    await db.teamNotificationSettings.upsert({ where: { id: "default" }, create: { id: "default", enabled: true }, update: { enabled: true } });
     const email = newEmail();
     const res = await apply(email, { name: "X</strong><a href=https://evil.example>Compte suspendu</a>", city: "<b>Ville</b>" });
     expect(res.status).toBeLessThan(300);
     const html = (await lastEmail(email))!.html!;
     expect(html).not.toContain("<a href=https://evil.example>");
-    expect(html).toContain("&lt;a href=https://evil.example&gt;");
-    expect(html).toContain("&lt;b&gt;Ville&lt;/b&gt;");
+    // Le balisage saisi reste du texte (une adresse seule peut devenir un lien, jamais une balise).
+    expect(html).toContain("X&lt;/strong&gt;&lt;a href=");
+    expect(html).toContain("suspendu&lt;/a&gt;");
+    // Notification interne à l'équipe : mêmes protections.
+    const team = await db.emailOutbox.findFirstOrThrow({ where: { to: "contact@fove.digital", text: { contains: email } }, orderBy: { createdAt: "desc" } });
+    expect(team.subject).toMatch(/^\[FOVE · Partenaires\]/);
+    expect(team.html).toContain("&lt;b&gt;Ville&lt;/b&gt;");
+    expect(team.html).not.toContain("<b>Ville</b>");
   });
 });

@@ -8,7 +8,8 @@ import { badRequest, notFound } from "../common/errors";
 import type { TenantContext } from "../common/context";
 import { loadConfig } from "../config";
 import { EmailService } from "../notifications/email.service";
-import { INTL_LOCALE, tenantLocale, type Locale } from "../i18n/locale";
+import { tenantLocale, type Locale } from "../i18n/locale";
+import { formatDay, formatMoney } from "../i18n/format";
 import { bankText, offlineExpiredMessage, offlineInstructionsMessage, offlinePaidMessage } from "../i18n/offline-emails";
 import { ReferralService } from "../referrals/referral.service";
 import { PartnersService } from "../partners/partners.service";
@@ -51,14 +52,6 @@ export interface ValidateInput {
 export type Actor = { userId: string; email: string };
 
 const meta = (invoice: Pick<Invoice, "metadata">) => invoice.metadata as unknown as OfflineMeta;
-
-export function formatMoney(cents: number, currency: string, locale: Locale): string {
-  return new Intl.NumberFormat(INTL_LOCALE[locale], { style: "currency", currency, minimumFractionDigits: cents % 100 === 0 ? 0 : 2 }).format(cents / 100);
-}
-
-export function formatDay(date: Date, locale: Locale): string {
-  return new Intl.DateTimeFormat(INTL_LOCALE[locale], { dateStyle: "long" }).format(date);
-}
 
 function addYear(date: Date): Date {
   const d = new Date(date);

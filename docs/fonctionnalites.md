@@ -444,10 +444,21 @@ La documentation pour les développeurs est sur la page publique `/developpeurs`
 
 ### 3.15 Emails reçus par le commerçant et son équipe
 
+Tous au gabarit de la marque, dans la langue du commerce. Ils partent à l'email de contact du commerce, sinon au propriétaire.
+
 - Code de connexion.
+- **Bienvenue** à la création du commerce : les trois premières étapes (programme, QR d'inscription, premier client).
 - Invitation à rejoindre une entreprise (le lien suffit : pas de mot de passe, et un compte existant est connecté).
 - Alertes de quota.
-- Règlement hors ligne : instructions avec la référence et les coordonnées, paiement reçu, fin de l'accès provisoire sans paiement.
+- **Abonnement** :
+  - activation (carte ou paiement simulé) ;
+  - passage à une offre supérieure (à la confirmation du paiement) ou programmation d'une offre inférieure ;
+  - résiliation enregistrée, avec la date de fin ;
+  - paiement par carte refusé, avec la date de fin du délai de grâce ;
+  - fin de l'offre payante et retour au Gratuit (échéance, résiliation ou impayé), une seule fois.
+- **Échéances** (abonnements réglés par virement ou espèces, qui ne se renouvellent pas seuls) : rappels **30 jours** et **7 jours** avant la fin, puis email de fin.
+- Règlement hors ligne : instructions avec la référence et les coordonnées, **rappel 2 jours avant la fin de l'accès provisoire** (avec la référence), paiement reçu, fin de l'accès provisoire sans paiement.
+- Parrainage : filleul abonné (crédit attendu et sa date), crédit acquis (montant et date d'expiration).
 
 ### 3.16 Parrainage entre commerçants
 
@@ -557,7 +568,8 @@ Un partenaire (agence, freelance, consultant, réseau de commerçants…) recomm
 **Versements**
 - **Automatiques chaque mois**, sans demande : le 1er, les commissions devenues disponibles le mois précédent sont regroupées en un versement, payé **avant le 10**, frais de transfert à la charge de FOVE. Sous **50 $ ou 50 €**, report au mois suivant. Le partenaire reçoit un récapitulatif par email.
 - Monnaie de versement au choix : dollar US ou euro. Les commissions disponibles sont converties au taux comptable du jour où elles deviennent disponibles (taux figé) ; un changement de monnaie reconvertit celles qui ne sont pas encore versées.
-- **Coordonnées de versement** : virement bancaire uniquement (titulaire, IBAN, BIC, banque).
+- **Coordonnées de versement** : virement bancaire uniquement (titulaire, IBAN, BIC, banque). Sans titulaire ni IBAN, aucun versement n'est créé : les commissions attendent le mois suivant et le partenaire reçoit, une fois par mois, une demande de coordonnées.
+- **Emails au partenaire** : candidature reçue, validée ou refusée ; commerce inscrit avec son lien ; commission enregistrée ; commission annulée (remboursement pendant la garantie) ; versement du mois ; versement effectué ; versement non effectué (motif, report au mois suivant) ; coordonnées bancaires manquantes.
 - Historique des versements.
 
 ### 5.3 Règles de commission
@@ -627,6 +639,11 @@ Le nombre d'entreprises abonnées à chaque offre est affiché.
 
 ### 6.5 Système
 
+- **Notifications de l'équipe FOVE** :
+  - interrupteur général, **désactivé par défaut** (phase de test : aucun email interne consommé) ; les candidatures et les messages restent visibles dans l'administration ;
+  - types d'envoi : nouvelle candidature partenaire, nouveau message de contact, récapitulatif quotidien ;
+  - destinataires (10 au plus ; vide : `TEAM_ALERT_EMAIL`) ;
+  - email de test, envoyé même si les notifications sont désactivées ; dernière modification (date, auteur), inscrite au journal d'audit.
 - Erreurs serveur récentes.
 - Intégrations de toutes les entreprises, avec leurs dernières erreurs de synchronisation.
 
@@ -695,13 +712,20 @@ Sur l'ensemble du site :
   - fin des accès provisoires de 7 jours sans paiement (retour au Gratuit, email) ;
   - commissions partenaires arrivées au bout du délai de garantie : disponibles et converties dans la monnaie de versement ;
   - versements mensuels des commissions partenaires (le 1er du mois) ;
+  - rappels d'échéance au commerçant (abonnement par virement ou espèces à J-30 et J-7, accès provisoire à J-2) et email de fin de délai de grâce d'un impayé par carte ;
+  - récapitulatif quotidien à l'équipe FOVE (à partir de 6 h UTC, rien s'il n'y a rien à faire) ;
   - relances de confirmation de l'email des clients FOVE (J3/J10) ;
   - prévenance puis suppression des comptes clients FOVE inactifs ;
   - nettoyage des sessions et codes expirés.
-- **Emails au gabarit FOVE** : logo, couleurs de la marque, code ou référence de paiement mis en valeur, bouton, pied de page ; arabe de droite à gauche. Un email sans mise en page propre est mis en forme automatiquement à partir de son texte.
+- **Deux gabarits d'emails** :
+  - **clients de FOVE** (commerçants, équipes, partenaires, clients finaux) : gabarit de la marque (en-tête bleu nuit, liseré jaune, code ou référence mis en valeur, bouton, pied de page « FOVE · La fidélité qui rapproche ») ; arabe de droite à gauche. Un email sans mise en page propre est mis en forme automatiquement, dans la langue du destinataire ;
+  - **équipe FOVE** (notifications internes) : gabarit d'outil interne, en français. Fond gris, étiquette « FOVE · Équipe » et rubrique de couleur (Partenaires, Contact, Encaissements, À surveiller, Récapitulatif), tableau libellé / valeur, bouton vers l'administration, mention « Ne pas transférer à un client ». L'objet commence par « [FOVE · Rubrique] » pour trier la boîte de réception. Destinataires et activation réglables dans Admin > Système (voir 6.5) ; désactivées par défaut.
+- **Notifications à l'équipe FOVE** :
+  - en temps réel : nouvelle candidature partenaire, message de contact ;
+  - **récapitulatif quotidien** : virements à rapprocher, accès provisoires qui se terminent sous 48 h, impayés par carte, échéances sous 30 jours (virement, espèces, contrats), candidatures à examiner, versements partenaires à payer, partenaires sans coordonnées bancaires, messages de contact non traités.
 - **Chargement des pages** : au clic sur un lien ou un bouton qui change de page, une barre cobalt à tampon doré part en haut de l'écran et se termine à l'arrivée de la page (rien ne s'affiche sous 0,1 s). Si l'attente dépasse 0,4 s, la zone de contenu affiche une carte de fidélité qui se tamponne (espace commerçant, administration, espace partenaire, compte client). Le bouton cliqué affiche un indicateur et ignore les clics répétés. Avec « réduire les animations », la carte reste fixe.
 - **Saisie d'un code à 6 chiffres** (connexion, compte client, validation de carte) : une case par chiffre, collage d'un code entier, remplissage automatique sur mobile.
-- **Emails envoyés par la plateforme** : code de connexion, email de bienvenue et prévenance avant suppression pour inactivité du compte client FOVE, code de connexion (commerçants, équipes, admin, partenaires), invitation d'équipe, code de validation de carte, lien de carte, alertes de quota, candidature partenaire (accusé, validation, refus), commission, versement du mois et versement effectué au partenaire, règlement hors ligne (instructions, paiement reçu, fin de l'accès provisoire), alertes internes à l'équipe FOVE (contact, candidature) ⚠.
+- **Emails envoyés par la plateforme** : code de connexion, email de bienvenue et prévenance avant suppression pour inactivité du compte client FOVE, code de connexion (commerçants, équipes, admin, partenaires), invitation d'équipe, code de validation de carte, lien de carte, alertes de quota, bienvenue du commerçant, vie de l'abonnement et échéances (voir 3.15), parrainage, emails au partenaire (voir 5.2), règlement hors ligne (instructions, rappel, paiement reçu, fin de l'accès provisoire), notifications internes à l'équipe FOVE (temps réel et récapitulatif quotidien).
 
 ---
 

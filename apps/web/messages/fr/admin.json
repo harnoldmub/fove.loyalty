@@ -1029,11 +1029,11 @@
       "tenants": "Entreprises",
       "messages": "Messages et prospects",
       "plans": "Offres et abonnements",
-      "system": "Intégrations et erreurs"
+      "system": "Système"
     }
   },
   "system": {
-    "title": "Intégrations et erreurs",
+    "title": "Système",
     "integrations": "Intégrations",
     "noIntegrations": "Aucune intégration configurée.",
     "status": {
@@ -1045,7 +1045,27 @@
     "syncError": "{id} : {error}",
     "recentErrors": "Erreurs serveur récentes",
     "noErrors": "Aucune erreur enregistrée.",
-    "errorMeta": "{date} · requête {requestId}"
+    "errorMeta": "{date} · requête {requestId}",
+    "team": {
+      "title": "Notifications de l'équipe FOVE",
+      "description": "Emails internes à l'équipe : candidatures partenaires, messages de contact et récapitulatif quotidien des actions à mener. Les emails envoyés aux clients ne sont pas concernés.",
+      "on": "Activées",
+      "off": "Désactivées",
+      "enabled": "Envoyer les notifications à l'équipe",
+      "enabledHint": "Désactivé : aucun email interne ne part. Les candidatures et les messages restent visibles dans l'administration.",
+      "types": "Envois",
+      "partners": "Nouvelle candidature partenaire",
+      "contact": "Nouveau message de contact",
+      "digest": "Récapitulatif quotidien (chaque matin, seulement s'il y a des actions à mener)",
+      "recipients": "Destinataires",
+      "recipientsHint": "Une adresse par ligne, 10 au plus. Vide : {email}.",
+      "save": "Enregistrer",
+      "saved": "Réglages enregistrés",
+      "invalidEmail": "Adresse invalide : {email}",
+      "test": "Envoyer un email de test",
+      "testSent": "Email de test envoyé à {to}",
+      "updated": "Modifié le {date} par {by}"
+    }
   },
   "plans": {
     "title": "Offres",
