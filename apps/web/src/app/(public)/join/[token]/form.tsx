@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useAppRouter } from "@/lib/navigation-progress";
 import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 import { ArrowLeft, ArrowRight, Sparkles } from "lucide-react";
 import { useTranslations } from "next-intl";
@@ -37,7 +37,7 @@ function subscribeHash(onChange: () => void) {
 }
 
 export function JoinForm({ token, data }: { token: string; data: JoinPage }) {
-  const router = useRouter();
+  const router = useAppRouter();
   const t = useTranslations("public");
   const { tenant, program } = data;
   const [state, setState] = useState<JoinState | null>(null);

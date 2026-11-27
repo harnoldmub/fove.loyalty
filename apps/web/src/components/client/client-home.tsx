@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { Download } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useAppRouter } from "@/lib/navigation-progress";
 import { useCallback, useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
@@ -30,7 +30,7 @@ export function ClientHome() {
   const t = useTranslations("client.home");
   const tLegal = useTranslations("client.legal");
   const errorMessage = useErrorMessage();
-  const router = useRouter();
+  const router = useAppRouter();
   const [account, setAccount] = useState<ClientAccount | null>(null);
   const [loadError, setLoadError] = useState(false);
 

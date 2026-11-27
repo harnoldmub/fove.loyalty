@@ -2,6 +2,8 @@ import type { Metadata, Viewport } from "next";
 import { Bricolage_Grotesque, Figtree, IBM_Plex_Sans_Arabic } from "next/font/google";
 import { NextIntlClientProvider } from "next-intl";
 import { getMessages, getTranslations } from "next-intl/server";
+import { Suspense } from "react";
+import { NavigationProgress } from "@/components/navigation/navigation-progress";
 import { Providers } from "@/components/providers";
 import { isRtl } from "@/i18n/config";
 import { resolveLocale } from "@/i18n/request";
@@ -83,6 +85,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   return (
     <html lang={locale} dir={isRtl(locale) ? "rtl" : "ltr"} suppressHydrationWarning className={`${bricolage.variable} ${figtree.variable} ${arabic.variable}`}>
       <body>
+        <Suspense fallback={null}>
+          <NavigationProgress />
+        </Suspense>
         <a href="#contenu" className="sr-only focus:not-sr-only focus:fixed focus:start-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-surface focus:px-4 focus:py-2 focus:shadow-2">
           {t("skipToContent")}
         </a>

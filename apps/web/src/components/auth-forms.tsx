@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
+import { useAppRouter } from "@/lib/navigation-progress";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import { useForm } from "react-hook-form";
@@ -33,7 +34,7 @@ function rules(t: (key: string) => string) {
  * directement au paiement.
  */
 function usePlanChoice(source: "signup" | "login") {
-  const router = useRouter();
+  const router = useAppRouter();
   const offre = useSearchParams().get("offre");
   const [planName, setPlanName] = useState<string | null>(null);
   useEffect(() => {
@@ -123,7 +124,7 @@ function CodeAuth({
   initialName?: string;
   initialEmail?: string;
 }) {
-  const router = useRouter();
+  const router = useAppRouter();
   const t = useTranslations("auth");
   const [step, setStep] = useState<"email" | "code" | "profile">("email");
   const [email, setEmail] = useState(initialEmail);
@@ -338,7 +339,7 @@ const ROLES = new Set(["OWNER", "MANAGER", "CASHIER", "VIEWER"]);
 
 export function AcceptInvite() {
   const token = useSearchParams().get("token") ?? "";
-  const router = useRouter();
+  const router = useAppRouter();
   const [preview, setPreview] = useState<InvitePreview | null>(null);
   const [error, setError] = useState<string | null>(null);
   const t = useTranslations("auth");

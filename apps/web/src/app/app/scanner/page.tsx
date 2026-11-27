@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useAppRouter } from "@/lib/navigation-progress";
 import { Search, ScanLine } from "lucide-react";
 import { useState } from "react";
 import { useTranslations } from "next-intl";
@@ -16,7 +16,7 @@ import { QrCamera, useRestartKey } from "./camera";
 export default function ScannerPage() {
   const toErrorMessage = useErrorMessage();
   const t = useTranslations("app.scanner");
-  const router = useRouter();
+  const router = useAppRouter();
   const [mode, setMode] = useState<"camera" | "search">("camera");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);

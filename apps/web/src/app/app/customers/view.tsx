@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
+import { useAppRouter } from "@/lib/navigation-progress";
 import { useInfiniteQuery, useQuery, useQueryClient } from "@tanstack/react-query";
 import { FileUp, Search, UserPlus, Users } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
@@ -30,7 +31,7 @@ function useDebounced<T>(value: T, ms = 300) {
 function NewCustomerDialog({ open, onOpenChange, programs }: { open: boolean; onOpenChange: (o: boolean) => void; programs: Program[] }) {
   const toErrorMessage = useErrorMessage();
   const t = useTranslations("app.customers.new");
-  const router = useRouter();
+  const router = useAppRouter();
   const qc = useQueryClient();
   // « auto » : premier programme actif ; « none » : pas de carte.
   const [form, setForm] = useState({ firstName: "", lastName: "", phone: "", email: "", programId: "auto", marketingSmsConsent: false });
