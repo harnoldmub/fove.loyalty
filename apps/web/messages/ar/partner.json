@@ -260,7 +260,7 @@
       "totalEarned": "إجمالي الأرباح",
       "alreadyPaid": "تم تحويله: {amount}",
       "balance": "الرصيد المتاح للتحويل: {amount}",
-      "threshold": "حد السحب: {amount} · الدفع بالتحويل البنكي أو عبر Mobile Money.",
+      "threshold": "حد السحب: {amount} · الدفع بالتحويل البنكي.",
       "requestPayout": "طلب تحويل",
       "recentClients": "المتاجر المُحالة مؤخرًا",
       "seeAll": "عرض الكل",
@@ -359,8 +359,7 @@
       "failed": "مرفوض",
       "processing": "قيد المعالجة",
       "methods": {
-        "BANK_TRANSFER": "تحويل بنكي",
-        "MOBILE_MONEY": "Mobile Money"
+        "BANK_TRANSFER": "تحويل بنكي"
       }
     },
     "resources": {
@@ -406,21 +405,10 @@
     "threshold": "الحد الأدنى: {amount}",
     "method": "طريقة الدفع *",
     "bankTransfer": "تحويل بنكي (IBAN / SWIFT)",
-    "mobileMoney": "Mobile Money (Airtel وOrange وM-Pesa)",
     "accountHolder": "الاسم الكامل لصاحب الحساب *",
     "iban": "IBAN / رقم الحساب *",
     "bic": "رمز BIC / SWIFT (اختياري)",
     "bankName": "اسم البنك",
-    "provider": "المشغّل *",
-    "providers": {
-      "AIRTEL_MONEY": "Airtel Money",
-      "ORANGE_MONEY": "Orange Money",
-      "M_PESA": "M-Pesa (Vodacom)",
-      "MTN_MOMO": "MTN Mobile Money",
-      "OTHER": "مشغّل آخر"
-    },
-    "mobileNumber": "رقم Mobile Money *",
-    "mobileHolder": "الاسم الرسمي المسجّل على الخط *",
     "cancel": "إلغاء",
     "submit": "تأكيد طلب التحويل",
     "submitting": "جارٍ الإرسال...",
@@ -428,7 +416,6 @@
       "minimum": "الحد الأدنى لمبلغ السحب هو {amount}",
       "exceeds": "المبلغ المطلوب يتجاوز رصيدك المتاح ({amount})",
       "bankRequired": "رقم IBAN واسم صاحب الحساب مطلوبان",
-      "mobileRequired": "رقم Mobile Money واسم صاحب الخط مطلوبان",
       "generic": "تعذّر إرسال طلب السحب"
     }
   },

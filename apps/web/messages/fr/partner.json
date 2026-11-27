@@ -260,7 +260,7 @@
       "totalEarned": "Total des gains perçus",
       "alreadyPaid": "Déjà viré : {amount}",
       "balance": "Solde disponible au virement : {amount}",
-      "threshold": "Seuil de retrait : {amount} · Règlements par Virement bancaire ou Mobile Money.",
+      "threshold": "Seuil de retrait : {amount} · Versement par virement bancaire.",
       "requestPayout": "Demander un virement",
       "recentClients": "Commerces récemment apportés",
       "seeAll": "Voir tout",
@@ -359,8 +359,7 @@
       "failed": "Rejeté",
       "processing": "En cours de traitement",
       "methods": {
-        "BANK_TRANSFER": "Virement bancaire",
-        "MOBILE_MONEY": "Mobile Money"
+        "BANK_TRANSFER": "Virement bancaire"
       }
     },
     "resources": {
@@ -406,21 +405,10 @@
     "threshold": "Seuil minimum : {amount}",
     "method": "Méthode de versement *",
     "bankTransfer": "Virement bancaire (IBAN / SWIFT)",
-    "mobileMoney": "Mobile Money (Airtel, Orange, M-Pesa)",
     "accountHolder": "Nom & Prénom du titulaire du compte *",
     "iban": "IBAN / Numéro de compte *",
     "bic": "Code BIC / SWIFT (optionnel)",
     "bankName": "Établissement bancaire",
-    "provider": "Opérateur *",
-    "providers": {
-      "AIRTEL_MONEY": "Airtel Money",
-      "ORANGE_MONEY": "Orange Money",
-      "M_PESA": "M-Pesa (Vodacom)",
-      "MTN_MOMO": "MTN Mobile Money",
-      "OTHER": "Autre opérateur"
-    },
-    "mobileNumber": "Numéro Mobile Money *",
-    "mobileHolder": "Nom officiel enregistré sur la ligne *",
     "cancel": "Annuler",
     "submit": "Confirmer la demande de virement",
     "submitting": "Transmission...",
@@ -428,7 +416,6 @@
       "minimum": "Le montant minimum de retrait est de {amount}",
       "exceeds": "Le montant demandé excède votre solde disponible ({amount})",
       "bankRequired": "L’IBAN et le nom du titulaire du compte sont obligatoires",
-      "mobileRequired": "Le numéro Mobile Money et le nom du titulaire sont obligatoires",
       "generic": "Impossible de soumettre la demande de retrait"
     }
   },

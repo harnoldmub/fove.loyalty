@@ -15,7 +15,7 @@ La page Tarifs propose « $ / € » mais affiche les **mêmes montants** dans l
 | Monnaie de référence | **L'euro**. Les autres prix en sont tirés, puis arrondis. |
 | Monnaies proposées | **EUR, USD, MAD, DZD, CDF** |
 | Paiement en ligne (Stripe) | **USD ou EUR uniquement** |
-| Monnaies locales (MAD, DZD, CDF) | Affichage des prix, et **règlement hors ligne** dans la monnaie locale (espèces, virement, mobile money) : voir le chantier lié |
+| Monnaies locales (MAD, DZD, CDF) | Affichage des prix, et **règlement hors ligne** dans la monnaie locale (espèces, virement) : voir le chantier lié |
 | RDC | Facturation en **dollars** ; le franc congolais reste disponible à l'affichage et pour un règlement hors ligne |
 | Algérie | Prix calculés sur un **taux intermédiaire** entre le taux officiel (≈ 150 DA pour 1 €) et le marché parallèle (≈ 250 DA) : **≈ 200 DA pour 1 €** |
 | Facture d'un paiement hors ligne | Dans **la monnaie réellement payée** (ex. 990 MAD) ; FOVE convertit en euros dans sa comptabilité avec le taux du jour, enregistré sur la facture. À confirmer par l'expert-comptable (facturation en devise étrangère, mentions de TVA hors UE). |

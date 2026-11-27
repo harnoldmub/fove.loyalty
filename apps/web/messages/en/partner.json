@@ -260,7 +260,7 @@
       "totalEarned": "Total earnings",
       "alreadyPaid": "Already paid out: {amount}",
       "balance": "Balance available for payout: {amount}",
-      "threshold": "Withdrawal threshold: {amount} · Paid by bank transfer or Mobile Money.",
+      "threshold": "Withdrawal threshold: {amount} · Paid by bank transfer.",
       "requestPayout": "Request a payout",
       "recentClients": "Recently referred businesses",
       "seeAll": "See all",
@@ -359,8 +359,7 @@
       "failed": "Rejected",
       "processing": "Processing",
       "methods": {
-        "BANK_TRANSFER": "Bank transfer",
-        "MOBILE_MONEY": "Mobile Money"
+        "BANK_TRANSFER": "Bank transfer"
       }
     },
     "resources": {
@@ -406,21 +405,10 @@
     "threshold": "Minimum threshold: {amount}",
     "method": "Payout method *",
     "bankTransfer": "Bank transfer (IBAN / SWIFT)",
-    "mobileMoney": "Mobile Money (Airtel, Orange, M-Pesa)",
     "accountHolder": "Account holder’s full name *",
     "iban": "IBAN / Account number *",
     "bic": "BIC / SWIFT code (optional)",
     "bankName": "Bank name",
-    "provider": "Provider *",
-    "providers": {
-      "AIRTEL_MONEY": "Airtel Money",
-      "ORANGE_MONEY": "Orange Money",
-      "M_PESA": "M-Pesa (Vodacom)",
-      "MTN_MOMO": "MTN Mobile Money",
-      "OTHER": "Other provider"
-    },
-    "mobileNumber": "Mobile Money number *",
-    "mobileHolder": "Official name registered on the line *",
     "cancel": "Cancel",
     "submit": "Confirm payout request",
     "submitting": "Sending...",
@@ -428,7 +416,6 @@
       "minimum": "The minimum withdrawal amount is {amount}",
       "exceeds": "The requested amount exceeds your available balance ({amount})",
       "bankRequired": "The IBAN and the account holder’s name are required",
-      "mobileRequired": "The Mobile Money number and the holder’s name are required",
       "generic": "We couldn’t submit the withdrawal request"
     }
   },

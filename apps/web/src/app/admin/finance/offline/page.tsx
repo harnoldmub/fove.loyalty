@@ -46,7 +46,7 @@ interface BankAccount {
   active: boolean;
 }
 
-const METHODS = ["BANK_TRANSFER", "CASH", "MOBILE_MONEY"] as const;
+const METHODS = ["BANK_TRANSFER", "CASH"] as const;
 const STATUSES = ["OPEN", "PAID", "VOID", "ALL"] as const;
 const TONE = { OPEN: "stamp", PAID: "mint", VOID: "neutral" } as const;
 

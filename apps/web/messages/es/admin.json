@@ -386,7 +386,7 @@
     "offline": {
       "receipt": "Recibo n.º {number}",
       "title": "Pagos fuera de línea",
-      "description": "Transferencias, efectivo y dinero móvil: facturas con referencia, validación y datos bancarios por país.",
+      "description": "Transferencias y efectivo: facturas con referencia, validación y datos bancarios por país.",
       "search": "Referencia o comercio",
       "searchButton": "Buscar",
       "status": "Estado",
@@ -421,8 +421,7 @@
         "method": "Medio de pago",
         "methods": {
           "BANK_TRANSFER": "Transferencia",
-          "CASH": "Efectivo",
-          "MOBILE_MONEY": "Dinero móvil"
+          "CASH": "Efectivo"
         },
         "amount": "Importe recibido ({currency})",
         "paidAt": "Fecha de recepción",
@@ -451,7 +450,7 @@
         "bankName": "Banco",
         "accountNumber": "Número de cuenta",
         "instructions": "Otros medios",
-        "instructionsHint": "Efectivo en la oficina, número de dinero móvil… Se muestra tal cual.",
+        "instructionsHint": "Efectivo en la oficina, horario, dirección… Se muestra tal cual.",
         "active": "Activo",
         "add": "Añadir",
         "update": "Guardar",
@@ -660,13 +659,12 @@
     "recordPayment": {
       "button": "Registrar un pago recibido",
       "title": "Pago recibido por FOVE",
-      "description": "Efectivo en la oficina, transferencia o dinero móvil ya recibido, en {currency}. El plan se activa (o se prolonga un año) de inmediato; se aplican la comisión del socio y la recomendación.",
+      "description": "Efectivo en la oficina o transferencia ya recibida, en {currency}. El plan se activa (o se prolonga un año) de inmediato; se aplican la comisión del socio y la recomendación.",
       "plan": "Plan",
       "method": "Medio de pago",
       "methods": {
         "CASH": "Efectivo",
-        "BANK_TRANSFER": "Transferencia",
-        "MOBILE_MONEY": "Dinero móvil"
+        "BANK_TRANSFER": "Transferencia"
       },
       "amount": "Importe recibido ({currency})",
       "amountHint": "Vacío: el importe adeudado (descuento y crédito de recomendación deducidos).",
@@ -895,8 +893,7 @@
       },
       "empty": "No hay pagos.",
       "methods": {
-        "BANK_TRANSFER": "Transferencia bancaria",
-        "MOBILE_MONEY": "Dinero móvil"
+        "BANK_TRANSFER": "Transferencia bancaria"
       },
       "paidOn": "Pagado el {date}",
       "createdOn": "Creado el {date}",

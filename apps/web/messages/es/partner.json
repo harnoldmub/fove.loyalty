@@ -260,7 +260,7 @@
       "totalEarned": "Total de ganancias",
       "alreadyPaid": "Ya transferido: {amount}",
       "balance": "Saldo disponible para transferir: {amount}",
-      "threshold": "Umbral de retiro: {amount} · Pagos por transferencia bancaria o Mobile Money.",
+      "threshold": "Umbral de retiro: {amount} · Pago por transferencia bancaria.",
       "requestPayout": "Solicitar una transferencia",
       "recentClients": "Comercios aportados recientemente",
       "seeAll": "Ver todo",
@@ -359,8 +359,7 @@
       "failed": "Rechazado",
       "processing": "En proceso",
       "methods": {
-        "BANK_TRANSFER": "Transferencia bancaria",
-        "MOBILE_MONEY": "Mobile Money"
+        "BANK_TRANSFER": "Transferencia bancaria"
       }
     },
     "resources": {
@@ -406,21 +405,10 @@
     "threshold": "Umbral mínimo: {amount}",
     "method": "Método de pago *",
     "bankTransfer": "Transferencia bancaria (IBAN / SWIFT)",
-    "mobileMoney": "Mobile Money (Airtel, Orange, M-Pesa)",
     "accountHolder": "Nombre y apellidos del titular de la cuenta *",
     "iban": "IBAN / Número de cuenta *",
     "bic": "Código BIC / SWIFT (opcional)",
     "bankName": "Entidad bancaria",
-    "provider": "Operador *",
-    "providers": {
-      "AIRTEL_MONEY": "Airtel Money",
-      "ORANGE_MONEY": "Orange Money",
-      "M_PESA": "M-Pesa (Vodacom)",
-      "MTN_MOMO": "MTN Mobile Money",
-      "OTHER": "Otro operador"
-    },
-    "mobileNumber": "Número de Mobile Money *",
-    "mobileHolder": "Nombre oficial registrado en la línea *",
     "cancel": "Cancelar",
     "submit": "Confirmar la solicitud de transferencia",
     "submitting": "Enviando...",
@@ -428,7 +416,6 @@
       "minimum": "El importe mínimo de retiro es de {amount}",
       "exceeds": "El importe solicitado supera tu saldo disponible ({amount})",
       "bankRequired": "El IBAN y el nombre del titular de la cuenta son obligatorios",
-      "mobileRequired": "El número de Mobile Money y el nombre del titular son obligatorios",
       "generic": "No se ha podido enviar la solicitud de retiro"
     }
   },

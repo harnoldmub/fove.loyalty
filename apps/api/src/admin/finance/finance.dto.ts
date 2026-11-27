@@ -24,7 +24,7 @@ export type SalesFilterDto = z.infer<typeof salesFilterSchema>;
 export const paymentsFilterSchema = financeFilterSchema.extend({
   q: z.string().optional(),
   status: z.enum(["ALL", "PENDING", "PROCESSING", "SUCCEEDED", "FAILED", "CANCELLED", "PARTIALLY_REFUNDED", "REFUNDED", "DISPUTED"]).default("ALL"),
-  provider: z.enum(["ALL", "STRIPE", "MANUAL", "MOCK", "BANK_TRANSFER", "MOBILE_MONEY"]).default("ALL"),
+  provider: z.enum(["ALL", "STRIPE", "MANUAL", "MOCK", "BANK_TRANSFER"]).default("ALL"),
   page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(100).default(25),
 });

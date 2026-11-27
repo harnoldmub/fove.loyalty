@@ -19,7 +19,7 @@ export const PROVISIONAL_DAYS = 7;
 const DAY = 86_400_000;
 
 /** Moyens de règlement hors ligne et fournisseur de paiement correspondant. */
-export const OFFLINE_METHODS = { BANK_TRANSFER: "BANK_TRANSFER", CASH: "MANUAL", MOBILE_MONEY: "MOBILE_MONEY" } as const satisfies Record<string, PaymentProvider>;
+export const OFFLINE_METHODS = { BANK_TRANSFER: "BANK_TRANSFER", CASH: "MANUAL" } as const satisfies Record<string, PaymentProvider>;
 export type OfflineMethod = keyof typeof OFFLINE_METHODS;
 
 /** Contenu d'une facture hors ligne (Invoice.metadata). */
@@ -401,7 +401,7 @@ export class OfflineBillingService {
 
   /**
    * « Enregistrer un paiement reçu » (fiche entreprise) : paiement déjà reçu par FOVE (espèces au
-   * bureau, virement, mobile money). La facture est créée sans email d'instructions puis validée.
+   * bureau, virement). La facture est créée sans email d'instructions puis validée.
    */
   async recordReceived(
     tenantId: string,
