@@ -183,3 +183,102 @@ input[type="file"]::file-selector-button:hover { background: var(--line); }
 [dir="rtl"] .rtl-flip {
   transform: scaleX(-1);
 }
+
+/*
+ * Chargement des pages. Barre en haut de l'écran : cobalt, avec un tampon doré en tête.
+ * Elle grandit depuis le début de la ligne (la droite en arabe).
+ */
+.nav-progress {
+  position: fixed;
+  inset: 0 0 auto 0;
+  z-index: 100;
+  height: 3px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 250ms ease 100ms;
+}
+.nav-progress[data-state="on"] { opacity: 1; transition-delay: 0ms; }
+.nav-progress-fill {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 0;
+  width: 0;
+  border-start-end-radius: 3px;
+  border-end-end-radius: 3px;
+  background: linear-gradient(to right, var(--cobalt), color-mix(in srgb, var(--cobalt) 60%, var(--stamp)));
+  box-shadow: 0 0 10px color-mix(in srgb, var(--cobalt) 50%, transparent);
+}
+[dir="rtl"] .nav-progress-fill { background: linear-gradient(to left, var(--cobalt), color-mix(in srgb, var(--cobalt) 60%, var(--stamp))); }
+.nav-progress-fill::after {
+  content: "";
+  position: absolute;
+  inset-inline-end: -4px;
+  top: 50%;
+  width: 9px;
+  height: 9px;
+  margin-top: -4.5px;
+  border-radius: 9999px;
+  background: var(--stamp);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--stamp) 30%, transparent), 0 0 12px var(--stamp);
+}
+
+/* Carte tamponnée : apparaît après 0,4 s, puis les cases se tamponnent l'une après l'autre. */
+@keyframes page-loader-in { from { opacity: 0; } }
+@keyframes page-loader-stamp {
+  0% { transform: scale(1.6); opacity: 0; }
+  10% { transform: scale(1); opacity: 1; }
+  75% { transform: scale(1); opacity: 1; }
+  90%, 100% { transform: scale(0.6); opacity: 0; }
+}
+.page-loader { animation: page-loader-in 300ms ease 400ms both; }
+.page-loader-card {
+  display: grid;
+  grid-template-columns: repeat(5, 22px);
+  gap: 9px;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: var(--shadow-1);
+}
+.page-loader-card span {
+  position: relative;
+  width: 22px;
+  height: 22px;
+  border: 2px dashed color-mix(in srgb, var(--ink-3) 55%, transparent);
+  border-radius: 9999px;
+}
+.page-loader-card span::after {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  border-radius: 9999px;
+  background: var(--stamp);
+  box-shadow: inset 0 0 0 3px color-mix(in srgb, var(--stamp) 60%, #fff);
+  opacity: 0;
+  animation: page-loader-stamp 2s cubic-bezier(0.3, 1.6, 0.5, 1) infinite;
+}
+.page-loader-card span:nth-child(2)::after { animation-delay: 250ms; }
+.page-loader-card span:nth-child(3)::after { animation-delay: 500ms; }
+.page-loader-card span:nth-child(4)::after { animation-delay: 750ms; }
+.page-loader-card span:nth-child(5)::after { animation-delay: 1s; }
+[dir="rtl"] .page-loader-card { direction: rtl; }
+@media (prefers-reduced-motion: reduce) {
+  /* Carte fixe, déjà tamponnée. */
+  .page-loader-card span::after { animation-name: none !important; opacity: 0.9; }
+}
+
+/* Lien ou bouton cliqué, en attente de la page suivante. */
+a[data-nav-pending] { cursor: progress; }
+[data-slot="button"][data-nav-pending] { pointer-events: none; opacity: 0.85; }
+[data-slot="button"][data-nav-pending]::before {
+  content: "";
+  width: 1em;
+  height: 1em;
+  flex-shrink: 0;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  border-radius: 9999px;
+  animation: nav-pending-spin 0.7s linear infinite;
+}
+@keyframes nav-pending-spin { to { transform: rotate(360deg); } }

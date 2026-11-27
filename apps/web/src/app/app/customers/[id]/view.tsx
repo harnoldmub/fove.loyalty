@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useAppRouter } from "@/lib/navigation-progress";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ArrowLeft,
@@ -530,7 +530,7 @@ export function CustomerDetail({ id }: { id: string }) {
   const toErrorMessage = useErrorMessage();
   const t = useTranslations("app.customer");
   const ts = useTranslations("app.segment");
-  const router = useRouter();
+  const router = useAppRouter();
   const qc = useQueryClient();
   const tenant = useActiveTenant();
   const canWrite = useCan("customers.write");

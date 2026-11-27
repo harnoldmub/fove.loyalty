@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useAppRouter } from "@/lib/navigation-progress";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   CheckCircle2,
@@ -50,7 +50,7 @@ export function CheckoutView({ accountId }: { accountId: string }) {
   const rewardValueLabel = useRewardValueLabel();
   const unitLabel = useUnitLabel();
   const buildMessage = useWhatsAppMessage();
-  const router = useRouter();
+  const router = useAppRouter();
   const qc = useQueryClient();
   const tenant = useActiveTenant();
   const canRedeem = useCan("redemptions.create");

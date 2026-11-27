@@ -1,6 +1,7 @@
 "use client";
 
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
+import { useAppRouter } from "@/lib/navigation-progress";
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { safeInternalPath } from "@fove/shared";
@@ -25,7 +26,7 @@ export function ClientLogin() {
   const t = useTranslations("client.login");
   const tGoogle = useTranslations("client.google");
   const errorMessage = useErrorMessage();
-  const router = useRouter();
+  const router = useAppRouter();
   const params = useSearchParams();
   const next = safeNext(params.get("next"));
   const oauthError = params.get("oauth_error");
