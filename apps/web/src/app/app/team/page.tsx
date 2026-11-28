@@ -135,6 +135,7 @@ export default function TeamPage() {
               ) : (
                 <Badge tone="cobalt">{t(`roles.${m.role}.label`)}</Badge>
               )}
+              {canWrite && m.user.id !== me.user.id && m.role !== "OWNER" && m.status === "ACTIVE" && <ReplaceDialog member={m} />}
               {canWrite && m.user.id !== me.user.id && (
                 <ConfirmDialog
                   trigger={<Button size="sm" variant="ghost">{m.status === "ACTIVE" ? t("deactivate") : t("reactivate")}</Button>}
@@ -311,5 +312,46 @@ function RegistersPanel() {
       )}
       <CashierPinDialog open={pinOpen} onOpenChange={setPinOpen} />
     </section>
+  );
+}
+
+/** « Remplacer » (rotation) : l'ancien collaborateur est désactivé, le nouveau invité avec le même rôle et les mêmes établissements. */
+function ReplaceDialog({ member }: { member: Team["members"][number] }) {
+  const t = useTranslations("app.team.replace");
+  const qc = useQueryClient();
+  const toErrorMessage = useErrorMessage();
+  const [open, setOpen] = useState(false);
+  const [email, setEmail] = useState("");
+  const [busy, setBusy] = useState(false);
+  return (
+    <>
+      <Button size="sm" variant="ghost" onClick={() => setOpen(true)}>{t("button")}</Button>
+      <DialogRoot open={open} onOpenChange={setOpen}>
+        <DialogContent title={t("title", { name: member.user.name })}>
+          <form
+            className="grid gap-4"
+            onSubmit={async (e) => {
+              e.preventDefault();
+              setBusy(true);
+              try {
+                await api.post(`/app/team/members/${member.id}/replace`, { email });
+                toast.success(t("done", { email }));
+                qc.invalidateQueries({ queryKey: ["team"] });
+                setOpen(false);
+                setEmail("");
+              } catch (err) {
+                toast.error(toErrorMessage(err));
+              } finally {
+                setBusy(false);
+              }
+            }}
+          >
+            <p className="text-sm text-ink-2">{t("help", { name: member.user.name })}</p>
+            <Field label={t("email")}>{(f) => <Input {...f} type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />}</Field>
+            <Button type="submit" loading={busy}>{t("submit")}</Button>
+          </form>
+        </DialogContent>
+      </DialogRoot>
+    </>
   );
 }
