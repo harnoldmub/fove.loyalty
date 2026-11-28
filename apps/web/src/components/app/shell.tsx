@@ -32,6 +32,7 @@ import { Logo } from "@/components/brand";
 import { LocaleSwitcher } from "@/components/locale-switcher";
 import { SwitchingOverlay } from "@/components/app/switching-overlay";
 import { UpgradeNudge } from "@/components/app/upgrade";
+import { CashierPinBanner } from "@/components/app/cashier-pin";
 import { LoaderCircle, type LucideIcon } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
@@ -267,6 +268,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-dvh">
       <SupportBanner />
+      <CashierPinBanner />
       <VerifyBanner />
       <VerifyEmailDialog />
       <div className="lg:grid lg:grid-cols-[264px_1fr]">

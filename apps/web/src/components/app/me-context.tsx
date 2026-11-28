@@ -10,6 +10,10 @@ export interface MeData {
   role: string | null;
   permissions: string[];
   tenants: { id: string; name: string; slug: string; role: string; logoUrl: string | null; primaryColor: string; onboardingCompleted: boolean }[];
+  /** Session de caisse (docs/chantier-code-caisse.md). */
+  register?: { deviceId: string; name: string; unlocked: boolean; cashier: { membershipId: string; name: string } | null; lockMinutes: number } | null;
+  /** Code caisse choisi dans le commerce actif. */
+  cashierPinSet?: boolean;
 }
 
 const Ctx = createContext<MeData | null>(null);

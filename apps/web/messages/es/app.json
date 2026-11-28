@@ -1,4 +1,58 @@
 {
+  "register": {
+    "switch": "Cambiar de cajero",
+    "who": "¿Quién está en caja?",
+    "whoHelp": "Toca tu nombre y escribe tu código de caja.",
+    "whoHelpAt": "{establishment} · toca tu nombre y escribe tu código de caja.",
+    "noCashier": "Ningún miembro del equipo ha elegido aún su código de caja. Cada uno lo elige en el espacio del comercio (Equipo).",
+    "hello": "Hola, {name}",
+    "pinHelp": "Escribe tu código de caja de 4 cifras.",
+    "back": "No soy yo",
+    "close": "Cerrar la caja en este dispositivo",
+    "closeTitle": "¿Cerrar la caja?",
+    "closeConsequence": "Se cerrará la sesión del dispositivo. Para volver a usarlo, inicia sesión por correo y activa de nuevo la caja.",
+    "closeConfirm": "Cerrar la caja",
+    "pin": {
+      "title": "Mi código de caja",
+      "choose": "Elige un código de 4 cifras. Te identifica en las cajas compartidas del comercio.",
+      "confirm": "Escríbelo otra vez para confirmar.",
+      "hint": "Guárdalo para ti: las operaciones hechas con este código llevan tu nombre.",
+      "mismatch": "Los dos códigos no coinciden: vuelve a empezar.",
+      "saved": "Código de caja guardado",
+      "banner": "Elige tu código de caja (4 cifras) para cobrar en una caja compartida.",
+      "bannerCta": "Elegir mi código"
+    },
+    "activate": {
+      "button": "Usar este dispositivo como caja",
+      "title": "Usar este dispositivo como caja",
+      "help": "Cada miembro del equipo se identificará con su código de caja; las operaciones llevarán su nombre.",
+      "name": "Nombre de la caja",
+      "defaultName": "Caja",
+      "establishment": "Establecimiento",
+      "allEstablishments": "Ninguno en particular",
+      "warning": "El dispositivo solo tendrá acceso a la caja. Para recuperar el espacio completo, cierra la sesión y vuelve a entrar por correo.",
+      "confirm": "Activar la caja"
+    },
+    "team": {
+      "noPin": "Sin código de caja",
+      "pin": "Código de caja",
+      "reset": "Restablecer",
+      "resetTitle": "¿Restablecer el código de caja de {name}?",
+      "resetConsequence": "No podrá abrir una caja hasta que elija un código nuevo.",
+      "title": "Cajas",
+      "help": "Una tableta o un teléfono compartido en el mostrador: cada persona se identifica con su código de caja de 4 cifras y cada operación lleva su nombre.",
+      "changeMyPin": "Cambiar mi código de caja",
+      "chooseMyPin": "Elegir mi código de caja",
+      "empty": "Aún no hay cajas. Abre el espacio del comercio en el dispositivo del mostrador y toca «Usar este dispositivo como caja».",
+      "lastSeen": "Usada el {date}",
+      "revoke": "Quitar",
+      "revokeTitle": "¿Quitar la caja «{name}»?",
+      "revokeConsequence": "El dispositivo se desconecta de inmediato.",
+      "lockMinutes": "Bloqueo automático (minutos)",
+      "save": "Guardar",
+      "saved": "Plazo guardado"
+    }
+  },
   "automations": {
     "title": "Recordatorios",
     "description": "Haz que tus clientes vuelvan: la lista de clientes que recordar y mensajes automáticos en su tarjeta Wallet (y por correo si lo aceptaron).",

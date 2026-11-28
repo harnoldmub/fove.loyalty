@@ -20,7 +20,7 @@ import { toast } from "sonner";
 import { computeRewardDiscount, buildWhatsAppLink } from "@fove/shared";
 import { useRewardValueLabel } from "@/components/app/use-reward-value";
 import { useWhatsAppMessage } from "@/components/app/use-whatsapp-message";
-import { useActiveTenant, useCan } from "@/components/app/me-context";
+import { useActiveTenant, useCan, useMe } from "@/components/app/me-context";
 import type { Account, Establishment } from "@/components/app/types";
 import { Stamps, stampsStatus } from "@/components/stamps";
 import { Button } from "@/components/ui/button";
@@ -45,6 +45,7 @@ function readEstablishment(): string {
 
 /** Fiche caisse ouverte après le scan : valider un achat ou une récompense, avec intelligence client Sidely. */
 export function CheckoutView({ accountId }: { accountId: string }) {
+  const onRegister = Boolean(useMe().register);
   const toErrorMessage = useErrorMessage();
   const t = useTranslations("app.checkout");
   const ts = useTranslations("app.segment");
@@ -263,11 +264,14 @@ export function CheckoutView({ accountId }: { accountId: string }) {
                 </a>
               </Button>
             )}
-            <Button asChild variant="ghost" size="sm">
-              <Link href={`/app/customers/${account.customer.id}`}>
-                <UserRound /> {t("profile")}
-              </Link>
-            </Button>
+            {/* Fiche complète : hors caisse (une caisse n'a accès qu'au scan). */}
+            {!onRegister && (
+              <Button asChild variant="ghost" size="sm">
+                <Link href={`/app/customers/${account.customer.id}`}>
+                  <UserRound /> {t("profile")}
+                </Link>
+              </Button>
+            )}
           </div>
         </div>
 

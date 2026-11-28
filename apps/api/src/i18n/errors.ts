@@ -20,6 +20,13 @@ const EXACT: Record<string, Tr> = {
   // Comptes et accès
   "Vous n'êtes pas membre de cette entreprise": ["You are not a member of this business", "لست عضوًا في هذا النشاط التجاري", "No eres miembro de esta empresa"],
   "Patientez une minute avant de redemander un code": ["Wait a minute before requesting a new code", "انتظر دقيقة قبل طلب رمز جديد", "Espera un minuto antes de pedir un nuevo código"],
+  "Fonction indisponible sur une caisse": ["Not available on a till", "غير متاح على الصندوق", "No disponible en una caja"],
+  "Caisse verrouillée : saisissez votre code": ["Till locked: enter your code", "الصندوق مقفل: أدخل رمزك", "Caja bloqueada: escribe tu código"],
+  "Le code caisse fait 4 chiffres": ["The till code has 4 digits", "رمز الصندوق من 4 أرقام", "El código de caja tiene 4 cifras"],
+  "Choisissez un code moins facile à deviner": ["Choose a code that's harder to guess", "اختر رمزًا يصعب تخمينه", "Elige un código más difícil de adivinar"],
+  "Trop d'essais : code bloqué 15 minutes": ["Too many attempts: code blocked for 15 minutes", "محاولات كثيرة: الرمز محظور لمدة 15 دقيقة", "Demasiados intentos: código bloqueado 15 minutos"],
+  "Cet appareil n'est pas une caisse": ["This device is not a till", "هذا الجهاز ليس صندوقًا", "Este dispositivo no es una caja"],
+  "Réservé au propriétaire et aux gérants": ["Owner and managers only", "مخصص للمالك والمديرين", "Solo para el propietario y los gerentes"],
   "Trop de codes demandés aujourd'hui : réessayez demain": ["Too many codes requested today: try again tomorrow", "طلبت رموزًا كثيرة اليوم: أعد المحاولة غدًا", "Demasiados códigos solicitados hoy: inténtalo mañana"],
   "Trop de candidatures envoyées depuis cette connexion : réessayez demain": ["Too many applications sent from this connection: try again tomorrow", "أُرسلت طلبات كثيرة من هذا الاتصال: أعد المحاولة غدًا", "Demasiadas solicitudes enviadas desde esta conexión: inténtalo mañana"],
   "Candidature en cours d'examen par l'équipe FOVE": ["Application under review by the FOVE team", "الطلب قيد المراجعة من فريق FOVE", "Solicitud en revisión por el equipo de FOVE"],

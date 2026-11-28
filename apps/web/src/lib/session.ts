@@ -22,6 +22,8 @@ export interface Me {
   role: "OWNER" | "MANAGER" | "CASHIER" | "VIEWER" | "SUPPORT" | null;
   permissions: string[];
   tenants: { id: string; name: string; slug: string; status: string; role: string; logoUrl: string | null; primaryColor: string; onboardingCompleted: boolean }[];
+  register?: { deviceId: string; name: string; unlocked: boolean; cashier: { membershipId: string; name: string } | null; lockMinutes: number } | null;
+  cashierPinSet?: boolean;
 }
 
 export async function requireMe(next: string): Promise<Me> {

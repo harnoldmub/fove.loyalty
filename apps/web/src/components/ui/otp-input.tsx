@@ -17,6 +17,8 @@ interface OtpInputProps {
   "aria-invalid"?: boolean;
   "aria-describedby"?: string;
   className?: string;
+  /** Code secret (code caisse) : chiffres masqués, sans suggestion de code reçu. */
+  secret?: boolean;
 }
 
 /**
@@ -24,7 +26,7 @@ interface OtpInputProps {
  * à la case suivante, retour arrière et flèches. La première case porte `autocomplete="one-time-code"`
  * pour que le téléphone propose le code reçu.
  */
-export function OtpInput({ value, onChange, onComplete, length = 6, autoFocus, disabled, id, className, ...aria }: OtpInputProps) {
+export function OtpInput({ value, onChange, onComplete, length = 6, autoFocus, disabled, id, className, secret, ...aria }: OtpInputProps) {
   const t = useTranslations("common.otp");
   const refs = useRef<(HTMLInputElement | null)[]>([]);
   const digits = Array.from({ length }, (_, i) => value[i] ?? "");
@@ -90,10 +92,10 @@ export function OtpInput({ value, onChange, onComplete, length = 6, autoFocus, d
           aria-label={t("digit", { index: index + 1, length })}
           aria-invalid={aria["aria-invalid"]}
           aria-describedby={index === 0 ? aria["aria-describedby"] : undefined}
-          type="text"
+          type={secret ? "password" : "text"}
           inputMode="numeric"
           pattern="[0-9]*"
-          autoComplete={index === 0 ? "one-time-code" : "off"}
+          autoComplete={index === 0 && !secret ? "one-time-code" : "off"}
           maxLength={index === 0 ? length : 1}
           autoFocus={autoFocus && index === 0}
           disabled={disabled}
