@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Header, Param, ParseUUIDPipe, Put } from "@nestjs/common";
+import { Body, Controller, Get, Header, HttpCode, Param, ParseUUIDPipe, Post, Put } from "@nestjs/common";
 import { ApiExcludeEndpoint, ApiTags } from "@nestjs/swagger";
 import { z } from "zod";
 import { safeEqual } from "../common/crypto";
@@ -46,6 +46,15 @@ export class AutomationController {
   @RequirePermission("programs.write")
   update(@Tenant() ctx: TenantContext, @Param("kind", new ZodPipe(z.enum(KINDS))) kind: (typeof KINDS)[number], @Body(new ZodPipe(ruleSchema)) body: z.infer<typeof ruleSchema>) {
     return this.automation.updateRule(ctx, kind, body);
+  }
+
+  /** Cadeau d'anniversaire utilisé en caisse (une seule fois). */
+  @Post("app/accounts/:id/birthday-gift/use")
+  @TenantRoute()
+  @RequirePermission("transactions.create")
+  @HttpCode(200)
+  useGift(@Tenant() ctx: TenantContext, @Param("id", ParseUUIDPipe) id: string) {
+    return this.automation.useGift(ctx, id);
   }
 
   /** Lien de désinscription des emails d'un commerce (pied de chaque email de relance). */

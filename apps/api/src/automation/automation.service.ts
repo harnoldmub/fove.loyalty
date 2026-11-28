@@ -1,17 +1,18 @@
 import { Injectable, Logger } from "@nestjs/common";
 import { createHmac } from "node:crypto";
 import type { AutomationRule, AutomationRuleKind, AutomationScenario, MessageChannel, Prisma } from "@fove/database";
-import { computeCustomerSegment, isLocalHourBetween, localDateKey, safeTimeZone } from "@fove/shared";
+import { addLocalDays, birthdayOffset, computeCustomerSegment, isLocalHourBetween, localDateKey, localMidnightUtc, safeTimeZone, zonedParts } from "@fove/shared";
 import { loadConfig } from "../config";
 import { PrismaService } from "../common/prisma.service";
 import { AuditService } from "../common/audit.service";
-import { badRequest, isUniqueViolation } from "../common/errors";
+import { badRequest, isUniqueViolation, notFound } from "../common/errors";
 import type { TenantContext } from "../common/context";
 import { PlanService } from "../billing/plan.service";
 import { CardsService } from "../cards/cards.service";
 import { LedgerService } from "../loyalty/ledger.service";
 import { EmailService } from "../notifications/email.service";
 import { emailHtml } from "../i18n/email-layout";
+import { formatDay } from "../i18n/format";
 import { tenantLocale, type Locale } from "../i18n/locale";
 import { defaultAutomationText, fillTemplate, formatUnits, type MessageText } from "../i18n/automation-texts";
 
@@ -51,7 +52,8 @@ interface TenantInfo {
 
 interface Candidate {
   customerId: string;
-  accountId: string;
+  /** Carte qui reçoit le message (null : client sans carte active, email seulement). */
+  accountId: string | null;
   firstName: string;
   email: string | null;
   emailConsent: boolean;
@@ -169,8 +171,17 @@ export class AutomationService {
     await this.audit.log({ tenantId, action: "automation.run", metadata: { key: runKey } });
 
     const rules = await this.prisma.client.automationRule.findMany({ where: { tenantId, enabled: true } });
-    const candidates = await this.relaunchCandidates(tenant, rules, now);
     let sent = 0;
+    // Anniversaires d'abord : ils passent avant les relances et ne comptent pas dans le plafond.
+    const birthdayRule = rules.find((r) => r.kind === "BIRTHDAY" && r.giftLabel);
+    const celebrated = new Set<string>();
+    if (birthdayRule) {
+      for (const candidate of await this.birthdayCandidates(tenant, birthdayRule, now)) {
+        celebrated.add(candidate.customerId);
+        if (await this.send(tenant, candidate, this.text(tenant.locale, birthdayRule, candidate.scenario), now)) sent += 1;
+      }
+    }
+    const candidates = (await this.relaunchCandidates(tenant, rules, now)).filter((c) => !celebrated.has(c.customerId));
     for (const candidate of candidates.slice(0, MAX_PER_RUN)) {
       const rule = rules.find((r) => r.kind === candidate.scenario)!;
       if (await this.send(tenant, candidate, this.text(tenant.locale, rule, candidate.scenario), now)) sent += 1;
@@ -258,10 +269,100 @@ export class AutomationService {
     return out;
   }
 
+  // --- Anniversaire ----------------------------------------------------------------------------
+
+  /**
+   * Clients dont l'anniversaire tombe dans la période du cadeau (J-avant à J+après, à l'heure du commerce) :
+   * cadeau créé une fois par an, message d'annonce avant le jour J, message du jour J s'il n'est pas utilisé.
+   */
+  async birthdayCandidates(tenant: TenantInfo, rule: AutomationRule, now: Date): Promise<Candidate[]> {
+    const today = zonedParts(now, tenant.timeZone);
+    const months = [addLocalDays(today, -rule.daysAfter).month, today.month, addLocalDays(today, rule.daysBefore).month];
+    const customers = await this.prisma.client.customer.findMany({
+      where: { tenantId: tenant.id, anonymizedAt: null, birthDay: { not: null }, birthMonth: { in: [...new Set(months)] } },
+      select: {
+        id: true,
+        firstName: true,
+        email: true,
+        marketingEmailConsent: true,
+        birthDay: true,
+        birthMonth: true,
+        accounts: { where: { status: "ACTIVE" }, orderBy: { lastActivityAt: "desc" }, take: 1, select: { id: true } },
+      },
+    });
+    const out: Candidate[] = [];
+    for (const c of customers) {
+      const offset = birthdayOffset(today, c.birthDay!, c.birthMonth!);
+      if (offset < -rule.daysBefore || offset > rule.daysAfter) continue;
+      const occurrence = addLocalDays(today, -offset);
+      const lastDay = addLocalDays(occurrence, rule.daysAfter);
+      const gift = await this.ensureGift(tenant, c.id, occurrence, rule, now);
+      if (gift.usedAt) continue;
+      const values = {
+        prénom: c.firstName,
+        commerce: tenant.name,
+        cadeau: gift.label,
+        date: formatDay(new Date(Date.UTC(lastDay.year, lastDay.month - 1, lastDay.day, 12)), tenant.locale),
+      };
+      const base = { customerId: c.id, accountId: c.accounts[0]?.id ?? null, firstName: c.firstName, email: c.email, emailConsent: c.marketingEmailConsent, values };
+      // Annonce avant le jour J ; le jour J (ou le lendemain si la tâche n'a pas tourné), « Joyeux anniversaire ».
+      if (offset < 0) out.push({ ...base, scenario: "BIRTHDAY_SOON", key: `BIRTHDAY_SOON:${c.id}:${occurrence.year}` });
+      else if (offset <= 1) out.push({ ...base, scenario: "BIRTHDAY_DAY", key: `BIRTHDAY_DAY:${c.id}:${occurrence.year}` });
+    }
+    return out;
+  }
+
+  /** Cadeau de l'année, créé une seule fois (période fixée à sa création). */
+  private async ensureGift(tenant: TenantInfo, customerId: string, occurrence: { year: number; month: number; day: number }, rule: AutomationRule, now: Date) {
+    const existing = await this.prisma.client.birthdayGift.findUnique({ where: { customerId_year: { customerId, year: occurrence.year } } });
+    if (existing) return existing;
+    try {
+      return await this.prisma.client.birthdayGift.create({
+        data: {
+          tenantId: tenant.id,
+          customerId,
+          year: occurrence.year,
+          label: rule.giftLabel!,
+          validFrom: localMidnightUtc(addLocalDays(occurrence, -rule.daysBefore), tenant.timeZone),
+          validUntil: localMidnightUtc(addLocalDays(occurrence, rule.daysAfter + 1), tenant.timeZone),
+          createdAt: now,
+        },
+      });
+    } catch (error) {
+      if (isUniqueViolation(error)) return this.prisma.client.birthdayGift.findUniqueOrThrow({ where: { customerId_year: { customerId, year: occurrence.year } } });
+      throw error;
+    }
+  }
+
+  /** Cadeau d'anniversaire utilisable aujourd'hui pour ce client (affiché au scanner). */
+  activeGift(tenantId: string, customerId: string, now = new Date()) {
+    return this.prisma.client.birthdayGift.findFirst({
+      where: { tenantId, customerId, usedAt: null, validFrom: { lte: now }, validUntil: { gt: now } },
+      select: { id: true, label: true, validUntil: true },
+    });
+  }
+
+  /** Utilisation en caisse : une seule fois, tracée. */
+  async useGift(ctx: TenantContext, accountId: string, now = new Date()) {
+    const account = await this.prisma.client.loyaltyAccount.findFirst({ where: { id: accountId, tenantId: ctx.tenantId }, select: { customerId: true } });
+    if (!account) throw notFound("Carte");
+    const gift = await this.activeGift(ctx.tenantId, account.customerId, now);
+    if (!gift) throw badRequest("no_birthday_gift", "Aucun cadeau d'anniversaire disponible pour ce client");
+    const used = await this.prisma.client.birthdayGift.updateMany({
+      where: { id: gift.id, usedAt: null },
+      data: { usedAt: now, usedByUserId: ctx.actor.type === "user" ? ctx.actor.userId : null },
+    });
+    if (used.count !== 1) throw badRequest("no_birthday_gift", "Aucun cadeau d'anniversaire disponible pour ce client");
+    await this.audit.forTenant(ctx, "birthday_gift.used", { type: "customer", id: account.customerId }, { label: gift.label });
+    return { used: true, label: gift.label };
+  }
+
   // --- Envoi ------------------------------------------------------------------------------------
 
   /** Envoie un message (carte Wallet, et email avec consentement si aucun iPhone n'est prévenu) ; journal unique par clé. */
   async send(tenant: TenantInfo, c: Candidate, template: MessageText, now = new Date()): Promise<boolean> {
+    // Ni carte ni email autorisé : rien à envoyer (le cadeau reste disponible en caisse).
+    if (!c.accountId && !(c.emailConsent && c.email)) return false;
     const message = { title: fillTemplate(template.title, c.values).slice(0, 60), body: fillTemplate(template.body, c.values).slice(0, 180) };
     let logId: string;
     try {
@@ -273,8 +374,8 @@ export class AutomationService {
       if (isUniqueViolation(error)) return false;
       throw error;
     }
-    if (c.bonus) await this.creditBonus(tenant.id, c.accountId, c.bonus.delta, c.key);
-    const { apple } = await this.cards.pushCardMessage(c.accountId, message);
+    if (c.bonus && c.accountId) await this.creditBonus(tenant.id, c.accountId, c.bonus.delta, c.key);
+    const { apple } = c.accountId ? await this.cards.pushCardMessage(c.accountId, message) : { apple: false };
     let channel: MessageChannel = "WALLET";
     if (!apple && c.emailConsent && c.email) {
       await this.sendEmail(tenant, c, message);

@@ -116,3 +116,57 @@ describe("relances automatiques", () => {
     expect(rules.rules.find((r: { kind: string }) => r.kind === "NEAR_REWARD").defaults.title).toBe("Plus qu'un passage !");
   });
 });
+
+describe("anniversaire", () => {
+  async function birthdayShop() {
+    const shop = await stampShop();
+    expect((await enable(shop.client, "BIRTHDAY", { giftLabel: "Un dessert offert", daysBefore: 3, daysAfter: 7 })).status).toBe(200);
+    return shop;
+  }
+
+  it("cadeau exigé pour activer", async () => {
+    const { client } = await stampShop();
+    expect((await client.put("/api/app/automations/BIRTHDAY", { enabled: true })).status).toBe(400);
+  });
+
+  it("J-3 : cadeau créé et annonce ; jour J : « Joyeux anniversaire » ; puis utilisé une fois au scanner", async () => {
+    const { client, tenantId, programId } = await birthdayShop();
+    const { accountId, customerId } = await cardWith(client, programId, { balance: 2, lastActivityDaysAgo: 1 });
+    // Anniversaire le 13 juin ; noon() = 10 juin à Kinshasa.
+    await db.customer.update({ where: { id: customerId }, data: { birthDay: 13, birthMonth: 6 } });
+    const automation = app.get(AutomationService);
+
+    expect(await automation.runTenant(tenantId, noon(-1))).toBe(0);
+    expect(await automation.runTenant(tenantId, noon())).toBe(1);
+    const gift = await db.birthdayGift.findUniqueOrThrow({ where: { customerId_year: { customerId, year: 2031 } } });
+    expect(gift.label).toBe("Un dessert offert");
+    expect(gift.validFrom.toISOString()).toBe("2031-06-09T23:00:00.000Z");
+    expect(gift.validUntil.toISOString()).toBe("2031-06-20T23:00:00.000Z");
+    const soon = await db.customerMessage.findFirstOrThrow({ where: { customerId, scenario: "BIRTHDAY_SOON" } });
+    expect(soon.body).toContain("Un dessert offert");
+    expect(soon.body).toContain("20 juin 2031");
+
+    expect(await automation.runTenant(tenantId, noon(3))).toBe(1);
+    expect(await db.customerMessage.count({ where: { customerId, scenario: "BIRTHDAY_DAY" } })).toBe(1);
+
+    // Au scanner : visible, utilisable une fois.
+    const giftNow = await automation.activeGift(tenantId, customerId, noon(4));
+    expect(giftNow?.label).toBe("Un dessert offert");
+    const ctx = { tenantId, readOnly: false, actor: { type: "system" as const, label: "scheduler" as const } };
+    expect(await automation.useGift(ctx, accountId, noon(4))).toMatchObject({ used: true });
+    await expect(automation.useGift(ctx, accountId, noon(4))).rejects.toMatchObject({ code: "no_birthday_gift" });
+    // Plus de message une fois le cadeau utilisé, et aucun nouveau cadeau la même année.
+    expect(await automation.runTenant(tenantId, noon(5))).toBe(0);
+    expect(await db.birthdayGift.count({ where: { customerId } })).toBe(1);
+  });
+
+  it("le cadeau n'est utilisable qu'entre J-3 et J+7", async () => {
+    const { client, tenantId, programId } = await birthdayShop();
+    const { customerId } = await cardWith(client, programId, { balance: 2, lastActivityDaysAgo: 1 });
+    await db.customer.update({ where: { id: customerId }, data: { birthDay: 13, birthMonth: 6 } });
+    const automation = app.get(AutomationService);
+    await automation.runTenant(tenantId, noon());
+    expect(await automation.activeGift(tenantId, customerId, noon(10))).not.toBeNull();
+    expect(await automation.activeGift(tenantId, customerId, noon(11))).toBeNull();
+  });
+});

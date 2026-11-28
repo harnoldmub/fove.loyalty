@@ -74,6 +74,8 @@ export interface Account {
   createdAt: string;
   segment?: CustomerSegmentResult;
   recentNotes?: CustomerNote[];
+  /** Cadeau d'anniversaire utilisable aujourd'hui (docs/chantier-relances-anniversaire.md). */
+  birthdayGift?: { id: string; label: string; validUntil: string } | null;
   customer: {
     id: string;
     firstName: string;

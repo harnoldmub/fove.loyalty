@@ -27,6 +27,20 @@
       "gift": "a free dessert",
       "date": "15 March"
     },
+    "birthday": {
+      "title": "Birthday",
+      "help": "A gift valid for a few days around the customer's birthday, announced in advance and reminded on the day if not used yet. It can be used once, at the till, from the scanner.",
+      "enable": "Turn on the birthday gift",
+      "gift": "Gift",
+      "giftHint": "Shown in messages and in the scanner.",
+      "giftPlaceholder": "1 free dessert",
+      "giftRequired": "Enter the birthday gift",
+      "daysBefore": "Days before",
+      "daysAfter": "Days after",
+      "soon": "Announcement (at the start of the period)",
+      "day": "On the day (if the gift hasn't been used yet)",
+      "variables": "Variables: {prénom}, {commerce}, {cadeau}, {date}."
+    },
     "kinds": {
       "NEAR_REWARD": {
         "title": "Almost a reward",
@@ -205,6 +219,12 @@
     "tenantSent": "Message sent to all Wallet customers"
   },
   "checkout": {
+    "birthday": {
+      "title": "Birthday gift available",
+      "body": "{gift}, valid until {date}.",
+      "use": "Use",
+      "used": "Birthday gift used"
+    },
     "scanAnother": "Scan another card",
     "noteSaved": "Note saved on the customer profile",
     "defaultStore": "your shop",

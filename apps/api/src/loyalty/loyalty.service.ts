@@ -171,6 +171,13 @@ export class LoyaltyService {
       createdAt: account.customer.createdAt,
     });
 
+    // Cadeau d'anniversaire utilisable aujourd'hui (docs/chantier-relances-anniversaire.md).
+    const now = new Date();
+    const birthdayGift = await this.prisma.client.birthdayGift.findFirst({
+      where: { tenantId: ctx.tenantId, customerId: account.customer.id, usedAt: null, validFrom: { lte: now }, validUntil: { gt: now } },
+      select: { id: true, label: true, validUntil: true },
+    });
+
     const recentNotes = await this.prisma.client.customerNote.findMany({
       where: { tenantId: ctx.tenantId, customerId: account.customer.id },
       orderBy: { createdAt: "desc" },
@@ -182,6 +189,7 @@ export class LoyaltyService {
       cardUrl: token ? cardUrl(token) : null,
       segment,
       recentNotes,
+      birthdayGift,
       rewards: rewards.map((r) => ({ ...r, affordable: account.balance >= r.cost })),
     };
   }

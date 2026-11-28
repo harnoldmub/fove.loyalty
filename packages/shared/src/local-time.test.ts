@@ -39,3 +39,12 @@ describe("anniversaire", () => {
     expect(birthdayOffset({ year: 2027, month: 1, day: 5 }, 30, 12)).toBe(6);
   });
 });
+
+describe("minuit local", () => {
+  it("Kinshasa (UTC+1) et Paris en été (UTC+2)", async () => {
+    const { localMidnightUtc, addLocalDays } = await import("./local-time");
+    expect(localMidnightUtc({ year: 2026, month: 3, day: 12 }, "Africa/Kinshasa").toISOString()).toBe("2026-03-11T23:00:00.000Z");
+    expect(localMidnightUtc({ year: 2026, month: 7, day: 1 }, "Europe/Paris").toISOString()).toBe("2026-06-30T22:00:00.000Z");
+    expect(addLocalDays({ year: 2026, month: 12, day: 30 }, 3)).toEqual({ year: 2027, month: 1, day: 2 });
+  });
+});

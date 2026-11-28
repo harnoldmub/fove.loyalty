@@ -76,6 +76,7 @@ export default function AutomationsPage() {
             const rule = data.rules.find((r) => r.kind === kind)!;
             return <RuleEditor key={`${kind}-${rule.enabled}-${rule.title}-${rule.body}-${rule.bonus}`} rule={rule} available={data.available} />;
           })}
+          <BirthdayEditor key={JSON.stringify(data.rules.find((r) => r.kind === "BIRTHDAY"))} rule={data.rules.find((r) => r.kind === "BIRTHDAY")!} available={data.available} />
         </div>
       )}
     </>
@@ -142,6 +143,98 @@ function RuleEditor({ rule, available }: { rule: Rule; available: boolean }) {
         <p className="text-ink-2">{fill(body.trim() || rule.defaults.body)}</p>
       </div>
       {!locked && <Button className="justify-self-start" loading={busy} onClick={save}>{t("save")}</Button>}
+    </Panel>
+  );
+}
+
+/** Anniversaire : cadeau valable sur une période, annonce avant le jour J, message le jour J. */
+function BirthdayEditor({ rule, available }: { rule: Rule; available: boolean }) {
+  const t = useTranslations("app.automations.birthday");
+  const ta = useTranslations("app.automations");
+  const errMsg = useErrorMessage();
+  const qc = useQueryClient();
+  const canWrite = useCan("programs.write");
+  const fill = useFillPreview();
+  const [f, setF] = useState({
+    enabled: rule.enabled,
+    giftLabel: rule.giftLabel ?? "",
+    daysBefore: String(rule.daysBefore),
+    daysAfter: String(rule.daysAfter),
+    title: rule.title ?? "",
+    body: rule.body ?? "",
+    dayTitle: rule.dayTitle ?? "",
+    dayBody: rule.dayBody ?? "",
+  });
+  const [busy, setBusy] = useState(false);
+  const locked = !available || !canWrite;
+  const set = (patch: Partial<typeof f>) => setF({ ...f, ...patch });
+  const num = (v: string, max: number) => Math.min(max, Math.max(0, Math.round(Number(v) || 0)));
+
+  const save = async () => {
+    if (f.enabled && !f.giftLabel.trim()) {
+      toast.error(t("giftRequired"));
+      return;
+    }
+    setBusy(true);
+    try {
+      await api.put("/app/automations/BIRTHDAY", {
+        enabled: f.enabled,
+        giftLabel: f.giftLabel.trim() || null,
+        daysBefore: num(f.daysBefore, 14),
+        daysAfter: num(f.daysAfter, 30),
+        title: f.title.trim() || null,
+        body: f.body.trim() || null,
+        dayTitle: f.dayTitle.trim() || null,
+        dayBody: f.dayBody.trim() || null,
+      });
+      await qc.invalidateQueries({ queryKey: ["automations"] });
+      toast.success(ta("saved"));
+    } catch (e) {
+      toast.error(errMsg(e));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const preview = (title: string, body: string, fallbackTitle: string, fallbackBody: string) => (
+    <div className="grid gap-1 rounded-md bg-surface-2 p-3 text-sm">
+      <p className="font-semibold text-ink">{fill(title.trim() || fallbackTitle)}</p>
+      <p className="text-ink-2">{fill(body.trim() || fallbackBody)}</p>
+    </div>
+  );
+
+  return (
+    <Panel className="grid gap-4 p-5">
+      <div className="grid gap-1">
+        <h2 className="flex flex-wrap items-center gap-2 font-display text-lg font-semibold">
+          {t("title")}
+          <Badge tone={rule.enabled ? "mint" : "neutral"}>{rule.enabled ? ta("on") : ta("off")}</Badge>
+        </h2>
+        <p className="text-sm text-ink-2">{t("help")}</p>
+      </div>
+      <Checkbox label={t("enable")} checked={f.enabled} disabled={locked} onChange={(e) => set({ enabled: e.target.checked })} />
+      <div className="grid gap-3 sm:grid-cols-[2fr_1fr_1fr]">
+        <Field label={t("gift")} hint={t("giftHint")}>{(p) => <Input {...p} maxLength={60} disabled={locked} placeholder={t("giftPlaceholder")} value={f.giftLabel} onChange={(e) => set({ giftLabel: e.target.value })} />}</Field>
+        <Field label={t("daysBefore")}>{(p) => <Input {...p} type="number" min={0} max={14} disabled={locked} value={f.daysBefore} onChange={(e) => set({ daysBefore: e.target.value })} />}</Field>
+        <Field label={t("daysAfter")}>{(p) => <Input {...p} type="number" min={0} max={30} disabled={locked} value={f.daysAfter} onChange={(e) => set({ daysAfter: e.target.value })} />}</Field>
+      </div>
+      <div className="grid gap-3">
+        <p className="text-sm font-medium text-ink">{t("soon")}</p>
+        <div className="grid gap-3 sm:grid-cols-[1fr_2fr]">
+          <Field label={ta("messageTitle")}>{(p) => <Input {...p} maxLength={60} disabled={locked} placeholder={rule.defaults.title} value={f.title} onChange={(e) => set({ title: e.target.value })} />}</Field>
+          <Field label={ta("messageBody")} hint={t("variables")}>{(p) => <Textarea {...p} rows={2} maxLength={180} disabled={locked} placeholder={rule.defaults.body} value={f.body} onChange={(e) => set({ body: e.target.value })} />}</Field>
+        </div>
+        {preview(f.title, f.body, rule.defaults.title, rule.defaults.body)}
+      </div>
+      <div className="grid gap-3">
+        <p className="text-sm font-medium text-ink">{t("day")}</p>
+        <div className="grid gap-3 sm:grid-cols-[1fr_2fr]">
+          <Field label={ta("messageTitle")}>{(p) => <Input {...p} maxLength={60} disabled={locked} placeholder={rule.defaults.dayTitle} value={f.dayTitle} onChange={(e) => set({ dayTitle: e.target.value })} />}</Field>
+          <Field label={ta("messageBody")} hint={t("variables")}>{(p) => <Textarea {...p} rows={2} maxLength={180} disabled={locked} placeholder={rule.defaults.dayBody} value={f.dayBody} onChange={(e) => set({ dayBody: e.target.value })} />}</Field>
+        </div>
+        {preview(f.dayTitle, f.dayBody, rule.defaults.dayTitle ?? "", rule.defaults.dayBody ?? "")}
+      </div>
+      {!locked && <Button className="justify-self-start" loading={busy} onClick={save}>{ta("save")}</Button>}
     </Panel>
   );
 }

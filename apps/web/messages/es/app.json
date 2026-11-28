@@ -27,6 +27,20 @@
       "gift": "un postre gratis",
       "date": "15 de marzo"
     },
+    "birthday": {
+      "title": "Cumpleaños",
+      "help": "Un regalo válido unos días alrededor del cumpleaños del cliente, anunciado con antelación y recordado el mismo día si aún no se ha usado. Se usa una vez, en caja, desde el escáner.",
+      "enable": "Activar el regalo de cumpleaños",
+      "gift": "Regalo",
+      "giftHint": "Se muestra en los mensajes y en el escáner.",
+      "giftPlaceholder": "1 postre gratis",
+      "giftRequired": "Indica el regalo de cumpleaños",
+      "daysBefore": "Días antes",
+      "daysAfter": "Días después",
+      "soon": "Anuncio (al inicio del periodo)",
+      "day": "El día del cumpleaños (si aún no se ha usado el regalo)",
+      "variables": "Variables: {prénom}, {commerce}, {cadeau}, {date}."
+    },
     "kinds": {
       "NEAR_REWARD": {
         "title": "Casi una recompensa",
@@ -205,6 +219,12 @@
     "tenantSent": "Mensaje enviado a todos los clientes Wallet"
   },
   "checkout": {
+    "birthday": {
+      "title": "Regalo de cumpleaños disponible",
+      "body": "{gift}, válido hasta el {date}.",
+      "use": "Usar",
+      "used": "Regalo de cumpleaños usado"
+    },
     "scanAnother": "Escanear otra tarjeta",
     "noteSaved": "Nota guardada en la ficha del cliente",
     "defaultStore": "tu tienda",

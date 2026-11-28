@@ -69,3 +69,17 @@ export function birthdayOffset(today: { year: number; month: number; day: number
   const candidates = [today.year - 1, today.year, today.year + 1].map((y) => t - dayNumber(birthdayInYear(day, month, y)));
   return candidates.reduce((best, c) => (Math.abs(c) < Math.abs(best) ? c : best));
 }
+
+/** Ajoute des jours à une date civile (sans heure). */
+export function addLocalDays(d: { year: number; month: number; day: number }, days: number): { year: number; month: number; day: number } {
+  const t = new Date(Date.UTC(d.year, d.month - 1, d.day + days));
+  return { year: t.getUTCFullYear(), month: t.getUTCMonth() + 1, day: t.getUTCDate() };
+}
+
+/** Instant UTC de minuit, à l'heure locale du fuseau, pour une date civile (début de journée locale). */
+export function localMidnightUtc(d: { year: number; month: number; day: number }, timeZone: string): Date {
+  const guess = Date.UTC(d.year, d.month - 1, d.day);
+  const p = zonedParts(new Date(guess), timeZone);
+  const offset = Date.UTC(p.year, p.month - 1, p.day, p.hour, p.minute) - guess;
+  return new Date(guess - offset);
+}

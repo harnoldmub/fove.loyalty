@@ -27,6 +27,20 @@
       "gift": "un dessert offert",
       "date": "15 mars"
     },
+    "birthday": {
+      "title": "Anniversaire",
+      "help": "Un cadeau valable quelques jours autour de l'anniversaire du client, annoncé à l'avance et rappelé le jour J s'il n'est pas encore utilisé. Il s'utilise une fois, en caisse, depuis le scanner.",
+      "enable": "Activer le cadeau d'anniversaire",
+      "gift": "Cadeau",
+      "giftHint": "Affiché dans les messages et au scanner.",
+      "giftPlaceholder": "1 dessert offert",
+      "giftRequired": "Indiquez le cadeau d'anniversaire",
+      "daysBefore": "Jours avant",
+      "daysAfter": "Jours après",
+      "soon": "Annonce (au début de la période)",
+      "day": "Le jour J (si le cadeau n'est pas encore utilisé)",
+      "variables": "Variables : {prénom}, {commerce}, {cadeau}, {date}."
+    },
     "kinds": {
       "NEAR_REWARD": {
         "title": "Presque une récompense",
@@ -205,6 +219,12 @@
     "tenantSent": "Message envoyé à tous les clients Wallet"
   },
   "checkout": {
+    "birthday": {
+      "title": "Cadeau d'anniversaire disponible",
+      "body": "{gift}, valable jusqu'au {date}.",
+      "use": "Utiliser",
+      "used": "Cadeau d'anniversaire utilisé"
+    },
     "scanAnother": "Scanner une autre carte",
     "noteSaved": "Note enregistrée sur la fiche client",
     "defaultStore": "votre boutique",

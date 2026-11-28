@@ -12,6 +12,7 @@ import {
   StickyNote,
   Tag,
   UserRound,
+  Cake,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
@@ -30,7 +31,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { api, useErrorMessage } from "@/lib/api";
 import { playChime } from "@/lib/sound";
 import { useUnitLabel } from "@/lib/labels";
-import { formatNumber, newIdempotencyKey } from "@/lib/utils";
+import { formatDate, formatNumber, newIdempotencyKey } from "@/lib/utils";
 
 type Done = { kind: "earn"; delta: number; balance: number } | { kind: "redeem"; reward: string; balance: number; discount: string | null; purchaseAmount: string | null };
 
@@ -222,6 +223,8 @@ export function CheckoutView({ accountId }: { accountId: string }) {
 
   return (
     <div className="mx-auto grid max-w-md gap-5">
+      {account.birthdayGift && <BirthdayGiftBanner accountId={account.id} gift={account.birthdayGift} />}
+
       {/* Panneau principal client avec RFM Sidely */}
       <Panel className="p-5">
         <div className="flex items-start justify-between gap-3">
@@ -456,5 +459,42 @@ export function CheckoutView({ accountId }: { accountId: string }) {
         <ScanLine /> {t("scanAnother")}
       </Button>
     </div>
+  );
+}
+
+/** Cadeau d'anniversaire disponible : affiché en tête du scan, utilisable une fois. */
+function BirthdayGiftBanner({ accountId, gift }: { accountId: string; gift: { label: string; validUntil: string } }) {
+  const t = useTranslations("app.checkout.birthday");
+  const toErrorMessage = useErrorMessage();
+  const qc = useQueryClient();
+  const [busy, setBusy] = useState(false);
+  // validUntil est la fin (exclue) de la période : dernier jour = la veille.
+  const lastDay = formatDate(new Date(new Date(gift.validUntil).getTime() - 1).toISOString());
+  return (
+    <Panel className="flex flex-wrap items-center gap-3 border-stamp/50 bg-stamp-soft p-4">
+      <Cake className="size-6 shrink-0 text-stamp-ink" aria-hidden />
+      <div className="min-w-0 flex-1">
+        <p className="font-semibold text-ink">{t("title")}</p>
+        <p className="text-sm text-ink-2">{t("body", { gift: gift.label, date: lastDay })}</p>
+      </div>
+      <Button
+        variant="stamp"
+        loading={busy}
+        onClick={async () => {
+          setBusy(true);
+          try {
+            await api.post(`/app/accounts/${accountId}/birthday-gift/use`);
+            toast.success(t("used"));
+            await qc.invalidateQueries({ queryKey: ["account", accountId] });
+          } catch (e) {
+            toast.error(toErrorMessage(e));
+          } finally {
+            setBusy(false);
+          }
+        }}
+      >
+        {t("use")}
+      </Button>
+    </Panel>
   );
 }
