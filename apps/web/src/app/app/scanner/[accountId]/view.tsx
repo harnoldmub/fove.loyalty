@@ -476,7 +476,7 @@ function BirthdayGiftBanner({ accountId, gift }: { accountId: string; gift: { la
   const lastDay = formatDate(new Date(new Date(gift.validUntil).getTime() - 1).toISOString());
   return (
     <Panel className="flex flex-wrap items-center gap-3 border-stamp/50 bg-stamp-soft p-4">
-      <Cake className="size-6 shrink-0 text-stamp-ink" aria-hidden />
+      <Cake className="size-6 shrink-0 text-stamp-ink dark:text-stamp" aria-hidden />
       <div className="min-w-0 flex-1">
         <p className="font-semibold text-ink">{t("title")}</p>
         <p className="text-sm text-ink-2">{t("body", { gift: gift.label, date: lastDay })}</p>

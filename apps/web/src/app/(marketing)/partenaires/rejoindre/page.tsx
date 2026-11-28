@@ -174,7 +174,7 @@ export default function RejoindrePartenairePage() {
       ) : (
         <div className="rounded-2xl border border-line bg-surface p-6 sm:p-10 shadow-md">
           <div className="mb-8">
-            <div className="inline-flex items-center gap-1.5 rounded-full bg-stamp-soft px-3 py-1 text-xs font-semibold text-stamp-ink mb-3">
+            <div className="inline-flex items-center gap-1.5 rounded-full bg-stamp-soft px-3 py-1 text-xs font-semibold text-stamp-ink dark:text-stamp mb-3">
               <Sparkles className="size-3.5" aria-hidden /> {t("badge")}
             </div>
             <h1 className="font-display text-2xl sm:text-3xl font-bold text-ink mb-2">

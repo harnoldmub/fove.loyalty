@@ -1,12 +1,12 @@
 # FOVE — État du projet
 
-> Mis à jour le **28 novembre 2026**, dernier commit analysé **`34f4868`** (`main`, après la PR #26). Version précédente : 2 novembre 2026, commit `139126f` (doc Claude Docs « FOVE — État du projet »). Référentiel fonctionnel détaillé : [fonctionnalites.md](fonctionnalites.md).
+> Mis à jour le **28 novembre 2026**, dernier commit analysé **`a92baee`** (`main`, après la PR #28). Version précédente : 2 novembre 2026, commit `139126f` (doc Claude Docs « FOVE — État du projet »). Référentiel fonctionnel détaillé : [fonctionnalites.md](fonctionnalites.md).
 
 ## 1. Synthèse
 
 FOVE fonctionne de bout en bout en local : fidélité multi-commerces (points et tampons), compte client FOVE, offres et facturation multi-devises, partenaires, parrainage, relances automatiques, caisse partagée, administration avec double authentification. **400 tests automatisés passent**, typecheck et lint sont au vert, la CI de `main` passe.
 
-Depuis la version du 2 novembre : **112 commits** (69 saboukellal, 43 Arnold MUBUANGA YATE), **26 PR mergées**. Les chiffres ont triplé : 85 → 333 tests API, 37 → 69 modèles, 6 → 34 migrations, 38 → 60 pages.
+Depuis la version du 2 novembre : **112 commits** (69 saboukellal, 43 Arnold MUBUANGA YATE), **28 PR mergées**. Les chiffres ont triplé : 85 → 333 tests API, 37 → 69 modèles, 6 → 34 migrations, 38 → 60 pages.
 
 Ce qui empêche encore de dire « 100 % prêt pour la production » :
 
@@ -74,7 +74,8 @@ Modules API : `auth`, `tenants`, `customers`, `loyalty`, `rewards`, `cards` (Goo
 | Connecteur e-commerce | Match Kwata : commandes, remboursements, rattachement | Testé | `matchkwata` ; côté boutique non écrit |
 | Administration FOVE | Entreprises, offres, Finance (trésorerie, abonnements, commissions, parrainages), messages, système | Testé | `billing-admin`, `finance-treasury`, `security-review-2` |
 | Sécurité | Deux revues (25/11, 28/11) : mass assignment, SSRF, CSRF, open redirect, CORS exact, CSP/HSTS, partenaires suspendus | Testé | `security-review-2`, `partners-security`, `webhooks-ssrf` |
-| Chargement des pages | Barre de progression, carte tamponnée pendant les chargements | Vérifié | contrôle en direct |
+| Chargement des pages | Barre de progression, carte tamponnée pendant les chargements | Non vérifié | Contrôlé en direct, aucun test automatisé |
+| Vitrine | Accueil (dont parrainage entre clients), Fonctionnalités avec une ancre par fonction, Tarifs reliés aux explications, sélecteur de monnaie, thème clair et sombre | Non vérifié | Contrôlée en direct (ordinateur, mobile, thème sombre), aucun test automatisé |
 | App mobile | Coquille Capacitor iOS / Android | Non vérifié | ni compilée ni lancée ici |
 
 ## 4. Tests et qualité
@@ -105,10 +106,12 @@ Mesures du 28/11/2026 sur `34f4868`, base PostgreSQL 16 locale.
 | 24–25 nov. | Compte client FOVE A1–A5 (#2), sécurité partenaires (#3), téléphone facultatif (#4), limites email non confirmé (#5), parrainage commerçants (#7), multi-devises et encaissement (#9). |
 | 26 nov. | Partenaires sans encaissement (#10), connexion par code (#11), arrivée admin et gabarit email (#12, #13). |
 | 27 nov. | Espaces partenaire (#14), chargement des pages (#15), retrait du mobile money (#16). |
-| 28 nov. | Emails à deux gabarits et notifications équipe (#17), revue sécu + 2FA admin (#18), chargement des données (#19), incohérences (#20), relances + anniversaire (#21), correctif CI fuseau (#22), code caisse (#23), limite de collaborateurs (#24), parrainage entre clients et état du projet (#25), export CSV des clients (#26). |
+| 28 nov. | Emails à deux gabarits et notifications équipe (#17), revue sécu + 2FA admin (#18), chargement des données (#19), incohérences (#20), relances + anniversaire (#21), correctif CI fuseau (#22), code caisse (#23), limite de collaborateurs (#24), parrainage entre clients et état du projet (#25), export CSV des clients (#26), état du projet (#27), vitrine : parrainage entre clients sur l'accueil, fonctionnalités avec ancres, tarifs reliés aux explications (#28). |
 
 | PR | Branche | Contenu |
 |---|---|---|
+| #28 | `feat/tarifs-parrainage-clients` | Vitrine : accueil, Fonctionnalités avec ancres, liens depuis les tarifs |
+| #27 | `docs/etat-projet-26` | État du projet après #25 et #26 |
 | #26 | `feat/export-clients` | Export CSV des clients |
 | #25 | `feat/parrainage-clients` | Parrainage entre clients P1–P3, ce document |
 | #24 | `fix/quota-collaborateurs` | Limite de collaborateurs fiable, « Remplacer » |
@@ -181,6 +184,7 @@ Rien de bloquant pour le cœur métier. Priorité : recetter les services extern
 
 | Date | Dernier commit analysé | Changement |
 |---|---|---|
+| 2026-11-28 | `a92baee` | PR #27 et #28 (vitrine : parrainage entre clients mis en avant, tarifs reliés aux explications) ; badges jaunes lisibles en thème sombre |
 | 2026-11-28 | `34f4868` | PR #25 et #26 mergées : 400 tests, export CSV des clients, parrainage entre clients sorti de « en PR » ; mise à jour faite désormais sur `main` après merge |
 | 2026-11-28 | `1de707f` | Document passé dans le dépôt ; 110 commits et 24 PR repris, 397 tests, statuts par domaine refaits, dettes mises à jour ; historique par PR au lieu de par commit |
 | 2026-11-02 | `139126f` | Première version (Claude Docs) : 28 commits, 117 tests, parcours commerçant en direct |

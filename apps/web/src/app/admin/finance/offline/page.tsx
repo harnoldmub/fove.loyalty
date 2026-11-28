@@ -273,7 +273,7 @@ export default function OfflinePaymentsPage() {
                         <td className="px-3 py-2.5">{inv.tenant.name}</td>
                         <td className="px-3 py-2.5">
                           {inv.plan} · {t(`kind.${inv.kind}`)}
-                          {inv.provisional && inv.status === "OPEN" && <span className="block text-xs text-stamp-ink">{t("provisional")}</span>}
+                          {inv.provisional && inv.status === "OPEN" && <span className="block text-xs text-stamp-ink dark:text-stamp">{t("provisional")}</span>}
                         </td>
                         <td className="px-3 py-2.5 text-end tabular-nums">{formatFinance(inv.status === "PAID" ? inv.amountPaidCents : inv.amountTotalCents, inv.currency)}</td>
                         <td className="px-3 py-2.5 text-xs text-ink-2">{formatDate(inv.paidAt ?? inv.createdAt)}</td>
