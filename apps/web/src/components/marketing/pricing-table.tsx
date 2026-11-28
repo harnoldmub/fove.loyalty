@@ -33,6 +33,9 @@ const FEATURE_ROWS: { key: string; included: (f: Partial<PlanFeatures>) => boole
   { key: "widget", included: (f) => Boolean(f.widget) },
   { key: "removeBranding", included: (f) => Boolean(f.removeBranding) },
   { key: "walletCampaigns", included: (f) => Boolean(f.walletCampaigns) },
+  // Relances, anniversaire et parrainage entre clients suivent la même fonction d'offre que les campagnes.
+  { key: "automations", included: (f) => Boolean(f.walletCampaigns) },
+  { key: "customerReferral", included: (f) => Boolean(f.walletCampaigns) },
   { key: "whatsappAuto", included: (f) => Boolean(f.whatsappAuto) },
   { key: "api", included: (f) => Boolean(f.api) },
   { key: "integrations", included: (f) => Boolean(f.integrations) },

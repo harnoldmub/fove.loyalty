@@ -238,10 +238,12 @@
       "widget": "Widget para su web",
       "removeBranding": "Sin la mención «Con la tecnología de FOVE»",
       "walletCampaigns": "Campañas Wallet a todos sus clientes",
+      "automations": "Recordatorios automáticos y regalo de cumpleaños",
+      "customerReferral": "Recomendación entre sus clientes: sus amigos se convierten en sus clientes",
       "whatsappAuto": "Envío automático por WhatsApp",
       "api": "API y webhooks",
       "integrations": "Conexión con tienda online (vía API)",
-      "referral": "Programa de recomendación (hasta un año gratis)"
+      "referral": "Recomiende a otros comercios: hasta un año gratis"
     },
     "custom": "A medida",
     "unlimited": "Ilimitados",

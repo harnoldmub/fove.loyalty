@@ -238,10 +238,12 @@
       "widget": "Widget pour votre site",
       "removeBranding": "Sans mention « Propulsé par FOVE »",
       "walletCampaigns": "Campagnes Wallet à tous vos clients",
+      "automations": "Relances automatiques et cadeau d’anniversaire",
+      "customerReferral": "Parrainage entre vos clients : leurs amis deviennent vos clients",
       "whatsappAuto": "Envoi WhatsApp automatique",
       "api": "API et webhooks",
       "integrations": "Connexion boutique en ligne (via API)",
-      "referral": "Programme de parrainage (jusqu'à une année offerte)"
+      "referral": "Parrainez d’autres commerçants : jusqu’à une année offerte"
     },
     "custom": "Sur mesure",
     "unlimited": "Illimités",

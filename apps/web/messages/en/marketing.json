@@ -238,10 +238,12 @@
       "widget": "Widget for your website",
       "removeBranding": "No “Powered by FOVE” mention",
       "walletCampaigns": "Wallet campaigns to all your customers",
+      "automations": "Automatic reminders and birthday gift",
+      "customerReferral": "Customer referral: their friends become your customers",
       "whatsappAuto": "Automatic WhatsApp messages",
       "api": "API and webhooks",
       "integrations": "Online store connection (via API)",
-      "referral": "Referral programme (up to one free year)"
+      "referral": "Refer other businesses: up to one free year"
     },
     "custom": "Custom",
     "unlimited": "Unlimited",
