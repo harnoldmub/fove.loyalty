@@ -96,6 +96,29 @@
     "rights": "© {year} Dizayna. All rights reserved."
   },
   "home": {
+    "referral": {
+      "eyebrow": "Customer referral",
+      "title": "Your customers bring their friends",
+      "text": "Word of mouth, rewarded. Every customer can invite friends from their card; you choose what the friend and the inviting customer earn.",
+      "paid": "Included in paid plans, turned on in one click.",
+      "link": "How it works",
+      "steps": {
+        "share": {
+          "title": "Your customer shares their link",
+          "text": "From their card, on WhatsApp or by copying the link."
+        },
+        "join": {
+          "title": "Their friend creates a card",
+          "text": "They get a welcome gift, for example a free stamp."
+        },
+        "visit": {
+          "title": "The friend comes in",
+          "text": "The customer who invited them is rewarded, for example two stamps."
+        }
+      },
+      "notifTitle": "Karim came thanks to you!",
+      "notifBody": "+2 stamps on your card. Thanks for the referral!"
+    },
     "hero": {
       "title": "Turn your customers into regulars.",
       "text": "A loyalty card on your customers’ phones, a QR code on your counter. They scan, they buy, they come back. No app to install.",
@@ -238,10 +261,12 @@
       "widget": "Widget for your website",
       "removeBranding": "No “Powered by FOVE” mention",
       "walletCampaigns": "Wallet campaigns to all your customers",
+      "automations": "Automatic reminders and birthday gift",
+      "customerReferral": "Customer referral: their friends become your customers",
       "whatsappAuto": "Automatic WhatsApp messages",
       "api": "API and webhooks",
       "integrations": "Online store connection (via API)",
-      "referral": "Referral programme (up to one free year)"
+      "referral": "Refer other businesses: up to one free year"
     },
     "custom": "Custom",
     "unlimited": "Unlimited",
@@ -282,11 +307,33 @@
     ]
   },
   "features": {
+    "paid": "Paid plans",
     "title": "Features",
     "intro": "Everything you need to bring customers back, and nothing you need a technician to set up.",
     "cta": "Your QR code can be on the counter today.",
     "start": "Start for free",
     "groups": {
+      "grow": {
+        "title": "Bring customers back and grow",
+        "items": {
+          "automations": {
+            "title": "Automatic reminders",
+            "text": "A message on the customer's Wallet card (and by email if they agreed) when they're close to a reward, have one waiting or stop coming. At most one reminder every 14 days, between 10am and 7pm."
+          },
+          "birthday": {
+            "title": "Birthday gift",
+            "text": "A gift valid around the customer's birthday, announced a few days before and recalled on the day on their card."
+          },
+          "customerReferral": {
+            "title": "Customer referral",
+            "text": "Your customers invite their friends from their card. The friend gets a welcome gift, and the customer who invited them is rewarded on the friend's first visit. You set the rewards and a monthly cap."
+          },
+          "merchantReferral": {
+            "title": "Refer other businesses",
+            "text": "Recommend FOVE to a business: they get a discount on their subscription, and you earn a credit on yours after their first annual payment, up to one free year."
+          }
+        }
+      },
       "program": {
         "title": "Your program",
         "items": {
@@ -302,7 +349,7 @@
           "wallet": { "title": "Apple Wallet & Google Wallet", "text": "A native pass added in one tap to Apple Wallet and Google Wallet. Zero apps to download." },
           "push": { "title": "Lock screen push notifications", "text": "Speak to your customers directly on their lock screen: flash offers, points updates and unlocked rewards." },
           "geo": { "title": "GPS proximity reminders", "text": "The loyalty card appears on the smartphone screen as soon as your customer gets close to your location." },
-          "crm": { "title": "Customer database & RFM", "text": "Automatic customer segmentation (VIP, regulars, dormant, at risk), tags and sales notes for your sales team." }
+          "crm": { "title": "Customer database & RFM", "text": "Automatic customer segmentation (VIP, regulars, dormant, at risk), tags and sales notes for your sales team. Export your customer list at any time." }
         }
       },
       "team": {
