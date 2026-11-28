@@ -10,7 +10,8 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "migrate:dev": "prisma migrate dev",
     "migrate:deploy": "prisma migrate deploy",
-    "seed": "tsx --env-file-if-exists=../../.env --env-file-if-exists=../../.env.local prisma/seed.ts"
+    "seed": "tsx --env-file-if-exists=../../.env --env-file-if-exists=../../.env.local prisma/seed.ts",
+    "mfa:reset": "tsx --env-file-if-exists=../../.env --env-file-if-exists=../../.env.local prisma/mfa-reset.ts"
   },
   "dependencies": {
     "@fove/shared": "workspace:*",

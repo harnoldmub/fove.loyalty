@@ -595,6 +595,11 @@ Le partenaire **n'encaisse jamais d'argent** (décision du 26 novembre 2026) : l
 
 - **Super admin** : toute l'administration.
 - **Associé** et **responsable financier** : uniquement le centre financier `/admin/finance` ⚠.
+- **Double authentification obligatoire** (super admin, associé, responsable financier) : en plus du code reçu par email, code d'une application d'authentification (Google Authenticator, Authy, 1Password…).
+  - Activation à la première arrivée : QR code (ou clé à saisir), premier code, puis **10 codes de secours** affichés une seule fois.
+  - L'administration reste ouverte **12 heures** ; ensuite, seul le code de l'application est redemandé. Les espaces commerçant et partenaire du même compte ne sont pas concernés.
+  - Un code ne sert qu'une fois ; 5 erreurs bloquent 15 minutes. Code de secours en cas de téléphone perdu ; nouveaux codes de secours dans Admin > Système.
+  - Plus de téléphone ni de codes de secours : réinitialisation sur le serveur (`pnpm --filter @fove/database mfa:reset -- email`), qui ferme les sessions du compte.
 - **Confidentialité** : l'administration n'affiche pas les fiches des clients finaux des commerces. Elle ne montre que des volumes.
 - **Arrivée après connexion**, selon les espaces du compte : administration (`/admin`), sinon espace commerçant (`/app`), sinon espace partenaire (`/partner`) ; une destination explicite dans le lien l'emporte. Un **même compte** (même email) peut être admin, commerçant et partenaire : chaque espace propose les autres (« Administration », « Espace commerçant », « Espace partenaire »), qui s'ouvrent dans **un nouvel onglet** ; les espaces restent ouverts côte à côte avec la même session. Un partenaire sans commerce peut en créer un depuis son espace. Un accès support en cours change le commerce affiché dans l'onglet commerçant (bandeau « accès support »).
 
@@ -639,6 +644,7 @@ Le nombre d'entreprises abonnées à chaque offre est affiché.
 
 ### 6.5 Système
 
+- **Double authentification du compte** : état, codes de secours restants, nouveaux codes de secours.
 - **Notifications de l'équipe FOVE** :
   - interrupteur général, **désactivé par défaut** (phase de test : aucun email interne consommé) ; les candidatures et les messages restent visibles dans l'administration ;
   - types d'envoi : nouvelle candidature partenaire, nouveau message de contact, récapitulatif quotidien ;

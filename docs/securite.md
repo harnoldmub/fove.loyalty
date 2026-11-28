@@ -6,6 +6,7 @@
 | CSRF | Cookie `SameSite=Lax` + en-tête `X-Fove-Csrf: 1` exigé sur toute écriture authentifiée par cookie (un site tiers ne peut pas l'envoyer sans passer CORS). |
 | Connexion | **Aucun mot de passe** (docs/chantier-connexion-otp.md) : Google, ou code à 6 chiffres par email (empreinte SHA-256 en base, comparaison à temps constant, 10 min, 5 essais, consommation atomique, 1 code par minute, 5 par heure et par email, 60 par heure et par adresse IP, même réponse que l'email existe ou non). L'email est prouvé à la création du compte. Double authentification des comptes admin à ajouter. |
 | Espace partenaire | Réservé aux partenaires **validés** (`APPROVED`, `ACTIVE`) à chaque requête : un profil en attente (`partner_pending`), suspendu ou refusé (`partner_suspended`) n'accède ni aux clients apportés, ni aux coordonnées de versement, ni aux prospects. |
+| Double authentification des admins | Super admin, associé, responsable financier : application TOTP (RFC 6238, 6 chiffres, 30 s, tolérance d'un pas) en plus du code par email, exigée sur toute route `SuperAdminRoute`/`FinanceRoute` (`AdminMfaGuard`). Secret chiffré AES-256-GCM (`APP_ENCRYPTION_KEY`), activation confirmée par un premier code, pas déjà utilisé refusé (pas de rejeu), 5 erreurs = blocage 15 min. Session admin valable **12 h** après vérification (`Session.mfaVerifiedAt`). 10 codes de secours à usage unique, stockés en empreinte SHA-256. Réinitialisation : `pnpm --filter @fove/database mfa:reset -- email` (ferme les sessions, auditée). `ADMIN_MFA=off` uniquement en local et dans les tests. |
 | Permissions | Vérifiées côté serveur à chaque requête (`TenantGuard` + `@RequirePermission`). Rôles : Owner, Manager, Cashier, Viewer ; périmètre par établissement. Super Admin séparé. |
 | Accès support | Super admin uniquement, motif obligatoire, 5 à 120 minutes, **lecture seule**, journalisé dans l'audit de l'entreprise. |
 | Liens de carte | Stables et chiffrés au repos ; « Retrouver ma carte » envoie le lien uniquement à l'email de la fiche, sans le renouveler (pas de coupure de carte par un tiers) ; renouvellement réservé au commerçant, confirmé et audité. Fichiers image/PDF limités à 20 req/min. |
@@ -34,12 +35,13 @@ Aucune faille critique (cloisonnement des commerces, sessions, CSRF, webhooks, m
 |---|---|---|
 | Moyenne | Un partenaire suspendu ou refusé gardait l'accès à son espace (drapeau `isPartner` suffisant). | Statut validé exigé à chaque requête ; espace partenaire masqué à la connexion. |
 | Moyenne | Candidature partenaire sans limite dédiée : envoi d'emails à des adresses arbitraires. | 3/min et 10/jour par IP. |
-| Moyenne | Admin protégé par la seule boîte mail, session de 90 jours. | Double authentification par application (lot S2). |
+| Moyenne | Admin protégé par la seule boîte mail, session de 90 jours. | Double authentification par application, administration ouverte 12 h. |
 | Faible | CORS avec cookie ouvert à tout sous-domaine. | Liste exacte. |
 | Faible | Documentation publique listant les routes internes. | Filtrée sur l'API publique et le widget. |
 | Faible | Adresses `javascript:` ou `data:` acceptées. | `webUrl()`. |
 | Faible | Pas de plafond journalier de codes de connexion. | 20 par jour et par email. |
 | Faible | Ni HSTS ni CSP côté web. | HSTS et CSP minimale. |
+| Anomalie | Code partenaire (nom + 3 chiffres) pouvant être déjà pris : candidature en erreur. | Code revérifié en base, allongé si besoin. |
 
 À vérifier en production : l'adresse IP vue par l'API (journal d'audit). Si toutes les lignes portent la même adresse (celle du site, qui relaie les appels), les limites par IP s'appliquent à tous les visiteurs ensemble : transmettre l'IP du visiteur.
 

@@ -5,6 +5,7 @@ import { PrismaService } from "./common/prisma.service";
 import { AuditService } from "./common/audit.service";
 import { EmailService } from "./notifications/email.service";
 import { TeamAlertService } from "./notifications/team-alert.service";
+import { MfaService } from "./auth/mfa.service";
 import { TeamDigestService } from "./notifications/team-digest.service";
 import { BillingEmailService } from "./billing/billing-emails.service";
 import { WhatsAppService } from "./notifications/whatsapp.service";
@@ -104,6 +105,7 @@ import { ClientJoinController } from "./client-account/client-join.controller";
     WebhooksService,
     SessionService,
     AuthService,
+    MfaService,
     ClientSessionService,
     ClientAccountService,
     ClientSessionGuard,

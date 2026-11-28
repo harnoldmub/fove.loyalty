@@ -1,3 +1,4 @@
+import { randomInt } from "node:crypto";
 import { Injectable, Logger } from "@nestjs/common";
 import type { Prisma } from "@fove/database";
 import { PrismaService } from "../common/prisma.service";
@@ -127,8 +128,18 @@ export class PartnersService {
       .replace(/[\u0300-\u036f]/g, "")
       .replace(/[^A-Z0-9]/g, "")
       .slice(0, 10);
-    const randomSuffix = Math.floor(100 + Math.random() * 900);
-    const code = `${baseCode || "PARTNER"}${randomSuffix}`;
+    // Code libre : nom + chiffres aléatoires, revérifié en base (deux candidats au même nom ne doivent
+    // jamais recevoir le même code), allongé si les tentatives courtes sont prises.
+    let code = "";
+    for (let attempt = 0; attempt < 8; attempt++) {
+      const digits = attempt < 4 ? 3 : 5;
+      const candidate = `${baseCode || "PARTNER"}${randomInt(10 ** (digits - 1), 10 ** digits)}`;
+      if (!(await this.prisma.client.partner.findUnique({ where: { code: candidate }, select: { id: true } }))) {
+        code = candidate;
+        break;
+      }
+    }
+    if (!code) code = `${baseCode || "PARTNER"}${randomInt(10 ** 7, 10 ** 8)}`;
 
     // Liaison avec un compte utilisateur FOVE si déjà inscrit
     // Seul un compte à l'email confirmé est lié : l'adresse saisie dans la candidature n'est pas prouvée.

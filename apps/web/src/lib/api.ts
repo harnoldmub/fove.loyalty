@@ -31,9 +31,18 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
   const isAuthArea = typeof window !== "undefined" && /^\/(app|admin|onboarding|partner)(\/|$)/.test(window.location.pathname);
   // « Email non confirmé » n'est pas une session perdue : l'écran affiche quoi faire, sans déconnecter.
   const emailNotVerified = json?.error?.code === "email_not_verified";
+  // Refus qui ne sont pas une session perdue : l'écran affiche quoi faire (double authentification des
+  // admins, espace partenaire en attente ou suspendu), sans renvoyer vers la connexion.
+  const code = json?.error?.code as string | undefined;
+  if ((code === "mfa_required" || code === "mfa_setup_required") && typeof window !== "undefined" && window.location.pathname.startsWith("/admin")) {
+    // L'administration (layout serveur) affiche alors l'écran du code.
+    window.location.reload();
+    return new Promise(() => {}) as unknown as T;
+  }
+  const handledForbidden = code === "partner_pending" || code === "partner_suspended" || code === "mfa_required" || code === "mfa_setup_required";
   // L'espace commerçant ouvre alors la fenêtre « Confirmez d'abord votre email » (shell).
   if (emailNotVerified && typeof window !== "undefined") window.dispatchEvent(new Event(EMAIL_NOT_VERIFIED_EVENT));
-  if ((res.status === 401 || res.status === 403) && !emailNotVerified && !path.startsWith("/auth/") && isAuthArea) {
+  if ((res.status === 401 || res.status === 403) && !emailNotVerified && !handledForbidden && !path.startsWith("/auth/") && isAuthArea) {
     const next = encodeURIComponent(window.location.pathname + window.location.search);
     window.location.replace(`/login?next=${next}`);
     return new Promise(() => {}) as unknown as T;
