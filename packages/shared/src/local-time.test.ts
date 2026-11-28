@@ -15,7 +15,7 @@ describe("heure locale d'un commerce", () => {
   });
 
   it("plage d'envoi 10 h – 19 h", () => {
-    expect(isLocalHourBetween(new Date("2026-11-28T09:00:00Z"), "Africa/Casablanca", 10, 19)).toBe(true);
+    expect(isLocalHourBetween(new Date("2026-11-28T09:00:00Z"), "Africa/Lagos", 10, 19)).toBe(true);
     expect(isLocalHourBetween(new Date("2026-11-28T18:30:00Z"), "Africa/Kinshasa", 10, 19)).toBe(false);
   });
 
