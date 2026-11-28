@@ -52,6 +52,14 @@ export class SessionService {
       include: { user: { select: { id: true, email: true, name: true, emailVerifiedAt: true, isSuperAdmin: true, isPartner: true, adminRole: true, totpEnabledAt: true } } },
     });
     if (!session || session.expiresAt < new Date()) return null;
+    // Caisse retirée par le commerçant : l'appareil est déconnecté.
+    if (session.registerDeviceId) {
+      const device = await this.prisma.client.registerDevice.findUnique({ where: { id: session.registerDeviceId }, select: { revokedAt: true, lastSeenAt: true } });
+      if (!device || device.revokedAt) return null;
+      if (Date.now() - device.lastSeenAt.getTime() > TOUCH_INTERVAL_MS) {
+        await this.prisma.client.registerDevice.update({ where: { id: session.registerDeviceId }, data: { lastSeenAt: new Date() } });
+      }
+    }
     if (Date.now() - session.lastSeenAt.getTime() > TOUCH_INTERVAL_MS) {
       // Chaque utilisation repousse l'échéance : on ne retape presque jamais de code sur son appareil.
       await this.prisma.client.session.update({ where: { id: session.id }, data: { lastSeenAt: new Date(), expiresAt: new Date(Date.now() + SESSION_DAYS * 86_400_000) } });
@@ -62,6 +70,7 @@ export class SessionService {
       activeTenantId: session.activeTenantId,
       supportGrantId: session.supportGrantId,
       mfaVerifiedAt: session.mfaVerifiedAt,
+      register: session.registerDeviceId ? { deviceId: session.registerDeviceId, membershipId: session.registerMembershipId, activeAt: session.registerActiveAt } : null,
     };
   }
 

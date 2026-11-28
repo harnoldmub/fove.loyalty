@@ -12,7 +12,7 @@ import {
 import { z } from "zod";
 import { ZodPipe } from "../common/zod.pipe";
 import { forbidden } from "../common/errors";
-import { Auth } from "../common/decorators";
+import { Auth, RegisterAllowed } from "../common/decorators";
 import type { AppRequest, AuthState } from "../common/context";
 import { AuthService, isAdminUser } from "./auth.service";
 import { MfaService } from "./mfa.service";
@@ -97,6 +97,7 @@ export class AuthController {
   }
 
   @Post("logout")
+  @RegisterAllowed("locked")
   @HttpCode(204)
   async logout(@Req() req: AppRequest, @Res({ passthrough: true }) res: Response) {
     requireCsrf(req);
@@ -106,6 +107,7 @@ export class AuthController {
   }
 
   @Get("me")
+  @RegisterAllowed("locked")
   @UserRoute()
   me(@Auth() auth: AuthState) {
     return this.auth.me(auth);

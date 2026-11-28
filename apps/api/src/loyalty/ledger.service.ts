@@ -139,12 +139,19 @@ export class LedgerService {
         idempotencyKey: input.idempotencyKey,
         reversesId: input.reversesId ?? null,
         refundOfId: input.refundOfId ?? null,
-        establishmentId: input.establishmentId ?? null,
+        establishmentId: input.establishmentId ?? registerEstablishment(ctx),
         actorUserId: actorUserId(ctx),
+        registerDeviceId: ctx.actor.type === "user" ? (ctx.actor.registerDeviceId ?? null) : null,
         actorApiKeyId: actorApiKeyId(ctx),
         source: input.source,
       },
     });
     return { transaction, replayed: false };
   }
+}
+
+/** Caisse rattachée à un établissement : les opérations sans établissement indiqué lui reviennent. */
+export function registerEstablishment(ctx: TenantContext): string | null {
+  if (ctx.actor.type !== "user" || !ctx.actor.registerDeviceId || !ctx.actor.establishmentIds || ctx.actor.establishmentIds.size !== 1) return null;
+  return [...ctx.actor.establishmentIds][0] ?? null;
 }

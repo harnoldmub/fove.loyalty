@@ -8,6 +8,8 @@ import { TeamAlertService } from "./notifications/team-alert.service";
 import { MfaService } from "./auth/mfa.service";
 import { AutomationService } from "./automation/automation.service";
 import { AutomationController } from "./automation/automation.controller";
+import { RegisterService } from "./register/register.service";
+import { RegisterController } from "./register/register.controller";
 import { TeamDigestService } from "./notifications/team-digest.service";
 import { BillingEmailService } from "./billing/billing-emails.service";
 import { WhatsAppService } from "./notifications/whatsapp.service";
@@ -96,6 +98,7 @@ import { ClientJoinController } from "./client-account/client-join.controller";
     ClientAccountController,
     ClientJoinController,
     AutomationController,
+    RegisterController,
   ],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },
@@ -110,6 +113,7 @@ import { ClientJoinController } from "./client-account/client-join.controller";
     AuthService,
     MfaService,
     AutomationService,
+    RegisterService,
     ClientSessionService,
     ClientAccountService,
     ClientSessionGuard,

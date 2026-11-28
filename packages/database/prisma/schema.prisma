@@ -60,6 +60,39 @@ model UserRecoveryCode {
   @@index([userId])
 }
 
+/// Appareil utilisé comme caisse (docs/chantier-code-caisse.md). Retirer la caisse déconnecte l'appareil.
+model RegisterDevice {
+  id              String    @id @default(uuid()) @db.Uuid
+  tenantId        String    @db.Uuid
+  tenant          Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  /// Établissement de la caisse : les opérations y sont rattachées ; null = commerce sans établissement choisi.
+  establishmentId String?   @db.Uuid
+  name            String
+  createdByUserId String    @db.Uuid
+  createdAt       DateTime  @default(now())
+  lastSeenAt      DateTime  @default(now())
+  revokedAt       DateTime?
+
+  @@index([tenantId])
+}
+
+/// Point à vérifier signalé au commerçant (ex. : annulations répétées d'une récompense).
+model TenantAlert {
+  id         String    @id @default(uuid()) @db.Uuid
+  tenantId   String    @db.Uuid
+  tenant     Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  kind       String
+  /// Clé d'unicité : la même anomalie n'est signalée qu'une fois.
+  key        String
+  details    Json
+  createdAt  DateTime  @default(now())
+  resolvedAt DateTime?
+  resolvedByUserId String? @db.Uuid
+
+  @@unique([tenantId, key])
+  @@index([tenantId, resolvedAt])
+}
+
 /// Le cookie porte un jeton opaque ; seule son empreinte SHA-256 est stockée.
 model Session {
   id             String    @id @default(uuid()) @db.Uuid
@@ -70,6 +103,11 @@ model Session {
   activeTenantId String?   @db.Uuid
   /// Accès support (super admin) : lecture seule, limité dans le temps.
   supportGrantId String?   @db.Uuid
+  /// Session de caisse : seulement les fonctions de caisse, au nom du caissier déverrouillé par son code.
+  registerDeviceId     String?   @db.Uuid
+  registerMembershipId String?   @db.Uuid
+  /// Dernière action du caissier : verrouillage automatique après le délai du commerce.
+  registerActiveAt     DateTime?
   /// Dernière double authentification (admins) : l'administration reste ouverte 12 h après.
   mfaVerifiedAt  DateTime?
   userAgent      String?
@@ -160,6 +198,8 @@ model Tenant {
   media          MediaAsset[]
   customerNotes  CustomerNote[]
   customerMessages CustomerMessage[]
+  registerDevices  RegisterDevice[]
+  alerts           TenantAlert[]
   automationRules  AutomationRule[]
   birthdayGifts    BirthdayGift[]
   appleWalletRegistrations AppleWalletRegistration[]
@@ -185,6 +225,8 @@ model TenantSettings {
   /// Monnaie de facturation de l'abonnement FOVE ; vide = celle du pays (EUR, USD, MAD, DZD, CDF).
   billingCurrency       String?
   timezone              String    @default("Africa/Kinshasa")
+  /// Caisse : verrouillage automatique après ce nombre de minutes sans activité.
+  registerLockMinutes   Int       @default(5)
   /// Langue des cartes Wallet et messages envoyés aux clients (fr, en, ar, es).
   /// Déduite du pays à la création ; vide = langue par défaut du pays.
   locale                String?
@@ -234,6 +276,11 @@ model TenantMembership {
   status            MembershipStatus @default(ACTIVE)
   /// Vrai : accès à tous les établissements. Faux : seulement ceux listés.
   allEstablishments Boolean          @default(true)
+  /// Code caisse à 4 chiffres (docs/chantier-code-caisse.md) : empreinte scrypt salée, jamais le code.
+  cashierPinHash        String?
+  cashierPinSetAt       DateTime?
+  cashierPinFailures    Int       @default(0)
+  cashierPinLockedUntil DateTime?
   createdAt         DateTime         @default(now())
 
   establishments MembershipEstablishment[]
@@ -596,6 +643,8 @@ model LoyaltyTransaction {
   establishmentId String?        @db.Uuid
   actorUserId    String?         @db.Uuid
   actorApiKeyId  String?         @db.Uuid
+  /// Caisse utilisée (mode caisse).
+  registerDeviceId String?       @db.Uuid
   source         OperationSource
   createdAt      DateTime        @default(now())
 
@@ -665,6 +714,8 @@ model RewardRedemption {
   idempotencyKey        String
   establishmentId       String?          @db.Uuid
   actorUserId           String?          @db.Uuid
+  /// Caisse utilisée (mode caisse).
+  registerDeviceId      String?          @db.Uuid
   cancelledById         String?          @db.Uuid
   cancelReason          String?
   cancelledAt           DateTime?

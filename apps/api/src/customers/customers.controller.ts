@@ -10,7 +10,7 @@ import {
 } from "@fove/shared";
 import { z } from "zod";
 import { ZodPipe } from "../common/zod.pipe";
-import { RequirePermission, RequireVerified, Tenant } from "../common/decorators";
+import { RequirePermission, RequireVerified, Tenant, RegisterAllowed } from "../common/decorators";
 import type { TenantContext } from "../common/context";
 import { TenantRoute } from "../auth/guards";
 import { PlanService } from "../billing/plan.service";
@@ -29,12 +29,14 @@ export class CustomersController {
   ) {}
 
   @Get()
+  @RegisterAllowed()
   @RequirePermission("customers.read")
   list(@Tenant() ctx: TenantContext, @Query(new ZodPipe(paginationSchema)) query: z.infer<typeof paginationSchema>) {
     return this.customers.search(ctx, query);
   }
 
   @Post()
+  @RegisterAllowed()
   @RequirePermission("customers.write")
   create(@Tenant() ctx: TenantContext, @Body(new ZodPipe(createWithProgram)) body: z.infer<typeof createWithProgram>) {
     return this.customers.create(ctx, body, "DASHBOARD").then(({ customer, card }) => ({
@@ -63,12 +65,14 @@ export class CustomersController {
   }
 
   @Get(":id/notes")
+  @RegisterAllowed()
   @RequirePermission("customers.read")
   notes(@Tenant() ctx: TenantContext, @Param("id", ParseUUIDPipe) id: string) {
     return this.customers.listNotes(ctx, id);
   }
 
   @Post(":id/notes")
+  @RegisterAllowed()
   @RequirePermission("customers.write")
   addNote(
     @Tenant() ctx: TenantContext,
@@ -82,6 +86,7 @@ export class CustomersController {
   }
 
   @Patch(":id/tags")
+  @RegisterAllowed()
   @RequirePermission("customers.write")
   updateTags(
     @Tenant() ctx: TenantContext,

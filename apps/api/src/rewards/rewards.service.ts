@@ -7,6 +7,7 @@ import { PrismaService } from "../common/prisma.service";
 import { AuditService } from "../common/audit.service";
 import { conflict, isUniqueViolation, notFound, unprocessable } from "../common/errors";
 import { actorUserId, type TenantContext } from "../common/context";
+import { registerEstablishment } from "../loyalty/ledger.service";
 import { LedgerService } from "../loyalty/ledger.service";
 import { WebhooksService } from "../notifications/webhooks.service";
 import { assertEstablishmentAccess } from "../tenants/tenants.service";
@@ -81,7 +82,9 @@ export class RewardsService {
    * ne débite jamais deux fois ; deux utilisations simultanées ne peuvent pas
    * dépasser le solde ni le stock.
    */
-  async redeem(ctx: TenantContext, input: z.infer<typeof redeemSchema>, source: OperationSource) {
+  async redeem(ctx: TenantContext, rawInput: z.infer<typeof redeemSchema>, source: OperationSource) {
+    // Caisse : l'établissement de la caisse par défaut.
+    const input = { ...rawInput, establishmentId: rawInput.establishmentId ?? registerEstablishment(ctx) };
     assertEstablishmentAccess(ctx, input.establishmentId);
     const replay = () =>
       this.prisma.client.rewardRedemption.findUniqueOrThrow({
@@ -148,8 +151,9 @@ export class RewardsService {
             cost: reward.cost,
             transactionId: transaction.id,
             idempotencyKey: input.idempotencyKey,
-            establishmentId: input.establishmentId,
+            establishmentId: input.establishmentId ?? registerEstablishment(ctx),
             actorUserId: actorUserId(ctx),
+            registerDeviceId: ctx.actor.type === "user" ? (ctx.actor.registerDeviceId ?? null) : null,
           },
         });
       });

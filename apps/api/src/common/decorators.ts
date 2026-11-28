@@ -5,11 +5,17 @@ import type { AppRequest, AuthState, TenantContext } from "./context";
 export const PERMISSION_KEY = "fove:permission";
 export const SCOPE_KEY = "fove:scope";
 export const REQUIRE_VERIFIED_KEY = "fove:require-verified";
+export const REGISTER_KEY = "fove:register";
 
 /** Permission requise sur une route d'entreprise (vérifiée par TenantGuard). */
 export const RequirePermission = (permission: Permission) => SetMetadata(PERMISSION_KEY, permission);
 /** Scope requis pour une clé API serveur (vérifié par ApiKeyGuard). */
 export const RequireScope = (scope: ApiScope) => SetMetadata(SCOPE_KEY, scope);
+/**
+ * Route utilisable depuis une caisse (docs/chantier-code-caisse.md). Une session de caisse n'accède qu'à
+ * ces routes. `locked` : utilisable aussi caisse verrouillée (état, déverrouillage).
+ */
+export const RegisterAllowed = (mode: "unlocked" | "locked" = "unlocked") => SetMetadata(REGISTER_KEY, mode);
 /** Route réservée aux comptes dont l'email est vérifié (clés API, facturation…). */
 export const RequireVerified = () => SetMetadata(REQUIRE_VERIFIED_KEY, true);
 

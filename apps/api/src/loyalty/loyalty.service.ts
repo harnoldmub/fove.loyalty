@@ -20,7 +20,7 @@ import type { TenantContext } from "../common/context";
 import { PlanService } from "../billing/plan.service";
 import { WebhooksService } from "../notifications/webhooks.service";
 import { assertEstablishmentAccess } from "../tenants/tenants.service";
-import { LedgerService, type PostResult } from "./ledger.service";
+import { registerEstablishment, LedgerService, type PostResult } from "./ledger.service";
 import { createCard, readAccessToken } from "./cards";
 import { CardsService, cardUrl } from "../cards/cards.service";
 
@@ -268,7 +268,9 @@ export class LoyaltyService {
     return { delta, balanceAfter: account.balance + delta };
   }
 
-  async earn(ctx: TenantContext, input: z.infer<typeof earnSchema> & { externalOrderId?: string | null }, source: OperationSource): Promise<PostResult> {
+  async earn(ctx: TenantContext, rawInput: z.infer<typeof earnSchema> & { externalOrderId?: string | null }, source: OperationSource): Promise<PostResult> {
+    // Caisse : l'établissement de la caisse par défaut.
+    const input = { ...rawInput, establishmentId: rawInput.establishmentId ?? registerEstablishment(ctx) };
     assertEstablishmentAccess(ctx, input.establishmentId);
     const account = await this.prisma.client.loyaltyAccount.findFirst({
       where: { id: input.accountId, tenantId: ctx.tenantId },

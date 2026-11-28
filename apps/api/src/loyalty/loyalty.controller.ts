@@ -16,7 +16,7 @@ import {
 import { z } from "zod";
 import { loadConfig } from "../config";
 import { ZodPipe } from "../common/zod.pipe";
-import { RequirePermission, RequireVerified, Tenant } from "../common/decorators";
+import { RequirePermission, RequireVerified, Tenant, RegisterAllowed } from "../common/decorators";
 import type { TenantContext } from "../common/context";
 import { notFound } from "../common/errors";
 import { PrismaService } from "../common/prisma.service";
@@ -53,6 +53,7 @@ export class LoyaltyController {
 
   // Programmes
   @Get("programs")
+  @RegisterAllowed()
   @RequirePermission("programs.read")
   programs(@Tenant() ctx: TenantContext) {
     return this.loyalty.listPrograms(ctx);
@@ -120,12 +121,14 @@ export class LoyaltyController {
 
   // Cartes
   @Post("accounts")
+  @RegisterAllowed()
   @RequirePermission("customers.write")
   enroll(@Tenant() ctx: TenantContext, @Body(new ZodPipe(enrollAccountSchema)) body: z.infer<typeof enrollAccountSchema>) {
     return this.loyalty.enroll(ctx, body.customerId, body.programId);
   }
 
   @Get("accounts/:id")
+  @RegisterAllowed()
   @RequirePermission("customers.read")
   account(@Tenant() ctx: TenantContext, @Param("id", ParseUUIDPipe) id: string) {
     return this.loyalty.getAccount(ctx, id);
@@ -133,6 +136,7 @@ export class LoyaltyController {
 
   /** Lien de la carte et message WhatsApp ; `renew` révoque l'ancien lien. */
   @Post("accounts/:id/share")
+  @RegisterAllowed()
   @HttpCode(200)
   @RequirePermission("customers.write")
   share(@Tenant() ctx: TenantContext, @Param("id", ParseUUIDPipe) id: string, @Body(new ZodPipe(shareSchema)) body: z.infer<typeof shareSchema>) {
@@ -165,6 +169,7 @@ export class LoyaltyController {
   }
 
   @Get("wallet/status")
+  @RegisterAllowed()
   @RequirePermission("programs.read")
   walletStatus() {
     return {
@@ -182,6 +187,7 @@ export class LoyaltyController {
 
   // Scanner
   @Post("scanner/lookup")
+  @RegisterAllowed()
   @HttpCode(200)
   @RequirePermission("customers.read")
   lookup(@Tenant() ctx: TenantContext, @Body(new ZodPipe(lookupSchema)) body: z.infer<typeof lookupSchema>) {
@@ -189,6 +195,7 @@ export class LoyaltyController {
   }
 
   @Post("scanner/preview")
+  @RegisterAllowed()
   @HttpCode(200)
   @RequirePermission("transactions.create")
   preview(@Tenant() ctx: TenantContext, @Body(new ZodPipe(previewSchema)) body: z.infer<typeof previewSchema>) {
@@ -203,6 +210,7 @@ export class LoyaltyController {
   }
 
   @Post("transactions/earn")
+  @RegisterAllowed()
   @RequirePermission("transactions.create")
   earn(@Tenant() ctx: TenantContext, @Body(new ZodPipe(earnSchema)) body: z.infer<typeof earnSchema>) {
     return this.loyalty.earn(ctx, body, "SCANNER");
@@ -215,6 +223,7 @@ export class LoyaltyController {
   }
 
   @Post("transactions/:id/reverse")
+  @RegisterAllowed()
   @RequirePermission("transactions.reverse")
   reverse(@Tenant() ctx: TenantContext, @Param("id", ParseUUIDPipe) id: string, @Body(new ZodPipe(reverseSchema)) body: z.infer<typeof reverseSchema>) {
     return this.loyalty.reverse(ctx, id, body.reason, body.idempotencyKey);
@@ -222,6 +231,7 @@ export class LoyaltyController {
 
   // Récompenses
   @Get("rewards")
+  @RegisterAllowed()
   @RequirePermission("rewards.read")
   rewardList(@Tenant() ctx: TenantContext, @Query("programId") programId?: string) {
     return this.rewards.list(ctx, programId && /^[0-9a-f-]{36}$/.test(programId) ? programId : undefined);
@@ -253,12 +263,14 @@ export class LoyaltyController {
   }
 
   @Post("redemptions")
+  @RegisterAllowed()
   @RequirePermission("redemptions.create")
   redeem(@Tenant() ctx: TenantContext, @Body(new ZodPipe(redeemSchema)) body: z.infer<typeof redeemSchema>) {
     return this.rewards.redeem(ctx, body, "SCANNER");
   }
 
   @Post("redemptions/:id/cancel")
+  @RegisterAllowed()
   @RequirePermission("redemptions.cancel")
   cancel(@Tenant() ctx: TenantContext, @Param("id", ParseUUIDPipe) id: string, @Body(new ZodPipe(cancelSchema)) body: z.infer<typeof cancelSchema>) {
     return this.rewards.cancel(ctx, id, body.reason);

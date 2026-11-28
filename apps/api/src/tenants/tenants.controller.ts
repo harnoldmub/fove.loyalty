@@ -3,7 +3,7 @@ import { ApiTags } from "@nestjs/swagger";
 import { createTenantSchema, establishmentSchema, inviteMemberSchema, updateEstablishmentSchema, updateMemberSchema, updateTenantSchema } from "@fove/shared";
 import { z } from "zod";
 import { ZodPipe } from "../common/zod.pipe";
-import { Auth, RequirePermission, RequireVerified, Tenant } from "../common/decorators";
+import { Auth, RequirePermission, RequireVerified, Tenant, RegisterAllowed } from "../common/decorators";
 import type { AuthState, TenantContext } from "../common/context";
 import { TenantRoute, UserRoute } from "../auth/guards";
 import { TenantsService } from "./tenants.service";
@@ -26,6 +26,7 @@ export class TenantsController {
   }
 
   @Get("tenant")
+  @RegisterAllowed()
   @TenantRoute()
   @RequirePermission("tenant.read")
   current(@Tenant() ctx: TenantContext) {
@@ -48,6 +49,7 @@ export class TenantsController {
   }
 
   @Get("establishments")
+  @RegisterAllowed()
   @TenantRoute()
   @RequirePermission("establishments.read")
   establishments(@Tenant() ctx: TenantContext) {

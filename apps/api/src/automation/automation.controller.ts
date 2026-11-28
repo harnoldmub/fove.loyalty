@@ -3,7 +3,7 @@ import { ApiExcludeEndpoint, ApiTags } from "@nestjs/swagger";
 import { z } from "zod";
 import { safeEqual } from "../common/crypto";
 import { ZodPipe } from "../common/zod.pipe";
-import { RequirePermission, Tenant } from "../common/decorators";
+import { RequirePermission, Tenant, RegisterAllowed } from "../common/decorators";
 import type { TenantContext } from "../common/context";
 import { PrismaService } from "../common/prisma.service";
 import { AuditService } from "../common/audit.service";
@@ -78,6 +78,7 @@ export class AutomationController {
 
   /** Cadeau d'anniversaire utilisé en caisse (une seule fois). */
   @Post("app/accounts/:id/birthday-gift/use")
+  @RegisterAllowed()
   @TenantRoute()
   @RequirePermission("transactions.create")
   @HttpCode(200)
