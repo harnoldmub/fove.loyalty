@@ -15,6 +15,7 @@ import { ClientTermsNotice } from "@/components/client/client-terms-notice";
 import { api, ApiError, errorMessage } from "@/lib/api";
 import { formatNumber } from "@/lib/utils";
 import { readRememberedCards } from "@/lib/remembered-cards";
+import { BirthdayInput } from "@/components/ui/birthday-input";
 
 export interface JoinPage {
   tenant: { name: string; logoUrl: string | null; primaryColor: string; privacyPolicyUrl: string | null; country: string };
@@ -176,7 +177,7 @@ function ConnectedJoin({
   const t = useTranslations("public");
   const { profile } = state;
   const needsName = !profile.firstName;
-  const [f, setF] = useState({ firstName: "", lastName: "", phone: profile.phone ?? "", acceptTerms: false, marketingConsent: false });
+  const [f, setF] = useState({ firstName: "", lastName: "", phone: profile.phone ?? "", acceptTerms: false, marketingConsent: false, birthDay: null as number | null, birthMonth: null as number | null });
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -211,6 +212,7 @@ function ConnectedJoin({
       <Field label={t("join.phoneOptional")}>
         {(p) => <PhoneInput {...p} defaultCountry={data.tenant.country} value={f.phone} onChange={(phone) => setF({ ...f, phone })} />}
       </Field>
+      <BirthdayInput value={f} onChange={(b) => setF({ ...f, ...b })} hint={t("join.birthdayHint", { tenant: data.tenant.name })} />
       <TermsCheckbox data={data} checked={f.acceptTerms} onChange={(acceptTerms) => setF({ ...f, acceptTerms })} />
       <Checkbox checked={f.marketingConsent} onChange={(e) => setF({ ...f, marketingConsent: e.target.checked })} label={t("join.marketingConsent", { tenant: data.tenant.name })} />
       <Button type="submit" size="lg" loading={busy} disabled={!f.acceptTerms || (needsName && !f.firstName)} style={{ background: "var(--brand)", color: "#fff" }}>
@@ -247,7 +249,7 @@ function AnonymousJoin({ token, data, rule, onJoined }: { token: string; data: J
     () => null,
   );
   const [showFormAnyway, setShowFormAnyway] = useState(false);
-  const [f, setF] = useState({ firstName: "", lastName: "", phone: "", email: "", acceptTerms: false, marketingConsent: false, website: "" });
+  const [f, setF] = useState({ firstName: "", lastName: "", phone: "", email: "", acceptTerms: false, marketingConsent: false, website: "", birthDay: null as number | null, birthMonth: null as number | null });
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [knownEmail, setKnownEmail] = useState<string | null>(null);
@@ -267,6 +269,8 @@ function AnonymousJoin({ token, data, rule, onJoined }: { token: string; data: J
         email: f.email,
         acceptTerms: f.acceptTerms,
         marketingConsent: f.marketingConsent,
+        birthDay: f.birthDay,
+        birthMonth: f.birthMonth,
         website: f.website || undefined,
       });
       if (res.state === "joined") return onJoined(res.cardPath);
@@ -286,6 +290,8 @@ function AnonymousJoin({ token, data, rule, onJoined }: { token: string; data: J
       phone: f.phone,
       acceptTerms: true,
       marketingConsent: f.marketingConsent,
+      birthDay: f.birthDay,
+      birthMonth: f.birthMonth,
     });
     onJoined(res.cardPath);
   };
@@ -368,6 +374,7 @@ function AnonymousJoin({ token, data, rule, onJoined }: { token: string; data: J
                 {t("join.honeypot")} <input tabIndex={-1} autoComplete="off" value={f.website} onChange={(e) => setF({ ...f, website: e.target.value })} />
               </label>
             </div>
+            <BirthdayInput value={f} onChange={(b) => setF({ ...f, ...b })} hint={t("join.birthdayHint", { tenant: data.tenant.name })} />
             <TermsCheckbox data={data} checked={f.acceptTerms} onChange={(acceptTerms) => setF({ ...f, acceptTerms })} />
             <Checkbox checked={f.marketingConsent} onChange={(e) => setF({ ...f, marketingConsent: e.target.checked })} label={t("join.marketingConsent", { tenant: tenant.name })} />
             <Button type="submit" size="lg" loading={busy} disabled={!f.firstName || !f.email || !f.acceptTerms} style={{ background: "var(--brand)", color: "#fff" }}>

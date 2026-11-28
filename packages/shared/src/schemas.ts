@@ -96,12 +96,35 @@ export const updateTenantSchema = tenantFields.partial().extend({
   /** Langue des cartes Wallet et messages clients ; null = langue du pays. */
   locale: z.enum(SUPPORTED_LOCALES).nullable().optional(),
 });
-export const establishmentSchema = z.object({
+const establishmentFields = z.object({
   name: z.string().trim().min(2).max(80),
   address: z.string().trim().max(200).nullable().optional(),
   city: z.string().trim().max(80).nullable().optional(),
   phone: z.string().trim().max(32).nullable().optional(),
+  /** Position GPS (annuaire à venir, cartes Wallet à proximité) : les deux ou aucune. */
+  latitude: z.number().min(-90).max(90).nullable().optional(),
+  longitude: z.number().min(-180).max(180).nullable().optional(),
 });
+const gpsCheck = (e: { latitude?: number | null; longitude?: number | null }) => (e.latitude == null) === (e.longitude == null);
+const gpsError = { message: "Latitude et longitude vont ensemble", path: ["latitude"] };
+export const establishmentSchema = establishmentFields.refine(gpsCheck, gpsError);
+export const updateEstablishmentSchema = establishmentFields.partial().extend({ active: z.boolean().optional() }).refine(gpsCheck, gpsError);
+
+// --- Anniversaire --------------------------------------------------------------
+/** Jours maximum par mois (29 février accepté). */
+const MONTH_DAYS = [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+/** Anniversaire : jour et mois seulement, les deux ou aucun, combinaison réelle (pas de 31 avril). */
+export function isValidBirthday(day: number | null | undefined, month: number | null | undefined): boolean {
+  if (day == null && month == null) return true;
+  if (day == null || month == null) return false;
+  return Number.isInteger(day) && Number.isInteger(month) && month >= 1 && month <= 12 && day >= 1 && day <= MONTH_DAYS[month - 1]!;
+}
+const birthdayFields = {
+  birthDay: z.int().min(1).max(31).nullable().optional(),
+  birthMonth: z.int().min(1).max(12).nullable().optional(),
+};
+const birthdayCheck = (v: { birthDay?: number | null; birthMonth?: number | null }) => isValidBirthday(v.birthDay, v.birthMonth);
+const birthdayError = { message: "Date d'anniversaire invalide", path: ["birthDay"] };
 
 // --- Programmes ------------------------------------------------------------
 export const programSchema = z
@@ -185,9 +208,12 @@ export const customerSchema = z
     marketingSmsConsent: z.boolean().default(false),
     tags: z.array(z.string().trim().min(1).max(30)).default([]),
     notes: z.string().trim().max(1000).nullable().default(null),
+    ...birthdayFields,
   })
-  .refine((c) => c.phone || c.email, { message: "Téléphone ou email requis", path: ["phone"] });
-export const updateCustomerSchema = z.object({
+  .refine((c) => c.phone || c.email, { message: "Téléphone ou email requis", path: ["phone"] })
+  .refine(birthdayCheck, birthdayError);
+export const updateCustomerSchema = z
+  .object({
   firstName: z.string().trim().min(1).max(60).optional(),
   lastName: z.string().trim().max(60).optional(),
   phone: z.string().trim().max(32).nullable().optional(),
@@ -197,7 +223,9 @@ export const updateCustomerSchema = z.object({
   marketingSmsConsent: z.boolean().optional(),
   tags: z.array(z.string().trim().min(1).max(30)).optional(),
   notes: z.string().trim().max(1000).nullable().optional(),
-});
+  ...birthdayFields,
+  })
+  .refine(birthdayCheck, birthdayError);
 export const customerNoteSchema = z.object({
   content: z.string().trim().min(1, "La note ne peut pas être vide").max(1000, "1 000 caractères maximum"),
 });
@@ -256,9 +284,10 @@ export const publicEnrollSchema = z.object({
   email: z.email().max(254).nullable().default(null),
   acceptTerms: z.literal(true, { error: "Vous devez accepter les conditions du programme" }),
   marketingConsent: z.boolean().default(false),
+  ...birthdayFields,
   /** Champ piège : doit rester vide. */
   website: z.string().max(0).optional(),
-});
+}).refine(birthdayCheck, birthdayError);
 export const verifyOtpSchema = z.object({ code: z.string().regex(/^\d{6}$/) });
 // --- Compte client FOVE -------------------------------------------------------
 export const clientCodeRequestSchema = z.object({ email: z.email().max(254) });
@@ -270,15 +299,18 @@ export const clientJoinSchema = z.object({
   phone: optionalPhone,
   acceptTerms: z.literal(true, { error: "Vous devez accepter les conditions du programme" }),
   marketingConsent: z.boolean().default(false),
-});
+  ...birthdayFields,
+}).refine(birthdayCheck, birthdayError);
 /** « Créer ma carte » sans être connecté : crée le compte FOVE (non confirmé) en même temps que la carte. */
-export const clientJoinSignupSchema = publicEnrollSchema.extend({ email: z.email().max(254) });
+export const clientJoinSignupSchema = publicEnrollSchema.safeExtend({ email: z.email().max(254) });
 export const clientProfileSchema = z.object({
   firstName: z.string().trim().min(1).max(60),
   lastName: z.string().trim().max(60).default(""),
   /** Contact uniquement : jamais utilisé pour se connecter ni pour rattacher une carte. */
   phone: z.string().trim().max(32).nullable().default(null),
-});
+  /** Anniversaire, recopié sur les cartes du compte (cadeau d'anniversaire des commerces). */
+  ...birthdayFields,
+}).refine(birthdayCheck, birthdayError);
 export const contactMessageSchema = z.object({
   name: z.string().trim().min(2, "Indiquez votre nom").max(100),
   email: z.email("Email invalide").max(254),

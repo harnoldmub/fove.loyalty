@@ -1,4 +1,98 @@
 {
+  "automations": {
+    "title": "Relances",
+    "description": "Faites revenir vos clients : la liste des clients à relancer, et des messages automatiques sur leur carte Wallet (et par email s'ils l'ont accepté).",
+    "rules": "Chaque scénario s'active séparément. Un client reçoit au plus une relance tous les 14 jours, entre 10 h et 19 h. Un texte laissé vide utilise le texte proposé.",
+    "on": "Activée",
+    "off": "Désactivée",
+    "enable": "Activer ce scénario",
+    "messageTitle": "Titre",
+    "messageBody": "Message",
+    "variables": "Variables : {vars}",
+    "bonus": "Offrir un bonus de retour (crédité sur la carte avec le message)",
+    "bonusAmount": "Bonus (points ou tampons)",
+    "preview": "Aperçu",
+    "save": "Enregistrer",
+    "saved": "Scénario enregistré",
+    "paidOnly": {
+      "title": "Réservé aux offres payantes",
+      "body": "Sur l'offre Gratuite, retrouvez les clients à relancer dans la liste « À relancer » et envoyez-leur un message WhatsApp en un clic.",
+      "cta": "Voir les offres"
+    },
+    "sample": {
+      "firstName": "Awa",
+      "balance": "7 tampons",
+      "reward": "un café offert",
+      "remaining": "1 tampon",
+      "gift": "un dessert offert",
+      "date": "15 mars"
+    },
+    "birthday": {
+      "title": "Anniversaire",
+      "help": "Un cadeau valable quelques jours autour de l'anniversaire du client, annoncé à l'avance et rappelé le jour J s'il n'est pas encore utilisé. Il s'utilise une fois, en caisse, depuis le scanner.",
+      "enable": "Activer le cadeau d'anniversaire",
+      "gift": "Cadeau",
+      "giftHint": "Affiché dans les messages et au scanner.",
+      "giftPlaceholder": "1 dessert offert",
+      "giftRequired": "Indiquez le cadeau d'anniversaire",
+      "daysBefore": "Jours avant",
+      "daysAfter": "Jours après",
+      "soon": "Annonce (au début de la période)",
+      "day": "Le jour J (si le cadeau n'est pas encore utilisé)",
+      "variables": "Variables : {vars}"
+    },
+    "tabs": {
+      "contact": "À relancer",
+      "auto": "Automatiques",
+      "results": "Résultats"
+    },
+    "contact": {
+      "help": "Les clients à relancer aujourd'hui et les anniversaires des 7 prochains jours. Envoyez-leur le message proposé sur WhatsApp : ils disparaissent de la liste pendant 14 jours.",
+      "birthdays": "Anniversaires",
+      "noBirthdays": "Aucun anniversaire dans les 7 prochains jours.",
+      "relaunch": "Clients à relancer",
+      "empty": "Personne à relancer pour le moment.",
+      "whatsapp": "WhatsApp",
+      "noPhone": "Pas de téléphone",
+      "done": "Fait",
+      "inDays": "Anniversaire dans {count, plural, one {# jour} other {# jours}}",
+      "today": "Anniversaire aujourd'hui"
+    },
+    "results": {
+      "help": "Sur les {days} derniers jours : messages envoyés et clients revenus en caisse dans les 30 jours qui suivent.",
+      "scenario": "Scénario",
+      "sent": "Envoyés",
+      "returned": "Revenus",
+      "rate": "Taux de retour",
+      "gifts": "Cadeaux d'anniversaire : {created} proposés, {used} utilisés."
+    },
+    "scenarios": {
+      "NEAR_REWARD": "Presque une récompense",
+      "REWARD_WAITING": "Récompense qui attend",
+      "AT_RISK": "Client en risque",
+      "DORMANT": "Client dormant",
+      "BIRTHDAY_SOON": "Anniversaire : annonce",
+      "BIRTHDAY_DAY": "Anniversaire : jour J"
+    },
+    "kinds": {
+      "NEAR_REWARD": {
+        "title": "Presque une récompense",
+        "when": "Il manque un seul passage (ou moins de 20 % des points), deux jours après sa dernière visite."
+      },
+      "REWARD_WAITING": {
+        "title": "Récompense qui attend",
+        "when": "Sa récompense est disponible depuis 7 jours sans être utilisée."
+      },
+      "AT_RISK": {
+        "title": "Client en risque",
+        "when": "Pas de visite depuis 35 jours : rappel de son solde et de la prochaine récompense."
+      },
+      "DORMANT": {
+        "title": "Client dormant",
+        "when": "Pas de visite depuis 75 jours : message de reconquête, avec un bonus de retour si vous le souhaitez."
+      }
+    }
+  },
   "billing": {
     "toasts": {
       "mockActivated": "Offre {name} activée (mode simulé, aucun paiement)",
@@ -158,6 +252,12 @@
     "tenantSent": "Message envoyé à tous les clients Wallet"
   },
   "checkout": {
+    "birthday": {
+      "title": "Cadeau d'anniversaire disponible",
+      "body": "{gift}, valable jusqu'au {date}.",
+      "use": "Utiliser",
+      "used": "Cadeau d'anniversaire utilisé"
+    },
     "scanAnother": "Scanner une autre carte",
     "noteSaved": "Note enregistrée sur la fiche client",
     "defaultStore": "votre boutique",
@@ -273,6 +373,7 @@
     "back": "Clients",
     "ref": "Réf. {ref}",
     "noContact": "Sans coordonnées",
+    "birthday": "Anniversaire le {date}",
     "anonymized": "Anonymisé le {date}",
     "export": "Exporter ses données",
     "erase": "Effacer",
@@ -324,7 +425,7 @@
     },
     "import": {
       "title": "Importer des clients",
-      "description": "Fichier CSV avec les colonnes prenom, nom, telephone, email (et reference si besoin). 5 000 lignes maximum.",
+      "description": "Fichier CSV avec les colonnes prenom, nom, telephone, email (et reference, anniversaire au format JJ/MM si besoin). 5 000 lignes maximum.",
       "created": "{count, plural, one {<strong>#</strong> client créé.} other {<strong>#</strong> clients créés.}}",
       "duplicates": "{count, plural, one {# déjà présent (même téléphone, email ou référence), ignoré.} other {# déjà présents (même téléphone, email ou référence), ignorés.}}",
       "invalid": "{count, plural, one {# ligne invalide (téléphone incorrect ou contact manquant).} other {# lignes invalides (téléphone incorrect ou contact manquant).}}",
@@ -370,6 +471,9 @@
       "city": "Ville",
       "address": "Adresse",
       "phone": "Téléphone",
+      "position": "Position GPS (facultatif)",
+      "positionHint": "Collez « latitude, longitude » depuis Google Maps (clic droit sur le lieu). Servira à l'annuaire des commerces.",
+      "positionInvalid": "Position GPS invalide : « latitude, longitude », par exemple -4.3217, 15.3125.",
       "save": "Enregistrer",
       "submit": "Ajouter l’établissement"
     },
@@ -520,6 +624,7 @@
     "integrations": "Intégrations",
     "billing": "Abonnement",
     "referral": "Parrainage",
+    "automations": "Relances",
     "settings": "Paramètres",
     "home": "Accueil"
   },

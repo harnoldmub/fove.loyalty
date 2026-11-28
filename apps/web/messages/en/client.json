@@ -44,6 +44,7 @@
     "lastNameOptional": "Last name (optional)",
     "phone": "Phone (optional)",
     "phoneHint": "Pre-filled when you join a programme. It is never used to sign in.",
+    "birthdayHint": "Your shops can give you a gift for your birthday. Day and month only.",
     "email": "Email",
     "emailHint": "This is the address you sign in with. It can't be changed yet.",
     "firstNameRequired": "Enter your first name",

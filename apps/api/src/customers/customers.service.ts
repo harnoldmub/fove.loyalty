@@ -3,6 +3,7 @@ import type { CustomerSource, IdentityKind, Prisma } from "@fove/database";
 import {
   computeCustomerSegment,
   customerSchema,
+  isValidBirthday,
   normalizeEmail,
   normalizePhone,
   updateCustomerSchema,
@@ -102,6 +103,8 @@ export class CustomersService {
         marketingEmailConsent: input.marketingEmailConsent,
         marketingSmsConsent: input.marketingSmsConsent,
         consentUpdatedAt: input.marketingEmailConsent || input.marketingSmsConsent ? now : null,
+        birthDay: input.birthDay ?? null,
+        birthMonth: input.birthMonth ?? null,
       },
     });
     await tx.customerIdentity.createMany({ data: identities.map((i) => ({ ...i, tenantId: ctx.tenantId, customerId: customer.id })) });
@@ -272,6 +275,7 @@ export class CustomersService {
             marketingEmailConsent: input.marketingEmailConsent,
             marketingSmsConsent: input.marketingSmsConsent,
             ...(consentChanged ? { consentUpdatedAt: new Date() } : {}),
+            ...(input.birthDay !== undefined ? { birthDay: input.birthDay ?? null, birthMonth: input.birthMonth ?? null } : {}),
           },
         });
         await tx.customerIdentity.deleteMany({ where: { tenantId: ctx.tenantId, customerId: id } });
@@ -302,6 +306,7 @@ export class CustomersService {
         phone: pick("phone", "telephone", "téléphone", "tel"),
         email: pick("email", "mail"),
         externalRef: pick("externalRef", "reference", "référence", "id"),
+        ...parseBirthday(pick("birthday", "anniversaire", "date de naissance", "birthdate", "naissance")),
       });
       if (!parsed.success) {
         results.push({ row, status: "invalid", message: parsed.error.issues[0]?.message });
@@ -381,6 +386,8 @@ export class CustomersService {
           externalRef: null,
           marketingEmailConsent: false,
           marketingSmsConsent: false,
+          birthDay: null,
+          birthMonth: null,
           anonymizedAt: new Date(),
           // Détachée du compte client FOVE : le client ne la retrouve plus dans « Mes cartes ».
           clientAccountId: null,
@@ -391,4 +398,17 @@ export class CustomersService {
     });
     await this.audit.forTenant(ctx, "customer.anonymized", { type: "customer", id });
   }
+}
+
+/**
+ * Anniversaire lu dans un import : « JJ/MM », « JJ/MM/AAAA », « JJ-MM », « AAAA-MM-JJ ». Seuls le jour
+ * et le mois sont gardés (jamais l'année). Valeur illisible : ignorée, sans bloquer la ligne.
+ */
+export function parseBirthday(raw: string | null): { birthDay?: number; birthMonth?: number } {
+  if (!raw) return {};
+  const value = raw.trim();
+  const iso = /^(\d{4})-(\d{1,2})-(\d{1,2})$/.exec(value);
+  const dm = /^(\d{1,2})[/.-](\d{1,2})(?:[/.-](\d{2,4}))?$/.exec(value);
+  const [day, month] = iso ? [Number(iso[3]), Number(iso[2])] : dm ? [Number(dm[1]), Number(dm[2])] : [NaN, NaN];
+  return isValidBirthday(day, month) ? { birthDay: day, birthMonth: month } : {};
 }

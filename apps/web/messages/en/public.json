@@ -35,6 +35,7 @@
     "acceptTerms": "I accept the program terms.",
     "acceptTermsWithPrivacy": "I accept the program terms and the <link>privacy policy</link>.",
     "marketingConsent": "I would like to receive offers from {tenant} (optional).",
+    "birthdayHint": "Optional: {tenant} can give you a gift for your birthday.",
     "submit": "Create my card",
     "alreadyEnrolled": "Use the “Find my card” tab or ask the staff to send it to you again.",
     "programTerms": "Program terms",

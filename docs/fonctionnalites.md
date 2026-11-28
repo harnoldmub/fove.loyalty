@@ -276,12 +276,12 @@ On y trouve aussi des raccourcis : scanner une carte, afficher son QR d'inscript
 - Le téléphone ou l'email évite les doublons : un client déjà connu n'est jamais recréé ni fusionné automatiquement.
 
 **Importer des clients** (gérant et propriétaire)
-- Fichier CSV avec les colonnes `prenom`, `nom`, `telephone`, `email`, et `reference` si besoin. 5 000 lignes maximum.
+- Fichier CSV avec les colonnes `prenom`, `nom`, `telephone`, `email`, et si besoin `reference` et `anniversaire` (JJ/MM, ou date complète dont seuls le jour et le mois sont gardés). 5 000 lignes maximum.
 - Création de leur carte dans un programme : facultative.
 - Les doublons sont ignorés. L'import s'arrête au nombre maximum de clients de l'offre, et le rapport indique les lignes refusées pour ce motif.
 
 **Fiche client**
-- Coordonnées modifiables, référence externe.
+- Coordonnées modifiables, référence externe, **anniversaire** (jour et mois seulement, facultatif ; aussi saisi par le client à l'inscription par QR et dans « Mes cartes », recopié sur ses fiches ; effacé avec la fiche).
 - **Statut fidélité** : segment et action conseillée ([règles ci-dessous](#segments-de-clients)), nombre de visites, dernier passage, date d'arrivée.
 - Consentements aux offres par email et par SMS ou WhatsApp.
 - Tags (20 maximum) et notes internes.
@@ -367,7 +367,7 @@ Programme à tampons : la carte repasse à zéro.
 
 ### 3.9 Établissements
 
-- Créer et modifier un point de vente : nom, adresse, ville, pays, téléphone ; activer ou désactiver.
+- Créer et modifier un point de vente : nom, adresse, ville, pays, téléphone, **position GPS** (facultative, « latitude, longitude » collé depuis une carte ; prépare l'annuaire des commerces) ; activer ou désactiver.
 - Chaque achat et chaque utilisation de récompense peut indiquer l'établissement.
 - Le nombre d'établissements est limité par l'offre.
 
@@ -478,6 +478,36 @@ Spec : [chantier-parrainage.md](chantier-parrainage.md). Page `/app/parrainage` 
 
 ---
 
+### 3.17 Relances et anniversaire
+
+Menu **Relances** ([chantier-relances-anniversaire.md](chantier-relances-anniversaire.md)).
+
+**À relancer** (toutes offres)
+- Clients à relancer aujourd'hui (récompense qui attend, presque une récompense, en risque, dormant) et anniversaires des 7 prochains jours.
+- Message proposé dans la langue du commerce, bouton **WhatsApp** pré-rempli ; une fois contacté (« WhatsApp » ou « Fait »), le client sort de la liste pendant 14 jours.
+- Le raccourci « Relancer » du tableau de bord mène ici.
+
+**Automatiques** (offres payantes, fonction « Campagnes Wallet »)
+- Scénarios activés un par un, textes modifiables (variables `{prénom}`, `{commerce}`, `{solde}`, `{récompense}`, `{reste}`), aperçu ; texte vide = texte proposé traduit.
+
+| Scénario | Déclencheur |
+|---|---|
+| Récompense qui attend | Récompense disponible depuis 7 jours sans être utilisée |
+| Presque une récompense | Il manque 1 tampon (ou moins de 20 % des points), 2 jours après la dernière visite |
+| Client dormant | Segment « dormant » (jusqu'à un an d'absence) ; bonus de retour en option, crédité une fois avec le message |
+| Client en risque | Segment « en risque » |
+
+- Envoi une fois par jour et par commerce, **entre 10 h et 19 h à son heure locale** ; au plus **une relance tous les 14 jours** par client ; un seul scénario par client ; jamais deux fois le même message pour la même absence.
+- Canal : message sur la **carte Wallet** (Google, Apple) ; **email** si le client l'a accepté et qu'aucun iPhone n'a été prévenu, aux couleurs du commerce, avec un lien de **désinscription** (la carte reste active).
+- Le message sur la carte ne compte pas comme une activité : il ne repousse pas l'expiration des points.
+
+**Anniversaire** (offres payantes)
+- Cadeau réglé par le commerçant (« 1 dessert offert »…), valable **3 jours avant à 7 jours après** (réglable), un par client et par an.
+- Annonce au début de la période (« Votre anniversaire approche… valable jusqu'au… »), puis « Joyeux anniversaire ! » le jour J si le cadeau n'est pas utilisé. Ces messages passent avant les relances et ne comptent pas dans le plafond.
+- **Au scanner** : « Cadeau d'anniversaire disponible », bouton « Utiliser » (une seule fois, tracé).
+
+**Résultats** (offres payantes) : par scénario, messages envoyés, clients revenus en caisse dans les 30 jours et taux de retour (90 derniers jours) ; cadeaux d'anniversaire proposés et utilisés.
+
 ## 4. Les offres
 
 Les prix, les limites et les fonctions de chaque offre se modifient dans l'administration ([6.3](#63-offres)). Les valeurs ci-dessous sont celles livrées par défaut.
@@ -496,7 +526,7 @@ Les prix, les limites et les fonctions de chaque offre se modifient dans l'admin
 | Export des données client (RGPD) | ✓ | ✓ | ✓ | ✓ | ✓ |
 | Widget pour son site | ✓ | ✓ | ✓ | ✓ | ✓ |
 | Sans mention « Propulsé par FOVE » | ✗ | ✓ | ✓ | ✓ | ✓ |
-| Campagnes Wallet | ✗ | ✓ | ✓ | ✓ | ✓ |
+| Campagnes Wallet, relances automatiques et cadeau d'anniversaire | ✗ | ✓ | ✓ | ✓ | ✓ |
 | Envoi WhatsApp automatique | ✗ | ✓ | ✓ | ✓ | ✓ |
 | API et webhooks | ✗ | ✗ | ✓ | ✓ | ✓ |
 | Connexion boutique en ligne | ✗ | ✗ | ✓ | ✓ | ✓ |

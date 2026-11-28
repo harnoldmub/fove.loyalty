@@ -18,6 +18,7 @@ import { EmptyState, ErrorNote, PageHeader, Panel, Skeleton } from "@/components
 import { api, useErrorMessage } from "@/lib/api";
 import { formatDate, formatNumber } from "@/lib/utils";
 import { QuotaUpgradeHint, useQuotaBlock } from "@/components/app/upgrade";
+import { BirthdayInput } from "@/components/ui/birthday-input";
 
 function useDebounced<T>(value: T, ms = 300) {
   const [v, setV] = useState(value);
@@ -34,7 +35,7 @@ function NewCustomerDialog({ open, onOpenChange, programs }: { open: boolean; on
   const router = useAppRouter();
   const qc = useQueryClient();
   // « auto » : premier programme actif ; « none » : pas de carte.
-  const [form, setForm] = useState({ firstName: "", lastName: "", phone: "", email: "", programId: "auto", marketingSmsConsent: false });
+  const [form, setForm] = useState({ firstName: "", lastName: "", phone: "", email: "", programId: "auto", marketingSmsConsent: false, birthDay: null as number | null, birthMonth: null as number | null });
   const [error, setError] = useState<string | null>(null);
   const quota = useQuotaBlock("customers");
   const [busy, setBusy] = useState(false);
@@ -53,6 +54,8 @@ function NewCustomerDialog({ open, onOpenChange, programs }: { open: boolean; on
         email: form.email || null,
         programId: programId === "none" ? null : programId,
         marketingSmsConsent: form.marketingSmsConsent,
+        birthDay: form.birthDay,
+        birthMonth: form.birthMonth,
       });
       toast.success(t("created"));
       qc.invalidateQueries({ queryKey: ["customers"] });
@@ -86,6 +89,7 @@ function NewCustomerDialog({ open, onOpenChange, programs }: { open: boolean; on
             )}
           </Field>
           <Field label={t("email")}>{(p) => <Input {...p} type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />}</Field>
+          <BirthdayInput value={form} onChange={(b) => setForm({ ...form, ...b })} />
           {programs.length > 0 && (
             <Field label={t("program")}>
               {(p) => (

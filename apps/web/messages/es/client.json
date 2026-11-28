@@ -44,6 +44,7 @@
     "lastNameOptional": "Apellidos (opcional)",
     "phone": "Teléfono (opcional)",
     "phoneHint": "Se rellena al unirte a un programa. Nunca se usa para iniciar sesión.",
+    "birthdayHint": "Tus comercios pueden hacerte un regalo por tu cumpleaños. Solo día y mes.",
     "email": "Correo electrónico",
     "emailHint": "Es la dirección con la que inicias sesión. Todavía no se puede cambiar.",
     "firstNameRequired": "Indica tu nombre",

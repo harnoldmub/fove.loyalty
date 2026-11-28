@@ -228,7 +228,7 @@ export class CardsService {
     await this.refreshProgramWallet(tenantId);
     await this.prisma.client.loyaltyAccount.updateMany({
       where: { tenantId },
-      data: { lastActivityAt: new Date() },
+      data: { passUpdatedAt: new Date() },
     });
     let appleSent = 0;
     if (this.appleWallet.isConfigured()) {
@@ -241,29 +241,40 @@ export class CardsService {
   async walletMessage(ctx: TenantContext, accountId: string, message: { title: string; body: string }) {
     const account = await this.prisma.client.loyaltyAccount.findFirst({ where: { id: accountId, tenantId: ctx.tenantId } });
     if (!account) throw notFound("Carte");
+    await this.pushCardMessage(accountId, message);
+    await this.audit.forTenant(ctx, "wallet.message_sent", { type: "account", id: accountId }, { title: message.title, body: message.body });
+  }
 
+  /**
+   * Message affiché sur la carte et notifié dans Wallet (Google : message de la carte ; Apple : mise à jour
+   * du pass). Usage interne (le commerce est vérifié par l'appelant). Renvoie vrai si un iPhone a été prévenu.
+   */
+  async pushCardMessage(accountId: string, message: { title: string; body: string }): Promise<{ apple: boolean }> {
     const now = new Date();
     await this.prisma.client.loyaltyAccount.update({
       where: { id: accountId },
       data: {
-        lastActivityAt: now,
+        // La carte change (Apple Wallet la recharge) ; ce n'est pas une activité du client (expiration des points).
+        passUpdatedAt: now,
         lastWalletMessageTitle: message.title,
         lastWalletMessageBody: message.body,
         lastWalletMessageAt: now,
       },
     });
-
     if (this.wallet.isConfigured()) {
       await this.wallet.sendToCard(accountId, message).catch((error) => {
         this.logger.warn(`Google Wallet card ${accountId} : ${error instanceof Error ? error.message : error}`);
       });
     }
+    let apple = false;
     if (this.appleWallet.isConfigured()) {
-      await this.appleWallet.notifyAccount(accountId).catch((error) => {
+      const res = await this.appleWallet.notifyAccount(accountId).catch((error) => {
         this.logger.warn(`Apple Wallet card ${accountId} : ${error instanceof Error ? error.message : error}`);
+        return null;
       });
+      apple = Boolean(res && res.sent > 0);
     }
-    await this.audit.forTenant(ctx, "wallet.message_sent", { type: "account", id: accountId }, { title: message.title, body: message.body });
+    return { apple };
   }
 
   async walletBroadcast(ctx: TenantContext, programId: string, message: { title: string; body: string }) {
@@ -275,7 +286,7 @@ export class CardsService {
     await this.prisma.client.loyaltyAccount.updateMany({
       where: { tenantId: ctx.tenantId, programId },
       data: {
-        lastActivityAt: now,
+        passUpdatedAt: now,
         lastWalletMessageTitle: message.title,
         lastWalletMessageBody: message.body,
         lastWalletMessageAt: now,
@@ -316,7 +327,7 @@ export class CardsService {
     await this.prisma.client.loyaltyAccount.updateMany({
       where: { tenantId: ctx.tenantId },
       data: {
-        lastActivityAt: now,
+        passUpdatedAt: now,
         lastWalletMessageTitle: message.title,
         lastWalletMessageBody: message.body,
         lastWalletMessageAt: now,

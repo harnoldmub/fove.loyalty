@@ -1,4 +1,98 @@
 {
+  "automations": {
+    "title": "Follow-ups",
+    "description": "Bring your customers back: the list of customers to follow up, and automatic messages on their Wallet card (and by email if they agreed).",
+    "rules": "Each scenario is turned on separately. A customer receives at most one follow-up every 14 days, between 10 am and 7 pm. An empty text uses the suggested one.",
+    "on": "On",
+    "off": "Off",
+    "enable": "Turn on this scenario",
+    "messageTitle": "Title",
+    "messageBody": "Message",
+    "variables": "Variables: {vars}",
+    "bonus": "Offer a welcome-back bonus (credited to the card with the message)",
+    "bonusAmount": "Bonus (points or stamps)",
+    "preview": "Preview",
+    "save": "Save",
+    "saved": "Scenario saved",
+    "paidOnly": {
+      "title": "Paid plans only",
+      "body": "On the Free plan, find the customers to follow up in the “To follow up” list and send them a WhatsApp message in one click.",
+      "cta": "See plans"
+    },
+    "sample": {
+      "firstName": "Awa",
+      "balance": "7 stamps",
+      "reward": "a free coffee",
+      "remaining": "1 stamp",
+      "gift": "a free dessert",
+      "date": "15 March"
+    },
+    "birthday": {
+      "title": "Birthday",
+      "help": "A gift valid for a few days around the customer's birthday, announced in advance and reminded on the day if not used yet. It can be used once, at the till, from the scanner.",
+      "enable": "Turn on the birthday gift",
+      "gift": "Gift",
+      "giftHint": "Shown in messages and in the scanner.",
+      "giftPlaceholder": "1 free dessert",
+      "giftRequired": "Enter the birthday gift",
+      "daysBefore": "Days before",
+      "daysAfter": "Days after",
+      "soon": "Announcement (at the start of the period)",
+      "day": "On the day (if the gift hasn't been used yet)",
+      "variables": "Variables: {vars}"
+    },
+    "tabs": {
+      "contact": "To follow up",
+      "auto": "Automatic",
+      "results": "Results"
+    },
+    "contact": {
+      "help": "Customers to follow up today and birthdays in the next 7 days. Send them the suggested message on WhatsApp: they leave the list for 14 days.",
+      "birthdays": "Birthdays",
+      "noBirthdays": "No birthdays in the next 7 days.",
+      "relaunch": "Customers to follow up",
+      "empty": "Nobody to follow up for now.",
+      "whatsapp": "WhatsApp",
+      "noPhone": "No phone",
+      "done": "Done",
+      "inDays": "Birthday in {count, plural, one {# day} other {# days}}",
+      "today": "Birthday today"
+    },
+    "results": {
+      "help": "Over the last {days} days: messages sent and customers who came back to the till within the next 30 days.",
+      "scenario": "Scenario",
+      "sent": "Sent",
+      "returned": "Came back",
+      "rate": "Return rate",
+      "gifts": "Birthday gifts: {created} offered, {used} used."
+    },
+    "scenarios": {
+      "NEAR_REWARD": "Almost a reward",
+      "REWARD_WAITING": "Reward waiting",
+      "AT_RISK": "At-risk customer",
+      "DORMANT": "Dormant customer",
+      "BIRTHDAY_SOON": "Birthday: announcement",
+      "BIRTHDAY_DAY": "Birthday: on the day"
+    },
+    "kinds": {
+      "NEAR_REWARD": {
+        "title": "Almost a reward",
+        "when": "Only one visit left (or less than 20% of the points), two days after their last visit."
+      },
+      "REWARD_WAITING": {
+        "title": "Reward waiting",
+        "when": "Their reward has been available for 7 days without being used."
+      },
+      "AT_RISK": {
+        "title": "At-risk customer",
+        "when": "No visit for 35 days: reminder of their balance and next reward."
+      },
+      "DORMANT": {
+        "title": "Dormant customer",
+        "when": "No visit for 75 days: win-back message, with a welcome-back bonus if you wish."
+      }
+    }
+  },
   "billing": {
     "toasts": {
       "mockActivated": "{name} plan activated (simulated mode, no payment)",
@@ -158,6 +252,12 @@
     "tenantSent": "Message sent to all Wallet customers"
   },
   "checkout": {
+    "birthday": {
+      "title": "Birthday gift available",
+      "body": "{gift}, valid until {date}.",
+      "use": "Use",
+      "used": "Birthday gift used"
+    },
     "scanAnother": "Scan another card",
     "noteSaved": "Note saved on the customer profile",
     "defaultStore": "your shop",
@@ -273,6 +373,7 @@
     "back": "Customers",
     "ref": "Ref. {ref}",
     "noContact": "No contact details",
+    "birthday": "Birthday on {date}",
     "anonymized": "Anonymized on {date}",
     "export": "Export their data",
     "erase": "Erase",
@@ -324,7 +425,7 @@
     },
     "import": {
       "title": "Import customers",
-      "description": "CSV file with the columns prenom, nom, telephone, email (and reference if needed). 5,000 rows maximum.",
+      "description": "CSV file with the columns prenom, nom, telephone, email (and reference, anniversaire as DD/MM if needed). 5,000 rows maximum.",
       "created": "{count, plural, one {<strong>#</strong> customer created.} other {<strong>#</strong> customers created.}}",
       "duplicates": "{count, plural, one {# already existing (same phone, email or reference), skipped.} other {# already existing (same phone, email or reference), skipped.}}",
       "invalid": "{count, plural, one {# invalid row (incorrect phone or missing contact).} other {# invalid rows (incorrect phone or missing contact).}}",
@@ -370,6 +471,9 @@
       "city": "City",
       "address": "Address",
       "phone": "Phone",
+      "position": "GPS position (optional)",
+      "positionHint": "Paste “latitude, longitude” from Google Maps (right-click on the place). Will be used for the business directory.",
+      "positionInvalid": "Invalid GPS position: “latitude, longitude”, for example -4.3217, 15.3125.",
       "save": "Save",
       "submit": "Add location"
     },
@@ -520,6 +624,7 @@
     "integrations": "Integrations",
     "billing": "Subscription",
     "referral": "Referrals",
+    "automations": "Follow-ups",
     "settings": "Settings",
     "home": "Home"
   },

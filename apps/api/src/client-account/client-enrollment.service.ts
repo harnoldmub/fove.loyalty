@@ -27,6 +27,8 @@ interface Account {
   firstName: string;
   lastName: string;
   phone: string | null;
+  birthDay: number | null;
+  birthMonth: number | null;
 }
 
 /** Situation du visiteur sur la page d'inscription d'un commerce. */
@@ -44,7 +46,7 @@ interface Enrolled {
   status: string;
 }
 
-const ACCOUNT_SELECT = { id: true, email: true, emailVerifiedAt: true, firstName: true, lastName: true, phone: true } as const;
+const ACCOUNT_SELECT = { id: true, email: true, emailVerifiedAt: true, firstName: true, lastName: true, phone: true, birthDay: true, birthMonth: true } as const;
 
 function publicCtx(tenantId: string): TenantContext {
   return { tenantId, readOnly: false, actor: { type: "system", label: "public-enrollment" } };
@@ -223,8 +225,19 @@ export class ClientEnrollmentService {
       lastName ||= customer.lastName;
     }
 
+    // Anniversaire (jour et mois) : saisi à l'inscription ou déjà connu du compte ; jamais écrasé par un vide.
+    const birthDay = input.birthDay ?? account.birthDay ?? null;
+    const birthMonth = input.birthMonth ?? account.birthMonth ?? null;
+    if (birthDay && birthMonth && (input.birthDay || customer!.birthDay === null)) {
+      customer = await tx.customer.update({ where: { id: customer!.id }, data: { birthDay, birthMonth } });
+    }
+
     // 3. Mémoire du compte : téléphone et nom pré-remplis la prochaine fois.
     const memory: Prisma.ClientAccountUpdateInput = {};
+    if (!account.birthDay && input.birthDay && input.birthMonth) {
+      memory.birthDay = input.birthDay;
+      memory.birthMonth = input.birthMonth;
+    }
     if (!account.phone && phone) memory.phone = phone;
     if (!account.firstName) memory.firstName = firstName;
     if (!account.lastName && lastName) memory.lastName = lastName;

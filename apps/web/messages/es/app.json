@@ -1,4 +1,98 @@
 {
+  "automations": {
+    "title": "Recordatorios",
+    "description": "Haz que tus clientes vuelvan: la lista de clientes que recordar y mensajes automáticos en su tarjeta Wallet (y por correo si lo aceptaron).",
+    "rules": "Cada escenario se activa por separado. Un cliente recibe como máximo un recordatorio cada 14 días, entre las 10 h y las 19 h. Un texto vacío usa el texto propuesto.",
+    "on": "Activado",
+    "off": "Desactivado",
+    "enable": "Activar este escenario",
+    "messageTitle": "Título",
+    "messageBody": "Mensaje",
+    "variables": "Variables: {vars}",
+    "bonus": "Ofrecer un bono de regreso (abonado en la tarjeta con el mensaje)",
+    "bonusAmount": "Bono (puntos o sellos)",
+    "preview": "Vista previa",
+    "save": "Guardar",
+    "saved": "Escenario guardado",
+    "paidOnly": {
+      "title": "Solo en planes de pago",
+      "body": "En el plan Gratuito, encuentra a los clientes que recordar en la lista «Por recordar» y envíales un WhatsApp con un clic.",
+      "cta": "Ver planes"
+    },
+    "sample": {
+      "firstName": "Awa",
+      "balance": "7 sellos",
+      "reward": "un café gratis",
+      "remaining": "1 sello",
+      "gift": "un postre gratis",
+      "date": "15 de marzo"
+    },
+    "birthday": {
+      "title": "Cumpleaños",
+      "help": "Un regalo válido unos días alrededor del cumpleaños del cliente, anunciado con antelación y recordado el mismo día si aún no se ha usado. Se usa una vez, en caja, desde el escáner.",
+      "enable": "Activar el regalo de cumpleaños",
+      "gift": "Regalo",
+      "giftHint": "Se muestra en los mensajes y en el escáner.",
+      "giftPlaceholder": "1 postre gratis",
+      "giftRequired": "Indica el regalo de cumpleaños",
+      "daysBefore": "Días antes",
+      "daysAfter": "Días después",
+      "soon": "Anuncio (al inicio del periodo)",
+      "day": "El día del cumpleaños (si aún no se ha usado el regalo)",
+      "variables": "Variables: {vars}"
+    },
+    "tabs": {
+      "contact": "Por recordar",
+      "auto": "Automáticos",
+      "results": "Resultados"
+    },
+    "contact": {
+      "help": "Los clientes que recordar hoy y los cumpleaños de los próximos 7 días. Envíales el mensaje propuesto por WhatsApp: salen de la lista durante 14 días.",
+      "birthdays": "Cumpleaños",
+      "noBirthdays": "Ningún cumpleaños en los próximos 7 días.",
+      "relaunch": "Clientes que recordar",
+      "empty": "Nadie que recordar por ahora.",
+      "whatsapp": "WhatsApp",
+      "noPhone": "Sin teléfono",
+      "done": "Hecho",
+      "inDays": "Cumpleaños en {count, plural, one {# día} other {# días}}",
+      "today": "Cumpleaños hoy"
+    },
+    "results": {
+      "help": "En los últimos {days} días: mensajes enviados y clientes que volvieron a caja en los 30 días siguientes.",
+      "scenario": "Escenario",
+      "sent": "Enviados",
+      "returned": "Volvieron",
+      "rate": "Tasa de regreso",
+      "gifts": "Regalos de cumpleaños: {created} ofrecidos, {used} usados."
+    },
+    "scenarios": {
+      "NEAR_REWARD": "Casi una recompensa",
+      "REWARD_WAITING": "Recompensa pendiente",
+      "AT_RISK": "Cliente en riesgo",
+      "DORMANT": "Cliente inactivo",
+      "BIRTHDAY_SOON": "Cumpleaños: anuncio",
+      "BIRTHDAY_DAY": "Cumpleaños: el día"
+    },
+    "kinds": {
+      "NEAR_REWARD": {
+        "title": "Casi una recompensa",
+        "when": "Le falta una sola visita (o menos del 20 % de los puntos), dos días después de su última visita."
+      },
+      "REWARD_WAITING": {
+        "title": "Recompensa pendiente",
+        "when": "Su recompensa está disponible desde hace 7 días sin usarse."
+      },
+      "AT_RISK": {
+        "title": "Cliente en riesgo",
+        "when": "Sin visitas desde hace 35 días: recordatorio de su saldo y próxima recompensa."
+      },
+      "DORMANT": {
+        "title": "Cliente inactivo",
+        "when": "Sin visitas desde hace 75 días: mensaje de reconquista, con un bono de regreso si quieres."
+      }
+    }
+  },
   "billing": {
     "toasts": {
       "mockActivated": "Plan {name} activado (modo simulado, sin pago)",
@@ -158,6 +252,12 @@
     "tenantSent": "Mensaje enviado a todos los clientes Wallet"
   },
   "checkout": {
+    "birthday": {
+      "title": "Regalo de cumpleaños disponible",
+      "body": "{gift}, válido hasta el {date}.",
+      "use": "Usar",
+      "used": "Regalo de cumpleaños usado"
+    },
     "scanAnother": "Escanear otra tarjeta",
     "noteSaved": "Nota guardada en la ficha del cliente",
     "defaultStore": "tu tienda",
@@ -273,6 +373,7 @@
     "back": "Clientes",
     "ref": "Ref. {ref}",
     "noContact": "Sin datos de contacto",
+    "birthday": "Cumpleaños el {date}",
     "anonymized": "Anonimizado el {date}",
     "export": "Exportar sus datos",
     "erase": "Borrar",
@@ -324,7 +425,7 @@
     },
     "import": {
       "title": "Importar clientes",
-      "description": "Archivo CSV con las columnas prenom, nom, telephone, email (y reference si hace falta). 5000 filas como máximo.",
+      "description": "Archivo CSV con las columnas prenom, nom, telephone, email (y reference, anniversaire en formato DD/MM si hace falta). 5000 filas como máximo.",
       "created": "{count, plural, one {<strong>#</strong> cliente creado.} other {<strong>#</strong> clientes creados.}}",
       "duplicates": "{count, plural, one {# ya existente (mismo teléfono, email o referencia), ignorado.} other {# ya existentes (mismo teléfono, email o referencia), ignorados.}}",
       "invalid": "{count, plural, one {# fila no válida (teléfono incorrecto o contacto ausente).} other {# filas no válidas (teléfono incorrecto o contacto ausente).}}",
@@ -370,6 +471,9 @@
       "city": "Ciudad",
       "address": "Dirección",
       "phone": "Teléfono",
+      "position": "Posición GPS (opcional)",
+      "positionHint": "Pega «latitud, longitud» desde Google Maps (clic derecho en el lugar). Servirá para el directorio de comercios.",
+      "positionInvalid": "Posición GPS no válida: «latitud, longitud», por ejemplo -4.3217, 15.3125.",
       "save": "Guardar",
       "submit": "Añadir el establecimiento"
     },
@@ -520,6 +624,7 @@
     "integrations": "Integraciones",
     "billing": "Suscripción",
     "referral": "Recomendaciones",
+    "automations": "Recordatorios",
     "settings": "Ajustes",
     "home": "Inicio"
   },

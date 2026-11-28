@@ -159,6 +159,9 @@ model Tenant {
   supportGrants  SupportAccessGrant[]
   media          MediaAsset[]
   customerNotes  CustomerNote[]
+  customerMessages CustomerMessage[]
+  automationRules  AutomationRule[]
+  birthdayGifts    BirthdayGift[]
   appleWalletRegistrations AppleWalletRegistration[]
   invoices       Invoice[]
   payments       Payment[]
@@ -202,6 +205,9 @@ model Establishment {
   address   String?
   city      String?
   phone     String?
+  /// Position GPS (préparation de l'annuaire des commerces et des cartes Wallet affichées à proximité).
+  latitude  Float?
+  longitude Float?
   active    Boolean  @default(true)
   createdAt DateTime @default(now())
 
@@ -298,6 +304,9 @@ model Customer {
   clientAccount         ClientAccount? @relation(fields: [clientAccountId], references: [id], onDelete: SetNull)
   tags                  String[]       @default([])
   notes                 String?
+  /// Anniversaire : jour et mois seulement (jamais l'année), facultatifs (docs/chantier-relances-anniversaire.md).
+  birthDay              Int?
+  birthMonth            Int?
   lastVisitAt           DateTime?
   totalVisits           Int            @default(0)
   totalSpend            Decimal        @default(0) @db.Decimal(14, 2)
@@ -308,6 +317,8 @@ model Customer {
   accounts      LoyaltyAccount[]
   customerNotes CustomerNote[]
   dismissedBy   ClientDismissedCustomer[]
+  messages      CustomerMessage[]
+  birthdayGifts BirthdayGift[]
 
   @@unique([tenantId, id])
   @@unique([tenantId, clientAccountId])
@@ -429,7 +440,10 @@ model LoyaltyAccount {
   balance         Int            @default(0)
   lifetimeEarned  Int            @default(0)
   lifetimeSpent   Int            @default(0)
+  /// Dernière opération de fidélité (gain, utilisation…) : sert à l'expiration des soldes inactifs.
   lastActivityAt       DateTime       @default(now())
+  /// Dernière modification visible de la carte (opération, message, design) : mise à jour Apple Wallet.
+  passUpdatedAt        DateTime       @default(now())
   lastWalletMessageTitle String?
   lastWalletMessageBody  String?
   lastWalletMessageAt    DateTime?
@@ -443,6 +457,100 @@ model LoyaltyAccount {
   @@unique([tenantId, programId, customerId])
   @@unique([tenantId, cardNumber])
   @@index([tenantId, programId, createdAt])
+}
+
+/// Messages automatiques au client (relances, anniversaire).
+enum AutomationScenario {
+  NEAR_REWARD
+  REWARD_WAITING
+  AT_RISK
+  DORMANT
+  BIRTHDAY_SOON
+  BIRTHDAY_DAY
+}
+
+enum MessageChannel {
+  WALLET
+  EMAIL
+  /// Envoyé par le commerçant lui-même (lien WhatsApp de la liste « À relancer »).
+  WHATSAPP_MANUAL
+}
+
+/// Règles des messages automatiques d'un commerce (docs/chantier-relances-anniversaire.md).
+enum AutomationRuleKind {
+  NEAR_REWARD
+  REWARD_WAITING
+  AT_RISK
+  DORMANT
+  BIRTHDAY
+}
+
+/// Réglage d'un scénario par commerce : désactivé par défaut ; textes vides = textes par défaut traduits.
+model AutomationRule {
+  id         String             @id @default(uuid()) @db.Uuid
+  tenantId   String             @db.Uuid
+  tenant     Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  kind       AutomationRuleKind
+  enabled    Boolean            @default(false)
+  title      String?
+  body       String?
+  /// Dormants : bonus de retour (points ou tampons) crédité avec le message ; null = message seul.
+  bonus      Int?
+  /// Anniversaire : cadeau, période de validité et message du jour J.
+  giftLabel  String?
+  daysBefore Int                @default(3)
+  daysAfter  Int                @default(7)
+  dayTitle   String?
+  dayBody    String?
+  updatedAt  DateTime           @updatedAt
+
+  @@unique([tenantId, kind])
+}
+
+/// Cadeau d'anniversaire d'un client : valable sur une période autour du jour J, utilisable une fois au scanner.
+model BirthdayGift {
+  id           String    @id @default(uuid()) @db.Uuid
+  tenantId     String    @db.Uuid
+  tenant       Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  customerId   String    @db.Uuid
+  customer     Customer  @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  /// Année de l'anniversaire concerné : un cadeau par an.
+  year         Int
+  label        String
+  /// Début et fin (exclue) de validité, minuit à l'heure du commerce.
+  validFrom    DateTime
+  validUntil   DateTime
+  usedAt       DateTime?
+  usedByUserId String?   @db.Uuid
+  createdAt    DateTime  @default(now())
+
+  @@unique([customerId, year])
+  @@index([tenantId, validUntil])
+}
+
+/// Journal des messages automatiques envoyés (une seule fois par clé) et suivi du retour du client.
+model CustomerMessage {
+  id         String             @id @default(uuid()) @db.Uuid
+  tenantId   String             @db.Uuid
+  tenant     Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  customerId String             @db.Uuid
+  customer   Customer           @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  accountId  String?            @db.Uuid
+  scenario   AutomationScenario
+  channel    MessageChannel
+  /// Clé d'unicité (scénario, client, épisode) : un même message ne part jamais deux fois.
+  key        String
+  title      String
+  body       String
+  /// Bonus de retour crédité avec le message (dormants), en points ou tampons.
+  bonus      Int?
+  sentAt     DateTime           @default(now())
+  /// Première visite du client après le message (taux de retour).
+  returnedAt DateTime?
+
+  @@unique([tenantId, key])
+  @@index([tenantId, sentAt])
+  @@index([customerId, sentAt])
 }
 
 enum TransactionKind {
@@ -1476,6 +1584,9 @@ model ClientAccount {
   lastName        String    @default("")
   /// Contact uniquement, pré-rempli à l'inscription chez un commerce. Jamais un identifiant.
   phone           String?
+  /// Anniversaire (jour et mois), recopié sur les fiches des commerces rattachées au compte.
+  birthDay        Int?
+  birthMonth      Int?
   /// Identifiant Google (« sub »), renseigné à la première connexion Google.
   googleSub       String?   @unique
   locale          String?

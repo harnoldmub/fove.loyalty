@@ -1,6 +1,6 @@
 import { Body, Controller, Delete, Get, HttpCode, Param, ParseUUIDPipe, Patch, Post } from "@nestjs/common";
 import { ApiTags } from "@nestjs/swagger";
-import { createTenantSchema, establishmentSchema, inviteMemberSchema, updateMemberSchema, updateTenantSchema } from "@fove/shared";
+import { createTenantSchema, establishmentSchema, inviteMemberSchema, updateEstablishmentSchema, updateMemberSchema, updateTenantSchema } from "@fove/shared";
 import { z } from "zod";
 import { ZodPipe } from "../common/zod.pipe";
 import { Auth, RequirePermission, RequireVerified, Tenant } from "../common/decorators";
@@ -9,7 +9,6 @@ import { TenantRoute, UserRoute } from "../auth/guards";
 import { TenantsService } from "./tenants.service";
 import { TeamService } from "./team.service";
 
-const updateEstablishmentSchema = establishmentSchema.partial().extend({ active: z.boolean().optional() });
 const memberStatusSchema = z.object({ status: z.enum(["ACTIVE", "DISABLED"]) });
 
 @ApiTags("app")

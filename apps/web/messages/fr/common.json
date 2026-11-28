@@ -1,4 +1,10 @@
 {
+  "birthday": {
+    "label": "Anniversaire (facultatif)",
+    "day": "Jour",
+    "month": "Mois",
+    "hint": "Jour et mois seulement : pour un cadeau le jour de votre anniversaire."
+  },
   "skipToContent": "Aller au contenu",
   "switchingBusiness": "Ouverture de {name}…",
   "loading": "Chargement…",

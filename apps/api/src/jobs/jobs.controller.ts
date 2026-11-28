@@ -14,6 +14,7 @@ import { PartnersService } from "../partners/partners.service";
 import { OfflineBillingService } from "../billing/offline.service";
 import { BillingEmailService } from "../billing/billing-emails.service";
 import { TeamDigestService } from "../notifications/team-digest.service";
+import { AutomationService } from "../automation/automation.service";
 
 /**
  * Tâches périodiques déclenchées par un cron Railway (toutes les 5 minutes)
@@ -34,6 +35,7 @@ export class JobsController {
     private readonly offline: OfflineBillingService,
     private readonly billingEmails: BillingEmailService,
     private readonly teamDigest: TeamDigestService,
+    private readonly automation: AutomationService,
   ) {}
 
   @Get("health")
@@ -67,6 +69,8 @@ export class JobsController {
     };
     // Versements mensuels des commissions partenaires (le 1er du mois, payés avant le 10).
     const payoutsScheduled = await this.partners.scheduleMonthlyPayouts(now);
+    // Relances automatiques et anniversaire : une fois par jour et par commerce, à son heure locale (10 h – 19 h).
+    const automations = await this.automation.runDue(now);
     // Récapitulatif quotidien des actions à mener par l'équipe FOVE (une fois par jour, à partir de 6 h UTC).
     const teamDigest = await this.teamDigest.sendDaily(now);
     const db = this.prisma.client;
@@ -80,6 +84,6 @@ export class JobsController {
       // Gardés 24 h : ils servent à limiter le nombre de demandes par email et par adresse IP.
       db.clientLoginCode.deleteMany({ where: { createdAt: { lt: new Date(now.getTime() - 86_400_000) } } }),
     ]);
-    return { webhooksRetried: webhooks, accountsExpired: expired, subscriptions, clientAccounts, clientReminders, referrals, commissionsReleased, offlineExpired, reminders, payoutsScheduled, teamDigest, cleaned: cleanup.map((c) => c.count) };
+    return { webhooksRetried: webhooks, accountsExpired: expired, subscriptions, clientAccounts, clientReminders, referrals, commissionsReleased, offlineExpired, reminders, payoutsScheduled, teamDigest, automations, cleaned: cleanup.map((c) => c.count) };
   }
 }
