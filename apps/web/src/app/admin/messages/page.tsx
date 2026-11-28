@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Badge, PageHeader, Panel } from "@/components/ui/misc";
 import { api, useErrorMessage } from "@/lib/api";
 import { formatDate } from "@/lib/utils";
+import { DataLoader } from "@/components/navigation/data-loader";
 
 type ContactStatus = "NEW" | "IN_PROGRESS" | "CONTACTED" | "ARCHIVED";
 
@@ -93,7 +94,7 @@ export default function AdminMessagesPage() {
       <div className="grid gap-6 lg:grid-cols-[1.2fr_1fr]">
         {/* Liste des messages */}
         <Panel className="overflow-hidden p-0">
-          {isLoading && <p className="p-6 text-sm text-ink-3">{t("loading")}</p>}
+          {isLoading && <DataLoader className="min-h-48" />}
           {!isLoading && messages.length === 0 && (
             <div className="p-8 text-center text-sm text-ink-3">
               {t("empty")}

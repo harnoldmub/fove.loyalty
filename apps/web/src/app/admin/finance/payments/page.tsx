@@ -14,6 +14,7 @@ import { FinanceNav } from "@/components/admin/finance/finance-nav";
 import { FinanceFilter, type PeriodKey } from "@/components/admin/finance/finance-filter";
 import { formatFinance } from "@/components/admin/finance/finance-utils";
 import { RefundModal } from "@/components/admin/finance/refund-modal";
+import { DataLoader } from "@/components/navigation/data-loader";
 
 interface PaymentRow {
   id: string;
@@ -113,7 +114,7 @@ export default function PaymentsPage() {
       </div>
 
       {isLoading ? (
-        <div className="py-20 text-center text-sm text-ink-3">{t("loading")}</div>
+        <DataLoader />
       ) : payments.length === 0 ? (
         <Panel className="p-12 text-center text-sm text-ink-3">
           {t("empty")}

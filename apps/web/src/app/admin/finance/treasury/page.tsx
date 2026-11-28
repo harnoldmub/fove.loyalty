@@ -14,6 +14,7 @@ import { api, useErrorMessage } from "@/lib/api";
 import { formatDate } from "@/lib/utils";
 import { FinanceNav } from "@/components/admin/finance/finance-nav";
 import { formatFinance } from "@/components/admin/finance/finance-utils";
+import { DataLoader } from "@/components/navigation/data-loader";
 
 /** Réponse de GET /admin/finance/treasury (FinanceService.treasury). */
 interface TreasuryResponse {
@@ -200,7 +201,7 @@ export default function TreasuryPage() {
           <BankImport onDone={() => void refetch()} />
 
           {isLoading ? (
-            <div className="py-20 text-center text-sm text-ink-3">{t("loading")}</div>
+            <DataLoader />
           ) : entries.length === 0 ? (
             <Panel className="p-12 text-center text-sm text-ink-3">{t("empty")}</Panel>
           ) : (

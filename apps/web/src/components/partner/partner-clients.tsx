@@ -9,6 +9,7 @@ import { Field, Input } from "@/components/ui/field";
 import { Badge, Panel } from "@/components/ui/misc";
 import { api } from "@/lib/api";
 import { formatDate, formatPrice } from "@/lib/utils";
+import { DataLoader } from "@/components/navigation/data-loader";
 
 interface PartnerClient {
   tenantId: string;
@@ -31,7 +32,7 @@ const TONE = { free: "neutral", pending: "stamp", provisional: "stamp", paid: "m
 export function PartnerClients({ partnerCode }: { partnerCode: string }) {
   const t = useTranslations("partner.clientsTab");
   const locale = useLocale();
-  const { data: clients = [] } = useQuery({ queryKey: ["partner-clients"], queryFn: () => api.get<PartnerClient[]>("/partner/clients") });
+  const { data: clients = [], isLoading } = useQuery({ queryKey: ["partner-clients"], queryFn: () => api.get<PartnerClient[]>("/partner/clients") });
   const [invite, setInvite] = useState({ name: "", business: "", email: "" });
 
   const signupLink = () => {
@@ -77,7 +78,9 @@ export function PartnerClients({ partnerCode }: { partnerCode: string }) {
           <h2 className="font-display text-lg font-bold text-ink">{t("title")}</h2>
           <p className="text-sm text-ink-2">{t("help")}</p>
         </div>
-        {clients.length === 0 ? (
+        {isLoading ? (
+          <DataLoader className="min-h-48" />
+        ) : clients.length === 0 ? (
           <p className="text-sm text-ink-3">{t("empty")}</p>
         ) : (
           <ul className="divide-y divide-line">

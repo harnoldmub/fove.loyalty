@@ -11,6 +11,7 @@ import { api } from "@/lib/api";
 import { formatDate } from "@/lib/utils";
 import { FinanceNav } from "@/components/admin/finance/finance-nav";
 import { formatFinance } from "@/components/admin/finance/finance-utils";
+import { DataLoader } from "@/components/navigation/data-loader";
 
 interface CustomerFinanceRow {
   /** Monnaie des totaux (euros, taux comptable). */
@@ -81,7 +82,7 @@ export default function CustomersFinancePage() {
       </div>
 
       {isLoading ? (
-        <div className="py-20 text-center text-sm text-ink-3">{t("loading")}</div>
+        <DataLoader />
       ) : filtered.length === 0 ? (
         <Panel className="p-12 text-center text-sm text-ink-3">{t("empty")}</Panel>
       ) : (

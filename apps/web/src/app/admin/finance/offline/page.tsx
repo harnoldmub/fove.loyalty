@@ -14,6 +14,7 @@ import { api, useErrorMessage } from "@/lib/api";
 import { formatDate } from "@/lib/utils";
 import { FinanceNav } from "@/components/admin/finance/finance-nav";
 import { formatFinance } from "@/components/admin/finance/finance-utils";
+import { DataLoader } from "@/components/navigation/data-loader";
 
 interface OfflineInvoice {
   id: string;
@@ -123,7 +124,7 @@ function BankAccounts() {
   const t = useTranslations("admin.finance.offline.accounts");
   const errMsg = useErrorMessage();
   const qc = useQueryClient();
-  const { data = [] } = useQuery({ queryKey: ["admin-bank-accounts"], queryFn: () => api.get<BankAccount[]>("/admin/finance/bank-accounts") });
+  const { data = [], isLoading: loadingAccounts } = useQuery({ queryKey: ["admin-bank-accounts"], queryFn: () => api.get<BankAccount[]>("/admin/finance/bank-accounts") });
   const empty = { country: "", currency: "EUR", beneficiary: "", bankName: "", iban: "", accountNumber: "", swift: "", instructions: "", active: true };
   const [form, setForm] = useState<typeof empty & { id?: string }>(empty);
   const [busy, setBusy] = useState(false);
@@ -155,7 +156,9 @@ function BankAccounts() {
         <h2 className="font-display text-lg font-semibold">{t("title")}</h2>
         <p className="text-sm text-ink-2">{t("help")}</p>
       </div>
-      {data.length === 0 ? (
+      {loadingAccounts ? (
+        <DataLoader className="min-h-32" />
+      ) : data.length === 0 ? (
         <p className="text-sm text-ink-3">{t("empty")}</p>
       ) : (
         <ul className="grid gap-2 text-sm">
@@ -219,7 +222,7 @@ export default function OfflinePaymentsPage() {
   const initial = useSearchParams().get("q") ?? "";
   const [q, setQ] = useState(initial);
   const [search, setSearch] = useState(initial);
-  const { data = [], refetch } = useQuery({
+  const { data = [], refetch, isLoading } = useQuery({
     queryKey: ["admin-offline-invoices", status, search],
     queryFn: () => api.get<OfflineInvoice[]>(`/admin/finance/offline-invoices?status=${status}&q=${encodeURIComponent(search)}`),
   });
@@ -243,7 +246,9 @@ export default function OfflinePaymentsPage() {
             </Select>
             <Button type="submit" variant="secondary">{t("searchButton")}</Button>
           </form>
-          {data.length === 0 ? (
+          {isLoading ? (
+            <DataLoader className="min-h-48" />
+          ) : data.length === 0 ? (
             <p className="text-sm text-ink-3">{t("empty")}</p>
           ) : (
             <div className="overflow-x-auto">

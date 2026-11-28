@@ -25,6 +25,7 @@ import { FinanceCharts } from "@/components/admin/finance/finance-charts";
 import { formatFinance, formatPct, DeltaBadge } from "@/components/admin/finance/finance-utils";
 import { ExpenseModal } from "@/components/admin/finance/expense-modal";
 import { PartnerModal } from "@/components/admin/finance/partner-modal";
+import { DataLoader } from "@/components/navigation/data-loader";
 
 interface FinanceOverviewResponse {
   currency: string;
@@ -138,7 +139,7 @@ export default function FinanceOverviewPage() {
       </div>
 
       {isLoading ? (
-        <div className="py-20 text-center text-sm text-ink-3">{t("loading")}</div>
+        <DataLoader />
       ) : cur ? (
         <div className="space-y-6">
           {/* Section 1 : Chiffre d'affaires & Encaissements bruts vs nets */}

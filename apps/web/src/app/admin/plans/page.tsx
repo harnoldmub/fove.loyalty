@@ -9,6 +9,7 @@ import { Checkbox, Field, Input } from "@/components/ui/field";
 import { PageHeader, Panel } from "@/components/ui/misc";
 import { BILLING_CURRENCIES, isOnlineCurrency, type BillingCurrency, type PlanFeatures } from "@fove/shared";
 import { api, ApiError, useErrorMessage } from "@/lib/api";
+import { DataLoader } from "@/components/navigation/data-loader";
 
 interface Plan {
   id: string;
@@ -142,11 +143,11 @@ function PlanEditor({ plan }: { plan: Plan }) {
 
 export default function AdminPlans() {
   const t = useTranslations("admin.plans");
-  const { data = [] } = useQuery({ queryKey: ["admin-plans"], queryFn: () => api.get<Plan[]>("/admin/plans") });
+  const { data = [], isLoading } = useQuery({ queryKey: ["admin-plans"], queryFn: () => api.get<Plan[]>("/admin/plans") });
   return (
     <>
       <PageHeader title={t("title")} description={t("description")} />
-      <div className="grid gap-5 lg:grid-cols-2 2xl:grid-cols-3">{data.map((p) => <PlanEditor key={p.id} plan={p} />)}</div>
+      {isLoading ? <DataLoader /> : <div className="grid gap-5 lg:grid-cols-2 2xl:grid-cols-3">{data.map((p) => <PlanEditor key={p.id} plan={p} />)}</div>}
     </>
   );
 }

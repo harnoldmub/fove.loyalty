@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/field";
 import { Badge, PageHeader, Panel } from "@/components/ui/misc";
 import { api } from "@/lib/api";
 import { formatDate, formatNumber, formatPrice } from "@/lib/utils";
+import { DataLoader } from "@/components/navigation/data-loader";
 
 interface Stats { tenants: number; suspended: number; newTenants30d: number; subscriptionsByStatus: Record<string, number>; activeByPlan: Record<string, number>; paying: number; free: number; mrrCents: number; customers: number; accounts: number; transactions30d: number }
 interface TenantRow { id: string; name: string; slug: string; status: string; createdAt: string; settings?: { logoUrl: string | null; primaryColor: string } | null; subscription: { status: string; provider: string; plan: { code: string; name: string; kind: "FREE" | "PAID" | "CUSTOM" } } | null; _count: { customers: number; accounts: number; memberships: number } }
@@ -17,8 +18,16 @@ interface TenantRow { id: string; name: string; slug: string; status: string; cr
 export default function AdminHome() {
   const t = useTranslations("admin.home");
   const [q, setQ] = useState("");
-  const { data: stats } = useQuery({ queryKey: ["admin-stats"], queryFn: () => api.get<Stats>("/admin/stats") });
+  const { data: stats, isLoading } = useQuery({ queryKey: ["admin-stats"], queryFn: () => api.get<Stats>("/admin/stats") });
   const { data: tenants = [] } = useQuery({ queryKey: ["admin-tenants", q], queryFn: () => api.get<TenantRow[]>(`/admin/tenants${q ? `?q=${encodeURIComponent(q)}` : ""}`) });
+  if (isLoading) {
+    return (
+      <>
+        <PageHeader title={t("title")} description={t("description")} />
+        <DataLoader />
+      </>
+    );
+  }
   return (
     <>
       <PageHeader title={t("title")} description={t("description")} />

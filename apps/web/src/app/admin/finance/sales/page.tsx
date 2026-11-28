@@ -13,6 +13,7 @@ import { formatDate } from "@/lib/utils";
 import { FinanceNav } from "@/components/admin/finance/finance-nav";
 import { FinanceFilter, type PeriodKey } from "@/components/admin/finance/finance-filter";
 import { formatFinance } from "@/components/admin/finance/finance-utils";
+import { DataLoader } from "@/components/navigation/data-loader";
 
 interface SaleItem {
   id: string;
@@ -124,7 +125,7 @@ export default function SalesPage() {
       </div>
 
       {isLoading ? (
-        <div className="py-20 text-center text-sm text-ink-3">{t("loading")}</div>
+        <DataLoader />
       ) : sales.length === 0 ? (
         <Panel className="p-12 text-center text-sm text-ink-3">
           {t("empty")}

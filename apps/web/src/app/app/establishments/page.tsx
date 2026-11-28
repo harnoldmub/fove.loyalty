@@ -14,6 +14,7 @@ import { Field, Input } from "@/components/ui/field";
 import { Badge, EmptyState, ErrorNote, PageHeader, Panel } from "@/components/ui/misc";
 import { api, useErrorMessage } from "@/lib/api";
 import { useQuotaBlock } from "@/components/app/upgrade";
+import { DataLoader } from "@/components/navigation/data-loader";
 
 function EstablishmentForm({ value, defaultCountry = "CD", onDone }: { value?: Establishment; defaultCountry?: string; onDone: () => void }) {
   const toErrorMessage = useErrorMessage();
@@ -85,11 +86,13 @@ export default function EstablishmentsPage() {
   const canWrite = useCan("establishments.write");
   const qc = useQueryClient();
   const [editing, setEditing] = useState<Establishment | "new" | null>(null);
-  const { data = [] } = useQuery({ queryKey: ["establishments"], queryFn: () => api.get<Establishment[]>("/app/establishments") });
+  const { data = [], isLoading } = useQuery({ queryKey: ["establishments"], queryFn: () => api.get<Establishment[]>("/app/establishments") });
   return (
     <>
       <PageHeader title={t("title")} description={t("description")} actions={canWrite && <Button onClick={() => setEditing("new")}><Plus /> {t("add")}</Button>} />
-      {data.length === 0 ? (
+      {isLoading ? (
+        <DataLoader />
+      ) : data.length === 0 ? (
         <EmptyState icon={<Building2 />} title={t("empty")} />
       ) : (
         <div className="grid gap-4 md:grid-cols-2">

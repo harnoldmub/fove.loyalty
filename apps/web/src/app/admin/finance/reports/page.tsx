@@ -10,6 +10,7 @@ import { api } from "@/lib/api";
 import { INTL_LOCALE, isLocale } from "@/i18n/config";
 import { FinanceNav } from "@/components/admin/finance/finance-nav";
 import { formatFinance } from "@/components/admin/finance/finance-utils";
+import { DataLoader } from "@/components/navigation/data-loader";
 
 const MONTHS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
 
@@ -81,7 +82,7 @@ export default function AssociateReportsPage() {
       </div>
 
       {isLoading ? (
-        <div className="py-20 text-center text-sm text-ink-3">{t("loading")}</div>
+        <DataLoader />
       ) : cur ? (
         <div className="space-y-6 print:space-y-4">
           {/* En-tête officiel du rapport imprimable */}

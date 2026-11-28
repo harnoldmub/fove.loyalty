@@ -11,6 +11,7 @@ import { Badge, Panel } from "@/components/ui/misc";
 import { api, useErrorMessage } from "@/lib/api";
 import { formatDate } from "@/lib/utils";
 import { formatFinance } from "@/components/admin/finance/finance-utils";
+import { DataLoader } from "@/components/navigation/data-loader";
 
 interface Payout {
   id: string;
@@ -43,7 +44,7 @@ export function PartnerPayouts() {
   const errMsg = useErrorMessage();
   const [status, setStatus] = useState<(typeof STATUSES)[number]>("PENDING");
   const [refs, setRefs] = useState<Record<string, string>>({});
-  const { data = [], refetch } = useQuery({ queryKey: ["admin-partner-payouts", status], queryFn: () => api.get<Payout[]>(`/admin/partners/payouts?status=${status}`) });
+  const { data = [], refetch, isLoading } = useQuery({ queryKey: ["admin-partner-payouts", status], queryFn: () => api.get<Payout[]>(`/admin/partners/payouts?status=${status}`) });
 
   const process = async (payout: Payout, action: "PAID" | "REJECTED") => {
     try {
@@ -64,7 +65,9 @@ export function PartnerPayouts() {
           {STATUSES.map((s) => <option key={s} value={s}>{t(`statuses.${s}`)}</option>)}
         </Select>
       </div>
-      {data.length === 0 ? (
+      {isLoading ? (
+        <DataLoader className="min-h-48" />
+      ) : data.length === 0 ? (
         <Panel className="p-12 text-center text-sm text-ink-3">{t("empty")}</Panel>
       ) : (
         data.map((p) => (
