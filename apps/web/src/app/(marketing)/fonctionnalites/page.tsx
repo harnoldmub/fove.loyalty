@@ -27,7 +27,7 @@ export default async function FeaturesPage() {
                 >
                   <dt className="font-medium">
                     {t(`groups.${g.key}.items.${item.key}.title`)}
-                    {"paid" in item && item.paid && <span className="ms-2 whitespace-nowrap rounded-full bg-stamp-soft px-2 py-0.5 align-middle text-xs font-medium text-stamp-ink">{t("paid")}</span>}
+                    {"paid" in item && item.paid && <span className="ms-2 whitespace-nowrap rounded-full bg-stamp-soft px-2 py-0.5 align-middle text-xs font-medium text-stamp-ink dark:text-stamp">{t("paid")}</span>}
                   </dt>
                   <dd className="text-ink-2">{t(`groups.${g.key}.items.${item.key}.text`)}</dd>
                 </div>

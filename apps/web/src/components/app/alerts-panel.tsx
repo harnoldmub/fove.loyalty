@@ -29,7 +29,7 @@ export function AlertsPanel() {
     <Panel className="mb-6 grid gap-3 border-stamp/40 p-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="flex items-center gap-2 font-display text-base font-semibold">
-          <ShieldAlert className="size-5 text-stamp-ink" aria-hidden /> {t("title")}
+          <ShieldAlert className="size-5 text-stamp-ink dark:text-stamp" aria-hidden /> {t("title")}
         </h2>
         <Button asChild size="sm" variant="secondary">
           <Link href="/app/transactions?kind=CANCELLATIONS">{t("cancellations", { count: data.cancellationsThisWeek })}</Link>

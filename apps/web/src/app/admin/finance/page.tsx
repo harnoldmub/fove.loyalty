@@ -280,7 +280,7 @@ export default function FinanceOverviewPage() {
             </Panel>
           )}
           {overview && overview.missingRates.length > 0 && (
-            <p className="rounded-md bg-stamp-soft px-4 py-3 text-sm text-stamp-ink">
+            <p className="rounded-md bg-stamp-soft px-4 py-3 text-sm text-stamp-ink dark:text-stamp">
               {t("missingRates", { currencies: overview.missingRates.join(", ") })}{" "}
               <Link href="/admin/finance/rates" className="font-medium underline underline-offset-4">{t("ratesLink")}</Link>
             </p>
