@@ -276,12 +276,12 @@ On y trouve aussi des raccourcis : scanner une carte, afficher son QR d'inscript
 - Le téléphone ou l'email évite les doublons : un client déjà connu n'est jamais recréé ni fusionné automatiquement.
 
 **Importer des clients** (gérant et propriétaire)
-- Fichier CSV avec les colonnes `prenom`, `nom`, `telephone`, `email`, et `reference` si besoin. 5 000 lignes maximum.
+- Fichier CSV avec les colonnes `prenom`, `nom`, `telephone`, `email`, et si besoin `reference` et `anniversaire` (JJ/MM, ou date complète dont seuls le jour et le mois sont gardés). 5 000 lignes maximum.
 - Création de leur carte dans un programme : facultative.
 - Les doublons sont ignorés. L'import s'arrête au nombre maximum de clients de l'offre, et le rapport indique les lignes refusées pour ce motif.
 
 **Fiche client**
-- Coordonnées modifiables, référence externe.
+- Coordonnées modifiables, référence externe, **anniversaire** (jour et mois seulement, facultatif ; aussi saisi par le client à l'inscription par QR et dans « Mes cartes », recopié sur ses fiches ; effacé avec la fiche).
 - **Statut fidélité** : segment et action conseillée ([règles ci-dessous](#segments-de-clients)), nombre de visites, dernier passage, date d'arrivée.
 - Consentements aux offres par email et par SMS ou WhatsApp.
 - Tags (20 maximum) et notes internes.
@@ -367,7 +367,7 @@ Programme à tampons : la carte repasse à zéro.
 
 ### 3.9 Établissements
 
-- Créer et modifier un point de vente : nom, adresse, ville, pays, téléphone ; activer ou désactiver.
+- Créer et modifier un point de vente : nom, adresse, ville, pays, téléphone, **position GPS** (facultative, « latitude, longitude » collé depuis une carte ; prépare l'annuaire des commerces) ; activer ou désactiver.
 - Chaque achat et chaque utilisation de récompense peut indiquer l'établissement.
 - Le nombre d'établissements est limité par l'offre.
 

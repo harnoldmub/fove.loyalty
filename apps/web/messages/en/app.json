@@ -273,6 +273,7 @@
     "back": "Customers",
     "ref": "Ref. {ref}",
     "noContact": "No contact details",
+    "birthday": "Birthday on {date}",
     "anonymized": "Anonymized on {date}",
     "export": "Export their data",
     "erase": "Erase",
@@ -324,7 +325,7 @@
     },
     "import": {
       "title": "Import customers",
-      "description": "CSV file with the columns prenom, nom, telephone, email (and reference if needed). 5,000 rows maximum.",
+      "description": "CSV file with the columns prenom, nom, telephone, email (and reference, anniversaire as DD/MM if needed). 5,000 rows maximum.",
       "created": "{count, plural, one {<strong>#</strong> customer created.} other {<strong>#</strong> customers created.}}",
       "duplicates": "{count, plural, one {# already existing (same phone, email or reference), skipped.} other {# already existing (same phone, email or reference), skipped.}}",
       "invalid": "{count, plural, one {# invalid row (incorrect phone or missing contact).} other {# invalid rows (incorrect phone or missing contact).}}",
@@ -370,6 +371,9 @@
       "city": "City",
       "address": "Address",
       "phone": "Phone",
+      "position": "GPS position (optional)",
+      "positionHint": "Paste “latitude, longitude” from Google Maps (right-click on the place). Will be used for the business directory.",
+      "positionInvalid": "Invalid GPS position: “latitude, longitude”, for example -4.3217, 15.3125.",
       "save": "Save",
       "submit": "Add location"
     },

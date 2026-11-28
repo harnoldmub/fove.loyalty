@@ -228,7 +228,7 @@ export class CardsService {
     await this.refreshProgramWallet(tenantId);
     await this.prisma.client.loyaltyAccount.updateMany({
       where: { tenantId },
-      data: { lastActivityAt: new Date() },
+      data: { passUpdatedAt: new Date() },
     });
     let appleSent = 0;
     if (this.appleWallet.isConfigured()) {
@@ -246,7 +246,7 @@ export class CardsService {
     await this.prisma.client.loyaltyAccount.update({
       where: { id: accountId },
       data: {
-        lastActivityAt: now,
+        passUpdatedAt: now,
         lastWalletMessageTitle: message.title,
         lastWalletMessageBody: message.body,
         lastWalletMessageAt: now,
@@ -275,7 +275,7 @@ export class CardsService {
     await this.prisma.client.loyaltyAccount.updateMany({
       where: { tenantId: ctx.tenantId, programId },
       data: {
-        lastActivityAt: now,
+        passUpdatedAt: now,
         lastWalletMessageTitle: message.title,
         lastWalletMessageBody: message.body,
         lastWalletMessageAt: now,
@@ -316,7 +316,7 @@ export class CardsService {
     await this.prisma.client.loyaltyAccount.updateMany({
       where: { tenantId: ctx.tenantId },
       data: {
-        lastActivityAt: now,
+        passUpdatedAt: now,
         lastWalletMessageTitle: message.title,
         lastWalletMessageBody: message.body,
         lastWalletMessageAt: now,

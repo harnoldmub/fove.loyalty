@@ -273,6 +273,7 @@
     "back": "Clientes",
     "ref": "Ref. {ref}",
     "noContact": "Sin datos de contacto",
+    "birthday": "Cumpleaños el {date}",
     "anonymized": "Anonimizado el {date}",
     "export": "Exportar sus datos",
     "erase": "Borrar",
@@ -324,7 +325,7 @@
     },
     "import": {
       "title": "Importar clientes",
-      "description": "Archivo CSV con las columnas prenom, nom, telephone, email (y reference si hace falta). 5000 filas como máximo.",
+      "description": "Archivo CSV con las columnas prenom, nom, telephone, email (y reference, anniversaire en formato DD/MM si hace falta). 5000 filas como máximo.",
       "created": "{count, plural, one {<strong>#</strong> cliente creado.} other {<strong>#</strong> clientes creados.}}",
       "duplicates": "{count, plural, one {# ya existente (mismo teléfono, email o referencia), ignorado.} other {# ya existentes (mismo teléfono, email o referencia), ignorados.}}",
       "invalid": "{count, plural, one {# fila no válida (teléfono incorrecto o contacto ausente).} other {# filas no válidas (teléfono incorrecto o contacto ausente).}}",
@@ -370,6 +371,9 @@
       "city": "Ciudad",
       "address": "Dirección",
       "phone": "Teléfono",
+      "position": "Posición GPS (opcional)",
+      "positionHint": "Pega «latitud, longitud» desde Google Maps (clic derecho en el lugar). Servirá para el directorio de comercios.",
+      "positionInvalid": "Posición GPS no válida: «latitud, longitud», por ejemplo -4.3217, 15.3125.",
       "save": "Guardar",
       "submit": "Añadir el establecimiento"
     },

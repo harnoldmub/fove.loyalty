@@ -44,6 +44,7 @@
     "lastNameOptional": "Nom (facultatif)",
     "phone": "Téléphone (facultatif)",
     "phoneHint": "Pré-rempli quand vous rejoignez un programme. Il ne sert jamais à vous connecter.",
+    "birthdayHint": "Vos commerces peuvent vous offrir un cadeau pour votre anniversaire. Jour et mois seulement.",
     "email": "Email",
     "emailHint": "C'est l'adresse qui vous permet de vous connecter. Elle ne peut pas encore être modifiée.",
     "firstNameRequired": "Indiquez votre prénom",

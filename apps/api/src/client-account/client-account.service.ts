@@ -205,11 +205,16 @@ export class ClientAccountService {
     await this.audit.log({ action: "client.email_verified", targetType: "ClientAccount", targetId: accountId });
   }
 
-  async updateProfile(accountId: string, input: { firstName: string; lastName: string; phone: string | null }): Promise<ClientAccountView> {
+  async updateProfile(accountId: string, input: { firstName: string; lastName: string; phone: string | null; birthDay?: number | null; birthMonth?: number | null }): Promise<ClientAccountView> {
+    const birthday = input.birthDay !== undefined ? { birthDay: input.birthDay ?? null, birthMonth: input.birthMonth ?? null } : {};
     const account = await this.prisma.client.clientAccount.update({
       where: { id: accountId },
-      data: { firstName: input.firstName, lastName: input.lastName, phone: input.phone || null },
+      data: { firstName: input.firstName, lastName: input.lastName, phone: input.phone || null, ...birthday },
     });
+    // L'anniversaire suit le client chez chacun de ses commerces (cadeau d'anniversaire).
+    if (input.birthDay !== undefined) {
+      await this.prisma.client.customer.updateMany({ where: { clientAccountId: accountId, anonymizedAt: null }, data: birthday });
+    }
     return view(account);
   }
 
@@ -373,5 +378,5 @@ export class ClientAccountService {
 }
 
 function view(a: ClientAccountView): ClientAccountView {
-  return { id: a.id, email: a.email, emailVerifiedAt: a.emailVerifiedAt, firstName: a.firstName, lastName: a.lastName, phone: a.phone, locale: a.locale };
+  return { id: a.id, email: a.email, emailVerifiedAt: a.emailVerifiedAt, firstName: a.firstName, lastName: a.lastName, phone: a.phone, locale: a.locale, birthDay: a.birthDay ?? null, birthMonth: a.birthMonth ?? null };
 }

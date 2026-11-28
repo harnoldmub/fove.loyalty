@@ -1,4 +1,10 @@
 {
+  "birthday": {
+    "label": "Birthday (optional)",
+    "day": "Day",
+    "month": "Month",
+    "hint": "Day and month only: for a gift on your birthday."
+  },
   "skipToContent": "Skip to content",
   "switchingBusiness": "Opening {name}…",
   "loading": "Loading…",

@@ -131,14 +131,14 @@ export class AppleWalletServiceController {
     const serials = registrations.map((r) => r.serialNumber);
     const accounts = await this.prisma.client.loyaltyAccount.findMany({
       where: { id: { in: serials } },
-      select: { id: true, lastActivityAt: true },
+      select: { id: true, passUpdatedAt: true },
     });
 
     const updatedSerials: string[] = [];
     let maxUpdatedAt = 0;
 
     for (const acc of accounts) {
-      const updatedAt = acc.lastActivityAt.getTime();
+      const updatedAt = acc.passUpdatedAt.getTime();
       if (updatedAt > maxUpdatedAt) {
         maxUpdatedAt = updatedAt;
       }
@@ -210,7 +210,7 @@ export class AppleWalletServiceController {
       const ifModifiedDate = new Date(ifModifiedSince as string);
       if (
         !isNaN(ifModifiedDate.getTime()) &&
-        Math.floor(account.lastActivityAt.getTime() / 1000) <= Math.floor(ifModifiedDate.getTime() / 1000)
+        Math.floor(account.passUpdatedAt.getTime() / 1000) <= Math.floor(ifModifiedDate.getTime() / 1000)
       ) {
         return res.status(HttpStatus.NOT_MODIFIED).send();
       }
@@ -245,7 +245,7 @@ export class AppleWalletServiceController {
     );
 
     res.setHeader("Content-Type", "application/vnd.apple.pkpass");
-    res.setHeader("Last-Modified", account.lastActivityAt.toUTCString());
+    res.setHeader("Last-Modified", account.passUpdatedAt.toUTCString());
     res.setHeader("Cache-Control", "no-cache");
     return res.status(HttpStatus.OK).send(passBuffer);
   }

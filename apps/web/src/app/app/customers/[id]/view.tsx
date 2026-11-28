@@ -36,6 +36,7 @@ import { Badge, ErrorNote, Panel, Skeleton } from "@/components/ui/misc";
 import { api, useErrorMessage } from "@/lib/api";
 import { useUnitLabel } from "@/lib/labels";
 import { formatDate, formatNumber, newIdempotencyKey } from "@/lib/utils";
+import { BirthdayInput, useFormatBirthday } from "@/components/ui/birthday-input";
 
 interface Customer {
   id: string;
@@ -44,6 +45,8 @@ interface Customer {
   phone: string | null;
   email: string | null;
   externalRef: string | null;
+  birthDay: number | null;
+  birthMonth: number | null;
   source: string;
   tags: string[];
   notes: string | null;
@@ -208,6 +211,8 @@ function EditDialog({ customer }: { customer: Customer }) {
     email: customer.email ?? "",
     marketingEmailConsent: customer.marketingEmailConsent,
     marketingSmsConsent: customer.marketingSmsConsent,
+    birthDay: customer.birthDay,
+    birthMonth: customer.birthMonth,
   });
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -242,6 +247,7 @@ function EditDialog({ customer }: { customer: Customer }) {
           </div>
           <Field label={t("phone")}>{(p) => <Input {...p} type="tel" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />}</Field>
           <Field label={t("email")}>{(p) => <Input {...p} type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />}</Field>
+          <BirthdayInput value={form} onChange={(b) => setForm({ ...form, ...b })} />
           <Checkbox checked={form.marketingSmsConsent} onChange={(e) => setForm({ ...form, marketingSmsConsent: e.target.checked })} label={t("smsConsent")} />
           <Checkbox checked={form.marketingEmailConsent} onChange={(e) => setForm({ ...form, marketingEmailConsent: e.target.checked })} label={t("emailConsent")} />
           <Button type="submit" loading={busy}>{t("submit")}</Button>
@@ -527,6 +533,7 @@ function NotesAndTagsPanel({ customer }: { customer: Customer }) {
 }
 
 export function CustomerDetail({ id }: { id: string }) {
+  const birthday = useFormatBirthday();
   const toErrorMessage = useErrorMessage();
   const t = useTranslations("app.customer");
   const ts = useTranslations("app.segment");
@@ -589,7 +596,7 @@ export function CustomerDetail({ id }: { id: string }) {
             )}
           </div>
           <p className="mt-1 text-ink-2">
-            {[customer.phone, customer.email, customer.externalRef && t("ref", { ref: customer.externalRef })].filter(Boolean).join(" · ") || t("noContact")}
+            {[customer.phone, customer.email, customer.externalRef && t("ref", { ref: customer.externalRef }), birthday(customer.birthDay, customer.birthMonth) && t("birthday", { date: birthday(customer.birthDay, customer.birthMonth)! })].filter(Boolean).join(" · ") || t("noContact")}
           </p>
           {customer.anonymizedAt && <Badge className="mt-2">{t("anonymized", { date: formatDate(customer.anonymizedAt) })}</Badge>}
         </div>

@@ -99,7 +99,9 @@ export class LedgerService {
         balance: { increment: input.delta },
         lifetimeEarned: { increment: earned },
         lifetimeSpent: { increment: spent },
+        // L'activité (expiration des soldes) ne bouge qu'avec une opération du client ; la carte, elle, change toujours.
         ...(input.kind === "EXPIRATION" ? {} : { lastActivityAt: new Date() }),
+        passUpdatedAt: new Date(),
       },
     });
 

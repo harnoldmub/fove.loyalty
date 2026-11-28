@@ -26,6 +26,8 @@ function EstablishmentForm({ value, defaultCountry = "CD", onDone }: { value?: E
     address: value?.address ?? "",
     city: value?.city ?? (SUGGESTED_CITIES[defaultCountry]?.[0] ?? "Kinshasa"),
     phone: value?.phone ?? "",
+    // « latitude, longitude » collé depuis Google Maps ou OpenStreetMap.
+    position: value?.latitude != null && value?.longitude != null ? `${value.latitude}, ${value.longitude}` : "",
   });
   const [error, setError] = useState<string | null>(null);
   const quota = useQuotaBlock("establishments");
@@ -38,7 +40,13 @@ function EstablishmentForm({ value, defaultCountry = "CD", onDone }: { value?: E
         setBusy(true);
         setError(null);
     quota.clear();
-        const body = { name: f.name, address: f.address || null, city: f.city || null, phone: f.phone || null };
+        const gps = parsePosition(f.position);
+        if (gps === "invalid") {
+          setError(t("positionInvalid"));
+          setBusy(false);
+          return;
+        }
+        const body = { name: f.name, address: f.address || null, city: f.city || null, phone: f.phone || null, latitude: gps?.latitude ?? null, longitude: gps?.longitude ?? null };
         try {
           if (value) await api.patch(`/app/establishments/${value.id}`, body);
           else await api.post("/app/establishments", body);
@@ -74,6 +82,9 @@ function EstablishmentForm({ value, defaultCountry = "CD", onDone }: { value?: E
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label={t("address")}>{(p) => <Input {...p} value={f.address} onChange={(e) => setF({ ...f, address: e.target.value })} />}</Field>
         <Field label={t("phone")}>{(p) => <Input {...p} type="tel" value={f.phone} onChange={(e) => setF({ ...f, phone: e.target.value })} />}</Field>
+      </div>
+      <div className="grid gap-4">
+        <Field label={t("position")} hint={t("positionHint")}>{(p) => <Input {...p} dir="ltr" inputMode="decimal" placeholder="-4.3217, 15.3125" value={f.position} onChange={(e) => setF({ ...f, position: e.target.value })} />}</Field>
       </div>
       <Button type="submit" loading={busy} disabled={f.name.trim().length < 2}>{value ? t("save") : t("submit")}</Button>
     </form>
@@ -136,4 +147,14 @@ export default function EstablishmentsPage() {
       </DialogRoot>
     </>
   );
+}
+
+/** « -4.3217, 15.3125 » (copié depuis Google Maps) → coordonnées ; vide → aucune ; sinon « invalid ». */
+function parsePosition(raw: string): { latitude: number; longitude: number } | null | "invalid" {
+  if (!raw.trim()) return null;
+  const parts = raw.trim().split(/[\s,;]+/).filter(Boolean);
+  if (parts.length !== 2) return "invalid";
+  const [latitude, longitude] = parts.map(Number) as [number, number];
+  if (!Number.isFinite(latitude) || !Number.isFinite(longitude) || Math.abs(latitude) > 90 || Math.abs(longitude) > 180) return "invalid";
+  return { latitude, longitude };
 }

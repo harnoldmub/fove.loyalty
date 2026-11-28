@@ -13,6 +13,7 @@ import { PhoneInput } from "@/components/ui/phone-input";
 import { CodeStep } from "@/components/client/code-step";
 import { MyCards } from "@/components/client/my-cards";
 import { api, ApiError, useErrorMessage } from "@/lib/api";
+import { BirthdayInput } from "@/components/ui/birthday-input";
 
 interface ClientAccount {
   id: string;
@@ -21,6 +22,8 @@ interface ClientAccount {
   firstName: string;
   lastName: string;
   phone: string | null;
+  birthDay?: number | null;
+  birthMonth?: number | null;
 }
 
 const LOGIN = "/mes-cartes/connexion";
@@ -176,7 +179,7 @@ function ProfileForm({
   errorMessage: (e: unknown) => string;
 }) {
   const t = useTranslations("client.home");
-  const [f, setF] = useState({ firstName: account.firstName, lastName: account.lastName, phone: account.phone ?? "" });
+  const [f, setF] = useState({ firstName: account.firstName, lastName: account.lastName, phone: account.phone ?? "", birthDay: account.birthDay ?? null, birthMonth: account.birthMonth ?? null });
   const [firstNameError, setFirstNameError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
@@ -190,7 +193,7 @@ function ProfileForm({
     setError(null);
     setBusy(true);
     try {
-      const updated = await api.patch<ClientAccount>("/client/me", { firstName: f.firstName, lastName: f.lastName, phone: f.phone || null });
+      const updated = await api.patch<ClientAccount>("/client/me", { firstName: f.firstName, lastName: f.lastName, phone: f.phone || null, birthDay: f.birthDay, birthMonth: f.birthMonth });
       setSaved(true);
       onSaved(updated);
     } catch (err) {
@@ -213,6 +216,7 @@ function ProfileForm({
       <Field label={t("phone")} hint={t("phoneHint")}>
         {(p) => <PhoneInput {...p} value={f.phone} onChange={(phone) => setF({ ...f, phone })} />}
       </Field>
+      <BirthdayInput value={f} onChange={(b) => setF({ ...f, ...b })} hint={t("birthdayHint")} />
       <Field label={t("email")} hint={t("emailHint")}>
         {(p) => <Input {...p} type="email" value={account.email} readOnly disabled />}
       </Field>

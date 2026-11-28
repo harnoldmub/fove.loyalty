@@ -22,6 +22,8 @@ export interface ClientAccountView {
   lastName: string;
   phone: string | null;
   locale: string | null;
+  birthDay?: number | null;
+  birthMonth?: number | null;
 }
 
 export interface ClientAuthState {

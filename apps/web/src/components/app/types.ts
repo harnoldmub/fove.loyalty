@@ -98,6 +98,8 @@ export interface Establishment {
   address: string | null;
   city: string | null;
   phone: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
   active: boolean;
 }
 

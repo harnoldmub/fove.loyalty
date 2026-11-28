@@ -273,6 +273,7 @@
     "back": "Clients",
     "ref": "Réf. {ref}",
     "noContact": "Sans coordonnées",
+    "birthday": "Anniversaire le {date}",
     "anonymized": "Anonymisé le {date}",
     "export": "Exporter ses données",
     "erase": "Effacer",
@@ -324,7 +325,7 @@
     },
     "import": {
       "title": "Importer des clients",
-      "description": "Fichier CSV avec les colonnes prenom, nom, telephone, email (et reference si besoin). 5 000 lignes maximum.",
+      "description": "Fichier CSV avec les colonnes prenom, nom, telephone, email (et reference, anniversaire au format JJ/MM si besoin). 5 000 lignes maximum.",
       "created": "{count, plural, one {<strong>#</strong> client créé.} other {<strong>#</strong> clients créés.}}",
       "duplicates": "{count, plural, one {# déjà présent (même téléphone, email ou référence), ignoré.} other {# déjà présents (même téléphone, email ou référence), ignorés.}}",
       "invalid": "{count, plural, one {# ligne invalide (téléphone incorrect ou contact manquant).} other {# lignes invalides (téléphone incorrect ou contact manquant).}}",
@@ -370,6 +371,9 @@
       "city": "Ville",
       "address": "Adresse",
       "phone": "Téléphone",
+      "position": "Position GPS (facultatif)",
+      "positionHint": "Collez « latitude, longitude » depuis Google Maps (clic droit sur le lieu). Servira à l'annuaire des commerces.",
+      "positionInvalid": "Position GPS invalide : « latitude, longitude », par exemple -4.3217, 15.3125.",
       "save": "Enregistrer",
       "submit": "Ajouter l’établissement"
     },

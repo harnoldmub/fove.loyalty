@@ -35,6 +35,7 @@
     "acceptTerms": "J’accepte les conditions du programme.",
     "acceptTermsWithPrivacy": "J’accepte les conditions du programme et la <link>politique de confidentialité</link>.",
     "marketingConsent": "Je souhaite recevoir les offres de {tenant} (facultatif).",
+    "birthdayHint": "Facultatif : {tenant} pourra vous offrir un cadeau pour votre anniversaire.",
     "submit": "Créer ma carte",
     "alreadyEnrolled": "Utilisez l’onglet « Retrouver ma carte » ou demandez au personnel de vous la renvoyer.",
     "programTerms": "Conditions du programme",
