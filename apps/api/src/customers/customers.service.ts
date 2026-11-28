@@ -19,6 +19,8 @@ import { QuotaAlertService } from "../billing/quota-alert.service";
 import { WebhooksService } from "../notifications/webhooks.service";
 import { createCard, readAccessToken } from "../loyalty/cards";
 import { cardUrl } from "../cards/cards.service";
+import { exportHeader, exportRow } from "./customers-export";
+import { tenantLocale } from "../i18n/locale";
 
 type Db = Prisma.TransactionClient;
 
@@ -142,7 +144,20 @@ export class CustomersService {
   }
 
   async search(ctx: TenantContext, params: { q?: string; cursor?: string; limit: number }) {
-    const q = params.q?.trim();
+    const where = await this.searchWhere(ctx, params.q);
+    const rows = await this.prisma.client.customer.findMany({
+      where,
+      take: params.limit + 1,
+      ...(params.cursor ? { cursor: { id: params.cursor }, skip: 1 } : {}),
+      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+      include: { accounts: { select: { id: true, programId: true, balance: true, cardNumber: true, status: true } } },
+    });
+    return this.searchResult(rows, params.limit);
+  }
+
+  /** Filtre de la recherche (nom, téléphone, email, référence, numéro de carte), partagé par la liste et l'export. */
+  private async searchWhere(ctx: TenantContext, rawQ?: string): Promise<Prisma.CustomerWhereInput> {
+    const q = rawQ?.trim();
     const where: Prisma.CustomerWhereInput = { tenantId: ctx.tenantId, anonymizedAt: null };
     if (q) {
       const digits = q.replace(/\D/g, "");
@@ -158,15 +173,12 @@ export class CustomersService {
         { accounts: { some: { cardNumber: q.toUpperCase() } } },
       ];
     }
-    const rows = await this.prisma.client.customer.findMany({
-      where,
-      take: params.limit + 1,
-      ...(params.cursor ? { cursor: { id: params.cursor }, skip: 1 } : {}),
-      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
-      include: { accounts: { select: { id: true, programId: true, balance: true, cardNumber: true, status: true } } },
-    });
-    const hasMore = rows.length > params.limit;
-    const rawData = hasMore ? rows.slice(0, params.limit) : rows;
+    return where;
+  }
+
+  private searchResult<T extends { id: string; totalVisits: number; totalSpend: Prisma.Decimal; lastVisitAt: Date | null; createdAt: Date }>(rows: T[], limit: number) {
+    const hasMore = rows.length > limit;
+    const rawData = hasMore ? rows.slice(0, limit) : rows;
     const data = rawData.map((c) => ({
       ...c,
       segment: computeCustomerSegment({
@@ -343,6 +355,40 @@ export class CustomersService {
   }
 
   /** Export RGPD : toutes les données d'un client chez ce commerçant. */
+  /**
+   * Export du fichier clients (CSV) : les clients non effacés, filtrés comme la liste (recherche, segment),
+   * lus par lots de 1 000. En-têtes dans la langue du commerce ; trace dans le journal d'audit.
+   */
+  async exportCsv(ctx: TenantContext, params: { q?: string; segment?: string }): Promise<{ csv: string; count: number; filename: string }> {
+    const tenant = await this.prisma.client.tenant.findUniqueOrThrow({ where: { id: ctx.tenantId }, include: { settings: true } });
+    const locale = tenantLocale(tenant.settings);
+    const now = new Date();
+    const where = await this.searchWhere(ctx, params.q);
+    const lines = [exportHeader(locale)];
+    let cursor: string | undefined;
+    let count = 0;
+    for (;;) {
+      const batch = await this.prisma.client.customer.findMany({
+        where,
+        take: 1000,
+        ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+        orderBy: { id: "asc" },
+        include: { accounts: { select: { cardNumber: true, balance: true, status: true, program: { select: { name: true } } } } },
+      });
+      for (const c of batch) {
+        const { line, segment } = exportRow(c, locale, now);
+        if (params.segment && params.segment !== segment) continue;
+        lines.push(line);
+        count += 1;
+      }
+      if (batch.length < 1000) break;
+      cursor = batch[batch.length - 1]!.id;
+    }
+    await this.audit.forTenant(ctx, "customers.exported", undefined, { count, segment: params.segment ?? null, q: params.q ?? null });
+    // BOM : Excel lit l'UTF-8 (accents, arabe) correctement.
+    return { csv: `\uFEFF${lines.join("\r\n")}\r\n`, count, filename: `clients-${tenant.slug}-${now.toISOString().slice(0, 10)}.csv` };
+  }
+
   async exportData(ctx: TenantContext, id: string) {
     const customer = await this.prisma.client.customer.findFirst({
       where: { id, tenantId: ctx.tenantId },

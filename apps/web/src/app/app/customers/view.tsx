@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useAppRouter } from "@/lib/navigation-progress";
 import { useInfiniteQuery, useQuery, useQueryClient } from "@tanstack/react-query";
-import { FileUp, Search, UserPlus, Users } from "lucide-react";
+import { Download, FileUp, Search, UserPlus, Users } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
@@ -15,7 +15,7 @@ import { DialogContent, DialogRoot } from "@/components/ui/dialog";
 import { Checkbox, Field, Input, Select } from "@/components/ui/field";
 import { PhoneInput } from "@/components/ui/phone-input";
 import { EmptyState, ErrorNote, PageHeader, Panel, Skeleton } from "@/components/ui/misc";
-import { api, useErrorMessage } from "@/lib/api";
+import { api, ApiError, useErrorMessage } from "@/lib/api";
 import { formatDate, formatNumber } from "@/lib/utils";
 import { QuotaUpgradeHint, useQuotaBlock } from "@/components/app/upgrade";
 import { BirthdayInput } from "@/components/ui/birthday-input";
@@ -195,6 +195,7 @@ export function CustomersView() {
   const params = useSearchParams();
   const canWrite = useCan("customers.write");
   const canImport = useCan("customers.import");
+  const canExport = useCan("customers.export");
   const [q, setQ] = useState("");
   const query = useDebounced(q);
   const [creating, setCreating] = useState(params.get("new") === "1");
@@ -221,6 +222,7 @@ export function CustomersView() {
         description={t("description")}
         actions={
           <>
+            {canExport && <ExportButton q={query} segment={selectedSegment === "ALL" ? null : selectedSegment} />}
             {canImport && (
               <Button variant="secondary" onClick={() => setImporting(true)}>
                 <FileUp /> {t("importButton")}
@@ -316,5 +318,39 @@ export function CustomersView() {
       <NewCustomerDialog open={creating} onOpenChange={setCreating} programs={programs.filter((p) => p.active)} />
       <ImportDialog open={importing} onOpenChange={setImporting} programs={programs.filter((p) => p.active)} />
     </>
+  );
+}
+
+/** Export CSV du fichier clients, avec la recherche et le segment affichés. */
+function ExportButton({ q, segment }: { q: string; segment: string | null }) {
+  const t = useTranslations("app.customers");
+  const toErrorMessage = useErrorMessage();
+  const [busy, setBusy] = useState(false);
+  const download = async () => {
+    setBusy(true);
+    try {
+      const params = new URLSearchParams({ ...(q ? { q } : {}), ...(segment ? { segment } : {}) });
+      const res = await fetch(`/api/app/customers/export.csv?${params}`, { credentials: "same-origin" });
+      if (!res.ok) {
+        const body = await res.json().catch(() => null);
+        throw new ApiError(res.status, body?.error?.code ?? "error", body?.error?.message ?? t("exportFailed"));
+      }
+      const name = /filename="([^"]+)"/.exec(res.headers.get("content-disposition") ?? "")?.[1] ?? "clients.csv";
+      const url = URL.createObjectURL(await res.blob());
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = name;
+      link.click();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      toast.error(toErrorMessage(e));
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <Button variant="secondary" loading={busy} onClick={download}>
+      <Download /> {t("exportButton")}
+    </Button>
   );
 }

@@ -507,6 +507,8 @@
     }
   },
   "customers": {
+    "exportButton": "Exporter (CSV)",
+    "exportFailed": "Export impossible",
     "new": {
       "created": "Client créé",
       "title": "Nouveau client",

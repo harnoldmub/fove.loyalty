@@ -507,6 +507,8 @@
     }
   },
   "customers": {
+    "exportButton": "تصدير (CSV)",
+    "exportFailed": "تعذّر التصدير",
     "new": {
       "created": "تم إنشاء العميل",
       "title": "عميل جديد",
