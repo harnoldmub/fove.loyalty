@@ -96,6 +96,29 @@
     "rights": "© {year} Dizayna. Todos los derechos reservados."
   },
   "home": {
+    "referral": {
+      "eyebrow": "Recomendación entre clientes",
+      "title": "Sus clientes le traen a sus amigos",
+      "text": "El boca a boca, recompensado. Cada cliente puede invitar a sus amigos desde su tarjeta; usted elige lo que ganan el amigo y el cliente que lo invitó.",
+      "paid": "Incluido en los planes de pago, se activa en un clic.",
+      "link": "Cómo funciona",
+      "steps": {
+        "share": {
+          "title": "Su cliente comparte su enlace",
+          "text": "Desde su tarjeta, por WhatsApp o copiando el enlace."
+        },
+        "join": {
+          "title": "Su amigo crea su tarjeta",
+          "text": "Recibe un regalo de bienvenida, por ejemplo un sello."
+        },
+        "visit": {
+          "title": "El amigo viene a la tienda",
+          "text": "El cliente que lo invitó recibe una recompensa, por ejemplo dos sellos."
+        }
+      },
+      "notifTitle": "¡Karim vino gracias a ti!",
+      "notifBody": "+2 sellos en tu tarjeta. ¡Gracias por recomendarnos!"
+    },
     "hero": {
       "title": "Convierta a sus clientes en habituales.",
       "text": "Una tarjeta de fidelidad en el teléfono de sus clientes y un código QR en su mostrador. Escanean, compran y vuelven. Sin aplicación que instalar.",
@@ -284,11 +307,33 @@
     ]
   },
   "features": {
+    "paid": "Planes de pago",
     "title": "Funcionalidades",
     "intro": "Todo lo necesario para que un cliente vuelva, y nada que tenga que configurar con un técnico.",
     "cta": "Su código QR puede estar en el mostrador hoy mismo.",
     "start": "Empezar gratis",
     "groups": {
+      "grow": {
+        "title": "Fidelizar y recomendar",
+        "items": {
+          "automations": {
+            "title": "Recordatorios automáticos",
+            "text": "Un mensaje en la tarjeta Wallet del cliente (y por email si lo aceptó) cuando está cerca de una recompensa, tiene una pendiente o deja de venir. Como máximo un recordatorio cada 14 días, entre las 10 y las 19 h."
+          },
+          "birthday": {
+            "title": "Regalo de cumpleaños",
+            "text": "Un regalo válido alrededor del cumpleaños del cliente, anunciado unos días antes y recordado el mismo día en su tarjeta."
+          },
+          "customerReferral": {
+            "title": "Recomendación entre clientes",
+            "text": "Sus clientes invitan a sus amigos desde su tarjeta. El amigo recibe un regalo de bienvenida y el cliente que lo invitó recibe una recompensa en su primera visita. Usted fija las recompensas y un límite mensual."
+          },
+          "merchantReferral": {
+            "title": "Recomiende a otros comercios",
+            "text": "Recomiende FOVE a un comercio: obtiene un descuento en su suscripción y usted gana un crédito en la suya tras su primer pago anual, hasta un año gratis."
+          }
+        }
+      },
       "program": {
         "title": "Su programa",
         "items": {
@@ -304,7 +349,7 @@
           "wallet": { "title": "Apple Wallet y Google Wallet", "text": "Un pase nativo añadido con 1 clic a Apple Wallet y Google Wallet. Ninguna aplicación que descargar." },
           "push": { "title": "Notificaciones push en pantalla de bloqueo", "text": "Comuníquese directamente en la pantalla de bloqueo de sus clientes: ofertas flash, actualizaciones de puntos y recompensas desbloqueadas." },
           "geo": { "title": "Recordatorios de proximidad GPS", "text": "La tarjeta de fidelidad aparece en la pantalla del smartphone en cuanto su cliente se acerca a su establecimiento." },
-          "crm": { "title": "Fichero de clientes y RFM", "text": "Segmentación automática de clientes (VIP, habituales, inactivos, en riesgo), etiquetas y notas comerciales para su fuerza de ventas." }
+          "crm": { "title": "Fichero de clientes y RFM", "text": "Segmentación automática de clientes (VIP, habituales, inactivos, en riesgo), etiquetas y notas comerciales para su fuerza de ventas. Exporte su fichero en cualquier momento." }
         }
       },
       "team": {

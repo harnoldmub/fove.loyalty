@@ -2,18 +2,11 @@ import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { Button } from "@/components/ui/button";
 import { localizedPageMeta } from "@/lib/og";
+import { FEATURE_GROUPS } from "@/lib/marketing-features";
 
 export async function generateMetadata() {
   return localizedPageMeta("features", "/fonctionnalites");
 }
-
-/** Groupes et fonctionnalités, dans l’ordre d’affichage ; les textes sont dans `marketing.features.groups`. */
-const groups = [
-  { key: "program", items: ["points", "rules", "rewards"] },
-  { key: "customers", items: ["qr", "wallet", "push", "geo", "crm"] },
-  { key: "team", items: ["roles", "stores", "audit"] },
-  { key: "tools", items: ["stats", "shop", "widget"] },
-] as const;
 
 export default async function FeaturesPage() {
   const t = await getTranslations("marketing.features");
@@ -22,14 +15,21 @@ export default async function FeaturesPage() {
       <h1 className="font-display text-4xl font-bold sm:text-5xl">{t("title")}</h1>
       <p className="mt-3 max-w-xl text-lg text-ink-2">{t("intro")}</p>
       <div className="mt-14 grid gap-16">
-        {groups.map((g) => (
+        {FEATURE_GROUPS.map((g) => (
           <section key={g.key} aria-labelledby={`groupe-${g.key}`} className="grid gap-6 md:grid-cols-[14rem_1fr]">
             <h2 id={`groupe-${g.key}`} className="font-display text-2xl font-semibold">{t(`groups.${g.key}.title`)}</h2>
             <dl className="grid gap-6 sm:grid-cols-3">
               {g.items.map((item) => (
-                <div key={item} className="grid content-start gap-1.5 border-t border-line pt-4">
-                  <dt className="font-medium">{t(`groups.${g.key}.items.${item}.title`)}</dt>
-                  <dd className="text-ink-2">{t(`groups.${g.key}.items.${item}.text`)}</dd>
+                <div
+                  key={item.key}
+                  id={item.anchor}
+                  className="grid scroll-mt-32 content-start gap-1.5 border-t border-line pt-4 transition-colors target:rounded-md target:bg-cobalt-soft target:px-3 target:pb-3 target:ring-2 target:ring-cobalt/30"
+                >
+                  <dt className="font-medium">
+                    {t(`groups.${g.key}.items.${item.key}.title`)}
+                    {"paid" in item && item.paid && <span className="ms-2 whitespace-nowrap rounded-full bg-stamp-soft px-2 py-0.5 align-middle text-xs font-medium text-stamp-ink">{t("paid")}</span>}
+                  </dt>
+                  <dd className="text-ink-2">{t(`groups.${g.key}.items.${item.key}.text`)}</dd>
                 </div>
               ))}
             </dl>

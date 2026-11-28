@@ -7,6 +7,7 @@ import type { ReactNode } from "react";
 import type { BillingCurrency, PlanFeatures, PlanLimits, QuotaKey } from "@fove/shared";
 import { Button } from "@/components/ui/button";
 import { cn, formatNumber, formatPrice } from "@/lib/utils";
+import { featureHref } from "@/lib/marketing-features";
 import { useMarketingCurrency } from "@/lib/marketing-currency";
 import { CurrencyToggle } from "./currency-toggle";
 
@@ -25,22 +26,33 @@ const FEATURED = "business";
 /** Quantités incluses : un chiffre par offre. */
 const QUOTA_ROWS: QuotaKey[] = ["customers", "establishments", "staff", "programs"];
 
-/** Fonctions : incluse ou non. */
-const FEATURE_ROWS: { key: string; included: (f: Partial<PlanFeatures>) => boolean }[] = [
-  { key: "cards", included: () => true },
-  { key: "wallet", included: () => true },
-  { key: "exports", included: (f) => Boolean(f.exports) },
-  { key: "widget", included: (f) => Boolean(f.widget) },
+/** Fonctions : incluse ou non ; `href` : explication sur la vitrine (lien du libellé). */
+const FEATURE_ROWS: { key: string; included: (f: Partial<PlanFeatures>) => boolean; href?: string }[] = [
+  { key: "cards", included: () => true, href: featureHref("inscription-qr") },
+  { key: "wallet", included: () => true, href: featureHref("wallet") },
+  { key: "exports", included: (f) => Boolean(f.exports), href: featureHref("fichier-clients") },
+  { key: "widget", included: (f) => Boolean(f.widget), href: featureHref("widget") },
   { key: "removeBranding", included: (f) => Boolean(f.removeBranding) },
-  { key: "walletCampaigns", included: (f) => Boolean(f.walletCampaigns) },
+  { key: "walletCampaigns", included: (f) => Boolean(f.walletCampaigns), href: featureHref("notifications") },
   // Relances, anniversaire et parrainage entre clients suivent la même fonction d'offre que les campagnes.
-  { key: "automations", included: (f) => Boolean(f.walletCampaigns) },
-  { key: "customerReferral", included: (f) => Boolean(f.walletCampaigns) },
+  { key: "automations", included: (f) => Boolean(f.walletCampaigns), href: featureHref("relances") },
+  { key: "customerReferral", included: (f) => Boolean(f.walletCampaigns), href: featureHref("parrainage-clients") },
   { key: "whatsappAuto", included: (f) => Boolean(f.whatsappAuto) },
-  { key: "api", included: (f) => Boolean(f.api) },
-  { key: "integrations", included: (f) => Boolean(f.integrations) },
-  { key: "referral", included: (f) => Boolean(f.referral) },
+  { key: "api", included: (f) => Boolean(f.api), href: "/developpeurs" },
+  { key: "integrations", included: (f) => Boolean(f.integrations), href: featureHref("boutique-en-ligne") },
+  { key: "referral", included: (f) => Boolean(f.referral), href: featureHref("parrainage-commercants") },
 ];
+
+/** Libellé d'une fonction, lien discret vers son explication quand il y en a une. */
+function FeatureLabel({ label, href }: { label: string; href?: string }) {
+  if (!href) return <>{label}</>;
+  // Lien classique (pas next/link) : l'ancre est mise en évidence par :target à l'arrivée.
+  return (
+    <a href={href} className="underline decoration-line decoration-dotted underline-offset-4 transition-colors hover:text-cobalt hover:decoration-cobalt">
+      {label}
+    </a>
+  );
+}
 
 type T = ReturnType<typeof useTranslations>;
 
@@ -73,7 +85,7 @@ export function PricingTable({ plans }: { plans: Plan[] }) {
     </tr>
   );
 
-  const row = (key: string, label: string, cells: (plan: Plan) => ReactNode) => (
+  const row = (key: string, label: ReactNode, cells: (plan: Plan) => ReactNode) => (
     <tr key={key} className="border-t border-line">
       <th scope="row" className={cn(stickyCol, "px-5 py-3.5 text-start font-normal text-ink-2")}>
         {label}
@@ -142,7 +154,7 @@ export function PricingTable({ plans }: { plans: Plan[] }) {
                   <li key={f.key} className={cn("flex gap-2.5", !included(plan, f) && "text-ink-3")}>
                     {included(plan, f) ? <Check className="mt-0.5 size-4 shrink-0 text-mint" aria-hidden /> : <X className="mt-0.5 size-4 shrink-0 text-ink-3/70" aria-hidden />}
                     <span>
-                      {t(`features.${f.key}`)}
+                      <FeatureLabel label={t(`features.${f.key}`)} href={f.href} />
                       {!included(plan, f) && <span className="sr-only">{t("notIncludedSuffix")}</span>}
                     </span>
                   </li>
@@ -190,7 +202,7 @@ export function PricingTable({ plans }: { plans: Plan[] }) {
             {QUOTA_ROWS.map((q) => row(q, t(`quotas.${q}`), (plan) => <span className="font-medium tabular text-ink">{quota(t, plan, q)}</span>))}
             {groupRow(t("groupFeatures"))}
             {FEATURE_ROWS.map((f) =>
-              row(f.key, t(`features.${f.key}`), (plan) =>
+              row(f.key, <FeatureLabel label={t(`features.${f.key}`)} href={f.href} />, (plan) =>
                 included(plan, f) ? (
                   <>
                     <Check className="mx-auto size-5 text-mint" aria-hidden />

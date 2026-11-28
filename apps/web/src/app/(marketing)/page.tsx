@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { BarChart3, Gift, QrCode, ScanLine, Store, Users } from "lucide-react";
+import { BarChart3, Gift, HeartHandshake, QrCode, ScanLine, Share2, Store, UserPlus, Users } from "lucide-react";
 import { StampDemo } from "@/components/marketing/stamp-demo";
 import { WalletNotificationDemo } from "@/components/marketing/wallet-notification-demo";
 import { Pricing } from "@/components/marketing/pricing";
@@ -9,6 +9,7 @@ import { localizedPageMeta, siteUrl } from "@/lib/og";
 import { serverGet } from "@/lib/server-api";
 import type { Plan } from "@/components/marketing/pricing-table";
 import { freeCustomerLimit } from "@/lib/free-plan";
+import { featureHref } from "@/lib/marketing-features";
 
 export async function generateMetadata() {
   return localizedPageMeta("home", "/");
@@ -67,6 +68,13 @@ const homeJsonLd = (t: (key: string) => string, plans: Plan[] | null) => ({
     },
   ],
 });
+
+/** Parrainage entre clients : les trois temps montrés sur l'accueil. */
+const referralSteps = [
+  { key: "share", icon: Share2 },
+  { key: "join", icon: UserPlus },
+  { key: "visit", icon: Gift },
+] as const;
 
 const steps = [
   { icon: QrCode, key: "qr" },
@@ -136,6 +144,48 @@ export default async function HomePage() {
       <section aria-labelledby="wallet-push" className="border-y border-line bg-surface/50 py-20 sm:py-24">
         <div className="mx-auto max-w-6xl px-4 sm:px-6">
           <WalletNotificationDemo />
+        </div>
+      </section>
+
+      <section aria-labelledby="parrainage-clients" className="mx-auto grid max-w-6xl items-center gap-12 px-4 py-20 sm:px-6 md:grid-cols-[1fr_1.1fr]">
+        <div>
+          <p className="flex items-center gap-2 text-sm font-semibold text-cobalt">
+            <HeartHandshake className="size-4" aria-hidden /> {t("referral.eyebrow")}
+          </p>
+          <h2 id="parrainage-clients" className="mt-3 font-display text-3xl font-semibold sm:text-4xl">{t("referral.title")}</h2>
+          <p className="mt-4 max-w-md text-ink-2">{t("referral.text")}</p>
+          <p className="mt-4 text-sm text-ink-3">{t("referral.paid")}</p>
+          <Button asChild variant="link" className="mt-2 px-0">
+            <a href={featureHref("parrainage-clients")}>{t("referral.link")}</a>
+          </Button>
+        </div>
+        <div className="grid gap-4">
+          <ol className="grid gap-3">
+            {referralSteps.map((s, i) => (
+              <li key={s.key} className="flex items-start gap-4 rounded-[var(--radius-lg)] bg-surface p-4 shadow-1">
+                <span className="grid size-11 shrink-0 place-items-center rounded-md bg-cobalt-soft text-cobalt">
+                  <s.icon className="size-5" aria-hidden />
+                </span>
+                <div className="min-w-0">
+                  <p className="font-display font-semibold">
+                    <span className="me-1.5 text-cobalt">{i + 1}.</span>
+                    {t(`referral.steps.${s.key}.title`)}
+                  </p>
+                  <p className="text-sm text-ink-2">{t(`referral.steps.${s.key}.text`)}</p>
+                </div>
+              </li>
+            ))}
+          </ol>
+          {/* Notification reçue par le parrain sur sa carte. */}
+          <div aria-hidden className="ms-auto flex max-w-sm items-center gap-3 rounded-2xl bg-ink/90 p-3 text-white shadow-2 backdrop-blur dark:bg-surface-2 dark:text-ink">
+            <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-mint text-white">
+              <HeartHandshake className="size-5" />
+            </span>
+            <div className="min-w-0 text-sm">
+              <p className="font-semibold">{t("referral.notifTitle")}</p>
+              <p className="opacity-80">{t("referral.notifBody")}</p>
+            </div>
+          </div>
         </div>
       </section>
 

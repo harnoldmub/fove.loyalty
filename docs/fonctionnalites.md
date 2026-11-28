@@ -755,9 +755,9 @@ Le nombre d'entreprises abonnées à chaque offre est affiché.
 
 | Page | Contenu |
 |---|---|
-| **Accueil** `/` | Présentation de FOVE |
-| **Fonctionnalités** `/fonctionnalites` | Ce que FOVE apporte au commerçant |
-| **Tarifs** `/tarifs` | Tableau comparatif des 5 offres (fonctions incluses ou non), FAQ. Sur mobile, une carte par offre. **Sélecteur de monnaie** (€, $, MAD, DZD, CDF) avec les prix fixes de chaque monnaie, détecté selon le pays du visiteur (comme la langue), sinon selon le navigateur, et mémorisé. En monnaie locale, la mention indique le règlement hors ligne et le prix en ligne en euros ou en dollars. |
+| **Accueil** `/` | Présentation de FOVE ; section **« Vos clients vous amènent leurs amis »** (parrainage entre clients en 3 étapes, offres payantes, lien vers son explication) |
+| **Fonctionnalités** `/fonctionnalites` | Ce que FOVE apporte au commerçant, par groupe (dont « Faire revenir et recommander » : relances, anniversaire, parrainage entre clients, parrainage entre commerçants) ; mention « Offres payantes » sur les fonctions réservées. Chaque fonctionnalité a une **ancre** (ex. `#parrainage-clients`), mise en évidence à l'arrivée. |
+| **Tarifs** `/tarifs` | Tableau comparatif des 5 offres (fonctions incluses ou non), FAQ. Le libellé de chaque fonction est un **lien vers son explication** (page Fonctionnalités ou Développeurs). Sur mobile, une carte par offre. **Sélecteur de monnaie** (€, $, MAD, DZD, CDF) avec les prix fixes de chaque monnaie, détecté selon le pays du visiteur (comme la langue), sinon selon le navigateur, et mémorisé. En monnaie locale, la mention indique le règlement hors ligne et le prix en ligne en euros ou en dollars. |
 | **Développeurs** `/developpeurs` | Documentation de l'API, des webhooks et du widget |
 | **Partenaires** `/partenaires` | Programme partenaires et candidature ; exemples de commissions calculés sur les prix de la monnaie choisie |
 | **Contact** `/contact` | Formulaire de contact. Le paramètre `?offre=sur-mesure` le pré-remplit pour une demande Sur-mesure. |

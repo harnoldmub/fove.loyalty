@@ -96,6 +96,29 @@
     "rights": "© {year} Dizayna. Tous droits réservés."
   },
   "home": {
+    "referral": {
+      "eyebrow": "Parrainage entre clients",
+      "title": "Vos clients vous amènent leurs amis",
+      "text": "Le bouche-à-oreille, récompensé. Chaque client peut inviter ses amis depuis sa carte ; vous choisissez ce que gagnent l’ami et le client qui l’a invité.",
+      "paid": "Inclus dans les offres payantes, activable en un clic.",
+      "link": "Comment ça marche",
+      "steps": {
+        "share": {
+          "title": "Votre client partage son lien",
+          "text": "Depuis sa carte, par WhatsApp ou en copiant le lien."
+        },
+        "join": {
+          "title": "Son ami crée sa carte",
+          "text": "Il reçoit un cadeau de bienvenue, par exemple un tampon offert."
+        },
+        "visit": {
+          "title": "L’ami passe en caisse",
+          "text": "Le client qui l’a invité est récompensé, par exemple deux tampons."
+        }
+      },
+      "notifTitle": "Karim est venu grâce à vous !",
+      "notifBody": "+2 tampons sur votre carte. Merci pour le parrainage !"
+    },
     "hero": {
       "title": "Transformez vos clients en habitués.",
       "text": "Une carte de fidélité sur le téléphone de vos clients, un QR code sur votre comptoir. Ils scannent, achètent, reviennent. Sans application à installer.",
@@ -284,11 +307,33 @@
     ]
   },
   "features": {
+    "paid": "Offres payantes",
     "title": "Fonctionnalités",
     "intro": "Tout ce qu’il faut pour qu’un client revienne, et rien que vous ayez à configurer avec un technicien.",
     "cta": "Votre QR code peut être au comptoir dès aujourd’hui.",
     "start": "Commencer gratuitement",
     "groups": {
+      "grow": {
+        "title": "Faire revenir et recommander",
+        "items": {
+          "automations": {
+            "title": "Relances automatiques",
+            "text": "Un message sur la carte Wallet du client (et par email s’il l’accepte) quand il approche d’une récompense, en a une qui l’attend ou ne vient plus. Au plus une relance tous les 14 jours, entre 10 h et 19 h."
+          },
+          "birthday": {
+            "title": "Cadeau d’anniversaire",
+            "text": "Un cadeau valable autour de l’anniversaire du client, annoncé quelques jours avant et rappelé le jour J sur sa carte."
+          },
+          "customerReferral": {
+            "title": "Parrainage entre clients",
+            "text": "Vos clients invitent leurs amis depuis leur carte. L’ami reçoit un cadeau de bienvenue, et le client qui l’a invité est récompensé dès son premier passage en caisse. Récompenses et plafond mensuel à votre main."
+          },
+          "merchantReferral": {
+            "title": "Parrainez d’autres commerçants",
+            "text": "Recommandez FOVE à un commerçant : il profite d’une remise sur son abonnement, et vous gagnez un crédit sur le vôtre après son premier paiement annuel, jusqu’à une année offerte."
+          }
+        }
+      },
       "program": {
         "title": "Votre programme",
         "items": {
@@ -304,7 +349,7 @@
           "wallet": { "title": "Apple Wallet & Google Wallet", "text": "Un pass natif ajouté en 1 clic dans Apple Cartes et Google Wallet. Zéro application à télécharger." },
           "push": { "title": "Notifications Push Lockscreen", "text": "Communiquez directement sur l'écran verrouillé de vos clients : offres flash, mises à jour de points et récompenses débloquées." },
           "geo": { "title": "Rappels de proximité GPS", "text": "La carte fidélité s'affiche sur l'écran du smartphone dès que votre client s'approche de votre établissement." },
-          "crm": { "title": "Fichier clients & RFM", "text": "Segmentation client automatique (VIP, réguliers, dormants, en risque), tags et mémos commerciaux pour votre force de vente." }
+          "crm": { "title": "Fichier clients & RFM", "text": "Segmentation client automatique (VIP, réguliers, dormants, en risque), tags et mémos commerciaux pour votre force de vente. Export de votre fichier à tout moment." }
         }
       },
       "team": {
