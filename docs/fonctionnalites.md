@@ -578,6 +578,8 @@ Un partenaire (agence, freelance, consultant, réseau de commerçants…) recomm
 |---|---|
 | Taux | 20 % du montant net payé (hors taxes et remises). Il peut être modifié pour chaque partenaire. |
 | Attribution | Par le cookie du lien partenaire au moment de créer le commerce, ou par un code saisi. Une seule attribution par commerce. Un partenaire ne peut pas s'attribuer son propre commerce. |
+| Durée du cookie | 30 jours (réglable dans Admin > Partenaires) ; un lien d'un partenaire inconnu ou non validé ne dépose aucun cookie |
+| Fenêtre de conversion | 90 jours (réglable) : le premier paiement doit arriver dans ce délai après l'inscription du commerce, sinon pas de commission |
 | Paiements concernés | Le **premier paiement** seulement (réglable) |
 | Délai de garantie | La commission devient disponible **30 jours** après le paiement |
 | Remboursement | Un paiement remboursé annule la commission correspondante, si elle n'a pas encore été versée |
@@ -756,13 +758,9 @@ Cette section liste ce qui **existe dans l'application mais n'est pas garanti à
 | **Taux et grille des monnaies** | Configuration | Prix et taux comptables initiaux approximatifs, à confirmer avant publication (grille dans l'admin > Offres, taux dans Finance > Taux comptables ; dinar algérien comptable initialisé au taux officiel ≈ 150). |
 | **Paiement en ligne en euros** | Configuration | Créer dans Stripe les tarifs en euros de chaque offre et les saisir dans l'admin (ou `STRIPE_TEST_PRICE_<OFFRE>_YEARLY_EUR_ID` en mode test), et ajouter une option en euros (`currency_options`) au coupon de parrainage. |
 | **Règlement hors ligne** | Configuration · À valider | Coordonnées bancaires à saisir par pays (sans coordonnées, l'option n'apparaît pas). À faire valider : compte ou entité locale en Algérie, comptes de FOVE pour les dépôts d'espèces (RDC), facturation en MAD, DZD ou CDF et mentions de TVA hors Union européenne. |
-| **Réglages partenaires « durée du cookie » et « fenêtre de conversion »** | Code incomplet | Modifiables dans l'admin, mais lus nulle part : le cookie du lien partenaire est fixé à 30 jours dans le code, et aucune fenêtre de conversion n'est appliquée. |
 | **Accès associé et responsable financier** | Code incomplet | Aucun écran ne permet d'attribuer ces rôles : il faut modifier la base de données. Le rôle « support » existe mais ne donne aucun accès. |
 | **Connexion Google des clients** | Configuration | Ajouter l'adresse de retour `…/api/client/auth/google/callback` (local et production) sur l'identifiant OAuth Google. Testé avec des réponses de Google simulées, jamais avec un vrai compte Google. |
 | **Textes du compte client FOVE** (conditions, confidentialité) | Code incomplet | Premier jet en français, marqué « projet », à faire relire par un juriste ([juridique-compte-client.md](juridique-compte-client.md)) ; identité légale de Dizayna à compléter. En anglais, arabe et espagnol, le texte s'affiche en français avec une mention, en attendant la traduction de la version validée. |
 | **Effacement des données d'un client (RGPD)** | Non testé | Aucun test automatisé de l'anonymisation. |
 | **Téléversement du logo** | Non testé | Aucun test automatisé. |
-| **Libellés « Pro »** | Incohérence | L'offre « Pro » n'existe plus. Côté commerçant, « Disponible avec un abonnement Pro » désigne les offres payantes. Côté admin, « Passer en Pro » active l'offre Business. |
-| **Mention PDF** dans les Paramètres | Incohérence | Le texte d'aide du compte Instagram parle de cartes « PNG et PDF », alors que le téléchargement en PDF a été retiré : seul le PNG existe. |
-| **« 100 clients » sur la vitrine** | Incohérence possible | Le chiffre est écrit en dur dans deux accroches. Il deviendra faux si la limite de l'offre Gratuite change dans l'administration. |
 | **Offre choisie sur la page tarifs** | Limite connue | Le choix est retenu dans le navigateur : il est perdu si la personne change d'appareil entre la page tarifs et l'inscription. |

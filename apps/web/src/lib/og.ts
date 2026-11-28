@@ -85,10 +85,10 @@ export function asList<T>(raw: unknown): T[] {
 }
 
 /** Métadonnées d’une page de la vitrine, lues dans `marketing.meta.<page>` selon la langue de la requête. */
-export async function localizedPageMeta(page: string, path: string): Promise<Metadata> {
+export async function localizedPageMeta(page: string, path: string, values?: Record<string, string | number>): Promise<Metadata> {
   const t = await getTranslations("marketing.meta");
   const extra = t.has(`${page}.keywords`) ? asList<string>(t.raw(`${page}.keywords`)) : [];
-  return pageMeta(t(`${page}.title`), t(`${page}.description`), path, extra, {
+  return pageMeta(t(`${page}.title`), t(`${page}.description`, values), path, extra, {
     ogLocale: t("ogLocale"),
     imageAlt: t("imageAlt"),
     keywords: asList<string>(t.raw("keywords")),

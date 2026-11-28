@@ -29,7 +29,7 @@
     },
     "pricing": {
       "title": "Precios — Planes de programa de fidelidad para comercios",
-      "description": "Empiece gratis con hasta 100 clientes y pase después a Essentiel, Business o Réseau, o a un plan a medida. Cero comisiones sobre sus ventas.",
+      "description": "Empiece gratis con hasta {freeCustomers} clientes y pase después a Essentiel, Business o Réseau, o a un plan a medida. Cero comisiones sobre sus ventas.",
       "keywords": ["precio tarjeta de fidelidad digital", "precio software de fidelidad", "suscripción fidelización tienda"]
     },
     "features": {
@@ -101,7 +101,7 @@
       "text": "Una tarjeta de fidelidad en el teléfono de sus clientes y un código QR en su mostrador. Escanean, compran y vuelven. Sin aplicación que instalar.",
       "cta": "Crear mi programa",
       "pricing": "Ver precios",
-      "note": "Gratis hasta 100 clientes, sin tarjeta bancaria. Configúrelo usted mismo en pocos minutos.",
+      "note": "Gratis hasta {freeCustomers} clientes, sin tarjeta bancaria. Configúrelo usted mismo en pocos minutos.",
       "wallet": "Sus clientes añaden su tarjeta al teléfono con un solo gesto:",
       "walletLabel": "Compatible con Apple Wallet y Google Wallet"
     },
@@ -273,7 +273,7 @@
     "whatsapp": "El envío automático por WhatsApp cubre compartir la tarjeta y «Recuperar mi tarjeta». Las campañas de SMS y WhatsApp no están incluidas en la suscripción; los créditos prepago se ofrecerán por separado.",
     "faqTitle": "Preguntas frecuentes",
     "faq": [
-      { "q": "¿El plan Gratuito tiene límite de tiempo?", "a": "No. Sigue siendo gratuito mientras se mantenga dentro de sus límites: 100 clientes, 1 establecimiento, 1 programa, sin colaboradores. Por encima, sus clientes actuales conservan sus tarjetas; solo los nuevos registros esperan a que pase a un plan superior." },
+      { "q": "¿El plan Gratuito tiene límite de tiempo?", "a": "No. Sigue siendo gratuito mientras se mantenga dentro de sus límites: {freeCustomers} clientes, 1 establecimiento, 1 programa, sin colaboradores. Por encima, sus clientes actuales conservan sus tarjetas; solo los nuevos registros esperan a que pase a un plan superior." },
       { "q": "¿Puedo cambiar de plan?", "a": "Sí, en cualquier momento desde el área Suscripción. Un plan superior se aplica de inmediato: la diferencia prorrateada se factura al momento. Pasar a un plan inferior no borra ninguna tarjeta: solo se bloquean las nuevas creaciones que superen los límites." },
       { "q": "¿Y si cancelo?", "a": "Su plan sigue activo hasta el final del periodo pagado y puede cambiar de opinión hasta entonces. Después, su cuenta pasa al plan Gratuito: no se elimina nada." },
       { "q": "¿Mi necesidad supera el plan Réseau?", "a": "El plan A medida se adapta a sus volúmenes: número de clientes, establecimientos y colaboradores, acompañamiento y contrato bajo presupuesto. Contáctenos." },

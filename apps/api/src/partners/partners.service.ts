@@ -261,6 +261,8 @@ export class PartnersService {
     return {
       found: true,
       partnerCode: partner.code,
+      // Durée du cookie d'attribution, réglée dans Admin > Partenaires.
+      cookieDays: (await this.getSettings()).cookieAttributionDays,
       targetUrl: `/tarifs?utm_source=partner&utm_campaign=${encodeURIComponent(partner.code)}`,
     };
   }
@@ -368,17 +370,20 @@ export class PartnersService {
     }
 
     const settings = await this.getSettings();
+    const previous = await this.prisma.client.partnerCommission.count({
+      where: { tenantId: payment.tenantId, partnerId: partner.id, status: { in: ["PENDING", "CONFIRMED", "AVAILABLE", "PAID"] } },
+    });
+
+    // Fenêtre de conversion (Admin > Partenaires) : le premier paiement doit arriver dans les N jours
+    // qui suivent l'inscription du commerce avec le lien ou le code du partenaire.
+    if (previous === 0 && Date.now() - attribution.createdAt.getTime() > settings.conversionWindowDays * 86_400_000) {
+      this.logger.log(`Commission ignorée pour ${payment.tenantId} : premier paiement après la fenêtre de conversion (${settings.conversionWindowDays} j)`);
+      return;
+    }
 
     // Règle 1er paiement seulement si configuré
     if (settings.firstPaymentOnly) {
-      const existingCommission = await this.prisma.client.partnerCommission.findFirst({
-        where: {
-          tenantId: payment.tenantId,
-          partnerId: partner.id,
-          status: { in: ["PENDING", "CONFIRMED", "AVAILABLE", "PAID"] },
-        },
-      });
-      if (existingCommission) {
+      if (previous > 0) {
         this.logger.log(`Commission récurrente ignorée pour ${payment.tenantId} (règle premier paiement uniquement)`);
         return;
       }

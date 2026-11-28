@@ -777,7 +777,7 @@
     "form": {
       "unlimited": "غير محدود",
       "saved": "تم تحديث الاشتراك",
-      "proActivated": "تم تفعيل اشتراك Pro",
+      "proActivated": "تم تفعيل باقة Business",
       "plan": "الباقة",
       "status": "الحالة",
       "statuses": {
@@ -798,10 +798,10 @@
         "programs": "البرامج"
       },
       "pro": {
-        "button": "الترقية إلى Pro",
-        "title": "تفعيل اشتراك Pro؟",
+        "button": "الترقية إلى Business",
+        "title": "تفعيل باقة Business؟",
         "consequence": "سيتم تفعيل باقة Business فورًا ويدويًا دون دفع عبر Stripe.",
-        "confirm": "تفعيل Pro"
+        "confirm": "تفعيل Business"
       },
       "advanced": {
         "button": "تطبيق الإعدادات المتقدمة",

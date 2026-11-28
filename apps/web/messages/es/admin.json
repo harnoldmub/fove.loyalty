@@ -777,7 +777,7 @@
     "form": {
       "unlimited": "ilimitado",
       "saved": "Suscripción actualizada",
-      "proActivated": "Suscripción Pro activada",
+      "proActivated": "Plan Business activado",
       "plan": "Plan",
       "status": "Estado",
       "statuses": {
@@ -798,10 +798,10 @@
         "programs": "Programas"
       },
       "pro": {
-        "button": "Pasar a Pro",
-        "title": "¿Activar la suscripción Pro?",
+        "button": "Pasar a Business",
+        "title": "¿Activar el plan Business?",
         "consequence": "El plan Business se activará de inmediato y manualmente, sin pago por Stripe.",
-        "confirm": "Activar Pro"
+        "confirm": "Activar Business"
       },
       "advanced": {
         "button": "Aplicar ajustes avanzados",

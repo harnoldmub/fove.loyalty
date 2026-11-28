@@ -29,7 +29,7 @@
     },
     "pricing": {
       "title": "Pricing — Loyalty program plans for merchants",
-      "description": "Start free with up to 100 customers, then move to Essential, Business or Network, or a custom plan. Zero commission on your sales.",
+      "description": "Start free with up to {freeCustomers} customers, then move to Essential, Business or Network, or a custom plan. Zero commission on your sales.",
       "keywords": ["digital loyalty card pricing", "merchant loyalty software price", "store loyalty subscription"]
     },
     "features": {
@@ -101,7 +101,7 @@
       "text": "A loyalty card on your customers’ phones, a QR code on your counter. They scan, they buy, they come back. No app to install.",
       "cta": "Create my program",
       "pricing": "See pricing",
-      "note": "Free up to 100 customers, no credit card. Set it up yourself in minutes.",
+      "note": "Free up to {freeCustomers} customers, no credit card. Set it up yourself in minutes.",
       "wallet": "Your customers add their card to their phone in one tap:",
       "walletLabel": "Works with Apple Wallet and Google Wallet"
     },
@@ -273,7 +273,7 @@
     "whatsapp": "Automatic WhatsApp messages cover sharing the card and “Find my card”. SMS and WhatsApp campaigns are not included in the subscription; prepaid credits will be offered separately.",
     "faqTitle": "Frequently asked questions",
     "faq": [
-      { "q": "Is the Free plan time-limited?", "a": "No. It stays free as long as you remain within its limits: 100 customers, 1 location, 1 program, no team members. Beyond that, your existing customers keep their cards; only new sign-ups wait until you move to a higher plan." },
+      { "q": "Is the Free plan time-limited?", "a": "No. It stays free as long as you remain within its limits: {freeCustomers} customers, 1 location, 1 program, no team members. Beyond that, your existing customers keep their cards; only new sign-ups wait until you move to a higher plan." },
       { "q": "Can I change plans?", "a": "Yes, at any time from the Subscription area. A higher plan applies immediately: the prorated difference is billed right away. Moving to a lower plan never deletes any card: only new items beyond the limits are blocked." },
       { "q": "What if I cancel?", "a": "Your plan stays active until the end of the paid period, and you can change your mind until then. After that, your account moves to the Free plan: nothing is deleted." },
       { "q": "Do I need more than the Network plan?", "a": "The Custom plan adapts to your volumes: number of customers, locations and team members, with support and a contract on quote. Get in touch." },

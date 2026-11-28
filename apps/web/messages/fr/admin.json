@@ -777,7 +777,7 @@
     "form": {
       "unlimited": "illimité",
       "saved": "Abonnement mis à jour",
-      "proActivated": "Abonnement Pro activé",
+      "proActivated": "Offre Business activée",
       "plan": "Offre",
       "status": "Statut",
       "statuses": {
@@ -798,10 +798,10 @@
         "programs": "Programmes"
       },
       "pro": {
-        "button": "Passer en Pro",
-        "title": "Activer l'abonnement Pro ?",
+        "button": "Passer en Business",
+        "title": "Activer l'offre Business ?",
         "consequence": "L'offre Business sera activée immédiatement et manuellement, sans paiement Stripe.",
-        "confirm": "Activer Pro"
+        "confirm": "Activer Business"
       },
       "advanced": {
         "button": "Appliquer les réglages avancés",

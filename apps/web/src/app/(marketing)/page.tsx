@@ -8,6 +8,7 @@ import { getTranslations } from "next-intl/server";
 import { localizedPageMeta, siteUrl } from "@/lib/og";
 import { serverGet } from "@/lib/server-api";
 import type { Plan } from "@/components/marketing/pricing-table";
+import { freeCustomerLimit } from "@/lib/free-plan";
 
 export async function generateMetadata() {
   return localizedPageMeta("home", "/");
@@ -105,7 +106,7 @@ export default async function HomePage() {
               <Link href="/#tarifs">{t("hero.pricing")}</Link>
             </Button>
           </div>
-          <p className="mt-4 text-sm text-ink-3">{t("hero.note")}</p>
+          <p className="mt-4 text-sm text-ink-3">{t("hero.note", { freeCustomers: await freeCustomerLimit(plans) })}</p>
 
           <div className="mt-8 border-t border-line pt-6">
             <p className="text-sm text-ink-2">{t("hero.wallet")}</p>
