@@ -215,6 +215,10 @@
       "body": "Either your application is awaiting approval by the FOVE team, or you haven’t applied yet.",
       "cta": "Submit an application"
     },
+    "suspended": {
+      "title": "Partner space suspended",
+      "body": "Your partner space is no longer available. For any questions, contact the FOVE team at contact@fove.digital."
+    },
     "unverified": {
       "title": "Confirm your email address",
       "body": "To access your partner space (commissions, payouts, leads), first confirm your email address: sign in again with the code we send you.",

@@ -17,6 +17,7 @@ const CODE_MAX_ATTEMPTS = 5;
 const RESEND_DELAY_MS = 60_000;
 const HOUR_MS = 3_600_000;
 const MAX_CODES_PER_EMAIL_HOUR = 5;
+const MAX_CODES_PER_EMAIL_DAY = 20;
 // Large : un bureau ou un réseau mobile partage une même adresse entre beaucoup de personnes.
 const MAX_CODES_PER_IP_HOUR = 60;
 
@@ -66,10 +67,15 @@ export class AuthService {
       throw badRequest("too_soon", "Patientez une minute avant de redemander un code");
     }
     const since = new Date(now - HOUR_MS);
-    const [perEmail, perIp] = await Promise.all([
+    const [perEmail, perIp, perEmailDay] = await Promise.all([
       db.userLoginCode.count({ where: { email, createdAt: { gt: since } } }),
       ip ? db.userLoginCode.count({ where: { ip, createdAt: { gt: since } } }) : Promise.resolve(0),
+      // Plafond journalier : borne le nombre d'essais possibles sur un même compte (codes gardés 24 h).
+      db.userLoginCode.count({ where: { email, createdAt: { gt: new Date(now - 24 * HOUR_MS) } } }),
     ]);
+    if (perEmailDay >= MAX_CODES_PER_EMAIL_DAY) {
+      throw new AppError(HttpStatus.TOO_MANY_REQUESTS, "too_many_codes_today", "Trop de codes demandés aujourd'hui : réessayez demain");
+    }
     if (perEmail >= MAX_CODES_PER_EMAIL_HOUR || perIp >= MAX_CODES_PER_IP_HOUR) {
       throw new AppError(HttpStatus.TOO_MANY_REQUESTS, "too_many_codes", "Trop de codes demandés : réessayez dans une heure");
     }
@@ -156,14 +162,14 @@ export class AuthService {
     const db = this.prisma.client;
     const [memberships, partner] = await Promise.all([
       db.tenantMembership.count({ where: { userId: user.id, status: "ACTIVE" } }),
-      user.isPartner
-        ? Promise.resolve(1)
-        : db.partner.count({
-            where: {
-              status: { notIn: ["REJECTED", "INACTIVE"] },
-              OR: [{ userId: user.id }, ...(user.emailVerifiedAt ? [{ userId: null, email: { equals: user.email, mode: "insensitive" as const } }] : [])],
-            },
-          }),
+      // Espace partenaire : profil validé, ou candidature en cours (l'espace l'indique). Jamais un profil
+      // suspendu ou refusé, même si le compte a été marqué partenaire auparavant.
+      db.partner.count({
+        where: {
+          status: { in: ["APPROVED", "ACTIVE", "PENDING", "UNDER_REVIEW"] },
+          OR: [{ userId: user.id }, ...(user.emailVerifiedAt ? [{ userId: null, email: { equals: user.email, mode: "insensitive" as const } }] : [])],
+        },
+      }),
     ]);
     return { admin: isAdminUser(user), merchant: memberships > 0, partner: partner > 0 };
   }

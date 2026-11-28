@@ -234,7 +234,6 @@ export class PartnerGuard implements CanActivate {
     const auth = req.auth;
     if (!auth?.user) throw unauthorized();
     if (auth.user.isSuperAdmin) return true;
-    if (auth.user.isPartner) return true;
 
     // Rattachement par email seulement si l'email du compte est confirmé, et à un profil encore libre.
     const byEmail = auth.user.emailVerifiedAt ? [{ email: { equals: auth.user.email, mode: "insensitive" as const }, userId: null }] : [];

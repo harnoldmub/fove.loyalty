@@ -215,6 +215,10 @@
       "body": "Votre candidature est soit en attente de validation par l’équipe FOVE, soit vous n’avez pas encore postulé.",
       "cta": "Déposer une candidature"
     },
+    "suspended": {
+      "title": "Espace partenaire suspendu",
+      "body": "Votre espace partenaire n'est plus accessible. Pour toute question, contactez l'équipe FOVE à contact@fove.digital."
+    },
     "unverified": {
       "title": "Confirmez votre adresse email",
       "body": "Pour accéder à votre espace partenaire (commissions, versements, prospects), confirmez d’abord votre adresse email : reconnectez-vous avec le code que nous vous envoyons.",

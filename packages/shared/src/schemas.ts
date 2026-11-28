@@ -80,16 +80,19 @@ export const createTenantSchema = tenantFields.extend({
   currency: z.string().length(3).default("CDF"),
   timezone: z.string().max(64).default("Africa/Kinshasa"),
 });
+/** Adresse web http(s) seulement : jamais `javascript:` ni `data:` (liens, Wallet, emails). */
+export const webUrl = () => z.url({ protocol: /^https?$/ });
+
 // Jamais `createTenantSchema.partial()` : avec Zod 4, les valeurs par défaut s'appliquent aussi aux champs
 // optionnels et chaque modification partielle remettait pays, devise, fuseau et couleur à leurs défauts.
 export const updateTenantSchema = tenantFields.partial().extend({
-  logoUrl: z.url().max(500).nullable().optional(),
-  walletBannerUrl: z.url().max(500).nullable().optional(),
+  logoUrl: webUrl().max(500).nullable().optional(),
+  walletBannerUrl: webUrl().max(500).nullable().optional(),
   walletBannerVersion: z.string().max(64).nullable().optional(),
   instagramHandle: z.string().max(64).nullable().optional(),
   legalName: z.string().max(120).nullable().optional(),
   contactEmail: z.email().nullable().optional(),
-  privacyPolicyUrl: z.url().max(500).nullable().optional(),
+  privacyPolicyUrl: webUrl().max(500).nullable().optional(),
   /** Langue des cartes Wallet et messages clients ; null = langue du pays. */
   locale: z.enum(SUPPORTED_LOCALES).nullable().optional(),
 });
@@ -308,7 +311,7 @@ export const createApiKeySchema = z.object({
   name: z.string().trim().min(2).max(60),
   kind: z.enum(["SECRET", "PUBLISHABLE"]),
   scopes: z.array(z.enum(API_SCOPES)).default([]),
-  allowedOrigins: z.array(z.url()).max(20).default([]),
+  allowedOrigins: z.array(webUrl()).max(20).default([]),
   environment: z.enum(["TEST", "LIVE"]).default("TEST"),
 });
 export const webhookEndpointSchema = z.object({

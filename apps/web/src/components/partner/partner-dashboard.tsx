@@ -210,6 +210,18 @@ export function PartnerDashboard({ user, spaces }: { user: { name: string; email
     );
   }
 
+  // Profil suspendu ou refusé : plus d'accès à l'espace (l'équipe FOVE est le point de contact).
+  if (error instanceof ApiError && error.code === "partner_suspended") {
+    return (
+      <div className="mx-auto max-w-lg px-4 py-20 text-center">
+        <Panel className="p-8">
+          <h2 className="font-display text-xl font-bold text-ink mb-2">{t("suspended.title")}</h2>
+          <p className="text-xs text-ink-2">{t("suspended.body")}</p>
+        </Panel>
+      </div>
+    );
+  }
+
   if (!partner) {
     return (
       <div className="mx-auto max-w-lg px-4 py-20 text-center">

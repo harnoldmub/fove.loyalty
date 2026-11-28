@@ -1,7 +1,7 @@
 import { Body, Controller, Delete, Get, HttpCode, Param, ParseUUIDPipe, Patch, Post, Query } from "@nestjs/common";
 import { ApiTags } from "@nestjs/swagger";
 import { z } from "zod";
-import { BILLING_CURRENCIES } from "@fove/shared";
+import { BILLING_CURRENCIES, webUrl } from "@fove/shared";
 import { ZodPipe } from "../../common/zod.pipe";
 import { Auth } from "../../common/decorators";
 import type { AuthState } from "../../common/context";
@@ -30,7 +30,7 @@ const validateSchema = z.object({
   paidAt: z.iso.datetime().optional(),
   bankReference: z.string().trim().max(140).optional(),
   receiptNumber: z.string().trim().max(60).optional(),
-  proofUrl: z.url().max(500).optional().or(z.literal("")),
+  proofUrl: webUrl().max(500).optional().or(z.literal("")),
   note: z.string().trim().max(500).optional(),
   acceptShortfall: z.boolean().optional(),
 });

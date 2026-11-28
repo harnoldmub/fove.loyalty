@@ -30,6 +30,7 @@ const CODE_MAX_ATTEMPTS = 5;
 const RESEND_DELAY_MS = 60_000;
 const HOUR_MS = 3_600_000;
 const MAX_CODES_PER_EMAIL_HOUR = 5;
+const MAX_CODES_PER_EMAIL_DAY = 20;
 // Large : un Wi-Fi de commerce ou un réseau mobile partage une même adresse entre beaucoup de clients.
 const MAX_CODES_PER_IP_HOUR = 60;
 
@@ -73,10 +74,15 @@ export class ClientAccountService {
       throw badRequest("too_soon", "Patientez une minute avant de redemander un code");
     }
     const since = new Date(now - HOUR_MS);
-    const [perEmail, perIp] = await Promise.all([
+    const [perEmail, perIp, perEmailDay] = await Promise.all([
       db.clientLoginCode.count({ where: { email, createdAt: { gt: since } } }),
       ip ? db.clientLoginCode.count({ where: { ip, createdAt: { gt: since } } }) : Promise.resolve(0),
+      // Plafond journalier : borne le nombre d'essais possibles sur un même compte (codes gardés 24 h).
+      db.clientLoginCode.count({ where: { email, createdAt: { gt: new Date(now - 24 * HOUR_MS) } } }),
     ]);
+    if (perEmailDay >= MAX_CODES_PER_EMAIL_DAY) {
+      throw new AppError(HttpStatus.TOO_MANY_REQUESTS, "too_many_codes_today", "Trop de codes demandés aujourd'hui : réessayez demain");
+    }
     if (perEmail >= MAX_CODES_PER_EMAIL_HOUR || perIp >= MAX_CODES_PER_IP_HOUR) {
       throw new AppError(HttpStatus.TOO_MANY_REQUESTS, "too_many_codes", "Trop de codes demandés : réessayez dans une heure");
     }
