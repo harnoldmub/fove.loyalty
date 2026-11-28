@@ -1,12 +1,12 @@
 # FOVE — État du projet
 
-> Mis à jour le **28 novembre 2026**, dernier commit analysé **`1de707f`** (branche `feat/parrainage-clients`). Version précédente : 2 novembre 2026, commit `139126f` (doc Claude Docs « FOVE — État du projet »). Référentiel fonctionnel détaillé : [fonctionnalites.md](fonctionnalites.md).
+> Mis à jour le **28 novembre 2026**, dernier commit analysé **`34f4868`** (`main`, après la PR #26). Version précédente : 2 novembre 2026, commit `139126f` (doc Claude Docs « FOVE — État du projet »). Référentiel fonctionnel détaillé : [fonctionnalites.md](fonctionnalites.md).
 
 ## 1. Synthèse
 
-FOVE fonctionne de bout en bout en local : fidélité multi-commerces (points et tampons), compte client FOVE, offres et facturation multi-devises, partenaires, parrainage, relances automatiques, caisse partagée, administration avec double authentification. **397 tests automatisés passent**, typecheck et lint sont au vert, la CI de `main` passe.
+FOVE fonctionne de bout en bout en local : fidélité multi-commerces (points et tampons), compte client FOVE, offres et facturation multi-devises, partenaires, parrainage, relances automatiques, caisse partagée, administration avec double authentification. **400 tests automatisés passent**, typecheck et lint sont au vert, la CI de `main` passe.
 
-Depuis la version du 2 novembre : **110 commits** (67 saboukellal, 43 Arnold MUBUANGA YATE), **24 PR mergées**. Les chiffres ont triplé : 85 → 330 tests API, 37 → 69 modèles, 6 → 34 migrations, 38 → 60 pages.
+Depuis la version du 2 novembre : **112 commits** (69 saboukellal, 43 Arnold MUBUANGA YATE), **26 PR mergées**. Les chiffres ont triplé : 85 → 333 tests API, 37 → 69 modèles, 6 → 34 migrations, 38 → 60 pages.
 
 Ce qui empêche encore de dire « 100 % prêt pour la production » :
 
@@ -24,7 +24,7 @@ Ce qui empêche encore de dire « 100 % prêt pour la production » :
 | Partiel | Fonctionne avec un défaut connu (section 6) |
 | À faire | Décidé ou documenté, pas encore codé |
 
-**Méthode.** Lecture des 110 commits et des specs `docs/chantier-*.md` ; `pnpm typecheck`, `pnpm --filter @fove/web lint`, `pnpm test` le 28/11/2026 sur `1de707f` ; contrôles en direct (Playwright local) des chantiers livrés ce mois-ci.
+**Méthode.** Lecture des 112 commits et des specs `docs/chantier-*.md` ; `pnpm typecheck`, `pnpm --filter @fove/web lint`, `pnpm test` le 28/11/2026 sur `34f4868` ; contrôles en direct (Playwright local) des chantiers livrés ce mois-ci.
 
 ## 2. Architecture et stack
 
@@ -54,13 +54,13 @@ Modules API : `auth`, `tenants`, `customers`, `loyalty`, `rewards`, `cards` (Goo
 | Commerces et onboarding | Pays détecté, ville, devise, logo, sous-domaine, plusieurs commerces par compte | Testé | `tenant-isolation`, `freemium` |
 | Équipe et rôles | Propriétaire, gérant, caissier, lecteur ; limite d'établissement ; limite de collaborateurs de l'offre, « Remplacer » | Testé | `permissions`, `staff-quota` |
 | Caisse partagée | Code caisse 4 chiffres, appareil caisse, « Qui encaisse ? », verrouillage, annulations tracées, anomalies | Vérifié | `register` ; contrôle en direct |
-| Clients (CRM) | Fiche, import, notes, tags, RFM, anonymisation, export RGPD | Testé | `client-retention`, `public` ; import sans test |
+| Clients (CRM) | Fiche, import, notes, tags, RFM, anonymisation, export RGPD, export CSV de la liste filtrée (protégé contre l'injection de formules) | Testé | `client-retention`, `public`, `customers-export` ; import sans test |
 | Programmes et opérations | Points et tampons, registre immuable, idempotence, concurrence, expiration | Testé | `loyalty`, `cards` |
 | Récompenses | Cadeau, pourcentage, montant fixe, stock, annulation | Testé | `loyalty`, `reward-discounts` |
 | Inscription et carte client | QR, `/join`, carte en temps réel, écran d'accueil, image PNG, « Retrouver ma carte » | Testé | `public`, `client-join` |
 | Compte client FOVE | Code email ou Google, « Mes cartes », cartes aux couleurs du commerce, export et suppression des comptes inactifs | Testé | `client-account`, `client-google`, `client-cards` ; textes juridiques « projet » |
 | Relances et anniversaire | Liste « À relancer » (WhatsApp manuel), relances automatiques, cadeau d'anniversaire, heure locale, résultats | Vérifié | `automations`, `relances-socle` ; contrôle en direct |
-| Parrainage entre clients | Lien par carte, bienvenue du filleul, parrain récompensé au premier passage, plafond mensuel, réglages et suivi | Vérifié | `customer-referrals` ; contrôle en direct (branche en PR) |
+| Parrainage entre clients | Lien par carte, bienvenue du filleul, parrain récompensé au premier passage, plafond mensuel, réglages et suivi | Vérifié | `customer-referrals` ; contrôle en direct |
 | Campagnes Wallet | Messages groupés sur les cartes, offres payantes | Non vérifié | Jamais envoyées chez Google ou Apple |
 | Google Wallet | Lien signé, mise à jour du solde, notifications | Non vérifié | Aucun test dédié ; jamais appelé chez Google ; compte émetteur à finaliser |
 | Apple Wallet | Pass signé, service PassKit, mises à jour | Partiel | Aucun test ; 500 sans certificat (section 6) |
@@ -79,11 +79,11 @@ Modules API : `auth`, `tenants`, `customers`, `loyalty`, `rewards`, `cards` (Goo
 
 ## 4. Tests et qualité
 
-Mesures du 28/11/2026 sur `1de707f`, base PostgreSQL 16 locale.
+Mesures du 28/11/2026 sur `34f4868`, base PostgreSQL 16 locale.
 
 | Vérification | Commande | Résultat |
 |---|---|---|
-| Tests API (intégration, base réelle) | `pnpm test` | **330 / 330** dans 42 fichiers |
+| Tests API (intégration, base réelle) | `pnpm test` | **333 / 333** dans 43 fichiers |
 | Tests `packages/shared` | `pnpm test` | 58 / 58 |
 | Tests `packages/sdk` | `pnpm test` | 5 / 5 |
 | Tests `packages/widget` | `pnpm test` | 4 / 4 |
@@ -105,10 +105,12 @@ Mesures du 28/11/2026 sur `1de707f`, base PostgreSQL 16 locale.
 | 24–25 nov. | Compte client FOVE A1–A5 (#2), sécurité partenaires (#3), téléphone facultatif (#4), limites email non confirmé (#5), parrainage commerçants (#7), multi-devises et encaissement (#9). |
 | 26 nov. | Partenaires sans encaissement (#10), connexion par code (#11), arrivée admin et gabarit email (#12, #13). |
 | 27 nov. | Espaces partenaire (#14), chargement des pages (#15), retrait du mobile money (#16). |
-| 28 nov. | Emails à deux gabarits et notifications équipe (#17), revue sécu + 2FA admin (#18), chargement des données (#19), incohérences (#20), relances + anniversaire (#21), correctif CI fuseau (#22), code caisse (#23), limite de collaborateurs (#24). En PR : export clients, parrainage entre clients. |
+| 28 nov. | Emails à deux gabarits et notifications équipe (#17), revue sécu + 2FA admin (#18), chargement des données (#19), incohérences (#20), relances + anniversaire (#21), correctif CI fuseau (#22), code caisse (#23), limite de collaborateurs (#24), parrainage entre clients et état du projet (#25), export CSV des clients (#26). |
 
 | PR | Branche | Contenu |
 |---|---|---|
+| #26 | `feat/export-clients` | Export CSV des clients |
+| #25 | `feat/parrainage-clients` | Parrainage entre clients P1–P3, ce document |
 | #24 | `fix/quota-collaborateurs` | Limite de collaborateurs fiable, « Remplacer » |
 | #23 | `feat/code-caisse` | Caisse partagée C1–C3 |
 | #22 | `fix/test-fuseau-ci` | Test de plage horaire sans changement d'heure |
@@ -145,7 +147,7 @@ Rien de bloquant pour le cœur métier. Priorité : recetter les services extern
 | Production | `ADMIN_MFA` et IP vue par l'API (journal d'audit) à vérifier | 2FA ou traçabilité inopérantes | Contrôle sur Railway |
 | Juridique | Textes du compte client en « projet », durée de conservation 36 mois | Mise en ligne du compte client | Relecture juriste puis traduction |
 | `.env.example` | En CRLF, 13 variables vides | Installation à neuf fragile | Passer en LF, commenter les variables vides |
-| Documentation | `architecture.md` annonce Apple Wallet « à venir » ; le README annonce 67 tests API (330) | Lecteurs induits en erreur | Mettre à jour les deux fichiers |
+| Documentation | `architecture.md` annonce Apple Wallet « à venir » ; le README annonce 67 tests API (333) | Lecteurs induits en erreur | Mettre à jour les deux fichiers |
 | Limiteur de débit | En mémoire, une seule instance d'API | Contournable à 2 instances ou plus | Stockage partagé avant de multiplier les instances |
 | Tâches planifiées | Cron GitHub toutes les 5 min, « au mieux » | Relances, échéances et expirations avec retard possible | Acceptable aujourd'hui |
 | `package-lock.json` | Fichier npm non suivi à la racine, absent du `.gitignore` | Installation avec le mauvais outil | Supprimer et ignorer |
@@ -166,7 +168,7 @@ Rien de bloquant pour le cœur métier. Priorité : recetter les services extern
 
 ## 7. Tenir ce document à jour
 
-À chaque PR mergée :
+À chaque PR mergée, **sur `main` après le merge** (les chiffres d'une branche ne comptent pas les PR mergées à côté) :
 
 1. Lister les nouveaux commits : `git log --oneline <dernier commit analysé>..HEAD`.
 2. Ajouter la PR en tête du tableau de la section 5.
@@ -179,5 +181,6 @@ Rien de bloquant pour le cœur métier. Priorité : recetter les services extern
 
 | Date | Dernier commit analysé | Changement |
 |---|---|---|
+| 2026-11-28 | `34f4868` | PR #25 et #26 mergées : 400 tests, export CSV des clients, parrainage entre clients sorti de « en PR » ; mise à jour faite désormais sur `main` après merge |
 | 2026-11-28 | `1de707f` | Document passé dans le dépôt ; 110 commits et 24 PR repris, 397 tests, statuts par domaine refaits, dettes mises à jour ; historique par PR au lieu de par commit |
 | 2026-11-02 | `139126f` | Première version (Claude Docs) : 28 commits, 117 tests, parcours commerçant en direct |
