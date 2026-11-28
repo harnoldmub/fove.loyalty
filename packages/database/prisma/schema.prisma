@@ -160,6 +160,7 @@ model Tenant {
   media          MediaAsset[]
   customerNotes  CustomerNote[]
   customerMessages CustomerMessage[]
+  automationRules  AutomationRule[]
   appleWalletRegistrations AppleWalletRegistration[]
   invoices       Invoice[]
   payments       Payment[]
@@ -469,6 +470,37 @@ enum AutomationScenario {
 enum MessageChannel {
   WALLET
   EMAIL
+}
+
+/// Règles des messages automatiques d'un commerce (docs/chantier-relances-anniversaire.md).
+enum AutomationRuleKind {
+  NEAR_REWARD
+  REWARD_WAITING
+  AT_RISK
+  DORMANT
+  BIRTHDAY
+}
+
+/// Réglage d'un scénario par commerce : désactivé par défaut ; textes vides = textes par défaut traduits.
+model AutomationRule {
+  id         String             @id @default(uuid()) @db.Uuid
+  tenantId   String             @db.Uuid
+  tenant     Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  kind       AutomationRuleKind
+  enabled    Boolean            @default(false)
+  title      String?
+  body       String?
+  /// Dormants : bonus de retour (points ou tampons) crédité avec le message ; null = message seul.
+  bonus      Int?
+  /// Anniversaire : cadeau, période de validité et message du jour J.
+  giftLabel  String?
+  daysBefore Int                @default(3)
+  daysAfter  Int                @default(7)
+  dayTitle   String?
+  dayBody    String?
+  updatedAt  DateTime           @updatedAt
+
+  @@unique([tenantId, kind])
 }
 
 /// Journal des messages automatiques envoyés (une seule fois par clé) et suivi du retour du client.

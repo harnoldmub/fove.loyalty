@@ -1,4 +1,51 @@
 {
+  "automations": {
+    "title": "Recordatorios automáticos",
+    "description": "Mensajes enviados automáticamente para que tus clientes vuelvan: en su tarjeta Wallet, y por correo si lo aceptaron.",
+    "rules": "Cada escenario se activa por separado. Un cliente recibe como máximo un recordatorio cada 14 días, entre las 10 h y las 19 h. Un texto vacío usa el texto propuesto.",
+    "on": "Activado",
+    "off": "Desactivado",
+    "enable": "Activar este escenario",
+    "messageTitle": "Título",
+    "messageBody": "Mensaje",
+    "variables": "Variables: {prénom}, {commerce}, {solde}, {récompense}, {reste}.",
+    "bonus": "Ofrecer un bono de regreso (abonado en la tarjeta con el mensaje)",
+    "bonusAmount": "Bono (puntos o sellos)",
+    "preview": "Vista previa",
+    "save": "Guardar",
+    "saved": "Escenario guardado",
+    "paidOnly": {
+      "title": "Solo en planes de pago",
+      "body": "En el plan Gratuito, encuentra a los clientes que recordar en la lista «Por recordar» y envíales un WhatsApp con un clic.",
+      "cta": "Ver planes"
+    },
+    "sample": {
+      "firstName": "Awa",
+      "balance": "7 sellos",
+      "reward": "un café gratis",
+      "remaining": "1 sello",
+      "gift": "un postre gratis",
+      "date": "15 de marzo"
+    },
+    "kinds": {
+      "NEAR_REWARD": {
+        "title": "Casi una recompensa",
+        "when": "Le falta una sola visita (o menos del 20 % de los puntos), dos días después de su última visita."
+      },
+      "REWARD_WAITING": {
+        "title": "Recompensa pendiente",
+        "when": "Su recompensa está disponible desde hace 7 días sin usarse."
+      },
+      "AT_RISK": {
+        "title": "Cliente en riesgo",
+        "when": "Sin visitas desde hace 35 días: recordatorio de su saldo y próxima recompensa."
+      },
+      "DORMANT": {
+        "title": "Cliente inactivo",
+        "when": "Sin visitas desde hace 75 días: mensaje de reconquista, con un bono de regreso si quieres."
+      }
+    }
+  },
   "billing": {
     "toasts": {
       "mockActivated": "Plan {name} activado (modo simulado, sin pago)",
@@ -524,6 +571,7 @@
     "integrations": "Integraciones",
     "billing": "Suscripción",
     "referral": "Recomendaciones",
+    "automations": "Recordatorios",
     "settings": "Ajustes",
     "home": "Inicio"
   },

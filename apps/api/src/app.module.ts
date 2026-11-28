@@ -6,6 +6,8 @@ import { AuditService } from "./common/audit.service";
 import { EmailService } from "./notifications/email.service";
 import { TeamAlertService } from "./notifications/team-alert.service";
 import { MfaService } from "./auth/mfa.service";
+import { AutomationService } from "./automation/automation.service";
+import { AutomationController } from "./automation/automation.controller";
 import { TeamDigestService } from "./notifications/team-digest.service";
 import { BillingEmailService } from "./billing/billing-emails.service";
 import { WhatsAppService } from "./notifications/whatsapp.service";
@@ -93,6 +95,7 @@ import { ClientJoinController } from "./client-account/client-join.controller";
     AppleWalletServiceController,
     ClientAccountController,
     ClientJoinController,
+    AutomationController,
   ],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },
@@ -106,6 +109,7 @@ import { ClientJoinController } from "./client-account/client-join.controller";
     SessionService,
     AuthService,
     MfaService,
+    AutomationService,
     ClientSessionService,
     ClientAccountService,
     ClientSessionGuard,

@@ -1,4 +1,51 @@
 {
+  "automations": {
+    "title": "Relances automatiques",
+    "description": "Des messages envoyés tout seuls pour faire revenir vos clients : sur leur carte Wallet, et par email s'ils l'ont accepté.",
+    "rules": "Chaque scénario s'active séparément. Un client reçoit au plus une relance tous les 14 jours, entre 10 h et 19 h. Un texte laissé vide utilise le texte proposé.",
+    "on": "Activée",
+    "off": "Désactivée",
+    "enable": "Activer ce scénario",
+    "messageTitle": "Titre",
+    "messageBody": "Message",
+    "variables": "Variables : {prénom}, {commerce}, {solde}, {récompense}, {reste}.",
+    "bonus": "Offrir un bonus de retour (crédité sur la carte avec le message)",
+    "bonusAmount": "Bonus (points ou tampons)",
+    "preview": "Aperçu",
+    "save": "Enregistrer",
+    "saved": "Scénario enregistré",
+    "paidOnly": {
+      "title": "Réservé aux offres payantes",
+      "body": "Sur l'offre Gratuite, retrouvez les clients à relancer dans la liste « À relancer » et envoyez-leur un message WhatsApp en un clic.",
+      "cta": "Voir les offres"
+    },
+    "sample": {
+      "firstName": "Awa",
+      "balance": "7 tampons",
+      "reward": "un café offert",
+      "remaining": "1 tampon",
+      "gift": "un dessert offert",
+      "date": "15 mars"
+    },
+    "kinds": {
+      "NEAR_REWARD": {
+        "title": "Presque une récompense",
+        "when": "Il manque un seul passage (ou moins de 20 % des points), deux jours après sa dernière visite."
+      },
+      "REWARD_WAITING": {
+        "title": "Récompense qui attend",
+        "when": "Sa récompense est disponible depuis 7 jours sans être utilisée."
+      },
+      "AT_RISK": {
+        "title": "Client en risque",
+        "when": "Pas de visite depuis 35 jours : rappel de son solde et de la prochaine récompense."
+      },
+      "DORMANT": {
+        "title": "Client dormant",
+        "when": "Pas de visite depuis 75 jours : message de reconquête, avec un bonus de retour si vous le souhaitez."
+      }
+    }
+  },
   "billing": {
     "toasts": {
       "mockActivated": "Offre {name} activée (mode simulé, aucun paiement)",
@@ -524,6 +571,7 @@
     "integrations": "Intégrations",
     "billing": "Abonnement",
     "referral": "Parrainage",
+    "automations": "Relances",
     "settings": "Paramètres",
     "home": "Accueil"
   },

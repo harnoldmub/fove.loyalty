@@ -1,4 +1,51 @@
 {
+  "automations": {
+    "title": "Automatic follow-ups",
+    "description": "Messages sent automatically to bring your customers back: on their Wallet card, and by email if they agreed.",
+    "rules": "Each scenario is turned on separately. A customer receives at most one follow-up every 14 days, between 10 am and 7 pm. An empty text uses the suggested one.",
+    "on": "On",
+    "off": "Off",
+    "enable": "Turn on this scenario",
+    "messageTitle": "Title",
+    "messageBody": "Message",
+    "variables": "Variables: {prénom}, {commerce}, {solde}, {récompense}, {reste}.",
+    "bonus": "Offer a welcome-back bonus (credited to the card with the message)",
+    "bonusAmount": "Bonus (points or stamps)",
+    "preview": "Preview",
+    "save": "Save",
+    "saved": "Scenario saved",
+    "paidOnly": {
+      "title": "Paid plans only",
+      "body": "On the Free plan, find the customers to follow up in the “To follow up” list and send them a WhatsApp message in one click.",
+      "cta": "See plans"
+    },
+    "sample": {
+      "firstName": "Awa",
+      "balance": "7 stamps",
+      "reward": "a free coffee",
+      "remaining": "1 stamp",
+      "gift": "a free dessert",
+      "date": "15 March"
+    },
+    "kinds": {
+      "NEAR_REWARD": {
+        "title": "Almost a reward",
+        "when": "Only one visit left (or less than 20% of the points), two days after their last visit."
+      },
+      "REWARD_WAITING": {
+        "title": "Reward waiting",
+        "when": "Their reward has been available for 7 days without being used."
+      },
+      "AT_RISK": {
+        "title": "At-risk customer",
+        "when": "No visit for 35 days: reminder of their balance and next reward."
+      },
+      "DORMANT": {
+        "title": "Dormant customer",
+        "when": "No visit for 75 days: win-back message, with a welcome-back bonus if you wish."
+      }
+    }
+  },
   "billing": {
     "toasts": {
       "mockActivated": "{name} plan activated (simulated mode, no payment)",
@@ -524,6 +571,7 @@
     "integrations": "Integrations",
     "billing": "Subscription",
     "referral": "Referrals",
+    "automations": "Follow-ups",
     "settings": "Settings",
     "home": "Home"
   },
