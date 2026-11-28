@@ -282,7 +282,8 @@ export function LoginForm() {
   );
 }
 
-export function SignupForm() {
+/** `freeCustomers` : clients inclus dans l'offre Gratuite (réglage de l'administration), lu par la page serveur. */
+export function SignupForm({ freeCustomers = 100 }: { freeCustomers?: number }) {
   const searchParams = useSearchParams();
   const { offre, planName } = usePlanChoice("signup");
   const t = useTranslations("auth");
@@ -310,7 +311,7 @@ export function SignupForm() {
   return (
     <>
       <Heading title={t("signup.title")}>
-        {planName ? t("signup.subtitleWithPlan", { plan: planName }) : t("signup.subtitle")}
+        {planName ? t("signup.subtitleWithPlan", { plan: planName }) : t("signup.subtitle", { freeCustomers })}
       </Heading>
       <GoogleLogin next={afterAuthPath()} />
       <CodeAuth

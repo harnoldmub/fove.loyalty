@@ -1,16 +1,19 @@
 import { getTranslations } from "next-intl/server";
 import { Pricing } from "@/components/marketing/pricing";
 import { asList, localizedPageMeta } from "@/lib/og";
+import { freeCustomerLimit } from "@/lib/free-plan";
 
 export async function generateMetadata() {
-  return localizedPageMeta("pricing", "/tarifs");
+  return localizedPageMeta("pricing", "/tarifs", { freeCustomers: await freeCustomerLimit() });
 }
 
 type FaqItem = { q: string; a: string };
 
 export default async function PricingPage() {
   const t = await getTranslations("marketing.pricingPage");
-  const faq = asList<FaqItem>(t.raw("faq"));
+  const freeCustomers = String(await freeCustomerLimit());
+  // Réponses brutes (aussi publiées en JSON-LD) : la limite de l'offre Gratuite vient de l'administration.
+  const faq = asList<FaqItem>(t.raw("faq")).map((item) => ({ ...item, a: item.a.replaceAll("{freeCustomers}", freeCustomers) }));
   const faqJsonLd = {
     "@context": "https://schema.org",
     "@type": "FAQPage",
