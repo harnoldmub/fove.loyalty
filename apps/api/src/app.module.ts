@@ -9,6 +9,7 @@ import { MfaService } from "./auth/mfa.service";
 import { AutomationService } from "./automation/automation.service";
 import { AutomationController } from "./automation/automation.controller";
 import { RegisterService } from "./register/register.service";
+import { AlertsService } from "./register/alerts.service";
 import { RegisterController } from "./register/register.controller";
 import { TeamDigestService } from "./notifications/team-digest.service";
 import { BillingEmailService } from "./billing/billing-emails.service";
@@ -114,6 +115,7 @@ import { ClientJoinController } from "./client-account/client-join.controller";
     MfaService,
     AutomationService,
     RegisterService,
+    AlertsService,
     ClientSessionService,
     ClientAccountService,
     ClientSessionGuard,

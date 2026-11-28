@@ -111,3 +111,42 @@ describe("caisse", () => {
     expect((await cashier.post("/api/app/register/activate", { name: "Caisse" })).status).toBe(403);
   });
 });
+
+describe("surveillance des annulations", () => {
+  it("deux annulations de récompense par le même caissier pour le même client : point à vérifier et email au propriétaire", async () => {
+    const { owner, tablet, accountId, cashierMembership } = await shopWithRegister();
+    const program = await db.loyaltyAccount.findUniqueOrThrow({ where: { id: accountId }, select: { programId: true } });
+    const reward = (await owner.client.post("/api/app/rewards", { programId: program.programId, name: "Café offert", cost: 10 })).body as { id: string };
+    await db.loyaltyAccount.update({ where: { id: accountId }, data: { balance: 10 } });
+    await unlock(tablet, cashierMembership.id, "2580");
+
+    const useAndCancel = async (n: number) => {
+      const red = await tablet.post("/api/app/redemptions", { accountId, rewardId: reward.id, idempotencyKey: `redeem-key-${n}` });
+      expect(red.status).toBe(201);
+      const id = (red.body.redemption?.id ?? red.body.id) as string;
+      expect((await tablet.post(`/api/app/redemptions/${id}/cancel`, { reason: "Erreur" })).status).toBeLessThan(300);
+    };
+    await useAndCancel(1);
+    expect((await owner.client.get("/api/app/alerts")).body.alerts).toHaveLength(0);
+    await useAndCancel(2);
+
+    const summary = (await owner.client.get("/api/app/alerts")).body;
+    expect(summary.alerts).toHaveLength(1);
+    expect(summary.alerts[0].details).toMatchObject({ cashier: "Membre", count: 2 });
+    expect(summary.cancellationsThisWeek).toBe(2);
+    const mail = await db.emailOutbox.findFirstOrThrow({ where: { to: owner.email, subject: { contains: "annulations répétées" } } });
+    expect(mail.text).toContain("Membre");
+
+    // Une troisième annulation ne redonne pas d'alerte (une par couple sur 30 jours).
+    await useAndCancel(3);
+    expect((await owner.client.get("/api/app/alerts")).body.alerts).toHaveLength(1);
+
+    // Historique filtré : caissier et caisse indiqués.
+    const list = (await owner.client.get("/api/app/transactions?kind=CANCELLATIONS")).body.data as { kind: string; actorName: string; registerName: string }[];
+    expect(list).toHaveLength(3);
+    expect(list.every((t) => t.kind === "REDEMPTION_REVERSAL" && t.actorName === "Membre" && t.registerName === "Caisse comptoir")).toBe(true);
+
+    expect((await owner.client.post(`/api/app/alerts/${summary.alerts[0].id}/resolve`)).status).toBe(204);
+    expect((await owner.client.get("/api/app/alerts")).body.alerts).toHaveLength(0);
+  });
+});

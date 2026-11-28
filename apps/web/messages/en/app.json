@@ -1,4 +1,11 @@
 {
+  "alerts": {
+    "title": "To check",
+    "cancellations": "{count, plural, =0 {No cancellations this week} one {# cancellation this week} other {# cancellations this week}}",
+    "repeated": "{cashier} cancelled a reward use {count} times in 30 days for {customer}.",
+    "seeCustomer": "See customer",
+    "resolve": "Mark as seen"
+  },
   "register": {
     "switch": "Switch cashier",
     "who": "Who's at the till?",
@@ -1067,6 +1074,7 @@
     "description": "Every operation, in order. Nothing is ever deleted: a mistake is fixed with a reversal.",
     "type": "Type",
     "all": "All",
+    "cancellations": "Cancellations",
     "from": "From",
     "to": "To",
     "empty": "No operations",

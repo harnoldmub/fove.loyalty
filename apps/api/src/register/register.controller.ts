@@ -8,6 +8,7 @@ import { Auth, RegisterAllowed, RequirePermission, Tenant } from "../common/deco
 import type { AuthState, TenantContext } from "../common/context";
 import { TenantRoute, UserRoute } from "../auth/guards";
 import { RegisterService } from "./register.service";
+import { AlertsService } from "./alerts.service";
 
 const activateSchema = z.object({ name: z.string().trim().min(2).max(40), establishmentId: z.uuid().nullable().optional() });
 const pinSchema = z.object({ pin: z.string().regex(/^\d{4}$/, "Le code caisse fait 4 chiffres") });
@@ -18,7 +19,10 @@ const settingsSchema = z.object({ lockMinutes: z.int().min(1).max(60) });
 @ApiTags("app")
 @Controller("app")
 export class RegisterController {
-  constructor(private readonly register: RegisterService) {}
+  constructor(
+    private readonly register: RegisterService,
+    private readonly alerts: AlertsService,
+  ) {}
 
   /** « Utiliser cet appareil comme caisse » (propriétaire ou gérant, sur l'appareil). */
   @Post("register/activate")
@@ -83,6 +87,22 @@ export class RegisterController {
   @HttpCode(204)
   async revoke(@Tenant() ctx: TenantContext, @Param("id", ParseUUIDPipe) id: string) {
     await this.register.revoke(ctx, id);
+  }
+
+  /** Points à vérifier et annulations de la semaine (tableau de bord). */
+  @Get("alerts")
+  @TenantRoute()
+  @RequirePermission("members.read")
+  alertSummary(@Tenant() ctx: TenantContext) {
+    return this.alerts.summary(ctx);
+  }
+
+  @Post("alerts/:id/resolve")
+  @TenantRoute()
+  @RequirePermission("members.read")
+  @HttpCode(204)
+  async resolveAlert(@Tenant() ctx: TenantContext, @Param("id", ParseUUIDPipe) id: string) {
+    await this.alerts.resolve(ctx, id);
   }
 
   @Put("registers/settings")

@@ -508,6 +508,18 @@ Menu **Relances** ([chantier-relances-anniversaire.md](chantier-relances-anniver
 
 **Résultats** (offres payantes) : par scénario, messages envoyés, clients revenus en caisse dans les 30 jours et taux de retour (90 derniers jours) ; cadeaux d'anniversaire proposés et utilisés.
 
+### 3.18 Caisse partagée (code caisse)
+
+([chantier-code-caisse.md](chantier-code-caisse.md)) Toutes les offres.
+
+- **Code caisse** : 4 chiffres, personnel, choisi par chaque collaborateur (bandeau d'invitation tant qu'il n'est pas choisi, ou Équipe > « Mon code caisse ») ; jamais visible ; réinitialisable par le propriétaire ou un gérant ; codes trop simples refusés ; **5 erreurs = code bloqué 15 minutes**.
+- **Activer une caisse** : sur l'appareil, Équipe > « Utiliser cet appareil comme caisse » (propriétaire ou gérant ; nom, établissement). L'appareil n'a plus accès qu'à la caisse, quel que soit le compte qui l'a activée ; pour retrouver l'espace complet, se déconnecter puis se reconnecter par email.
+- **À la caisse** : « Qui encaisse ? » (collaborateurs ayant un code et accès à l'établissement), code à 4 chiffres masqué, puis le scanner et la fiche de scan (passage, points, récompense, cadeau d'anniversaire, nouvelle carte). Chaque opération porte le **nom du caissier**, la **caisse** et l'établissement de la caisse.
+- **Verrouillage automatique** après 5 minutes sans activité (réglable dans Équipe) ; « Changer de caissier » en un geste ; « Fermer la caisse sur cet appareil ».
+- **Annulations** : sur la caisse, tout caissier peut annuler une opération ou l'utilisation d'une récompense, sans limite de temps, toujours tracé. Le réglage manuel du solde reste réservé au gérant, hors caisse.
+- **Surveillance** : historique avec le caissier et la caisse, filtre **« Annulations »** ; sur le tableau de bord (propriétaire, gérants), nombre d'annulations de la semaine et **points à vérifier** : le même caissier annule deux fois en 30 jours l'utilisation d'une récompense pour le même client (le propriétaire reçoit aussi un email, une fois par couple caissier-client sur 30 jours) ; « Marquer comme vu ».
+- **Caisses** (Équipe) : liste (nom, établissement, dernière utilisation), **Retirer** = appareil déconnecté tout de suite.
+
 ## 4. Les offres
 
 Les prix, les limites et les fonctions de chaque offre se modifient dans l'administration ([6.3](#63-offres)). Les valeurs ci-dessous sont celles livrées par défaut.

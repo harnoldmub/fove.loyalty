@@ -1,4 +1,11 @@
 {
+  "alerts": {
+    "title": "Points à vérifier",
+    "cancellations": "{count, plural, =0 {Aucune annulation cette semaine} one {# annulation cette semaine} other {# annulations cette semaine}}",
+    "repeated": "{cashier} a annulé {count} fois en 30 jours l'utilisation d'une récompense pour {customer}.",
+    "seeCustomer": "Voir le client",
+    "resolve": "Marquer comme vu"
+  },
   "register": {
     "switch": "Changer de caissier",
     "who": "Qui encaisse ?",
@@ -1067,6 +1074,7 @@
     "description": "Toutes les opérations, dans l’ordre. Rien ne s’efface : une erreur se corrige par une annulation.",
     "type": "Type",
     "all": "Tous",
+    "cancellations": "Annulations",
     "from": "Du",
     "to": "Au",
     "empty": "Aucune opération",

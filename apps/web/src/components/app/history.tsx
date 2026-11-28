@@ -37,6 +37,8 @@ export function TransactionList({ items, showCustomer = false, reversedIds }: { 
                 {t.amount && ` · ${formatNumber(Number(t.amount))} ${t.currency ?? ""}`}
                 {t.saleReference && ` · ${t.saleReference}`}
                 {t.reason && ` · ${t.reason}`}
+                {t.actorName && ` · ${t.actorName}`}
+                {t.registerName && ` · ${t.registerName}`}
                 {reversed.has(t.id) && ` · ${tr("reversed")}`}
               </p>
             </div>

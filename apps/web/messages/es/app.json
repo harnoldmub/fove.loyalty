@@ -1,4 +1,11 @@
 {
+  "alerts": {
+    "title": "Puntos a revisar",
+    "cancellations": "{count, plural, =0 {Ninguna cancelación esta semana} one {# cancelación esta semana} other {# cancelaciones esta semana}}",
+    "repeated": "{cashier} anuló {count} veces en 30 días el uso de una recompensa para {customer}.",
+    "seeCustomer": "Ver cliente",
+    "resolve": "Marcar como visto"
+  },
   "register": {
     "switch": "Cambiar de cajero",
     "who": "¿Quién está en caja?",
@@ -1067,6 +1074,7 @@
     "description": "Todas las operaciones, en orden. Nada se borra: un error se corrige con una anulación.",
     "type": "Tipo",
     "all": "Todos",
+    "cancellations": "Cancelaciones",
     "from": "Desde",
     "to": "Hasta",
     "empty": "Ninguna operación",

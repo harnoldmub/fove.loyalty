@@ -28,7 +28,8 @@ import { CardsService } from "../cards/cards.service";
 
 const transactionsQuery = paginationSchema.extend({
   accountId: z.uuid().optional(),
-  kind: z.enum(["EARN", "ADJUSTMENT", "REDEMPTION", "REDEMPTION_REVERSAL", "REVERSAL", "REFUND", "EXPIRATION"]).optional(),
+  /** CANCELLATIONS : annulations d'opérations et d'utilisations de récompense (surveillance des caisses). */
+  kind: z.enum(["EARN", "ADJUSTMENT", "REDEMPTION", "REDEMPTION_REVERSAL", "REVERSAL", "REFUND", "EXPIRATION", "CANCELLATIONS"]).optional(),
   from: z.iso.date().optional(),
   to: z.iso.date().optional(),
 });

@@ -8,6 +8,7 @@ import { AuditService } from "../common/audit.service";
 import { conflict, isUniqueViolation, notFound, unprocessable } from "../common/errors";
 import { actorUserId, type TenantContext } from "../common/context";
 import { registerEstablishment } from "../loyalty/ledger.service";
+import { AlertsService } from "../register/alerts.service";
 import { LedgerService } from "../loyalty/ledger.service";
 import { WebhooksService } from "../notifications/webhooks.service";
 import { assertEstablishmentAccess } from "../tenants/tenants.service";
@@ -20,6 +21,7 @@ export class RewardsService {
     private readonly audit: AuditService,
     private readonly webhooks: WebhooksService,
     private readonly cards: CardsService,
+    private readonly alerts: AlertsService,
   ) {}
 
   list(ctx: TenantContext, programId?: string) {
@@ -200,6 +202,9 @@ export class RewardsService {
       return tx.rewardRedemption.update({ where: { id: current.id }, data: { reversalTransactionId: transaction.id } });
     });
     await this.audit.forTenant(ctx, "redemption.cancelled", { type: "redemption", id: redemptionId }, { reason });
+    // Surveillance : deuxième annulation en 30 jours pour le même client et le même caissier = point à vérifier.
+    const account = await this.prisma.client.loyaltyAccount.findUnique({ where: { id: redemption.accountId }, select: { customerId: true } });
+    if (account) await this.alerts.afterRewardCancel(ctx, account.customerId).catch(() => undefined);
     await this.webhooks.emit(ctx.tenantId, "redemption.cancelled", { id: redemptionId });
     return redemption;
   }

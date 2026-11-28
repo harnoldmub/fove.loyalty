@@ -1,6 +1,6 @@
 # Chantier — Code caisse (appareil partagé)
 
-> Statut : **spec validée** le 28 novembre 2026. Référentiel : [fonctionnalites.md](fonctionnalites.md).
+> Statut : **livré** le 28 novembre 2026 (C1 à C3, branche `feat/code-caisse`). Référentiel : [fonctionnalites.md](fonctionnalites.md).
 
 ## 1. Pourquoi
 
@@ -27,3 +27,9 @@ Chaque collaborateur a son compte (connexion par code email) et chaque opératio
 | **C1. Socle** | Code caisse (choix, réinitialisation, blocage) ; caisses (activation sur l'appareil, retrait) ; session de caisse limitée ; caissier déverrouillé par son code, verrouillage automatique ; opérations au nom du caissier avec la caisse ; annulations ouvertes sur la caisse. |
 | **C2. Écran de caisse** | Interface caisse dans l'espace commerçant : « Qui encaisse ? » et pavé à 4 chiffres, verrouillage, scanner et fiche de scan existants, changement de caissier ; activation ; invitation à choisir son code. 4 langues. |
 | **C3. Gestion et surveillance** | Caisses dans Équipe, réglage du délai, filtre « Annulations », compteur hebdomadaire, anomalies (encadré, email), tests, docs. |
+
+## 4. Mise en œuvre
+
+- `TenantMembership.cashierPinHash` (scrypt salé), `RegisterDevice`, `Session.registerDeviceId/registerMembershipId/registerActiveAt`, `TenantSettings.registerLockMinutes`, `registerDeviceId` sur les opérations et les utilisations de récompense, `TenantAlert`.
+- Contrôle d'accès : une session de caisse n'accède qu'aux routes `@RegisterAllowed` (`SessionGuard`, code `register_mode`) ; `TenantGuard` construit le contexte au nom du caissier déverrouillé (code `register_locked` sinon), avec les annulations en plus de ses droits.
+- `/auth/me` en caisse : le commerce de la caisse, les droits du caissier (aucun caisse verrouillée), `register`.
