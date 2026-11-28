@@ -130,6 +130,8 @@ La page de la carte affiche :
 - **Copier le lien** de la carte pour se l'envoyer.
 - La carte est mémorisée sur le téléphone : la page d'inscription du commerce propose alors « Ouvrir ma carte ».
 
+**Parrainer un ami** (si le commerce l'a activé, offres payantes) : un encadré annonce les gains et donne un lien personnel à partager (WhatsApp, partage du téléphone ou copie). L'ami qui ouvre ce lien voit « Un ami vous invite » et la bienvenue offerte. Détail en [3.19](#319-parrainage-entre-clients).
+
 ### 2.3 Retrouver sa carte
 
 - **Avec son compte FOVE** (nouveau téléphone, autre navigateur) : « J'ai déjà un compte FOVE » ou « Continuer avec Google » sur la page du commerce, puis la carte s'ouvre ; toutes les autres sont dans « Mes cartes ». Aucune aide du caissier.
@@ -524,6 +526,17 @@ Menu **Relances** ([chantier-relances-anniversaire.md](chantier-relances-anniver
 - **Surveillance** : historique avec le caissier et la caisse, filtre **« Annulations »** ; sur le tableau de bord (propriétaire, gérants), nombre d'annulations de la semaine et **points à vérifier** : le même caissier annule deux fois en 30 jours l'utilisation d'une récompense pour le même client (le propriétaire reçoit aussi un email, une fois par couple caissier-client sur 30 jours) ; « Marquer comme vu ».
 - **Caisses** (Équipe) : liste (nom, établissement, dernière utilisation), **Retirer** = appareil déconnecté tout de suite.
 
+### 3.19 Parrainage entre clients
+
+([chantier-parrainage-clients.md](chantier-parrainage-clients.md)) Offres payantes ; distinct du parrainage entre commerçants (3.16).
+
+- **Réglages** : Relances > onglet **« Parrainage clients »** (droit Programmes). Désactivé par défaut. Réglables : gain du parrain (**+2 tampons** ou **+50 points** par défaut), bienvenue du filleul (**+1 tampon**, 0 point par défaut), **plafond de 5 parrainages récompensés par client et par mois** (1 à 100). Tampons pour un programme à tampons, points pour un programme à points.
+- **Lien** : bouton « Partager mon lien » sur la carte du client ; le lien mène à l'inscription du programme de la carte. Le code est gardé pendant la connexion (code email, Google) jusqu'à la création de la carte.
+- **Filleul** : seulement un **nouveau client** du commerce (fiche créée par l'inscription, téléphone inconnu du commerce), jamais le même compte FOVE que le parrain, une seule fois. Bienvenue créditée à la création de la carte (opération « Parrainage : bienvenue »).
+- **Parrain** : récompensé au **premier passage en caisse** du filleul, jamais à la simple inscription ; opération « Parrainage : prénom de l'ami » et notification sur sa carte (Wallet). Un programme à tampons n'est jamais crédité au-delà de la carte pleine.
+- **Plafond** : compté sur le mois du commerce (son fuseau) ; au-delà, le parrainage est noté sans récompense.
+- **Suivi** : amis inscrits, venus en caisse, parrains récompensés, 5 meilleurs parrains (lien vers la fiche).
+
 ## 4. Les offres
 
 Les prix, les limites et les fonctions de chaque offre se modifient dans l'administration ([6.3](#63-offres)). Les valeurs ci-dessous sont celles livrées par défaut.
@@ -542,7 +555,7 @@ Les prix, les limites et les fonctions de chaque offre se modifient dans l'admin
 | Export des données client (RGPD) | ✓ | ✓ | ✓ | ✓ | ✓ |
 | Widget pour son site | ✓ | ✓ | ✓ | ✓ | ✓ |
 | Sans mention « Propulsé par FOVE » | ✗ | ✓ | ✓ | ✓ | ✓ |
-| Campagnes Wallet, relances automatiques et cadeau d'anniversaire | ✗ | ✓ | ✓ | ✓ | ✓ |
+| Campagnes Wallet, relances automatiques, cadeau d'anniversaire et parrainage entre clients | ✗ | ✓ | ✓ | ✓ | ✓ |
 | Envoi WhatsApp automatique | ✗ | ✓ | ✓ | ✓ | ✓ |
 | API et webhooks | ✗ | ✗ | ✓ | ✓ | ✓ |
 | Connexion boutique en ligne | ✗ | ✗ | ✓ | ✓ | ✓ |

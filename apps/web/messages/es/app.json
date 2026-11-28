@@ -60,6 +60,41 @@
       "saved": "Plazo guardado"
     }
   },
+  "customerReferral": {
+    "title": "Recomendación entre clientes",
+    "on": "Activada",
+    "off": "Desactivada",
+    "how": "Tus clientes comparten un enlace desde su tarjeta. Su amigo crea su tarjeta con ese enlace y, en su primera visita, el cliente que lo invitó recibe una recompensa.",
+    "enable": "Activar la recomendación",
+    "referrer": "Cliente que invita",
+    "referrerHelp": "Se acredita en la primera visita de su amigo.",
+    "referee": "Amigo invitado",
+    "refereeHelp": "Se acredita al crear su tarjeta.",
+    "fields": {
+      "referrerStamps": "Sellos",
+      "referrerPoints": "Puntos",
+      "refereeStamps": "Sellos",
+      "refereePoints": "Puntos",
+      "monthlyCap": "Recomendaciones recompensadas al mes"
+    },
+    "capHelp": "Por cliente. Por encima, la recomendación se registra sin recompensa.",
+    "rules": "Sellos para un programa de sellos, puntos para un programa de puntos. Un cliente que ya tiene tarjeta aquí no puede ser recomendado.",
+    "save": "Guardar",
+    "saved": "Recomendación guardada.",
+    "paidOnly": {
+      "title": "Disponible en los planes de pago",
+      "body": "La recomendación entre clientes atrae nuevos clientes gracias a tus mejores clientes.",
+      "cta": "Ver planes"
+    },
+    "stats": {
+      "signedUp": "Amigos registrados",
+      "came": "Vinieron",
+      "rewarded": "Clientes recompensados",
+      "top": "Mejores recomendadores",
+      "empty": "Aún no hay recomendaciones recompensadas.",
+      "friends": "{count, plural, one {# amigo} other {# amigos}}"
+    }
+  },
   "automations": {
     "title": "Recordatorios",
     "description": "Haz que tus clientes vuelvan: la lista de clientes que recordar y mensajes automáticos en su tarjeta Wallet (y por correo si lo aceptaron).",
@@ -103,6 +138,7 @@
       "variables": "Variables: {vars}"
     },
     "tabs": {
+      "referral": "Recomendación de clientes",
       "contact": "Por recordar",
       "auto": "Automáticos",
       "results": "Resultados"

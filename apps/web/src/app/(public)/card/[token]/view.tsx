@@ -4,7 +4,7 @@ import type { RewardKind } from "@fove/shared";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
-import { Download, Gift, PartyPopper, Sparkles } from "lucide-react";
+import { Check, Copy, Download, Gift, HeartHandshake, PartyPopper, Share2, Sparkles } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { Button } from "@/components/ui/button";
 import { GoogleWalletButton } from "@/components/google-wallet-button";
@@ -35,6 +35,8 @@ export interface CardData {
   appleWallet?: boolean;
   /** Mention « Propulsé par FOVE », retirée dans les offres payantes. */
   poweredBy?: boolean;
+  /** Parrainage entre clients actif dans ce commerce : gains du parrain et du filleul. */
+  referral?: { mode: string; referrerGain: number; refereeGain: number } | null;
 }
 
 export function CardView({ token, initial }: { token: string; initial: CardData }) {
@@ -306,6 +308,8 @@ export function CardView({ token, initial }: { token: string; initial: CardData 
           </div>
         )}
 
+        {data.referral && card.status === "ACTIVE" && <ReferFriend token={token} tenant={tenant.name} offer={data.referral} />}
+
         {data.rewards.length > 0 && (
           <section aria-labelledby="recompenses" className="grid gap-2">
             <h2 id="recompenses" className="font-display text-lg font-semibold">{t("rewards")}</h2>
@@ -360,5 +364,91 @@ export function CardView({ token, initial }: { token: string; initial: CardData 
         )}
       </main>
     </div>
+  );
+}
+
+/** « Parrainer un ami » : lien personnel à partager (WhatsApp, partage du téléphone ou copie). */
+function ReferFriend({ token, tenant, offer }: { token: string; tenant: string; offer: NonNullable<CardData["referral"]> }) {
+  const t = useTranslations("public.card.referral");
+  const [url, setUrl] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const stamps = offer.mode === "STAMPS";
+  const gain = (count: number) => (stamps ? t("stamps", { count }) : t("points", { count }));
+  const message = (link: string) => (offer.refereeGain > 0 ? t("messageGift", { tenant, gain: gain(offer.refereeGain), link }) : t("message", { tenant, link }));
+
+  const getLink = async () => {
+    if (url) return url;
+    setBusy(true);
+    setError(null);
+    try {
+      const res = await api.post<{ url: string }>(`/public/cards/${token}/referral-link`);
+      setUrl(res.url);
+      return res.url;
+    } catch (err) {
+      setError(errorMessage(err));
+      return null;
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const share = async () => {
+    const link = await getLink();
+    if (!link) return;
+    if (typeof navigator !== "undefined" && navigator.share) {
+      try {
+        await navigator.share({ title: tenant, text: message(link) });
+      } catch {
+        // Partage annulé : le lien reste affiché.
+      }
+    }
+  };
+
+  return (
+    <section aria-labelledby="parrainage" className="grid gap-3 rounded-[var(--radius-lg)] bg-surface p-5 shadow-1">
+      <div className="flex items-start gap-3">
+        <span className="grid size-10 shrink-0 place-items-center rounded-full bg-mint-soft text-mint">
+          <HeartHandshake className="size-5" aria-hidden />
+        </span>
+        <div className="min-w-0">
+          <h2 id="parrainage" className="font-display text-lg font-semibold">{t("title")}</h2>
+          <p className="text-sm text-ink-2">
+            {offer.refereeGain > 0 ? t("textBoth", { mine: gain(offer.referrerGain), theirs: gain(offer.refereeGain) }) : t("text", { mine: gain(offer.referrerGain) })}
+          </p>
+        </div>
+      </div>
+      {error && <ErrorNote>{error}</ErrorNote>}
+      {!url ? (
+        <Button onClick={() => void share()} loading={busy} style={{ background: "var(--brand)", color: "#fff" }}>
+          <Share2 /> {t("cta")}
+        </Button>
+      ) : (
+        <div className="grid gap-2">
+          <p dir="ltr" className="truncate rounded-md bg-surface-2 px-3 py-2 text-sm text-ink-2">{url}</p>
+          <div className="grid grid-cols-2 gap-2">
+            <Button asChild variant="secondary">
+              <a href={`https://wa.me/?text=${encodeURIComponent(message(url))}`} target="_blank" rel="noopener">{t("whatsapp")}</a>
+            </Button>
+            <Button
+              variant="secondary"
+              onClick={async () => {
+                try {
+                  await navigator.clipboard.writeText(url);
+                  setCopied(true);
+                  setTimeout(() => setCopied(false), 2500);
+                } catch {
+                  setError(t("copyFailed"));
+                }
+              }}
+            >
+              {copied ? <Check /> : <Copy />} {copied ? t("copied") : t("copy")}
+            </Button>
+          </div>
+        </div>
+      )}
+      <p className="text-xs text-ink-3">{t("hint")}</p>
+    </section>
   );
 }

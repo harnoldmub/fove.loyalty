@@ -285,6 +285,8 @@ export const publicEnrollSchema = z.object({
   acceptTerms: z.literal(true, { error: "Vous devez accepter les conditions du programme" }),
   marketingConsent: z.boolean().default(false),
   ...birthdayFields,
+  /** Code du lien « Parrainer un ami » (parrainage entre clients du commerce). */
+  referralCode: z.string().trim().max(16).optional(),
   /** Champ piège : doit rester vide. */
   website: z.string().max(0).optional(),
 }).refine(birthdayCheck, birthdayError);
@@ -300,6 +302,7 @@ export const clientJoinSchema = z.object({
   acceptTerms: z.literal(true, { error: "Vous devez accepter les conditions du programme" }),
   marketingConsent: z.boolean().default(false),
   ...birthdayFields,
+  referralCode: z.string().trim().max(16).optional(),
 }).refine(birthdayCheck, birthdayError);
 /** « Créer ma carte » sans être connecté : crée le compte FOVE (non confirmé) en même temps que la carte. */
 export const clientJoinSignupSchema = publicEnrollSchema.safeExtend({ email: z.email().max(254) });

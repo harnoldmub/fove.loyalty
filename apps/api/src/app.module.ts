@@ -10,6 +10,8 @@ import { AutomationService } from "./automation/automation.service";
 import { AutomationController } from "./automation/automation.controller";
 import { RegisterService } from "./register/register.service";
 import { AlertsService } from "./register/alerts.service";
+import { CustomerReferralService } from "./customer-referrals/customer-referral.service";
+import { CustomerReferralController } from "./customer-referrals/customer-referral.controller";
 import { RegisterController } from "./register/register.controller";
 import { TeamDigestService } from "./notifications/team-digest.service";
 import { BillingEmailService } from "./billing/billing-emails.service";
@@ -100,6 +102,7 @@ import { ClientJoinController } from "./client-account/client-join.controller";
     ClientJoinController,
     AutomationController,
     RegisterController,
+    CustomerReferralController,
   ],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },
@@ -116,6 +119,7 @@ import { ClientJoinController } from "./client-account/client-join.controller";
     AutomationService,
     RegisterService,
     AlertsService,
+    CustomerReferralService,
     ClientSessionService,
     ClientAccountService,
     ClientSessionGuard,

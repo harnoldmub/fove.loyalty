@@ -43,7 +43,10 @@
     "recoverIntro": "Your card link is sent to the email saved on your record. No email? Ask the staff at the counter.",
     "recoverIdentifier": "Email or phone used to sign up",
     "recoverSubmit": "Get the link",
-    "poweredBy": "Loyalty card powered by FOVE"
+    "poweredBy": "Loyalty card powered by FOVE",
+    "invited": "A friend invited you: welcome!",
+    "invitedStamps": "A friend invited you: {count, plural, one {# free stamp} other {# free stamps}} when you create your card.",
+    "invitedPoints": "A friend invited you: {count, plural, one {# free point} other {# free points}} when you create your card."
   },
   "homeScreen": {
     "added": "Card added to your home screen!",
@@ -133,7 +136,22 @@
       "EXPIRATION": "Expiry"
     },
     "memberSince": "Member since {date}. This link is personal: do not share it.",
-    "poweredBy": "Powered by <link>FOVE</link>"
+    "poweredBy": "Powered by <link>FOVE</link>",
+    "referral": {
+      "title": "Refer a friend",
+      "text": "Share your link: you earn {mine} when your friend comes in for the first time.",
+      "textBoth": "Share your link: your friend gets {theirs} on sign-up, and you earn {mine} on their first visit.",
+      "stamps": "{count, plural, one {# stamp} other {# stamps}}",
+      "points": "{count, plural, one {# point} other {# points}}",
+      "message": "I'm a customer at {tenant} and I recommend it! Get your loyalty card here: {link}",
+      "messageGift": "I'm a customer at {tenant} and I recommend it! Get your loyalty card here, {gain} free: {link}",
+      "cta": "Share my link",
+      "whatsapp": "WhatsApp",
+      "copy": "Copy",
+      "copied": "Copied",
+      "copyFailed": "Couldn't copy: select the link.",
+      "hint": "For someone who doesn't have a card here yet."
+    }
   },
   "wallet": {
     "apple": "Add to Apple Wallet",

@@ -16,6 +16,7 @@ import { tenantLocale, type Locale } from "../i18n/locale";
 import { recoverCardMessage } from "../i18n/notifications";
 import { cardLinkSubject, otpMessage } from "../i18n/emails";
 import { TeamAlertService } from "../notifications/team-alert.service";
+import { CustomerReferralService } from "../customer-referrals/customer-referral.service";
 
 const OTP_TTL_MS = 10 * 60_000;
 const OTP_MAX_ATTEMPTS = 5;
@@ -36,6 +37,7 @@ export class PublicService {
     private readonly cards: CardsService,
     private readonly clientAccounts: ClientAccountService,
     private readonly team: TeamAlertService,
+    private readonly customerReferrals: CustomerReferralService,
   ) { }
 
   /** Lien d'inscription d'un commerce, par jeton de QR ou par adresse publique. */
@@ -105,6 +107,8 @@ export class PublicService {
         verification: link.program.enrollmentVerification,
         rewards: link.program.rewards.map((r) => ({ name: r.name, cost: r.cost })),
       },
+      /** Bienvenue offerte au filleul (affichée seulement quand le lien porte un code de parrainage). */
+      referral: await this.referralOffer(link.tenantId, link.program.mode, "ACTIVE"),
     };
   }
 
@@ -206,7 +210,24 @@ export class PublicService {
       googleWallet: this.cards.wallet.isConfigured() && account.status === "ACTIVE",
       appleWallet: this.cards.appleWallet.isConfigured() && account.status === "ACTIVE",
       poweredBy: !(await this.plans.features(account.tenantId)).removeBranding,
+      referral: await this.referralOffer(account.tenantId, account.program.mode, account.status),
     };
+  }
+
+  /** « Parrainer un ami » sur la carte : gains annoncés au parrain et au filleul (programme actif). */
+  private async referralOffer(tenantId: string, mode: string, status: string) {
+    const settings = status === "ACTIVE" ? await this.customerReferrals.active(tenantId) : null;
+    if (!settings) return null;
+    const stamps = mode === "STAMPS";
+    return { mode, referrerGain: stamps ? settings.referrerStamps : settings.referrerPoints, refereeGain: stamps ? settings.refereeStamps : settings.refereePoints };
+  }
+
+  /** Lien de parrainage de la carte (créé à la première demande). */
+  async referralLink(accessToken: string) {
+    const account = await this.account(accessToken);
+    const link = await this.customerReferrals.shareLink(account.id);
+    if (!link) throw notFound("Parrainage");
+    return link;
   }
 
   async getTenantBySlug(slug: string) {

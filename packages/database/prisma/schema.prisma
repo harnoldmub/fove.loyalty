@@ -201,6 +201,8 @@ model Tenant {
   registerDevices  RegisterDevice[]
   alerts           TenantAlert[]
   automationRules  AutomationRule[]
+  customerReferralSettings CustomerReferralSettings?
+  customerReferrals CustomerReferral[]
   birthdayGifts    BirthdayGift[]
   appleWalletRegistrations AppleWalletRegistration[]
   invoices       Invoice[]
@@ -491,6 +493,8 @@ model LoyaltyAccount {
   lastActivityAt       DateTime       @default(now())
   /// Dernière modification visible de la carte (opération, message, design) : mise à jour Apple Wallet.
   passUpdatedAt        DateTime       @default(now())
+  /// Code du lien « Parrainer un ami » de cette carte (créé à la première demande).
+  referralCode         String?        @unique
   lastWalletMessageTitle String?
   lastWalletMessageBody  String?
   lastWalletMessageAt    DateTime?
@@ -521,6 +525,50 @@ enum MessageChannel {
   EMAIL
   /// Envoyé par le commerçant lui-même (lien WhatsApp de la liste « À relancer »).
   WHATSAPP_MANUAL
+}
+
+/// Parrainage entre clients d'un commerce (docs/chantier-parrainage-clients.md) : réglages, désactivé par défaut.
+model CustomerReferralSettings {
+  tenantId       String   @id @db.Uuid
+  tenant         Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  enabled        Boolean  @default(false)
+  /// Récompense du parrain au premier passage en caisse du filleul (programme à tampons / à points).
+  referrerStamps Int      @default(2)
+  referrerPoints Int      @default(50)
+  /// Bienvenue du filleul à l'inscription (0 = aucune).
+  refereeStamps  Int      @default(1)
+  refereePoints  Int      @default(0)
+  /// Parrainages récompensés par client et par mois.
+  monthlyCap     Int      @default(5)
+  updatedAt      DateTime @updatedAt
+}
+
+enum CustomerReferralStatus {
+  /// Filleul inscrit, en attente de son premier passage en caisse.
+  SIGNED_UP
+  REWARDED
+  /// Plafond mensuel du parrain atteint : pas de récompense.
+  CAPPED
+}
+
+/// Un filleul (nouveau client du commerce) et son parrain.
+model CustomerReferral {
+  id                  String                 @id @default(uuid()) @db.Uuid
+  tenantId            String                 @db.Uuid
+  tenant              Tenant                 @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  referrerAccountId   String                 @db.Uuid
+  referrerCustomerId  String                 @db.Uuid
+  refereeCustomerId   String                 @db.Uuid
+  refereeAccountId    String                 @db.Uuid
+  status              CustomerReferralStatus @default(SIGNED_UP)
+  /// Bienvenue créditée au filleul et récompense du parrain (opérations de fidélité).
+  welcomeDelta        Int?
+  rewardDelta         Int?
+  rewardedAt          DateTime?
+  createdAt           DateTime               @default(now())
+
+  @@unique([tenantId, refereeCustomerId])
+  @@index([tenantId, referrerCustomerId, status])
 }
 
 /// Règles des messages automatiques d'un commerce (docs/chantier-relances-anniversaire.md).

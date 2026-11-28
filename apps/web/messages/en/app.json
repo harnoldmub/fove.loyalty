@@ -60,6 +60,41 @@
       "saved": "Delay saved"
     }
   },
+  "customerReferral": {
+    "title": "Customer referral",
+    "on": "On",
+    "off": "Off",
+    "how": "Your customers share a link from their card. Their friend creates a card with it, and on the friend's first visit, the customer who invited them is rewarded.",
+    "enable": "Turn on referral",
+    "referrerHelp": "Credited on their friend's first visit.",
+    "referrer": "Inviting customer (referrer)",
+    "referee": "Invited friend (referee)",
+    "refereeHelp": "Credited when they create their card.",
+    "fields": {
+      "referrerStamps": "Stamps",
+      "referrerPoints": "Points",
+      "refereeStamps": "Stamps",
+      "refereePoints": "Points",
+      "monthlyCap": "Rewarded referrals per month"
+    },
+    "capHelp": "Per customer. Beyond that, the referral is recorded without a reward.",
+    "rules": "Stamps for a stamp program, points for a points program. A customer who already has a card here can't be referred.",
+    "save": "Save",
+    "saved": "Referral saved.",
+    "paidOnly": {
+      "title": "Available on paid plans",
+      "body": "Customer referral brings in new customers through your best customers.",
+      "cta": "See plans"
+    },
+    "stats": {
+      "signedUp": "Friends signed up",
+      "came": "Came in",
+      "rewarded": "Referrers rewarded",
+      "top": "Top referrers",
+      "empty": "No rewarded referrals yet.",
+      "friends": "{count, plural, one {# friend} other {# friends}}"
+    }
+  },
   "automations": {
     "title": "Follow-ups",
     "description": "Bring your customers back: the list of customers to follow up, and automatic messages on their Wallet card (and by email if they agreed).",
@@ -103,6 +138,7 @@
       "variables": "Variables: {vars}"
     },
     "tabs": {
+      "referral": "Customer referral",
       "contact": "To follow up",
       "auto": "Automatic",
       "results": "Results"

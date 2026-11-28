@@ -43,7 +43,10 @@
     "recoverIntro": "Le lien de votre carte est envoyé à l’email enregistré sur votre fiche. Sans email, demandez-le au personnel en caisse.",
     "recoverIdentifier": "Email ou téléphone utilisé à l’inscription",
     "recoverSubmit": "Recevoir le lien",
-    "poweredBy": "Carte de fidélité propulsée par FOVE"
+    "poweredBy": "Carte de fidélité propulsée par FOVE",
+    "invited": "Un ami vous invite chez nous : bienvenue !",
+    "invitedStamps": "Un ami vous invite : {count, plural, one {# tampon offert} other {# tampons offerts}} à la création de votre carte.",
+    "invitedPoints": "Un ami vous invite : {count, plural, one {# point offert} other {# points offerts}} à la création de votre carte."
   },
   "homeScreen": {
     "added": "Carte ajoutée à votre écran d’accueil !",
@@ -133,7 +136,22 @@
       "EXPIRATION": "Expiration"
     },
     "memberSince": "Membre depuis le {date}. Ce lien est personnel : ne le partagez pas.",
-    "poweredBy": "Propulsé par <link>FOVE</link>"
+    "poweredBy": "Propulsé par <link>FOVE</link>",
+    "referral": {
+      "title": "Parrainer un ami",
+      "text": "Partagez votre lien : vous gagnez {mine} quand votre ami passe pour la première fois.",
+      "textBoth": "Partagez votre lien : votre ami reçoit {theirs} à l’inscription, et vous gagnez {mine} à son premier passage.",
+      "stamps": "{count, plural, one {# tampon} other {# tampons}}",
+      "points": "{count, plural, one {# point} other {# points}}",
+      "message": "Je suis client chez {tenant}, je te le recommande ! Crée ta carte de fidélité ici : {link}",
+      "messageGift": "Je suis client chez {tenant}, je te le recommande ! Crée ta carte de fidélité ici, {gain} offerts : {link}",
+      "cta": "Partager mon lien",
+      "whatsapp": "WhatsApp",
+      "copy": "Copier",
+      "copied": "Copié",
+      "copyFailed": "Copie impossible : sélectionnez le lien.",
+      "hint": "Valable pour une personne qui n’a pas encore de carte ici."
+    }
   },
   "wallet": {
     "apple": "Ajouter à Apple Wallet",

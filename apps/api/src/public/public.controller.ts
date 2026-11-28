@@ -45,6 +45,14 @@ export class PublicController {
     await this.service.recover(token, body.identifier);
   }
 
+  /** « Parrainer un ami » : lien personnel de la carte (parrainage entre clients du commerce). */
+  @Post("cards/:token/referral-link")
+  @Throttle({ default: { limit: 20, ttl: 60_000 } })
+  @HttpCode(200)
+  referralLink(@Param("token") token: string) {
+    return this.service.referralLink(token);
+  }
+
   @Get("cards/:token")
   @Throttle({ default: { limit: 60, ttl: 60_000 } })
   card(@Param("token") token: string, @Res({ passthrough: true }) res: Response) {
