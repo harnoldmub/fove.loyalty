@@ -215,6 +215,10 @@
       "body": "Tu solicitud está pendiente de validación por el equipo de FOVE o todavía no te has postulado.",
       "cta": "Enviar una solicitud"
     },
+    "suspended": {
+      "title": "Espacio de socio suspendido",
+      "body": "Tu espacio de socio ya no está disponible. Para cualquier pregunta, contacta con el equipo de FOVE en contact@fove.digital."
+    },
     "unverified": {
       "title": "Confirma tu dirección de correo",
       "body": "Para acceder a tu espacio de socio (comisiones, pagos, prospectos), confirma primero tu correo: vuelve a entrar con el código que te enviamos.",

@@ -1032,6 +1032,49 @@
       "system": "Système"
     }
   },
+  "mfa": {
+    "signedInAs": "Connecté avec {email}.",
+    "logout": "Se déconnecter",
+    "verify": {
+      "title": "Double authentification",
+      "help": "Saisissez le code à 6 chiffres affiché par votre application d'authentification.",
+      "recoveryHelp": "Saisissez l'un de vos codes de secours. Chaque code ne sert qu'une fois.",
+      "codeLabel": "Code de l'application",
+      "recoveryLabel": "Code de secours",
+      "submit": "Valider",
+      "useRecovery": "Utiliser un code de secours",
+      "useApp": "Utiliser le code de l'application"
+    },
+    "setup": {
+      "title": "Protégez l'administration",
+      "intro": "L'administration FOVE exige une double authentification : en plus du code reçu par email, un code affiché par une application d'authentification sur votre téléphone (Google Authenticator, Authy, 1Password…).",
+      "start": "Activer la double authentification",
+      "scanTitle": "Scannez ce QR code",
+      "scanHelp": "Ouvrez votre application d'authentification, ajoutez un compte et scannez ce QR code.",
+      "manual": "Impossible de scanner ? Saisissez cette clé :",
+      "codeLabel": "Code affiché par l'application",
+      "confirm": "Activer"
+    },
+    "recovery": {
+      "title": "Vos codes de secours",
+      "help": "Si vous perdez votre téléphone, chacun de ces codes remplace une fois le code de l'application. Gardez-les en lieu sûr : ils ne seront plus affichés.",
+      "copy": "Copier les codes",
+      "copied": "Codes copiés",
+      "copyFailed": "Copie impossible : notez les codes à la main",
+      "saved": "J'ai noté mes codes de secours en lieu sûr",
+      "continue": "Accéder à l'administration"
+    },
+    "security": {
+      "title": "Double authentification",
+      "on": "Activée",
+      "off": "Non exigée",
+      "pending": "À activer",
+      "help": "L'administration demande le code de votre application d'authentification toutes les 12 heures. En cas de téléphone perdu, utilisez un code de secours.",
+      "codesLeft": "{count, plural, =0 {Plus aucun code de secours : générez-en de nouveaux.} one {# code de secours restant.} other {# codes de secours restants.}}",
+      "regenerate": "Générer de nouveaux codes de secours",
+      "done": "Terminé"
+    }
+  },
   "system": {
     "title": "Système",
     "integrations": "Intégrations",

@@ -9,6 +9,7 @@ import { PERMISSION_KEY, REQUIRE_VERIFIED_KEY, SCOPE_KEY } from "../common/decor
 import type { AppRequest, AuthState } from "../common/context";
 import { SessionService, sessionCookieName } from "./session.service";
 import { PlanService } from "../billing/plan.service";
+import { MfaService } from "./mfa.service";
 
 const MUTATING = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 
@@ -234,7 +235,6 @@ export class PartnerGuard implements CanActivate {
     const auth = req.auth;
     if (!auth?.user) throw unauthorized();
     if (auth.user.isSuperAdmin) return true;
-    if (auth.user.isPartner) return true;
 
     // Rattachement par email seulement si l'email du compte est confirmé, et à un profil encore libre.
     const byEmail = auth.user.emailVerifiedAt ? [{ email: { equals: auth.user.email, mode: "insensitive" as const }, userId: null }] : [];
@@ -265,9 +265,27 @@ export class PartnerGuard implements CanActivate {
   }
 }
 
+/**
+ * Double authentification des admins : application activée et vérifiée sur cette session depuis
+ * moins de 12 h (MFA_ADMIN_HOURS). Codes dédiés pour que l'administration affiche le bon écran.
+ */
+@Injectable()
+export class AdminMfaGuard implements CanActivate {
+  constructor(private readonly mfa: MfaService) {}
+
+  canActivate(context: ExecutionContext): boolean {
+    const auth = context.switchToHttp().getRequest<AppRequest>().auth;
+    if (!auth) throw unauthorized();
+    if (!this.mfa.isRequired(auth.user)) return true;
+    if (!auth.user.totpEnabledAt) throw new AppError(HttpStatus.FORBIDDEN, "mfa_setup_required", "Activez la double authentification pour accéder à l'administration");
+    if (!this.mfa.isFresh(auth)) throw new AppError(HttpStatus.FORBIDDEN, "mfa_required", "Saisissez le code de votre application d'authentification");
+    return true;
+  }
+}
+
 export const UserRoute = () => UseGuards(SessionGuard);
 export const TenantRoute = () => applyDecorators(UseGuards(SessionGuard, TenantGuard));
-export const SuperAdminRoute = () => applyDecorators(UseGuards(SessionGuard, SuperAdminGuard));
-export const FinanceRoute = () => applyDecorators(UseGuards(SessionGuard, FinanceAccessGuard));
+export const SuperAdminRoute = () => applyDecorators(UseGuards(SessionGuard, SuperAdminGuard, AdminMfaGuard));
+export const FinanceRoute = () => applyDecorators(UseGuards(SessionGuard, FinanceAccessGuard, AdminMfaGuard));
 export const PartnerRoute = () => applyDecorators(UseGuards(SessionGuard, PartnerGuard));
 export const ApiKeyRoute = () => UseGuards(ApiKeyGuard);

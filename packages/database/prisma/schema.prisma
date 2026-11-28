@@ -29,13 +29,35 @@ model User {
   adminRole        AdminRole?
   /// Langue des emails et de l'interface (fr, en, ar, es). Mise à jour à l'inscription et à chaque connexion.
   locale           String?
+  /// Double authentification des admins (application TOTP) : secret chiffré (APP_ENCRYPTION_KEY).
+  totpSecret        String?
+  /// Secret proposé à l'activation, en attente du premier code juste.
+  totpPendingSecret String?
+  totpEnabledAt     DateTime?
+  /// Dernier pas de 30 s accepté : un même code ne sert qu'une fois.
+  totpLastStep      Int?
+  totpFailures      Int       @default(0)
+  totpLockedUntil   DateTime?
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
 
   sessions     Session[]
+  recoveryCodes UserRecoveryCode[]
   memberships  TenantMembership[]
   supportGrants SupportAccessGrant[]
   partner      Partner?
+}
+
+/// Codes de secours de la double authentification : empreinte SHA-256, chacun utilisable une fois.
+model UserRecoveryCode {
+  id        String    @id @default(uuid()) @db.Uuid
+  userId    String    @db.Uuid
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  codeHash  String
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
 }
 
 /// Le cookie porte un jeton opaque ; seule son empreinte SHA-256 est stockée.
@@ -48,6 +70,8 @@ model Session {
   activeTenantId String?   @db.Uuid
   /// Accès support (super admin) : lecture seule, limité dans le temps.
   supportGrantId String?   @db.Uuid
+  /// Dernière double authentification (admins) : l'administration reste ouverte 12 h après.
+  mfaVerifiedAt  DateTime?
   userAgent      String?
   ip             String?
   expiresAt      DateTime

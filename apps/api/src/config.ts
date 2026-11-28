@@ -15,6 +15,8 @@ const schema = z.object({
   RESEND_API_KEY: z.string().optional(),
   /** Destinataire des notifications internes à l'équipe FOVE (candidatures, contact, récapitulatif quotidien). */
   TEAM_ALERT_EMAIL: z.string().default("contact@fove.digital"),
+  /** Double authentification des admins : exigée par défaut ; « off » seulement en local ou dans les tests. */
+  ADMIN_MFA: z.enum(["required", "off"]).default("required"),
   /** OAuth Google du compte client (distinct de Google Wallet et des comptes commerçants). */
   GOOGLE_OAUTH_CLIENT_ID: z.string().optional(),
   GOOGLE_OAUTH_CLIENT_SECRET: z.string().optional(),

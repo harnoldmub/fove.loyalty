@@ -1,4 +1,4 @@
-import { Body, Controller, Get, HttpCode, Post, Query, Req, Res } from "@nestjs/common";
+import { Body, Controller, Get, HttpCode, Ip, Post, Query, Req, Res } from "@nestjs/common";
 import { ApiTags } from "@nestjs/swagger";
 import { Throttle } from "@nestjs/throttler";
 import type { Request, Response } from "express";
@@ -9,12 +9,13 @@ import {
   loginCodeVerifySchema,
   switchTenantSchema,
 } from "@fove/shared";
-import type { z } from "zod";
+import { z } from "zod";
 import { ZodPipe } from "../common/zod.pipe";
 import { forbidden } from "../common/errors";
 import { Auth } from "../common/decorators";
 import type { AppRequest, AuthState } from "../common/context";
-import { AuthService } from "./auth.service";
+import { AuthService, isAdminUser } from "./auth.service";
+import { MfaService } from "./mfa.service";
 import { SessionService, sessionCookieName } from "./session.service";
 import { UserRoute } from "./guards";
 import { TeamService } from "../tenants/team.service";
@@ -23,6 +24,7 @@ import { requestLocaleOrNull } from "../i18n/locale";
 import { finishGoogleOAuth, safeNext, startGoogleOAuth } from "./google-oauth";
 
 const strict = { default: { limit: 10, ttl: 60_000 } };
+const mfaCodeSchema = z.object({ code: z.string().trim().min(6).max(12) });
 /** Connexion Google des commerçants : cookie d'état et adresse de retour propres à l'espace commerçant. */
 function googleFlow() {
   const config = loadConfig();
@@ -40,6 +42,7 @@ export class AuthController {
     private readonly auth: AuthService,
     private readonly sessions: SessionService,
     private readonly team: TeamService,
+    private readonly mfa: MfaService,
   ) {}
 
   @Get("providers")
@@ -106,6 +109,53 @@ export class AuthController {
   @UserRoute()
   me(@Auth() auth: AuthState) {
     return this.auth.me(auth);
+  }
+
+  // --- Double authentification des admins (docs/securite.md) -------------------------------
+
+  @Get("mfa")
+  @UserRoute()
+  mfaStatus(@Auth() auth: AuthState) {
+    return this.mfa.status(auth);
+  }
+
+  @Post("mfa/setup")
+  @UserRoute()
+  @Throttle(strict)
+  mfaSetup(@Auth() auth: AuthState) {
+    this.assertAdmin(auth);
+    return this.mfa.startEnrollment(auth);
+  }
+
+  @Post("mfa/setup/confirm")
+  @UserRoute()
+  @Throttle(strict)
+  @HttpCode(200)
+  mfaConfirm(@Auth() auth: AuthState, @Body(new ZodPipe(mfaCodeSchema)) body: z.infer<typeof mfaCodeSchema>) {
+    this.assertAdmin(auth);
+    return this.mfa.confirmEnrollment(auth, body.code);
+  }
+
+  @Post("mfa/verify")
+  @UserRoute()
+  @Throttle(strict)
+  @HttpCode(200)
+  mfaVerify(@Auth() auth: AuthState, @Body(new ZodPipe(mfaCodeSchema)) body: z.infer<typeof mfaCodeSchema>, @Ip() ip: string) {
+    this.assertAdmin(auth);
+    return this.mfa.verify(auth, body.code, ip);
+  }
+
+  @Post("mfa/recovery-codes")
+  @UserRoute()
+  @Throttle(strict)
+  @HttpCode(200)
+  mfaRecoveryCodes(@Auth() auth: AuthState) {
+    this.assertAdmin(auth);
+    return this.mfa.regenerateRecoveryCodes(auth);
+  }
+
+  private assertAdmin(auth: AuthState) {
+    if (!isAdminUser({ isSuperAdmin: auth.user.isSuperAdmin, adminRole: auth.user.adminRole ?? null })) throw forbidden();
   }
 
   @Post("switch-tenant")

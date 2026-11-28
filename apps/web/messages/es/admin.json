@@ -1032,6 +1032,49 @@
       "system": "Sistema"
     }
   },
+  "mfa": {
+    "signedInAs": "Sesión iniciada con {email}.",
+    "logout": "Cerrar sesión",
+    "verify": {
+      "title": "Autenticación en dos pasos",
+      "help": "Introduce el código de 6 cifras que muestra tu aplicación de autenticación.",
+      "recoveryHelp": "Introduce uno de tus códigos de recuperación. Cada código solo sirve una vez.",
+      "codeLabel": "Código de la aplicación",
+      "recoveryLabel": "Código de recuperación",
+      "submit": "Validar",
+      "useRecovery": "Usar un código de recuperación",
+      "useApp": "Usar el código de la aplicación"
+    },
+    "setup": {
+      "title": "Protege la administración",
+      "intro": "La administración de FOVE exige autenticación en dos pasos: además del código recibido por correo, un código que muestra una aplicación de autenticación en tu teléfono (Google Authenticator, Authy, 1Password…).",
+      "start": "Activar la autenticación en dos pasos",
+      "scanTitle": "Escanea este código QR",
+      "scanHelp": "Abre tu aplicación de autenticación, añade una cuenta y escanea este código QR.",
+      "manual": "¿No puedes escanear? Introduce esta clave:",
+      "codeLabel": "Código que muestra la aplicación",
+      "confirm": "Activar"
+    },
+    "recovery": {
+      "title": "Tus códigos de recuperación",
+      "help": "Si pierdes tu teléfono, cada uno de estos códigos sustituye una vez al código de la aplicación. Guárdalos en un lugar seguro: no se volverán a mostrar.",
+      "copy": "Copiar los códigos",
+      "copied": "Códigos copiados",
+      "copyFailed": "No se pudo copiar: anota los códigos a mano",
+      "saved": "He guardado mis códigos de recuperación en un lugar seguro",
+      "continue": "Acceder a la administración"
+    },
+    "security": {
+      "title": "Autenticación en dos pasos",
+      "on": "Activada",
+      "off": "No exigida",
+      "pending": "Por activar",
+      "help": "La administración pide el código de tu aplicación de autenticación cada 12 horas. Si pierdes tu teléfono, usa un código de recuperación.",
+      "codesLeft": "{count, plural, =0 {No quedan códigos de recuperación: genera otros nuevos.} one {Queda # código de recuperación.} other {Quedan # códigos de recuperación.}}",
+      "regenerate": "Generar nuevos códigos de recuperación",
+      "done": "Hecho"
+    }
+  },
   "system": {
     "title": "Sistema",
     "integrations": "Integraciones",

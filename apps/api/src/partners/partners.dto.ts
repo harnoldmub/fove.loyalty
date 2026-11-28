@@ -1,4 +1,4 @@
-import { PAYOUT_CURRENCIES } from "@fove/shared";
+import { PAYOUT_CURRENCIES, webUrl } from "@fove/shared";
 import { z } from "zod";
 
 export const partnerTypeEnum = z.enum([
@@ -19,7 +19,7 @@ export const partnerApplySchema = z.object({
   country: z.string().trim().min(2, "Pays requis").max(60),
   city: z.string().trim().min(2, "Ville requise").max(60),
   partnerType: partnerTypeEnum.default("SALES_FREELANCE"),
-  websiteUrl: z.string().trim().url("URL de site ou profil invalide").optional().or(z.literal("")),
+  websiteUrl: z.string().trim().pipe(webUrl().max(300)).optional().or(z.literal("")),
   promotionStrategy: z.string().trim().min(10, "Veuillez expliquer brièvement comment vous comptez recommander FOVE").max(2000),
   networkSizeEstimate: z.string().trim().max(50).optional().or(z.literal("")),
   acceptTerms: z.boolean().refine((v) => v === true, "Vous devez accepter les conditions du programme partenaires"),
@@ -88,7 +88,7 @@ export type AdminPartnerUpdateDto = z.infer<typeof adminPartnerUpdateSchema>;
 export const adminPayoutActionSchema = z.object({
   status: z.enum(["PAID", "REJECTED"]),
   reference: z.string().trim().max(100).optional(),
-  proofFileUrl: z.string().trim().url().optional().or(z.literal("")),
+  proofFileUrl: webUrl().max(500).optional().or(z.literal("")),
   rejectionReason: z.string().trim().max(500).optional(),
 });
 

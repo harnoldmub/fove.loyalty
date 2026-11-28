@@ -1032,6 +1032,49 @@
       "system": "System"
     }
   },
+  "mfa": {
+    "signedInAs": "Signed in as {email}.",
+    "logout": "Sign out",
+    "verify": {
+      "title": "Two-factor authentication",
+      "help": "Enter the 6-digit code shown in your authenticator app.",
+      "recoveryHelp": "Enter one of your recovery codes. Each code can be used once.",
+      "codeLabel": "App code",
+      "recoveryLabel": "Recovery code",
+      "submit": "Confirm",
+      "useRecovery": "Use a recovery code",
+      "useApp": "Use the app code"
+    },
+    "setup": {
+      "title": "Protect the admin",
+      "intro": "The FOVE admin requires two-factor authentication: in addition to the code received by email, a code shown by an authenticator app on your phone (Google Authenticator, Authy, 1Password…).",
+      "start": "Turn on two-factor authentication",
+      "scanTitle": "Scan this QR code",
+      "scanHelp": "Open your authenticator app, add an account and scan this QR code.",
+      "manual": "Can't scan? Enter this key:",
+      "codeLabel": "Code shown in the app",
+      "confirm": "Turn on"
+    },
+    "recovery": {
+      "title": "Your recovery codes",
+      "help": "If you lose your phone, each of these codes replaces the app code once. Keep them somewhere safe: they won't be shown again.",
+      "copy": "Copy codes",
+      "copied": "Codes copied",
+      "copyFailed": "Couldn't copy: write the codes down",
+      "saved": "I have saved my recovery codes somewhere safe",
+      "continue": "Go to the admin"
+    },
+    "security": {
+      "title": "Two-factor authentication",
+      "on": "On",
+      "off": "Not required",
+      "pending": "To set up",
+      "help": "The admin asks for your authenticator app code every 12 hours. If you lose your phone, use a recovery code.",
+      "codesLeft": "{count, plural, =0 {No recovery codes left: generate new ones.} one {# recovery code left.} other {# recovery codes left.}}",
+      "regenerate": "Generate new recovery codes",
+      "done": "Done"
+    }
+  },
   "system": {
     "title": "System",
     "integrations": "Integrations",

@@ -30,6 +30,7 @@ Les deux domaines `fove.digital` et `app.fove.digital` pointent sur le même ser
 | `APP_ENCRYPTION_KEY` | `openssl rand -base64 32` — **ne jamais changer** (chiffre les secrets de webhooks) |
 | `CRON_SECRET` | `openssl rand -hex 24` |
 | `EMAIL_PROVIDER` / `RESEND_API_KEY` / `EMAIL_FROM` | `resend`, clé Resend, `FOVE <no-reply@fove.digital>` (domaine à vérifier chez Resend) |
+| `ADMIN_MFA` | Ne pas définir en production (double authentification des admins exigée). `off` seulement en local ou en test. Téléphone perdu : `pnpm --filter @fove/database mfa:reset -- email` depuis le service API. |
 | `TEAM_ALERT_EMAIL` | Destinataire par défaut des notifications internes (candidatures, contact, récapitulatif quotidien), si aucun destinataire n'est réglé dans Admin > Système. Par défaut `contact@fove.digital`. Les notifications sont désactivées tant qu'elles ne sont pas activées dans Admin > Système. |
 | `STRIPE_SECRET_KEY` / `STRIPE_WEBHOOK_SECRET` | clés **test** tant que la mise en production n'est pas validée |
 | `STRIPE_ALLOW_LIVE` | `false` (passer à `true` seulement après validation) |

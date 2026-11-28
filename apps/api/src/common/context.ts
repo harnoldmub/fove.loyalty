@@ -41,6 +41,8 @@ export interface SessionUser {
   isSuperAdmin: boolean;
   isPartner?: boolean;
   adminRole?: "SUPER_ADMIN" | "ASSOCIATE" | "FINANCE_MANAGER" | "SUPPORT" | null;
+  /** Double authentification activée (admins). */
+  totpEnabledAt?: Date | null;
 }
 
 export interface AuthState {
@@ -48,6 +50,8 @@ export interface AuthState {
   user: SessionUser;
   activeTenantId: string | null;
   supportGrantId: string | null;
+  /** Dernière double authentification sur cette session (admins). */
+  mfaVerifiedAt?: Date | null;
 }
 
 export type AppRequest = Request & {

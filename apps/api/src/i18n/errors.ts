@@ -20,6 +20,10 @@ const EXACT: Record<string, Tr> = {
   // Comptes et accès
   "Vous n'êtes pas membre de cette entreprise": ["You are not a member of this business", "لست عضوًا في هذا النشاط التجاري", "No eres miembro de esta empresa"],
   "Patientez une minute avant de redemander un code": ["Wait a minute before requesting a new code", "انتظر دقيقة قبل طلب رمز جديد", "Espera un minuto antes de pedir un nuevo código"],
+  "Trop de codes demandés aujourd'hui : réessayez demain": ["Too many codes requested today: try again tomorrow", "طلبت رموزًا كثيرة اليوم: أعد المحاولة غدًا", "Demasiados códigos solicitados hoy: inténtalo mañana"],
+  "Trop de candidatures envoyées depuis cette connexion : réessayez demain": ["Too many applications sent from this connection: try again tomorrow", "أُرسلت طلبات كثيرة من هذا الاتصال: أعد المحاولة غدًا", "Demasiadas solicitudes enviadas desde esta conexión: inténtalo mañana"],
+  "Candidature en cours d'examen par l'équipe FOVE": ["Application under review by the FOVE team", "الطلب قيد المراجعة من فريق FOVE", "Solicitud en revisión por el equipo de FOVE"],
+  "Espace partenaire suspendu : contactez l'équipe FOVE": ["Partner space suspended: contact the FOVE team", "مساحة الشريك معلّقة: تواصل مع فريق FOVE", "Espacio de socio suspendido: contacta con el equipo de FOVE"],
   "Invitation invalide": ["Invalid invitation", "دعوة غير صالحة", "Invitación no válida"],
   "Invitation invalide ou expirée": ["Invalid or expired invitation", "دعوة غير صالحة أو منتهية الصلاحية", "Invitación no válida o caducada"],
   "Invitation déjà utilisée": ["Invitation already used", "تم استخدام الدعوة بالفعل", "Invitación ya utilizada"],

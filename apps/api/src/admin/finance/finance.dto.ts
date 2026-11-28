@@ -1,4 +1,4 @@
-import { BILLING_CURRENCIES } from "@fove/shared";
+import { BILLING_CURRENCIES, webUrl } from "@fove/shared";
 import { z } from "zod";
 
 export const financeFilterSchema = z.object({
@@ -42,7 +42,7 @@ export const expenseCreateSchema = z.object({
   recurringInterval: z.enum(["month", "year"]).optional(),
   status: z.enum(["PLANNED", "PAID", "CANCELLED"]).default("PAID"),
   paymentMethod: z.string().optional(),
-  proofUrl: z.string().url().optional().or(z.literal("")),
+  proofUrl: webUrl().max(500).optional().or(z.literal("")),
   expenseDate: z.string(),
 });
 

@@ -32,18 +32,9 @@ export async function createApp(): Promise<NestExpressApplication> {
     // CORS : le widget est appelé depuis les sites des commerçants (sans cookie,
     // domaines vérifiés par la clé publique) ; le reste uniquement depuis l'app.
     const origin = req.headers.origin;
-    const isAllowedOrigin = (o: string) => {
-      if (config.corsOrigins.includes(o)) return true;
-      try {
-        const u = new URL(o);
-        return config.corsOrigins.some((allowed) => {
-          const a = new URL(allowed);
-          return u.protocol === a.protocol && u.port === a.port && u.hostname.endsWith(`.${a.hostname.replace(/^app\./, "")}`);
-        });
-      } catch {
-        return false;
-      }
-    };
+    // Liste exacte (CORS_ORIGINS) : aucun sous-domaine n'est autorisé par défaut, car l'accès
+    // se fait avec le cookie de session.
+    const isAllowedOrigin = (o: string) => config.corsOrigins.includes(o);
     if (origin) {
       if (req.path.startsWith("/api/widget/")) {
         res.setHeader("Access-Control-Allow-Origin", origin);
@@ -74,6 +65,10 @@ export async function createApp(): Promise<NestExpressApplication> {
     .setVersion("1.0")
     .addBearerAuth()
     .build();
-  SwaggerModule.setup("api/docs", app, SwaggerModule.createDocument(app, doc), { jsonDocumentUrl: "api/openapi.json" });
+  // Documentation publique : l'API publique (/api/v1) et le widget seulement, jamais les routes internes
+  // (administration, finance, espaces connectés).
+  const document = SwaggerModule.createDocument(app, doc);
+  document.paths = Object.fromEntries(Object.entries(document.paths).filter(([path]) => path.startsWith("/api/v1/") || path.startsWith("/api/widget/")));
+  SwaggerModule.setup("api/docs", app, document, { jsonDocumentUrl: "api/openapi.json" });
   return app;
 }

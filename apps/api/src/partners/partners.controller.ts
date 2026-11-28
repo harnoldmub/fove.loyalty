@@ -13,6 +13,7 @@ import {
   Req,
 } from "@nestjs/common";
 import { ApiTags } from "@nestjs/swagger";
+import { Throttle } from "@nestjs/throttler";
 import type { Request } from "express";
 import { ZodPipe } from "../common/zod.pipe";
 import { Auth, RequireVerified } from "../common/decorators";
@@ -44,12 +45,15 @@ export class PartnersController {
 
   // --- ROUTES PUBLIQUES ------------------------------------------------------
 
+  // Chaque candidature envoie un email à l'adresse saisie : limite stricte (pas d'envoi en masse depuis FOVE).
   @Post("partners/apply")
+  @Throttle({ default: { limit: 3, ttl: 60_000 } })
   apply(@Body(new ZodPipe(partnerApplySchema)) body: PartnerApplyDto, @Ip() ip: string, @Req() req: Request) {
     return this.partners.apply(body, ip, requestLocaleOrNull(req));
   }
 
   @Get("partners/track/:code")
+  @Throttle({ default: { limit: 30, ttl: 60_000 } })
   track(
     @Param("code") code: string,
     @Ip() ip: string,

@@ -26,6 +26,11 @@ const nextConfig: NextConfig = {
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
           { key: "X-Frame-Options", value: "DENY" },
           { key: "Permissions-Policy", value: "camera=(self), microphone=(), geolocation=()" },
+          // Politique de contenu minimale, sans risque de casser l'affichage : pas d'intégration dans un
+          // cadre, pas de <base> détourné, pas de plugins. Une politique complète (scripts) viendra ensuite.
+          { key: "Content-Security-Policy", value: "frame-ancestors 'none'; base-uri 'self'; object-src 'none'" },
+          // HTTPS imposé par le navigateur (ignoré en local, servi en http).
+          ...(process.env.NODE_ENV === "production" ? [{ key: "Strict-Transport-Security", value: "max-age=31536000" }] : []),
         ],
       },
       { source: "/card/:path*", headers: [{ key: "X-Robots-Tag", value: "noindex" }, { key: "Cache-Control", value: "no-store" }] },
