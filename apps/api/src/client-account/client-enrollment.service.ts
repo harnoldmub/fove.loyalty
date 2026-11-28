@@ -16,6 +16,7 @@ import { PublicService } from "../public/public.service";
 import { requestLocaleOrNull } from "../i18n/locale";
 import { ClientAccountService, termsAccepted } from "./client-account.service";
 import { ClientSessionService } from "./client-session.service";
+import { CustomerReferralService } from "../customer-referrals/customer-referral.service";
 
 type Link = Awaited<ReturnType<PublicService["link"]>>;
 type JoinInput = z.infer<typeof clientJoinSchema>;
@@ -74,6 +75,7 @@ export class ClientEnrollmentService {
     private readonly audit: AuditService,
     private readonly webhooks: WebhooksService,
     private readonly quotaAlerts: QuotaAlertService,
+    private readonly customerReferrals: CustomerReferralService,
   ) {}
 
   async state(token: string, req: Request, res: Response): Promise<JoinState> {
@@ -181,6 +183,8 @@ export class ClientEnrollmentService {
     // 1. Fiche déjà rattachée au compte, sinon fiche du commerce avec l'email vérifié du compte (4.2).
     let customer = await tx.customer.findUnique({ where: { tenantId_clientAccountId: { tenantId, clientAccountId: account.id } } });
     let customerCreated = false;
+    // Téléphone déjà connu chez ce commerce : pas un nouveau client au sens du parrainage.
+    let knownPhone = false;
     if (!customer && account.emailVerifiedAt) {
       const byEmail = await tx.customerIdentity.findUnique({ where: { tenantId_kind_value: { tenantId, kind: "EMAIL", value: account.email } } });
       if (byEmail) {
@@ -219,6 +223,7 @@ export class ClientEnrollmentService {
       );
       customer = await tx.customer.update({ where: { id: created.id }, data: { clientAccountId: account.id } });
       customerCreated = true;
+      knownPhone = Boolean(phoneTaken);
     } else {
       // Fiche reprise : son nom complète un compte encore anonyme.
       firstName ||= customer.firstName;
@@ -251,6 +256,10 @@ export class ClientEnrollmentService {
     const status =
       program.enrollmentVerification === "IN_STORE" || (program.enrollmentVerification === "EMAIL_OTP" && !account.emailVerifiedAt) ? "PENDING_VERIFICATION" : "ACTIVE";
     const card = await createCard(tx, { tenantId, programId: program.id, customerId: customer!.id, status }, link.tenant.name);
+    // Lien « Parrainer un ami » : seulement pour un nouveau client du commerce (docs/chantier-parrainage-clients.md).
+    if (customerCreated && !knownPhone) {
+      await this.customerReferrals.onSignup(tx, { tenantId, code: input.referralCode, refereeCustomerId: customer!.id, refereeAccountId: card.accountId, refereeClientAccountId: account.id });
+    }
     await tx.enrollmentLink.update({ where: { id: link.id }, data: { enrollCount: { increment: 1 } } });
     return { accountId: card.accountId, customerId: customer!.id, customerCreated, cardCreated: true, status };
   }

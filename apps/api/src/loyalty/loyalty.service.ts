@@ -23,6 +23,7 @@ import { assertEstablishmentAccess } from "../tenants/tenants.service";
 import { registerEstablishment, LedgerService, type PostResult } from "./ledger.service";
 import { createCard, readAccessToken } from "./cards";
 import { CardsService, cardUrl } from "../cards/cards.service";
+import { CustomerReferralService } from "../customer-referrals/customer-referral.service";
 
 export function earnRules(program: LoyaltyProgram): EarnRules {
   return {
@@ -44,6 +45,7 @@ export class LoyaltyService {
     private readonly plans: PlanService,
     private readonly webhooks: WebhooksService,
     private readonly cards: CardsService,
+    private readonly customerReferrals: CustomerReferralService,
   ) {}
 
   // --- Programmes ------------------------------------------------------------
@@ -324,7 +326,11 @@ export class LoyaltyService {
       },
       async () => ({ transaction: (await this.ledger.findByKey(ctx, input.idempotencyKey))!, replayed: true }),
     );
-    if (!result.replayed) await this.emitTransaction(ctx, result);
+    if (!result.replayed) {
+      await this.emitTransaction(ctx, result);
+      // Premier passage d'un filleul : son parrain est récompensé (parrainage entre clients).
+      await this.customerReferrals.onVisit(ctx.tenantId, account.customerId).catch(() => undefined);
+    }
     return result;
   }
 
