@@ -1,5 +1,6 @@
-import { Body, Controller, Get, HttpCode, Param, ParseUUIDPipe, Patch, Post, Query, Req } from "@nestjs/common";
+import { Body, Controller, Get, HttpCode, Param, ParseUUIDPipe, Patch, Post, Query, Req, Res } from "@nestjs/common";
 import { ApiTags } from "@nestjs/swagger";
+import type { Response } from "express";
 import {
   customerNoteSchema,
   customerSchema,
@@ -19,6 +20,8 @@ import { cardUrl } from "../cards/cards.service";
 
 const createWithProgram = customerSchema.and(z.object({ programId: z.uuid().nullable().default(null) }));
 
+const exportQuery = z.object({ q: z.string().trim().max(80).optional(), segment: z.enum(["NEW", "VIP", "REGULAR", "AT_RISK", "DORMANT"]).optional() });
+
 @ApiTags("app")
 @Controller("app/customers")
 @TenantRoute()
@@ -33,6 +36,19 @@ export class CustomersController {
   @RequirePermission("customers.read")
   list(@Tenant() ctx: TenantContext, @Query(new ZodPipe(paginationSchema)) query: z.infer<typeof paginationSchema>) {
     return this.customers.search(ctx, query);
+  }
+
+  /** Export du fichier clients (CSV), filtré comme la liste. Avant « :id » (sinon pris pour un identifiant). */
+  @Get("export.csv")
+  @RequireVerified()
+  @RequirePermission("customers.export")
+  async exportCsv(@Tenant() ctx: TenantContext, @Query(new ZodPipe(exportQuery)) query: z.infer<typeof exportQuery>, @Res() res: Response) {
+    await this.plans.assertFeature(ctx.tenantId, "exports");
+    const { csv, filename } = await this.customers.exportCsv(ctx, query);
+    res.setHeader("Content-Type", "text/csv; charset=utf-8");
+    res.setHeader("Content-Disposition", `attachment; filename="${filename.replace(/[^\w.-]/g, "_")}"`);
+    res.setHeader("Cache-Control", "no-store");
+    res.send(csv);
   }
 
   @Post()

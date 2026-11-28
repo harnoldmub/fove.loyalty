@@ -275,6 +275,11 @@ On y trouve aussi des raccourcis : scanner une carte, afficher son QR d'inscript
 - Création de sa carte dans un programme : facultative.
 - Le téléphone ou l'email évite les doublons : un client déjà connu n'est jamais recréé ni fusionné automatiquement.
 
+**Exporter le fichier clients** (gérant et propriétaire)
+- Bouton « Exporter (CSV) » de la liste des clients, avec la recherche et le segment affichés ; clients effacés exclus.
+- Colonnes : prénom, nom, téléphone, email, référence, date d'inscription, dernière visite, visites, dépenses, segment, anniversaire (JJ/MM), consentements email et SMS/WhatsApp, étiquettes, cartes (programme, numéro, solde).
+- Fichier lisible directement par Excel (UTF-8 avec BOM ; séparateur « ; », « , » en anglais) ; en-têtes dans la langue du commerce ; formules neutralisées (une cellule ne peut pas lancer de calcul) ; chaque export est inscrit au journal d'audit.
+
 **Importer des clients** (gérant et propriétaire)
 - Fichier CSV avec les colonnes `prenom`, `nom`, `telephone`, `email`, et si besoin `reference` et `anniversaire` (JJ/MM, ou date complète dont seuls le jour et le mois sont gardés). 5 000 lignes maximum.
 - Création de leur carte dans un programme : facultative.
@@ -540,6 +545,7 @@ Les prix, les limites et les fonctions de chaque offre se modifient dans l'admin
 | Cartes, QR d'inscription, scanner | ✓ | ✓ | ✓ | ✓ | ✓ |
 | Apple Wallet et Google Wallet | ✓ | ✓ | ✓ | ✓ | ✓ |
 | Export des données client (RGPD) | ✓ | ✓ | ✓ | ✓ | ✓ |
+| Export du fichier clients (CSV) | ✓ | ✓ | ✓ | ✓ | ✓ |
 | Widget pour son site | ✓ | ✓ | ✓ | ✓ | ✓ |
 | Sans mention « Propulsé par FOVE » | ✗ | ✓ | ✓ | ✓ | ✓ |
 | Campagnes Wallet, relances automatiques et cadeau d'anniversaire | ✗ | ✓ | ✓ | ✓ | ✓ |
