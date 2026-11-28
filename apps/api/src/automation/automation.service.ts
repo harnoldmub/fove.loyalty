@@ -269,6 +269,109 @@ export class AutomationService {
     return out;
   }
 
+  // --- Résultats et liste « À relancer » -------------------------------------------------------
+
+  /**
+   * Résultats sur une période : messages envoyés par scénario, clients revenus (un passage dans les 30 jours
+   * qui suivent le message), cadeaux d'anniversaire créés et utilisés.
+   */
+  async stats(tenantId: string, days = 90, now = new Date()) {
+    const since = new Date(now.getTime() - days * DAY);
+    const rows = await this.prisma.client.$queryRaw<{ scenario: AutomationScenario; sent: number; returned: number }[]>`
+      SELECT m.scenario, COUNT(*)::int AS sent,
+        COUNT(*) FILTER (WHERE EXISTS (
+          SELECT 1 FROM "LoyaltyTransaction" t JOIN "LoyaltyAccount" a ON a.id = t."accountId"
+          WHERE a."customerId" = m."customerId" AND t.kind = 'EARN'
+            AND t."createdAt" > m."sentAt" AND t."createdAt" <= m."sentAt" + interval '30 days'
+        ))::int AS returned
+      FROM "CustomerMessage" m
+      WHERE m."tenantId" = ${tenantId}::uuid AND m."sentAt" >= ${since}
+      GROUP BY m.scenario`;
+    const [giftsCreated, giftsUsed] = await Promise.all([
+      this.prisma.client.birthdayGift.count({ where: { tenantId, createdAt: { gte: since } } }),
+      this.prisma.client.birthdayGift.count({ where: { tenantId, usedAt: { gte: since } } }),
+    ]);
+    return { days, scenarios: rows, birthdayGifts: { created: giftsCreated, used: giftsUsed } };
+  }
+
+  /**
+   * Liste « À relancer » (toutes offres) : clients de chaque scénario, hors plafond de 14 jours, avec le
+   * message proposé dans la langue du commerce ; anniversaires des 7 prochains jours. Le commerçant
+   * envoie lui-même le message (lien WhatsApp).
+   */
+  async toContact(tenantId: string, now = new Date()) {
+    const tenant = await this.tenantInfo(tenantId);
+    const all = RELAUNCH_KINDS.map((kind) => ({ kind, bonus: null }) as unknown as AutomationRule);
+    const candidates = (await this.relaunchCandidates(tenant, all, now)).slice(0, 200);
+    const customerIds = candidates.map((c) => c.customerId);
+    const phones = new Map(
+      (await this.prisma.client.customer.findMany({ where: { id: { in: customerIds } }, select: { id: true, phone: true, lastName: true } })).map((c) => [c.id, c]),
+    );
+    const relaunch = candidates.map((c) => {
+      const text = defaultAutomationText(tenant.locale, c.scenario as Exclude<AutomationRuleKind, "BIRTHDAY">);
+      return {
+        customerId: c.customerId,
+        name: `${c.firstName} ${phones.get(c.customerId)?.lastName ?? ""}`.trim(),
+        phone: phones.get(c.customerId)?.phone ?? null,
+        scenario: c.scenario,
+        message: `${fillTemplate(text.title, c.values)}\n${fillTemplate(text.body, c.values)}`,
+      };
+    });
+
+    // Anniversaires à venir (7 jours) ou du jour, pas encore souhaités cette année.
+    const today = zonedParts(now, tenant.timeZone);
+    const months = [...new Set([today.month, addLocalDays(today, 7).month])];
+    const birthdays = (
+      await this.prisma.client.customer.findMany({
+        where: { tenantId, anonymizedAt: null, birthDay: { not: null }, birthMonth: { in: months } },
+        select: { id: true, firstName: true, lastName: true, phone: true, birthDay: true, birthMonth: true },
+      })
+    )
+      .map((c) => ({ c, offset: birthdayOffset(today, c.birthDay!, c.birthMonth!) }))
+      .filter(({ offset }) => offset >= -7 && offset <= 0)
+      .sort((a, b) => b.offset - a.offset);
+    const wished = new Set(
+      (await this.prisma.client.customerMessage.findMany({
+        where: { tenantId, customerId: { in: birthdays.map((b) => b.c.id) }, scenario: { in: ["BIRTHDAY_SOON", "BIRTHDAY_DAY"] }, key: { contains: `:${today.year}` } },
+        select: { customerId: true },
+      })).map((m) => m.customerId),
+    );
+    const day = defaultAutomationText(tenant.locale, "BIRTHDAY_DAY");
+    const birthdayList = birthdays
+      .filter(({ c }) => !wished.has(c.id))
+      .map(({ c, offset }) => ({
+        customerId: c.id,
+        name: `${c.firstName} ${c.lastName}`.trim(),
+        phone: c.phone,
+        scenario: "BIRTHDAY_DAY" as const,
+        inDays: -offset,
+        birthDay: c.birthDay,
+        birthMonth: c.birthMonth,
+        // Message simple (offre Gratuite : pas de cadeau automatique).
+        message: `${fillTemplate(day.title, { prénom: c.firstName })}\n${fillTemplate(UNSUBSCRIBE_FREE_BIRTHDAY[tenant.locale], { prénom: c.firstName, commerce: tenant.name })}`,
+      }));
+    return { birthdays: birthdayList, relaunch };
+  }
+
+  /** Relance faite à la main (WhatsApp) : journalisée, et comptée dans le plafond de 14 jours. */
+  async markContacted(ctx: TenantContext, customerId: string, scenario: AutomationScenario, now = new Date()) {
+    const customer = await this.prisma.client.customer.findFirst({ where: { id: customerId, tenantId: ctx.tenantId }, select: { id: true, firstName: true } });
+    if (!customer) throw notFound("Client");
+    const tenant = await this.tenantInfo(ctx.tenantId);
+    const day = localDateKey(now, tenant.timeZone);
+    const year = zonedParts(now, tenant.timeZone).year;
+    // Anniversaire : une fois par an ; relance : une fois par jour.
+    const key = scenario === "BIRTHDAY_DAY" || scenario === "BIRTHDAY_SOON" ? `BIRTHDAY_DAY:${customerId}:${year}:manual` : `MANUAL:${scenario}:${customerId}:${day}`;
+    try {
+      await this.prisma.client.customerMessage.create({
+        data: { tenantId: ctx.tenantId, customerId, scenario, channel: "WHATSAPP_MANUAL", key, title: "WhatsApp", body: "", sentAt: now },
+      });
+    } catch (error) {
+      if (!isUniqueViolation(error)) throw error;
+    }
+    return { contacted: true };
+  }
+
   // --- Anniversaire ----------------------------------------------------------------------------
 
   /**
@@ -414,6 +517,14 @@ export class AutomationService {
     return { id: tenant.id, name: tenant.name, locale: tenantLocale(tenant.settings), timeZone: safeTimeZone(tenant.settings?.timezone), color: tenant.settings?.primaryColor ?? null };
   }
 }
+
+/** Anniversaire sur l'offre Gratuite (envoyé à la main, sans cadeau automatique). */
+const UNSUBSCRIBE_FREE_BIRTHDAY: Record<Locale, string> = {
+  fr: "Toute l'équipe de {commerce} vous souhaite un très bel anniversaire, {prénom} !",
+  en: "The whole {commerce} team wishes you a very happy birthday, {prénom}!",
+  ar: "يتمنى لك فريق {commerce} عيد ميلاد سعيدًا جدًا يا {prénom}!",
+  es: "¡Todo el equipo de {commerce} te desea un muy feliz cumpleaños, {prénom}!",
+};
 
 const UNSUBSCRIBE: Record<Locale, (tenant: string) => string> = {
   fr: (t) => `Vous recevez cet email car vous avez accepté les offres de ${t}. Pour ne plus en recevoir :`,

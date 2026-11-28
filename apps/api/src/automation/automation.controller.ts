@@ -24,6 +24,11 @@ const ruleSchema = z.object({
   dayBody: text(180),
 });
 
+const contactedSchema = z.object({
+  customerId: z.uuid(),
+  scenario: z.enum(["NEAR_REWARD", "REWARD_WAITING", "AT_RISK", "DORMANT", "BIRTHDAY_DAY"]),
+});
+
 /** Relances automatiques et anniversaire (docs/chantier-relances-anniversaire.md). */
 @ApiTags("app")
 @Controller()
@@ -46,6 +51,29 @@ export class AutomationController {
   @RequirePermission("programs.write")
   update(@Tenant() ctx: TenantContext, @Param("kind", new ZodPipe(z.enum(KINDS))) kind: (typeof KINDS)[number], @Body(new ZodPipe(ruleSchema)) body: z.infer<typeof ruleSchema>) {
     return this.automation.updateRule(ctx, kind, body);
+  }
+
+  @Get("app/automations/stats")
+  @TenantRoute()
+  @RequirePermission("analytics.read")
+  stats(@Tenant() ctx: TenantContext) {
+    return this.automation.stats(ctx.tenantId);
+  }
+
+  /** Liste « À relancer » (toutes offres) : le commerçant envoie lui-même le message WhatsApp. */
+  @Get("app/automations/to-contact")
+  @TenantRoute()
+  @RequirePermission("customers.read")
+  toContact(@Tenant() ctx: TenantContext) {
+    return this.automation.toContact(ctx.tenantId);
+  }
+
+  @Post("app/automations/contacted")
+  @TenantRoute()
+  @RequirePermission("customers.read")
+  @HttpCode(200)
+  contacted(@Tenant() ctx: TenantContext, @Body(new ZodPipe(contactedSchema)) body: z.infer<typeof contactedSchema>) {
+    return this.automation.markContacted(ctx, body.customerId, body.scenario);
   }
 
   /** Cadeau d'anniversaire utilisé en caisse (une seule fois). */

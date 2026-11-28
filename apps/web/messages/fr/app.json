@@ -1,14 +1,14 @@
 {
   "automations": {
-    "title": "Relances automatiques",
-    "description": "Des messages envoyés tout seuls pour faire revenir vos clients : sur leur carte Wallet, et par email s'ils l'ont accepté.",
+    "title": "Relances",
+    "description": "Faites revenir vos clients : la liste des clients à relancer, et des messages automatiques sur leur carte Wallet (et par email s'ils l'ont accepté).",
     "rules": "Chaque scénario s'active séparément. Un client reçoit au plus une relance tous les 14 jours, entre 10 h et 19 h. Un texte laissé vide utilise le texte proposé.",
     "on": "Activée",
     "off": "Désactivée",
     "enable": "Activer ce scénario",
     "messageTitle": "Titre",
     "messageBody": "Message",
-    "variables": "Variables : {prénom}, {commerce}, {solde}, {récompense}, {reste}.",
+    "variables": "Variables : {vars}",
     "bonus": "Offrir un bonus de retour (crédité sur la carte avec le message)",
     "bonusAmount": "Bonus (points ou tampons)",
     "preview": "Aperçu",
@@ -39,7 +39,40 @@
       "daysAfter": "Jours après",
       "soon": "Annonce (au début de la période)",
       "day": "Le jour J (si le cadeau n'est pas encore utilisé)",
-      "variables": "Variables : {prénom}, {commerce}, {cadeau}, {date}."
+      "variables": "Variables : {vars}"
+    },
+    "tabs": {
+      "contact": "À relancer",
+      "auto": "Automatiques",
+      "results": "Résultats"
+    },
+    "contact": {
+      "help": "Les clients à relancer aujourd'hui et les anniversaires des 7 prochains jours. Envoyez-leur le message proposé sur WhatsApp : ils disparaissent de la liste pendant 14 jours.",
+      "birthdays": "Anniversaires",
+      "noBirthdays": "Aucun anniversaire dans les 7 prochains jours.",
+      "relaunch": "Clients à relancer",
+      "empty": "Personne à relancer pour le moment.",
+      "whatsapp": "WhatsApp",
+      "noPhone": "Pas de téléphone",
+      "done": "Fait",
+      "inDays": "Anniversaire dans {count, plural, one {# jour} other {# jours}}",
+      "today": "Anniversaire aujourd'hui"
+    },
+    "results": {
+      "help": "Sur les {days} derniers jours : messages envoyés et clients revenus en caisse dans les 30 jours qui suivent.",
+      "scenario": "Scénario",
+      "sent": "Envoyés",
+      "returned": "Revenus",
+      "rate": "Taux de retour",
+      "gifts": "Cadeaux d'anniversaire : {created} proposés, {used} utilisés."
+    },
+    "scenarios": {
+      "NEAR_REWARD": "Presque une récompense",
+      "REWARD_WAITING": "Récompense qui attend",
+      "AT_RISK": "Client en risque",
+      "DORMANT": "Client dormant",
+      "BIRTHDAY_SOON": "Anniversaire : annonce",
+      "BIRTHDAY_DAY": "Anniversaire : jour J"
     },
     "kinds": {
       "NEAR_REWARD": {

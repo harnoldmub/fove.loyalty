@@ -1,6 +1,6 @@
 # Chantier — Relances automatiques et anniversaire
 
-> Statut : **spec validée** le 28 novembre 2026. R1 (socle) fait. Référentiel : [fonctionnalites.md](fonctionnalites.md).
+> Statut : **livré** le 28 novembre 2026 (R1 à R5, branche `feat/relances-anniversaire`). Référentiel : [fonctionnalites.md](fonctionnalites.md).
 
 ## 1. Pourquoi
 
@@ -53,3 +53,11 @@ Pour chaque scénario : messages envoyés, clients revenus dans les 30 jours (ta
 | **R3. Relances** | Les 4 scénarios, page « Relances automatiques » (activer, textes, aperçu, bonus de retour des dormants). |
 | **R4. Anniversaire** | Cadeau sur une période, messages J-3 et jour J, cadeau au scanner. |
 | **R5. Résultats et liste manuelle** | Taux de retour par scénario ; liste « À relancer » avec WhatsApp pré-rempli (toutes offres) ; tests et documentation. |
+
+## 7. Mise en œuvre
+
+- Réglages : `AutomationRule` (un par commerce et par scénario) ; journal : `CustomerMessage` (clé unique par épisode, canal `WALLET`, `EMAIL` ou `WHATSAPP_MANUAL`) ; cadeaux : `BirthdayGift`.
+- Moteur : `AutomationService.runDue`, appelé par la tâche planifiée toutes les 5 minutes ; un passage par commerce et par jour local (journal d'audit `automation.run`).
+- Autorisation : fonction d'offre `walletCampaigns` (offres payantes).
+- Message sur la carte : `CardsService.pushCardMessage` met à jour `passUpdatedAt` (rechargement Apple Wallet), jamais `lastActivityAt` (expiration des points).
+- Désinscription email : `/api/public/unsubscribe/:customerId/:signature` (HMAC).

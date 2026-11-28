@@ -1,14 +1,14 @@
 {
   "automations": {
-    "title": "Recordatorios automáticos",
-    "description": "Mensajes enviados automáticamente para que tus clientes vuelvan: en su tarjeta Wallet, y por correo si lo aceptaron.",
+    "title": "Recordatorios",
+    "description": "Haz que tus clientes vuelvan: la lista de clientes que recordar y mensajes automáticos en su tarjeta Wallet (y por correo si lo aceptaron).",
     "rules": "Cada escenario se activa por separado. Un cliente recibe como máximo un recordatorio cada 14 días, entre las 10 h y las 19 h. Un texto vacío usa el texto propuesto.",
     "on": "Activado",
     "off": "Desactivado",
     "enable": "Activar este escenario",
     "messageTitle": "Título",
     "messageBody": "Mensaje",
-    "variables": "Variables: {prénom}, {commerce}, {solde}, {récompense}, {reste}.",
+    "variables": "Variables: {vars}",
     "bonus": "Ofrecer un bono de regreso (abonado en la tarjeta con el mensaje)",
     "bonusAmount": "Bono (puntos o sellos)",
     "preview": "Vista previa",
@@ -39,7 +39,40 @@
       "daysAfter": "Días después",
       "soon": "Anuncio (al inicio del periodo)",
       "day": "El día del cumpleaños (si aún no se ha usado el regalo)",
-      "variables": "Variables: {prénom}, {commerce}, {cadeau}, {date}."
+      "variables": "Variables: {vars}"
+    },
+    "tabs": {
+      "contact": "Por recordar",
+      "auto": "Automáticos",
+      "results": "Resultados"
+    },
+    "contact": {
+      "help": "Los clientes que recordar hoy y los cumpleaños de los próximos 7 días. Envíales el mensaje propuesto por WhatsApp: salen de la lista durante 14 días.",
+      "birthdays": "Cumpleaños",
+      "noBirthdays": "Ningún cumpleaños en los próximos 7 días.",
+      "relaunch": "Clientes que recordar",
+      "empty": "Nadie que recordar por ahora.",
+      "whatsapp": "WhatsApp",
+      "noPhone": "Sin teléfono",
+      "done": "Hecho",
+      "inDays": "Cumpleaños en {count, plural, one {# día} other {# días}}",
+      "today": "Cumpleaños hoy"
+    },
+    "results": {
+      "help": "En los últimos {days} días: mensajes enviados y clientes que volvieron a caja en los 30 días siguientes.",
+      "scenario": "Escenario",
+      "sent": "Enviados",
+      "returned": "Volvieron",
+      "rate": "Tasa de regreso",
+      "gifts": "Regalos de cumpleaños: {created} ofrecidos, {used} usados."
+    },
+    "scenarios": {
+      "NEAR_REWARD": "Casi una recompensa",
+      "REWARD_WAITING": "Recompensa pendiente",
+      "AT_RISK": "Cliente en riesgo",
+      "DORMANT": "Cliente inactivo",
+      "BIRTHDAY_SOON": "Cumpleaños: anuncio",
+      "BIRTHDAY_DAY": "Cumpleaños: el día"
     },
     "kinds": {
       "NEAR_REWARD": {

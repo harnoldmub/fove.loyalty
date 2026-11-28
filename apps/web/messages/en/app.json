@@ -1,14 +1,14 @@
 {
   "automations": {
-    "title": "Automatic follow-ups",
-    "description": "Messages sent automatically to bring your customers back: on their Wallet card, and by email if they agreed.",
+    "title": "Follow-ups",
+    "description": "Bring your customers back: the list of customers to follow up, and automatic messages on their Wallet card (and by email if they agreed).",
     "rules": "Each scenario is turned on separately. A customer receives at most one follow-up every 14 days, between 10 am and 7 pm. An empty text uses the suggested one.",
     "on": "On",
     "off": "Off",
     "enable": "Turn on this scenario",
     "messageTitle": "Title",
     "messageBody": "Message",
-    "variables": "Variables: {prénom}, {commerce}, {solde}, {récompense}, {reste}.",
+    "variables": "Variables: {vars}",
     "bonus": "Offer a welcome-back bonus (credited to the card with the message)",
     "bonusAmount": "Bonus (points or stamps)",
     "preview": "Preview",
@@ -39,7 +39,40 @@
       "daysAfter": "Days after",
       "soon": "Announcement (at the start of the period)",
       "day": "On the day (if the gift hasn't been used yet)",
-      "variables": "Variables: {prénom}, {commerce}, {cadeau}, {date}."
+      "variables": "Variables: {vars}"
+    },
+    "tabs": {
+      "contact": "To follow up",
+      "auto": "Automatic",
+      "results": "Results"
+    },
+    "contact": {
+      "help": "Customers to follow up today and birthdays in the next 7 days. Send them the suggested message on WhatsApp: they leave the list for 14 days.",
+      "birthdays": "Birthdays",
+      "noBirthdays": "No birthdays in the next 7 days.",
+      "relaunch": "Customers to follow up",
+      "empty": "Nobody to follow up for now.",
+      "whatsapp": "WhatsApp",
+      "noPhone": "No phone",
+      "done": "Done",
+      "inDays": "Birthday in {count, plural, one {# day} other {# days}}",
+      "today": "Birthday today"
+    },
+    "results": {
+      "help": "Over the last {days} days: messages sent and customers who came back to the till within the next 30 days.",
+      "scenario": "Scenario",
+      "sent": "Sent",
+      "returned": "Came back",
+      "rate": "Return rate",
+      "gifts": "Birthday gifts: {created} offered, {used} used."
+    },
+    "scenarios": {
+      "NEAR_REWARD": "Almost a reward",
+      "REWARD_WAITING": "Reward waiting",
+      "AT_RISK": "At-risk customer",
+      "DORMANT": "Dormant customer",
+      "BIRTHDAY_SOON": "Birthday: announcement",
+      "BIRTHDAY_DAY": "Birthday: on the day"
     },
     "kinds": {
       "NEAR_REWARD": {

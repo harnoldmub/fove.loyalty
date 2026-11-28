@@ -472,6 +472,8 @@ enum AutomationScenario {
 enum MessageChannel {
   WALLET
   EMAIL
+  /// Envoyé par le commerçant lui-même (lien WhatsApp de la liste « À relancer »).
+  WHATSAPP_MANUAL
 }
 
 /// Règles des messages automatiques d'un commerce (docs/chantier-relances-anniversaire.md).

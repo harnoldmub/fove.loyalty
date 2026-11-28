@@ -170,3 +170,42 @@ describe("anniversaire", () => {
     expect(await automation.activeGift(tenantId, customerId, noon(11))).toBeNull();
   });
 });
+
+describe("résultats et liste « À relancer »", () => {
+  it("offre Gratuite : liste des clients à relancer et des anniversaires, retirés une fois contactés", async () => {
+    const owner = await ownerWithTenant(app, { plan: "free" });
+    const program = await createPointsProgram(owner.client, { name: "Café", mode: "STAMPS", stampsTarget: 10, stampsPerPurchase: 1 });
+    const dormant = await cardWith(owner.client, program.id, { balance: 3, lastActivityDaysAgo: 0, lastVisitDaysAgo: 100 });
+    await db.customer.update({ where: { id: dormant.customerId }, data: { lastVisitAt: new Date(Date.now() - 100 * DAY), createdAt: new Date(Date.now() - 300 * DAY) } });
+    const birthday = await cardWith(owner.client, program.id, { balance: 1, lastActivityDaysAgo: 0, lastVisitDaysAgo: 1 });
+    const inThreeDays = new Date(Date.now() + 3 * DAY);
+    await db.customer.update({ where: { id: birthday.customerId }, data: { birthDay: inThreeDays.getUTCDate(), birthMonth: inThreeDays.getUTCMonth() + 1, lastVisitAt: new Date(), createdAt: new Date(Date.now() - 300 * DAY) } });
+
+    const list = (await owner.client.get("/api/app/automations/to-contact")).body;
+    const entry = list.relaunch.find((r: { customerId: string }) => r.customerId === dormant.customerId);
+    expect(entry).toMatchObject({ scenario: "DORMANT" });
+    expect(entry.message).toContain("Vous nous manquez");
+    expect(list.birthdays.find((b: { customerId: string }) => b.customerId === birthday.customerId)).toMatchObject({ inDays: 3 });
+
+    expect((await owner.client.post("/api/app/automations/contacted", { customerId: dormant.customerId, scenario: "DORMANT" })).status).toBe(200);
+    expect((await owner.client.post("/api/app/automations/contacted", { customerId: birthday.customerId, scenario: "BIRTHDAY_DAY" })).status).toBe(200);
+    const after = (await owner.client.get("/api/app/automations/to-contact")).body;
+    expect(after.relaunch.some((r: { customerId: string }) => r.customerId === dormant.customerId)).toBe(false);
+    expect(after.birthdays.some((b: { customerId: string }) => b.customerId === birthday.customerId)).toBe(false);
+  });
+
+  it("taux de retour : un passage dans les 30 jours après le message", async () => {
+    const { client, tenantId, programId } = await stampShop();
+    const back = await cardWith(client, programId, { balance: 9, lastActivityDaysAgo: 3 });
+    const gone = await cardWith(client, programId, { balance: 9, lastActivityDaysAgo: 3 });
+    await enable(client, "NEAR_REWARD");
+    const sentAt = new Date(Date.now() - 5 * DAY);
+    for (const c of [back, gone]) {
+      await db.customerMessage.create({ data: { tenantId, customerId: c.customerId, accountId: c.accountId, scenario: "NEAR_REWARD", channel: "WALLET", key: uniq("k"), title: "t", body: "b", sentAt } });
+    }
+    await db.loyaltyAccount.update({ where: { id: back.accountId }, data: { lastActivityAt: new Date(Date.now() - 2 * DAY) } });
+    expect((await client.post("/api/app/transactions/earn", { accountId: back.accountId, amount: null, idempotencyKey: uniq("e") })).status).toBeLessThan(300);
+    const stats = (await client.get("/api/app/automations/stats")).body;
+    expect(stats.scenarios.find((s: { scenario: string }) => s.scenario === "NEAR_REWARD")).toMatchObject({ sent: 2, returned: 1 });
+  });
+});

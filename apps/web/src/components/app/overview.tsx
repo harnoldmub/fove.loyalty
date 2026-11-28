@@ -260,7 +260,7 @@ export function OverviewView({ mode }: { mode: "home" | "analytics" }) {
                   <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-md bg-stamp-soft p-3 text-sm text-stamp-ink dark:text-stamp">
                     <span>{t.rich("segments.atRiskAlert", { count: segments.AT_RISK, strong: (c) => <strong>{c}</strong> })}</span>
                     <Button asChild size="sm" variant="secondary" className="shrink-0">
-                      <Link href="/app/customers">{t("segments.remind")}</Link>
+                      <Link href="/app/relances">{t("segments.remind")}</Link>
                     </Button>
                   </div>
                 )}
