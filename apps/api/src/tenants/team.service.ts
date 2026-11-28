@@ -6,7 +6,7 @@ import { loadConfig } from "../config";
 import { PrismaService } from "../common/prisma.service";
 import { AuditService } from "../common/audit.service";
 import { randomToken, sha256 } from "../common/crypto";
-import { badRequest, conflict, forbidden, notFound } from "../common/errors";
+import { badRequest, conflict, forbidden, notFound, paymentRequired } from "../common/errors";
 import type { AuthState, TenantContext } from "../common/context";
 import { EmailService } from "../notifications/email.service";
 import { PlanService } from "../billing/plan.service";
@@ -59,8 +59,25 @@ export class TeamService {
     if (count !== ids.length) throw badRequest("invalid_establishment", "Établissement inconnu");
   }
 
+  /**
+   * Place libre dans la limite de collaborateurs de l'offre : actifs, plus les invitations encore valables
+   * (une place est réservée dès l'envoi). Le propriétaire compte.
+   */
+  private async assertStaffRoom(tenantId: string, opts: { countPending: boolean }) {
+    const limit = (await this.plans.limits(tenantId)).staff;
+    if (limit === null) return;
+    const db = this.prisma.client;
+    const [active, pending] = await Promise.all([
+      db.tenantMembership.count({ where: { tenantId, status: "ACTIVE" } }),
+      opts.countPending ? db.invitation.count({ where: { tenantId, acceptedAt: null, revokedAt: null, expiresAt: { gt: new Date() } } }) : Promise.resolve(0),
+    ]);
+    if (active + pending + 1 > limit) {
+      throw paymentRequired("quota_exceeded", `Limite de ${limit} collaborateurs atteinte pour votre offre (invitations en attente comprises)`);
+    }
+  }
+
   async invite(ctx: TenantContext, input: z.infer<typeof inviteMemberSchema>) {
-    await this.plans.assertQuota(ctx.tenantId, "staff");
+    await this.assertStaffRoom(ctx.tenantId, { countPending: true });
     await this.assertEstablishments(ctx.tenantId, input.establishmentIds);
     const email = normalizeEmail(input.email);
     const existing = await this.prisma.client.tenantMembership.findFirst({ where: { tenantId: ctx.tenantId, user: { email } } });
@@ -116,6 +133,11 @@ export class TeamService {
 
   async acceptInvitation(input: z.infer<typeof acceptInviteSchema>, state: AuthState | null, req: Request, res: Response) {
     const invitation = await this.findValidInvitation(input.token);
+    // La place peut avoir été prise entre l'invitation et son acceptation (collaborateur réactivé, offre changée).
+    const limit = (await this.plans.limits(invitation.tenantId)).staff;
+    if (limit !== null && (await this.prisma.client.tenantMembership.count({ where: { tenantId: invitation.tenantId, status: "ACTIVE" } })) >= limit) {
+      throw paymentRequired("staff_full", "Ce commerce a atteint sa limite de collaborateurs : demandez-lui de libérer une place");
+    }
     let userId: string;
     const existingUser = await this.prisma.client.user.findUnique({ where: { email: invitation.email } });
     if (existingUser) {
@@ -204,8 +226,43 @@ export class TeamService {
       if (ctx.actor.type !== "user" || ctx.actor.role !== "OWNER") throw forbidden();
       if (status === "DISABLED") await this.assertAnotherOwner(ctx.tenantId, membershipId);
     }
+    // Réactiver reprend une place : même limite qu'une invitation.
+    if (status === "ACTIVE" && membership.status !== "ACTIVE") await this.assertStaffRoom(ctx.tenantId, { countPending: true });
     await this.prisma.client.tenantMembership.update({ where: { id: membershipId }, data: { status } });
     await this.audit.forTenant(ctx, status === "DISABLED" ? "member.disabled" : "member.enabled", { type: "membership", id: membershipId });
+  }
+
+  /**
+   * « Remplacer » (rotation des caissiers) : l'ancien collaborateur est désactivé (son historique reste à son nom)
+   * et le nouveau est invité avec le même rôle et les mêmes établissements, en un seul geste.
+   */
+  async replace(ctx: TenantContext, membershipId: string, emailRaw: string) {
+    const membership = await this.prisma.client.tenantMembership.findFirst({
+      where: { id: membershipId, tenantId: ctx.tenantId },
+      include: { role: true, establishments: { select: { establishmentId: true } }, user: { select: { name: true } } },
+    });
+    if (!membership) throw notFound("Collaborateur");
+    if (ctx.actor.type === "user" && membership.userId === ctx.actor.userId) throw badRequest("self", "Vous ne pouvez pas modifier votre propre accès");
+    if (membership.role.key === "OWNER") throw forbidden("Un propriétaire ne se remplace pas");
+    const email = normalizeEmail(emailRaw);
+    const already = await this.prisma.client.tenantMembership.findFirst({ where: { tenantId: ctx.tenantId, user: { email } } });
+    if (already) throw conflict("already_member", "Cette personne fait déjà partie de l'équipe");
+
+    const wasActive = membership.status === "ACTIVE";
+    if (wasActive) await this.prisma.client.tenantMembership.update({ where: { id: membership.id }, data: { status: "DISABLED" } });
+    try {
+      const invitation = await this.invite(ctx, {
+        email,
+        role: membership.role.key as Exclude<TenantRole, "OWNER">,
+        establishmentIds: membership.allEstablishments ? [] : membership.establishments.map((e) => e.establishmentId),
+      });
+      await this.audit.forTenant(ctx, "member.replaced", { type: "membership", id: membership.id }, { email });
+      return invitation;
+    } catch (error) {
+      // Invitation impossible : l'ancien collaborateur garde sa place.
+      if (wasActive) await this.prisma.client.tenantMembership.update({ where: { id: membership.id }, data: { status: "ACTIVE" } });
+      throw error;
+    }
   }
 
   private async assertAnotherOwner(tenantId: string, exceptMembershipId: string) {

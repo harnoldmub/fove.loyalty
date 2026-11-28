@@ -105,6 +105,8 @@ const EXACT: Record<string, Tr> = {
   "Envoi refusé": ["Submission refused", "تم رفض الإرسال", "Envío rechazado"],
   "Aucune validation en attente": ["No verification pending", "لا يوجد تحقق معلّق", "No hay ninguna validación pendiente"],
   "Code expiré : demandez-en un nouveau": ["Code expired: request a new one", "انتهت صلاحية الرمز: اطلب رمزًا جديدًا", "Código caducado: pide uno nuevo"],
+  "Ce commerce a atteint sa limite de collaborateurs : demandez-lui de libérer une place": ["This business has reached its team member limit: ask it to free up a spot", "بلغ هذا النشاط حدّ أعضاء الفريق: اطلب منه تحرير مكان", "Este comercio ha alcanzado su límite de miembros del equipo: pídele que libere un puesto"],
+  "Un propriétaire ne se remplace pas": ["An owner can't be replaced", "لا يمكن استبدال المالك", "Un propietario no se puede sustituir"],
   "Code incorrect": ["Incorrect code", "رمز غير صحيح", "Código incorrecto"],
   "Ce parrainage est déjà clos": ["This referral is already closed", "هذه الإحالة مغلقة بالفعل", "Esta recomendación ya está cerrada"],
   "Confirmez votre email pour inscrire plus de 50 clients": ["Confirm your email to sign up more than 50 customers", "أكّد بريدك الإلكتروني لتسجيل أكثر من 50 عميلًا", "Confirma tu correo para inscribir a más de 50 clientes"],
@@ -228,6 +230,10 @@ const PATTERNS: Pattern[] = [
       if (!what) return null;
       return [`Your plan's limit of ${m[1]} ${what} has been reached`, `تم بلوغ حدّ ${m[1]} ${what} في باقتك`, `Se ha alcanzado el límite de ${m[1]} ${what} de tu plan`][i]!;
     },
+  ],
+  [
+    /^Limite de (\d+) collaborateurs atteinte pour votre offre \(invitations en attente comprises\)$/,
+    (m, i) => [`Your plan's limit of ${m[1]} team members has been reached (pending invitations included)`, `تم بلوغ حدّ ${m[1]} أعضاء الفريق في باقتك (بما في ذلك الدعوات المعلّقة)`, `Se ha alcanzado el límite de ${m[1]} miembros del equipo de tu plan (invitaciones pendientes incluidas)`][i]!,
   ],
   [
     /^La carte a déjà atteint (\d+) tampons\. La récompense est prête à être utilisée\.$/,

@@ -1022,6 +1022,14 @@
     "quickNav": "Navegación rápida"
   },
   "team": {
+    "replace": {
+      "button": "Sustituir",
+      "title": "Sustituir a {name}",
+      "help": "{name} quedará desactivado (su historial sigue a su nombre) y la persona de abajo será invitada con el mismo rol y los mismos establecimientos.",
+      "email": "Correo del sustituto",
+      "submit": "Sustituir e invitar",
+      "done": "Invitación enviada a {email}"
+    },
     "roles": {
       "OWNER": {
         "label": "Propietario",

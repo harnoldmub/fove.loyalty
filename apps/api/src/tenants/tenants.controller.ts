@@ -11,6 +11,8 @@ import { TeamService } from "./team.service";
 
 const memberStatusSchema = z.object({ status: z.enum(["ACTIVE", "DISABLED"]) });
 
+const replaceSchema = z.object({ email: z.email().max(254) });
+
 @ApiTags("app")
 @Controller("app")
 export class TenantsController {
@@ -105,6 +107,15 @@ export class TenantsController {
   @RequirePermission("members.write")
   async updateMember(@Tenant() ctx: TenantContext, @Param("id", ParseUUIDPipe) id: string, @Body(new ZodPipe(updateMemberSchema)) body: z.infer<typeof updateMemberSchema>) {
     await this.team.updateMember(ctx, id, body);
+  }
+
+  /** Remplacer un collaborateur : désactivé, et son remplaçant invité avec le même rôle. */
+  @Post("team/members/:id/replace")
+  @RequireVerified()
+  @TenantRoute()
+  @RequirePermission("members.write")
+  replace(@Tenant() ctx: TenantContext, @Param("id", ParseUUIDPipe) id: string, @Body(new ZodPipe(replaceSchema)) body: z.infer<typeof replaceSchema>) {
+    return this.team.replace(ctx, id, body.email);
   }
 
   @Post("team/members/:id/status")

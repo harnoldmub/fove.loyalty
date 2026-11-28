@@ -1022,6 +1022,14 @@
     "quickNav": "Quick navigation"
   },
   "team": {
+    "replace": {
+      "button": "Replace",
+      "title": "Replace {name}",
+      "help": "{name} will be deactivated (their history stays under their name) and the person below will be invited with the same role and locations.",
+      "email": "Replacement's email",
+      "submit": "Replace and invite",
+      "done": "Invitation sent to {email}"
+    },
     "roles": {
       "OWNER": {
         "label": "Owner",

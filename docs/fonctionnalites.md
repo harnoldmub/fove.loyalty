@@ -378,11 +378,15 @@ Programme à tampons : la carte repasse à zéro.
   - Une nouvelle personne crée son accès depuis le lien ; son email est alors considéré comme confirmé.
 - Révoquer une invitation en attente.
 - Changer le rôle ou les établissements d'un collaborateur ; désactiver ou réactiver son accès.
+- **Remplacer** un collaborateur (rotation des caissiers) : il est désactivé, son historique reste à son nom, et son remplaçant est invité avec le même rôle et les mêmes établissements, en un seul geste.
 - Garde-fous :
   - on ne peut pas modifier son propre accès ;
   - l'entreprise garde toujours au moins un propriétaire ;
   - on ne peut pas inviter un autre propriétaire.
-- Le nombre de collaborateurs est limité par l'offre. Le propriétaire compte pour un.
+- Le nombre de collaborateurs est limité par l'offre. Le propriétaire compte pour un ; un collaborateur désactivé ne compte plus.
+  - Une invitation en attente réserve une place dès son envoi.
+  - L'acceptation est refusée si le commerce est plein entre-temps (« demandez-lui de libérer une place »).
+  - Réactiver un collaborateur reprend une place : refusé si la limite est atteinte.
 
 ### 3.11 Campagnes Wallet
 
