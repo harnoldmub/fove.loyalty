@@ -46,6 +46,7 @@ import { formatDate, formatNumber, formatPrice } from "@/lib/utils";
 import { PartnerLeadModal } from "./partner-lead-modal";
 import { PartnerQrModal } from "./partner-qr-modal";
 import { PartnerUtmModal } from "./partner-utm-modal";
+import { DataLoader } from "@/components/navigation/data-loader";
 
 interface DashboardData {
   partner: {
@@ -183,8 +184,8 @@ export function PartnerDashboard({ user, spaces }: { user: { name: string; email
 
   if (isLoading) {
     return (
-      <div className="grid min-h-dvh place-items-center bg-paper text-sm text-ink-3">
-        {t("loading")}
+      <div className="bg-paper">
+        <DataLoader className="min-h-dvh" />
       </div>
     );
   }

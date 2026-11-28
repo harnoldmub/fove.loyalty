@@ -14,6 +14,7 @@ import { Badge, ErrorNote, PageHeader, Panel } from "@/components/ui/misc";
 import { api, useErrorMessage } from "@/lib/api";
 import { formatDate } from "@/lib/utils";
 import { useQuotaBlock } from "@/components/app/upgrade";
+import { DataLoader } from "@/components/navigation/data-loader";
 
 const ROLES = ["OWNER", "MANAGER", "CASHIER", "VIEWER"] as const;
 type Role = (typeof ROLES)[number];
@@ -97,9 +98,10 @@ export default function TeamPage() {
   return (
     <>
       <PageHeader title={t("title")} description={t("description")} actions={canWrite && <Button onClick={() => setInviting(true)}><UserPlus /> {t("inviteButton")}</Button>} />
+      {!data ? <DataLoader /> : (
       <Panel className="overflow-hidden">
         <ul className="divide-y divide-line">
-          {data?.members.map((m) => (
+          {data.members.map((m) => (
             <li key={m.id} className="flex flex-wrap items-center gap-3 px-5 py-4">
               <div className="min-w-0 flex-1">
                 <p className="font-medium">
@@ -152,6 +154,7 @@ export default function TeamPage() {
           ))}
         </ul>
       </Panel>
+      )}
       {data && data.invitations.length > 0 && (
         <section className="mt-8" aria-labelledby="invitations">
           <h2 id="invitations" className="mb-3 font-display text-xl font-semibold">{t("pending")}</h2>

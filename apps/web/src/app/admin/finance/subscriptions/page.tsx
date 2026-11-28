@@ -9,6 +9,7 @@ import { api } from "@/lib/api";
 import { formatDate } from "@/lib/utils";
 import { FinanceNav } from "@/components/admin/finance/finance-nav";
 import { formatFinance } from "@/components/admin/finance/finance-utils";
+import { DataLoader } from "@/components/navigation/data-loader";
 
 interface SubscriptionRow {
   id: string;
@@ -115,7 +116,7 @@ export default function SubscriptionsFinancePage() {
       </div>
 
       {isLoading ? (
-        <div className="py-20 text-center text-sm text-ink-3">{t("loading")}</div>
+        <DataLoader />
       ) : subs.length === 0 ? (
         <Panel className="p-12 text-center text-sm text-ink-3">{t("empty")}</Panel>
       ) : (

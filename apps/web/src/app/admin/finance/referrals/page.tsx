@@ -14,6 +14,7 @@ import { formatDate } from "@/lib/utils";
 import { FinanceNav } from "@/components/admin/finance/finance-nav";
 import { formatFinance } from "@/components/admin/finance/finance-utils";
 import type { ReferralStatus } from "@/lib/referral";
+import { DataLoader } from "@/components/navigation/data-loader";
 
 interface ReferralItem {
   id: string;
@@ -72,7 +73,7 @@ export default function ReferralsFinancePage() {
       </div>
 
       {isLoading ? (
-        <div className="py-20 text-center text-sm text-ink-3">{t("loading")}</div>
+        <DataLoader />
       ) : referrals.length === 0 ? (
         <Panel className="py-12 text-center text-sm text-ink-3">{t("empty")}</Panel>
       ) : (

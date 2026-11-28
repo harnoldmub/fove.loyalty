@@ -16,6 +16,7 @@ import { Badge, EmptyState, ErrorNote, PageHeader, Panel } from "@/components/ui
 import { api, useErrorMessage } from "@/lib/api";
 import { useIsNativeApp } from "@/lib/native-app";
 import { formatDate } from "@/lib/utils";
+import { DataLoader } from "@/components/navigation/data-loader";
 
 interface ApiKey { id: string; name: string; kind: "SECRET" | "PUBLISHABLE"; environment: "TEST" | "LIVE"; prefix: string; scopes: string[]; allowedOrigins: string[]; lastUsedAt: string | null; revokedAt: string | null; createdAt: string }
 interface Endpoint { id: string; url: string; events: string[]; active: boolean }
@@ -199,13 +200,15 @@ export default function IntegrationsPage() {
   const { data: keys = [] } = useQuery({ queryKey: ["keys"], queryFn: () => api.get<ApiKey[]>("/app/integrations/keys") });
   const { data: hooks = [] } = useQuery({ queryKey: ["webhooks"], queryFn: () => api.get<Endpoint[]>("/app/integrations/webhooks") });
   const { data: deliveries = [] } = useQuery({ queryKey: ["deliveries"], queryFn: () => api.get<Delivery[]>("/app/integrations/deliveries") });
-  const { data: connections = [] } = useQuery({ queryKey: ["connections"], queryFn: () => api.get<Connection[]>("/app/integrations/connections") });
+  const { data: connections = [], isLoading } = useQuery({ queryKey: ["connections"], queryFn: () => api.get<Connection[]>("/app/integrations/connections") });
   const { data: programs = [] } = useQuery({ queryKey: ["programs"], queryFn: () => api.get<Program[]>("/app/programs") });
 
   return (
     <>
       <PageHeader title={t("title")} description={native ? t("description") : t.rich("descriptionDocs", { link: (c) => <Link className="text-cobalt underline" href="/developpeurs">{c}</Link> })} />
 
+      {isLoading ? <DataLoader /> : (
+      <>
       <section className="grid gap-3" aria-labelledby="boutique">
         <h2 id="boutique" className="font-display text-xl font-semibold">{t("shop.title")}</h2>
         {connections.length === 0 ? (
@@ -354,6 +357,8 @@ export default function IntegrationsPage() {
 
       <KeyDialog open={keyOpen} onOpenChange={setKeyOpen} />
       <WebhookDialog open={hookOpen} onOpenChange={setHookOpen} />
+      </>
+      )}
     </>
   );
 }

@@ -13,6 +13,7 @@ import { formatDate } from "@/lib/utils";
 import { FinanceNav } from "@/components/admin/finance/finance-nav";
 import { formatFinance, formatPct } from "@/components/admin/finance/finance-utils";
 import { PartnerModal } from "@/components/admin/finance/partner-modal";
+import { DataLoader } from "@/components/navigation/data-loader";
 
 interface PartnerRow {
   id: string;
@@ -135,7 +136,7 @@ export default function CommissionsPage() {
       <div className="mb-8 space-y-3">
         <h3 className="font-display text-base font-semibold text-ink">{t("partnersTitle")}</h3>
         {loadingPartners ? (
-          <div className="py-10 text-center text-sm text-ink-3">{t("loading")}</div>
+          <DataLoader className="min-h-48" />
         ) : partners.length === 0 ? (
           <Panel className="p-8 text-center text-sm text-ink-3">
             {t("partnersEmpty")}
@@ -196,7 +197,7 @@ export default function CommissionsPage() {
       <div className="space-y-3">
         <h3 className="font-display text-base font-semibold text-ink">{t("logTitle")}</h3>
         {loadingComms ? (
-          <div className="py-10 text-center text-sm text-ink-3">{t("loading")}</div>
+          <DataLoader className="min-h-48" />
         ) : commissions.length === 0 ? (
           <Panel className="p-8 text-center text-sm text-ink-3">
             {t("logEmpty")}

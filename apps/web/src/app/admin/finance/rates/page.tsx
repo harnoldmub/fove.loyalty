@@ -11,6 +11,7 @@ import { PageHeader, Panel } from "@/components/ui/misc";
 import { api, useErrorMessage } from "@/lib/api";
 import { formatDate } from "@/lib/utils";
 import { FinanceNav } from "@/components/admin/finance/finance-nav";
+import { DataLoader } from "@/components/navigation/data-loader";
 
 interface Rate {
   currency: string;
@@ -29,7 +30,7 @@ export default function RatesPage() {
   const t = useTranslations("admin.finance.rates");
   const errMsg = useErrorMessage();
   const qc = useQueryClient();
-  const { data = [] } = useQuery({ queryKey: ["admin-fx-rates"], queryFn: () => api.get<Rate[]>("/admin/finance/exchange-rates") });
+  const { data = [], isLoading } = useQuery({ queryKey: ["admin-fx-rates"], queryFn: () => api.get<Rate[]>("/admin/finance/exchange-rates") });
   // Saisies en cours, par-dessus les taux enregistrés.
   const [edits, setEdits] = useState<Record<string, string>>({});
   const values: Record<string, string> = { ...Object.fromEntries(data.map((r) => [r.currency, String(r.unitsPerEur)])), ...edits };
@@ -62,6 +63,7 @@ export default function RatesPage() {
     <>
       <PageHeader title={t("title")} description={t("description")} />
       <FinanceNav />
+      {isLoading ? <DataLoader /> : (
       <Panel className="grid max-w-2xl gap-4 p-5">
         <p className="text-sm text-ink-2">{t("help")}</p>
         {CURRENCIES.map((currency) => {
@@ -88,6 +90,7 @@ export default function RatesPage() {
           {t("save")}
         </Button>
       </Panel>
+      )}
     </>
   );
 }
