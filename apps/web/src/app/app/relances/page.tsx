@@ -14,6 +14,7 @@ import { MessageCircle } from "lucide-react";
 import { buildWhatsAppLink } from "@fove/shared";
 import { api, useErrorMessage } from "@/lib/api";
 import { useActiveTenant, useCan } from "@/components/app/me-context";
+import { CustomerReferralsPanel } from "@/components/app/customer-referrals";
 
 type Kind = "NEAR_REWARD" | "REWARD_WAITING" | "AT_RISK" | "DORMANT" | "BIRTHDAY";
 
@@ -69,6 +70,7 @@ export default function AutomationsPage() {
             <TabsTrigger value="contact">{t("tabs.contact")}</TabsTrigger>
             <TabsTrigger value="auto">{t("tabs.auto")}</TabsTrigger>
             {data.available && <TabsTrigger value="results">{t("tabs.results")}</TabsTrigger>}
+            <TabsTrigger value="referral">{t("tabs.referral")}</TabsTrigger>
           </TabsList>
           <TabsContent value="contact">
             <ToContactList />
@@ -95,6 +97,9 @@ export default function AutomationsPage() {
               <Results />
             </TabsContent>
           )}
+          <TabsContent value="referral">
+            <CustomerReferralsPanel />
+          </TabsContent>
         </Tabs>
       )}
     </>

@@ -43,7 +43,10 @@
     "recoverIntro": "El enlace de tu tarjeta se envía al email registrado en tu ficha. Si no tienes email, pídelo al personal en caja.",
     "recoverIdentifier": "Email o teléfono usado en el registro",
     "recoverSubmit": "Recibir el enlace",
-    "poweredBy": "Tarjeta de fidelización impulsada por FOVE"
+    "poweredBy": "Tarjeta de fidelización impulsada por FOVE",
+    "invited": "Un amigo te invita: ¡bienvenido!",
+    "invitedStamps": "Un amigo te invita: {count, plural, one {# sello de regalo} other {# sellos de regalo}} al crear tu tarjeta.",
+    "invitedPoints": "Un amigo te invita: {count, plural, one {# punto de regalo} other {# puntos de regalo}} al crear tu tarjeta."
   },
   "homeScreen": {
     "added": "¡Tarjeta añadida a tu pantalla de inicio!",
@@ -133,7 +136,22 @@
       "EXPIRATION": "Caducidad"
     },
     "memberSince": "Miembro desde el {date}. Este enlace es personal: no lo compartas.",
-    "poweredBy": "Impulsado por <link>FOVE</link>"
+    "poweredBy": "Impulsado por <link>FOVE</link>",
+    "referral": {
+      "title": "Recomienda a un amigo",
+      "text": "Comparte tu enlace: ganas {mine} cuando tu amigo venga por primera vez.",
+      "textBoth": "Comparte tu enlace: tu amigo recibe {theirs} al registrarse y tú ganas {mine} en su primera visita.",
+      "stamps": "{count, plural, one {# sello} other {# sellos}}",
+      "points": "{count, plural, one {# punto} other {# puntos}}",
+      "message": "Soy cliente de {tenant} y te lo recomiendo. Crea tu tarjeta de fidelidad aquí: {link}",
+      "messageGift": "Soy cliente de {tenant} y te lo recomiendo. Crea tu tarjeta de fidelidad aquí, {gain} de regalo: {link}",
+      "cta": "Compartir mi enlace",
+      "whatsapp": "WhatsApp",
+      "copy": "Copiar",
+      "copied": "Copiado",
+      "copyFailed": "No se pudo copiar: selecciona el enlace.",
+      "hint": "Válido para alguien que todavía no tiene tarjeta aquí."
+    }
   },
   "wallet": {
     "apple": "Añadir a Apple Wallet",

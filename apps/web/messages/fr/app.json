@@ -60,6 +60,41 @@
       "saved": "Délai enregistré"
     }
   },
+  "customerReferral": {
+    "title": "Parrainage entre clients",
+    "on": "Activé",
+    "off": "Désactivé",
+    "how": "Vos clients partagent un lien depuis leur carte. Leur ami crée sa carte avec ce lien, et dès son premier passage en caisse, le client qui l’a invité est récompensé.",
+    "enable": "Activer le parrainage",
+    "referrer": "Client qui invite (parrain)",
+    "referrerHelp": "Crédité au premier passage en caisse de son ami.",
+    "referee": "Ami invité (filleul)",
+    "refereeHelp": "Crédité à la création de sa carte.",
+    "fields": {
+      "referrerStamps": "Tampons",
+      "referrerPoints": "Points",
+      "refereeStamps": "Tampons",
+      "refereePoints": "Points",
+      "monthlyCap": "Parrainages récompensés par mois"
+    },
+    "capHelp": "Par client. Au-delà, le parrainage est noté sans récompense.",
+    "rules": "Tampons pour un programme à tampons, points pour un programme à points. Un client qui a déjà une carte ici ne peut pas être parrainé.",
+    "save": "Enregistrer",
+    "saved": "Parrainage enregistré.",
+    "paidOnly": {
+      "title": "Disponible dans les offres payantes",
+      "body": "Le parrainage entre clients fait venir de nouveaux clients par vos meilleurs clients.",
+      "cta": "Voir les offres"
+    },
+    "stats": {
+      "signedUp": "Amis inscrits",
+      "came": "Venus en caisse",
+      "rewarded": "Parrains récompensés",
+      "top": "Meilleurs parrains",
+      "empty": "Aucun parrainage récompensé pour l’instant.",
+      "friends": "{count, plural, one {# ami} other {# amis}}"
+    }
+  },
   "automations": {
     "title": "Relances",
     "description": "Faites revenir vos clients : la liste des clients à relancer, et des messages automatiques sur leur carte Wallet (et par email s'ils l'ont accepté).",
@@ -103,6 +138,7 @@
       "variables": "Variables : {vars}"
     },
     "tabs": {
+      "referral": "Parrainage clients",
       "contact": "À relancer",
       "auto": "Automatiques",
       "results": "Résultats"

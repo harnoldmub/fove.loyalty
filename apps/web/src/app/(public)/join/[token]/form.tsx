@@ -2,7 +2,7 @@
 
 import { useAppRouter } from "@/lib/navigation-progress";
 import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
-import { ArrowLeft, ArrowRight, Sparkles } from "lucide-react";
+import { ArrowLeft, ArrowRight, HeartHandshake, Sparkles } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Checkbox, Field, Input } from "@/components/ui/field";
@@ -21,7 +21,25 @@ export interface JoinPage {
   tenant: { name: string; logoUrl: string | null; primaryColor: string; privacyPolicyUrl: string | null; country: string };
   establishment: string | null;
   program: { name: string; mode: "POINTS" | "STAMPS"; currency: string; spendStep: string; pointsPerStep: number; stampsTarget: number; terms: string; verification: "NONE" | "EMAIL_OTP" | "IN_STORE"; rewards: { name: string; cost: number }[] };
+  /** Parrainage entre clients actif : bienvenue offerte au filleul. */
+  referral?: { mode: string; refereeGain: number } | null;
 }
+
+/**
+ * Code de parrainage du lien (?parrain=…), gardé pour l'onglet : il survit à la connexion (code email, Google)
+ * avant la création de la carte.
+ */
+const REFERRAL_KEY = (token: string) => `fove.parrain.${token}`;
+function rememberReferral(token: string): string | null {
+  try {
+    const fromUrl = new URLSearchParams(window.location.search).get("parrain")?.trim().slice(0, 16);
+    if (fromUrl) sessionStorage.setItem(REFERRAL_KEY(token), fromUrl);
+    return fromUrl || sessionStorage.getItem(REFERRAL_KEY(token));
+  } catch {
+    return null;
+  }
+}
+const referralCode = (token: string) => rememberReferral(token) ?? undefined;
 
 /** Situation du visiteur, calculée par l'API d'après la session de son compte FOVE. */
 type JoinState =
@@ -43,6 +61,8 @@ export function JoinForm({ token, data }: { token: string; data: JoinPage }) {
   const { tenant, program } = data;
   const [state, setState] = useState<JoinState | null>(null);
   const [loadError, setLoadError] = useState(false);
+  // Lien d'un ami (?parrain=…) : code gardé pour l'onglet, bienvenue annoncée.
+  const invited = useSyncExternalStore(subscribeHash, () => Boolean(data.referral && rememberReferral(token)), () => false);
 
   const apply = useCallback(
     (next: JoinState) => {
@@ -93,6 +113,16 @@ export function JoinForm({ token, data }: { token: string; data: JoinPage }) {
       </header>
       <main id="contenu" className="mx-auto -mt-10 max-w-md px-4 pb-16">
         <div className="rounded-[var(--radius-lg)] bg-surface p-5 shadow-2 sm:p-6">
+          {invited && data.referral && (
+            <p role="status" className="mb-4 flex items-start gap-2 rounded-md bg-mint-soft px-3 py-2.5 text-sm text-mint">
+              <HeartHandshake className="mt-0.5 size-4 shrink-0" aria-hidden />
+              <span>
+                {data.referral.refereeGain > 0
+                  ? t(program.mode === "STAMPS" ? "join.invitedStamps" : "join.invitedPoints", { count: data.referral.refereeGain })
+                  : t("join.invited")}
+              </span>
+            </p>
+          )}
           {loadError ? (
             <ErrorNote>{t("account.loadError")}</ErrorNote>
           ) : !state ? (
@@ -186,7 +216,7 @@ function ConnectedJoin({
     setBusy(true);
     setError(null);
     try {
-      const res = await api.post<{ cardPath: string }>(`/client/join/${token}`, f);
+      const res = await api.post<{ cardPath: string }>(`/client/join/${token}`, { ...f, referralCode: referralCode(token) });
       onJoined(res.cardPath);
     } catch (err) {
       // Le compte a perdu sa confirmation entre-temps (autre appareil) : on recharge la situation.
@@ -272,6 +302,7 @@ function AnonymousJoin({ token, data, rule, onJoined }: { token: string; data: J
         birthDay: f.birthDay,
         birthMonth: f.birthMonth,
         website: f.website || undefined,
+        referralCode: referralCode(token),
       });
       if (res.state === "joined") return onJoined(res.cardPath);
       // Email déjà connu : le code prouve que c'est bien le sien avant de toucher à son compte.
@@ -292,6 +323,7 @@ function AnonymousJoin({ token, data, rule, onJoined }: { token: string; data: J
       marketingConsent: f.marketingConsent,
       birthDay: f.birthDay,
       birthMonth: f.birthMonth,
+      referralCode: referralCode(token),
     });
     onJoined(res.cardPath);
   };
