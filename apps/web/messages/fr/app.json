@@ -1,4 +1,65 @@
 {
+  "alerts": {
+    "title": "Points à vérifier",
+    "cancellations": "{count, plural, =0 {Aucune annulation cette semaine} one {# annulation cette semaine} other {# annulations cette semaine}}",
+    "repeated": "{cashier} a annulé {count} fois en 30 jours l'utilisation d'une récompense pour {customer}.",
+    "seeCustomer": "Voir le client",
+    "resolve": "Marquer comme vu"
+  },
+  "register": {
+    "switch": "Changer de caissier",
+    "who": "Qui encaisse ?",
+    "whoHelp": "Touchez votre nom, puis tapez votre code caisse.",
+    "whoHelpAt": "{establishment} · touchez votre nom, puis tapez votre code caisse.",
+    "noCashier": "Aucun collaborateur n'a encore choisi son code caisse. Chacun le choisit dans l'espace commerçant (Équipe).",
+    "hello": "Bonjour {name}",
+    "pinHelp": "Tapez votre code caisse à 4 chiffres.",
+    "back": "Ce n'est pas moi",
+    "close": "Fermer la caisse sur cet appareil",
+    "closeTitle": "Fermer la caisse ?",
+    "closeConsequence": "L'appareil sera déconnecté. Pour le réutiliser, il faudra se reconnecter par email puis réactiver la caisse.",
+    "closeConfirm": "Fermer la caisse",
+    "pin": {
+      "title": "Mon code caisse",
+      "choose": "Choisissez un code à 4 chiffres. Il vous identifie sur les caisses partagées du commerce.",
+      "confirm": "Tapez-le une seconde fois pour confirmer.",
+      "hint": "Gardez-le pour vous : les opérations faites avec ce code portent votre nom.",
+      "mismatch": "Les deux codes ne correspondent pas : recommencez.",
+      "saved": "Code caisse enregistré",
+      "banner": "Choisissez votre code caisse (4 chiffres) pour encaisser sur une caisse partagée.",
+      "bannerCta": "Choisir mon code"
+    },
+    "activate": {
+      "button": "Utiliser cet appareil comme caisse",
+      "title": "Utiliser cet appareil comme caisse",
+      "help": "Chaque collaborateur s'y identifiera avec son code caisse ; les opérations porteront son nom.",
+      "name": "Nom de la caisse",
+      "defaultName": "Caisse",
+      "establishment": "Établissement",
+      "allEstablishments": "Aucun en particulier",
+      "warning": "L'appareil n'aura plus accès qu'à la caisse. Pour retrouver l'espace complet, il faudra se déconnecter puis se reconnecter par email.",
+      "confirm": "Activer la caisse"
+    },
+    "team": {
+      "noPin": "Sans code caisse",
+      "pin": "Code caisse",
+      "reset": "Réinitialiser",
+      "resetTitle": "Réinitialiser le code caisse de {name} ?",
+      "resetConsequence": "Il ne pourra plus ouvrir une caisse tant qu'il n'aura pas choisi un nouveau code.",
+      "title": "Caisses",
+      "help": "Une tablette ou un téléphone partagé au comptoir : chacun s'y identifie avec son code caisse à 4 chiffres, et chaque opération porte son nom.",
+      "changeMyPin": "Changer mon code caisse",
+      "chooseMyPin": "Choisir mon code caisse",
+      "empty": "Aucune caisse pour le moment. Ouvrez l'espace commerçant sur l'appareil du comptoir et touchez « Utiliser cet appareil comme caisse ».",
+      "lastSeen": "Utilisée le {date}",
+      "revoke": "Retirer",
+      "revokeTitle": "Retirer la caisse « {name} » ?",
+      "revokeConsequence": "L'appareil est déconnecté tout de suite.",
+      "lockMinutes": "Verrouillage automatique (minutes)",
+      "save": "Enregistrer",
+      "saved": "Délai enregistré"
+    }
+  },
   "automations": {
     "title": "Relances",
     "description": "Faites revenir vos clients : la liste des clients à relancer, et des messages automatiques sur leur carte Wallet (et par email s'ils l'ont accepté).",
@@ -1013,6 +1074,7 @@
     "description": "Toutes les opérations, dans l’ordre. Rien ne s’efface : une erreur se corrige par une annulation.",
     "type": "Type",
     "all": "Tous",
+    "cancellations": "Annulations",
     "from": "Du",
     "to": "Au",
     "empty": "Aucune opération",

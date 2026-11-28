@@ -59,6 +59,9 @@ export interface Transaction {
   source: string;
   createdAt: string;
   reversesId: string | null;
+  /** Qui a fait l'opération et sur quelle caisse (historique du commerce). */
+  actorName?: string | null;
+  registerName?: string | null;
   account?: { cardNumber: string; customer: { id: string; firstName: string; lastName: string }; program: { name: string; mode: Mode } };
 }
 

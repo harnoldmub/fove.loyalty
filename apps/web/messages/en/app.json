@@ -1,4 +1,65 @@
 {
+  "alerts": {
+    "title": "To check",
+    "cancellations": "{count, plural, =0 {No cancellations this week} one {# cancellation this week} other {# cancellations this week}}",
+    "repeated": "{cashier} cancelled a reward use {count} times in 30 days for {customer}.",
+    "seeCustomer": "See customer",
+    "resolve": "Mark as seen"
+  },
+  "register": {
+    "switch": "Switch cashier",
+    "who": "Who's at the till?",
+    "whoHelp": "Tap your name, then enter your till code.",
+    "whoHelpAt": "{establishment} · tap your name, then enter your till code.",
+    "noCashier": "No team member has chosen a till code yet. Each person chooses it in the business dashboard (Team).",
+    "hello": "Hello {name}",
+    "pinHelp": "Enter your 4-digit till code.",
+    "back": "That's not me",
+    "close": "Close the till on this device",
+    "closeTitle": "Close the till?",
+    "closeConsequence": "The device will be signed out. To use it again, sign in by email and turn the till back on.",
+    "closeConfirm": "Close the till",
+    "pin": {
+      "title": "My till code",
+      "choose": "Choose a 4-digit code. It identifies you on the business's shared tills.",
+      "confirm": "Enter it again to confirm.",
+      "hint": "Keep it to yourself: operations made with this code carry your name.",
+      "mismatch": "The two codes don't match: try again.",
+      "saved": "Till code saved",
+      "banner": "Choose your till code (4 digits) to work on a shared till.",
+      "bannerCta": "Choose my code"
+    },
+    "activate": {
+      "button": "Use this device as a till",
+      "title": "Use this device as a till",
+      "help": "Each team member will identify themselves with their till code; operations will carry their name.",
+      "name": "Till name",
+      "defaultName": "Till",
+      "establishment": "Location",
+      "allEstablishments": "None in particular",
+      "warning": "The device will only have access to the till. To get the full dashboard back, sign out then sign in again by email.",
+      "confirm": "Turn on the till"
+    },
+    "team": {
+      "noPin": "No till code",
+      "pin": "Till code",
+      "reset": "Reset",
+      "resetTitle": "Reset {name}'s till code?",
+      "resetConsequence": "They won't be able to open a till until they choose a new code.",
+      "title": "Tills",
+      "help": "A tablet or phone shared at the counter: each person identifies themselves with their 4-digit till code, and every operation carries their name.",
+      "changeMyPin": "Change my till code",
+      "chooseMyPin": "Choose my till code",
+      "empty": "No tills yet. Open the business dashboard on the counter device and tap “Use this device as a till”.",
+      "lastSeen": "Used on {date}",
+      "revoke": "Remove",
+      "revokeTitle": "Remove the till “{name}”?",
+      "revokeConsequence": "The device is signed out right away.",
+      "lockMinutes": "Auto-lock (minutes)",
+      "save": "Save",
+      "saved": "Delay saved"
+    }
+  },
   "automations": {
     "title": "Follow-ups",
     "description": "Bring your customers back: the list of customers to follow up, and automatic messages on their Wallet card (and by email if they agreed).",
@@ -1013,6 +1074,7 @@
     "description": "Every operation, in order. Nothing is ever deleted: a mistake is fixed with a reversal.",
     "type": "Type",
     "all": "All",
+    "cancellations": "Cancellations",
     "from": "From",
     "to": "To",
     "empty": "No operations",

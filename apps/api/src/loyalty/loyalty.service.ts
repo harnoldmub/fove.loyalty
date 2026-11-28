@@ -20,7 +20,7 @@ import type { TenantContext } from "../common/context";
 import { PlanService } from "../billing/plan.service";
 import { WebhooksService } from "../notifications/webhooks.service";
 import { assertEstablishmentAccess } from "../tenants/tenants.service";
-import { LedgerService, type PostResult } from "./ledger.service";
+import { registerEstablishment, LedgerService, type PostResult } from "./ledger.service";
 import { createCard, readAccessToken } from "./cards";
 import { CardsService, cardUrl } from "../cards/cards.service";
 
@@ -233,7 +233,8 @@ export class LoyaltyService {
   ) {
     const where: Prisma.LoyaltyTransactionWhereInput = { tenantId: ctx.tenantId };
     if (params.accountId) where.accountId = params.accountId;
-    if (params.kind) where.kind = params.kind as Prisma.LoyaltyTransactionWhereInput["kind"];
+    if (params.kind === "CANCELLATIONS") where.kind = { in: ["REVERSAL", "REDEMPTION_REVERSAL"] };
+    else if (params.kind) where.kind = params.kind as Prisma.LoyaltyTransactionWhereInput["kind"];
     if (params.from || params.to) {
       where.createdAt = { ...(params.from ? { gte: new Date(params.from) } : {}), ...(params.to ? { lte: new Date(params.to) } : {}) };
     }
@@ -247,7 +248,13 @@ export class LoyaltyService {
       },
     });
     const hasMore = rows.length > params.limit;
-    const data = hasMore ? rows.slice(0, params.limit) : rows;
+    const page = hasMore ? rows.slice(0, params.limit) : rows;
+    // Qui et sur quelle caisse (surveillance des annulations).
+    const [users, registers] = await Promise.all([
+      this.prisma.client.user.findMany({ where: { id: { in: [...new Set(page.map((r) => r.actorUserId).filter((v): v is string => Boolean(v)))] } }, select: { id: true, name: true } }),
+      this.prisma.client.registerDevice.findMany({ where: { tenantId: ctx.tenantId, id: { in: [...new Set(page.map((r) => r.registerDeviceId).filter((v): v is string => Boolean(v)))] } }, select: { id: true, name: true } }),
+    ]);
+    const data = page.map((r) => ({ ...r, actorName: users.find((u) => u.id === r.actorUserId)?.name ?? null, registerName: registers.find((d) => d.id === r.registerDeviceId)?.name ?? null }));
     return { data, nextCursor: hasMore ? data[data.length - 1]!.id : null };
   }
 
@@ -268,7 +275,9 @@ export class LoyaltyService {
     return { delta, balanceAfter: account.balance + delta };
   }
 
-  async earn(ctx: TenantContext, input: z.infer<typeof earnSchema> & { externalOrderId?: string | null }, source: OperationSource): Promise<PostResult> {
+  async earn(ctx: TenantContext, rawInput: z.infer<typeof earnSchema> & { externalOrderId?: string | null }, source: OperationSource): Promise<PostResult> {
+    // Caisse : l'établissement de la caisse par défaut.
+    const input = { ...rawInput, establishmentId: rawInput.establishmentId ?? registerEstablishment(ctx) };
     assertEstablishmentAccess(ctx, input.establishmentId);
     const account = await this.prisma.client.loyaltyAccount.findFirst({
       where: { id: input.accountId, tenantId: ctx.tenantId },

@@ -46,6 +46,8 @@ export class TeamService {
         status: m.status,
         allEstablishments: m.allEstablishments,
         establishmentIds: m.establishments.map((e) => e.establishmentId),
+        // Code caisse choisi (jamais le code ni son empreinte).
+        cashierPinSet: Boolean(m.cashierPinHash),
       })),
       invitations: invitations.map((i) => ({ id: i.id, email: i.email, role: i.role.key, expiresAt: i.expiresAt })),
     };

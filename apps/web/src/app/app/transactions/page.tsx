@@ -3,6 +3,7 @@
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { ReceiptText } from "lucide-react";
 import { useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { TransactionList } from "@/components/app/history";
 import type { Page, Transaction } from "@/components/app/types";
@@ -15,7 +16,8 @@ import { TRANSACTION_KINDS, useKindLabel } from "@/lib/labels";
 export default function TransactionsPage() {
   const t = useTranslations("app.transactions");
   const kindLabel = useKindLabel();
-  const [kind, setKind] = useState("");
+  // ?kind=CANCELLATIONS : lien « Annulations » du tableau de bord et de l'email d'alerte.
+  const [kind, setKind] = useState(useSearchParams().get("kind") ?? "");
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
   const qs = new URLSearchParams({ limit: "30", ...(kind && { kind }), ...(from && { from }), ...(to && { to }) }).toString();
@@ -35,6 +37,7 @@ export default function TransactionsPage() {
           {(p) => (
             <Select {...p} value={kind} onChange={(e) => setKind(e.target.value)}>
               <option value="">{t("all")}</option>
+              <option value="CANCELLATIONS">{t("cancellations")}</option>
               {TRANSACTION_KINDS.map((k) => <option key={k} value={k}>{kindLabel(k)}</option>)}
             </Select>
           )}

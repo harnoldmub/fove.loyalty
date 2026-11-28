@@ -39,6 +39,11 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
     window.location.reload();
     return new Promise(() => {}) as unknown as T;
   }
+  // Caisse verrouillée (délai dépassé) ou fonction hors caisse : l'écran de caisse reprend la main.
+  if ((code === "register_locked" || code === "register_mode") && typeof window !== "undefined" && window.location.pathname.startsWith("/app")) {
+    window.location.assign("/app/scanner");
+    return new Promise(() => {}) as unknown as T;
+  }
   const handledForbidden = code === "partner_pending" || code === "partner_suspended" || code === "mfa_required" || code === "mfa_setup_required";
   // L'espace commerçant ouvre alors la fenêtre « Confirmez d'abord votre email » (shell).
   if (emailNotVerified && typeof window !== "undefined") window.dispatchEvent(new Event(EMAIL_NOT_VERIFIED_EVENT));

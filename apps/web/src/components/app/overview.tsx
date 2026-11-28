@@ -13,6 +13,7 @@ import { formatNumber } from "@/lib/utils";
 import { useActiveTenant, useCan } from "./me-context";
 import { TenantWalletBroadcast } from "./card-share";
 import { UpgradeCard } from "./upgrade";
+import { AlertsPanel } from "./alerts-panel";
 
 interface Overview {
   periodDays: number;
@@ -162,6 +163,8 @@ export function OverviewView({ mode }: { mode: "home" | "analytics" }) {
           )
         }
       />
+
+      {mode === "home" && <AlertsPanel />}
 
       {isLoading || !data ? (
         <div className="grid gap-4 sm:grid-cols-3">

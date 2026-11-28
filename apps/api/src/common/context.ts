@@ -9,6 +9,8 @@ export interface UserActor {
   permissions: ReadonlySet<Permission>;
   /** null = tous les établissements. */
   establishmentIds: ReadonlySet<string> | null;
+  /** Caisse utilisée (mode caisse) : enregistrée avec les opérations. */
+  registerDeviceId?: string | null;
 }
 
 export interface ApiKeyActor {
@@ -52,6 +54,8 @@ export interface AuthState {
   supportGrantId: string | null;
   /** Dernière double authentification sur cette session (admins). */
   mfaVerifiedAt?: Date | null;
+  /** Session de caisse : caisse, caissier déverrouillé et dernière action. */
+  register?: { deviceId: string; membershipId: string | null; activeAt: Date | null } | null;
 }
 
 export type AppRequest = Request & {

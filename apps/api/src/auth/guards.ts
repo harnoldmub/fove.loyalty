@@ -5,7 +5,7 @@ import { loadConfig } from "../config";
 import { sha256 } from "../common/crypto";
 import { AppError, forbidden, unauthorized, paymentRequired } from "../common/errors";
 import { PrismaService } from "../common/prisma.service";
-import { PERMISSION_KEY, REQUIRE_VERIFIED_KEY, SCOPE_KEY } from "../common/decorators";
+import { PERMISSION_KEY, REGISTER_KEY, REQUIRE_VERIFIED_KEY, SCOPE_KEY } from "../common/decorators";
 import type { AppRequest, AuthState } from "../common/context";
 import { SessionService, sessionCookieName } from "./session.service";
 import { PlanService } from "../billing/plan.service";
@@ -32,6 +32,10 @@ export class SessionGuard implements CanActivate {
     }
     const auth = await this.sessions.resolve(req.cookies?.[sessionCookieName()]);
     if (!auth) throw unauthorized();
+    // Session de caisse : seulement les routes prévues pour la caisse (docs/chantier-code-caisse.md).
+    if (auth.register && !this.reflector.getAllAndOverride<string>(REGISTER_KEY, [context.getHandler(), context.getClass()])) {
+      throw new AppError(HttpStatus.FORBIDDEN, "register_mode", "Fonction indisponible sur une caisse");
+    }
     const needsVerified = this.reflector.getAllAndOverride<boolean>(REQUIRE_VERIFIED_KEY, [context.getHandler(), context.getClass()]);
     if (needsVerified && !auth.user.emailVerifiedAt) {
       // Code dédié : le site affiche « confirmez votre email » au lieu de renvoyer vers la connexion.
@@ -56,6 +60,7 @@ export class TenantGuard implements CanActivate {
     const req = context.switchToHttp().getRequest<AppRequest>();
     const auth = req.auth;
     if (!auth) throw unauthorized();
+    if (auth.register) return this.registerContext(context, req, auth);
     if (!auth.activeTenantId) throw forbidden("Aucune entreprise sélectionnée");
     const required = this.reflector.getAllAndOverride<Permission | undefined>(PERMISSION_KEY, [
       context.getHandler(),
@@ -121,7 +126,51 @@ export class TenantGuard implements CanActivate {
     };
     return true;
   }
+
+  /**
+   * Caisse : le commerce et l'établissement de la caisse, au nom du caissier déverrouillé par son code
+   * (permissions de son rôle, plus les annulations, ouvertes à tout caissier sur la caisse).
+   */
+  private async registerContext(context: ExecutionContext, req: AppRequest, auth: AuthState): Promise<boolean> {
+    const register = auth.register!;
+    const db = this.prisma.client;
+    const device = await db.registerDevice.findUnique({ where: { id: register.deviceId }, include: { tenant: { select: { status: true, settings: { select: { registerLockMinutes: true } } } } } });
+    if (!device || device.revokedAt) throw unauthorized();
+    if (device.tenant.status === "SUSPENDED") throw forbidden("Compte suspendu : contactez le support FOVE");
+    const lockMs = (device.tenant.settings?.registerLockMinutes ?? 5) * 60_000;
+    const now = Date.now();
+    const unlocked = register.membershipId && register.activeAt && now - register.activeAt.getTime() < lockMs;
+    if (!unlocked) throw new AppError(HttpStatus.FORBIDDEN, "register_locked", "Caisse verrouillée : saisissez votre code");
+    const membership = await db.tenantMembership.findFirst({
+      where: { id: register.membershipId!, tenantId: device.tenantId, status: "ACTIVE", cashierPinHash: { not: null } },
+      include: { role: true, establishments: { select: { establishmentId: true } } },
+    });
+    if (!membership) throw new AppError(HttpStatus.FORBIDDEN, "register_locked", "Caisse verrouillée : saisissez votre code");
+    const permissions = new Set<Permission>([...(membership.role.permissions as Permission[]), "transactions.reverse", "redemptions.cancel"]);
+    const required = this.reflector.getAllAndOverride<Permission | undefined>(PERMISSION_KEY, [context.getHandler(), context.getClass()]);
+    if (required && !permissions.has(required)) throw forbidden();
+    if (now - register.activeAt!.getTime() > REGISTER_TOUCH_MS) {
+      await db.session.update({ where: { id: auth.sessionId }, data: { registerActiveAt: new Date(now) } });
+    }
+    req.tenant = {
+      tenantId: device.tenantId,
+      readOnly: false,
+      actor: {
+        type: "user",
+        userId: membership.userId,
+        membershipId: membership.id,
+        role: membership.role.key as TenantRole,
+        permissions,
+        establishmentIds: device.establishmentId ? new Set([device.establishmentId]) : membership.allEstablishments ? null : new Set(membership.establishments.map((e) => e.establishmentId)),
+        registerDeviceId: device.id,
+      },
+    };
+    return true;
+  }
 }
+
+/** Délai minimal entre deux enregistrements de l'activité d'un caissier (verrouillage automatique). */
+const REGISTER_TOUCH_MS = 30_000;
 
 @Injectable()
 export class SuperAdminGuard implements CanActivate {

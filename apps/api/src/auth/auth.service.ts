@@ -175,6 +175,7 @@ export class AuthService {
   }
 
   async me(auth: AuthState) {
+    if (auth.register) return this.registerMe(auth);
     const memberships = await this.prisma.client.tenantMembership.findMany({
       where: { userId: auth.user.id, status: "ACTIVE" },
       include: { tenant: { include: { settings: true } }, role: true },
@@ -221,6 +222,49 @@ export class AuthService {
       role: active?.role.key ?? (auth.supportGrantId ? "SUPPORT" : null),
       permissions: active?.role.permissions ?? [],
       tenants,
+      register: null,
+      /** Code caisse choisi dans le commerce actif (sinon l'espace invite à le choisir). */
+      cashierPinSet: Boolean(active?.cashierPinHash),
+    };
+  }
+
+  /**
+   * Session de caisse (docs/chantier-code-caisse.md) : le commerce de la caisse seulement, avec les droits du
+   * caissier déverrouillé (aucun si la caisse est verrouillée), jamais ceux du compte qui l'a activée.
+   */
+  private async registerMe(auth: AuthState) {
+    const register = auth.register!;
+    const db = this.prisma.client;
+    const device = await db.registerDevice.findUniqueOrThrow({ where: { id: register.deviceId }, include: { tenant: { include: { settings: true } } } });
+    const lockMs = (device.tenant.settings?.registerLockMinutes ?? 5) * 60_000;
+    const unlocked = Boolean(register.membershipId && register.activeAt && Date.now() - register.activeAt.getTime() < lockMs);
+    const cashier = unlocked
+      ? await db.tenantMembership.findFirst({ where: { id: register.membershipId!, tenantId: device.tenantId, status: "ACTIVE" }, include: { role: true, user: { select: { id: true, name: true } } } })
+      : null;
+    const t = device.tenant;
+    const permissions = cashier ? [...new Set([...(cashier.role.permissions as string[]), "transactions.reverse", "redemptions.cancel"])] : [];
+    return {
+      user: cashier ? { ...auth.user, id: cashier.user.id, name: cashier.user.name, email: "", isSuperAdmin: false, adminRole: null, isPartner: false } : { ...auth.user, name: device.name, email: "", isSuperAdmin: false, adminRole: null, isPartner: false },
+      spaces: { admin: false, merchant: true, partner: false },
+      home: "/app" as Home,
+      activeTenantId: t.id,
+      support: false,
+      role: cashier?.role.key ?? null,
+      permissions,
+      tenants: [
+        {
+          id: t.id,
+          name: t.name,
+          slug: t.slug,
+          status: t.status,
+          role: cashier?.role.key ?? "CASHIER",
+          logoUrl: t.settings?.logoUrl ?? null,
+          primaryColor: t.settings?.primaryColor ?? "#1F4FFF",
+          onboardingCompleted: true,
+        },
+      ],
+      register: { deviceId: device.id, name: device.name, unlocked: Boolean(cashier), cashier: cashier ? { membershipId: cashier.id, name: cashier.user.name } : null, lockMinutes: lockMs / 60_000 },
+      cashierPinSet: true,
     };
   }
 
